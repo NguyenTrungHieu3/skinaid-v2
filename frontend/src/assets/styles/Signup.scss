@@ -1,0 +1,140 @@
+//Register
+@import "../styles/base/variables.scss";
+
+.page-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: linear-gradient(rgba($primary, 0.67), rgba($primary, 0.67)),
+    url("../images/background2.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.signup-box {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 250px;
+  text-align: center;
+  border: 1px solid #26b894;
+}
+
+.signup-box h2 {
+  color: #26b894;
+  margin-bottom: 20px;
+  margin-top: -10px;
+}
+
+.signup-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.signup-box input {
+  padding: 12px;
+  border: 1px solid #26b894;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+// bọc input + icon
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    width: 100%;
+    padding: 12px;
+    padding-right: 35px; // chừa chỗ cho icon
+    border: 1px solid #26b894;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  i {
+    position: absolute;
+    right: 10px;
+    color: #555;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s;
+
+    &:hover {
+      color: #26b894;
+    }
+  }
+}
+
+.signup-box button {
+  background: #26b894;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.signup-box button:hover:enabled {
+  background: #1f8c73;
+}
+
+.signup-box button:disabled {
+  background: #9cd9c8;
+  cursor: not-allowed;
+}
+
+.signup-box p {
+  margin-top: 15px;
+  font-size: 13px;
+  text-align: right;
+}
+
+.signup-box a {
+  color: #26b894;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.divider {
+  border: none; /* bỏ viền mặc định */
+  border-top: 1px solid rgba(0, 0, 0, 0.2); /* line mảnh màu nhạt */
+  margin: 15px 0; /* khoảng cách trên dưới */
+}
+
+p.error-signup-message {
+  color: red;
+  font-size: 0.7rem;
+  margin: 0;
+  text-align: left;
+  // margin-bottom: 0.5rem;
+}
+
+/* Tắt icon mặc định của Chrome/Edge/Safari */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-password-toggle-button,
+input[type="password"]::-webkit-inner-spin-button,
+input[type="password"]::-webkit-outer-spin-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+span {
+  color: "#26b894";
+  cursor: "pointer";
+
+  &:hover {
+    text-decoration: underline;
+    font-weight: bold;
+  }
+}

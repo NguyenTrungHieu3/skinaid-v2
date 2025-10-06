@@ -1,0 +1,19 @@
+.homepage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  overflow-x: hidden;
+  background-color: #f9fafc; // nền tổng thể nhẹ
+
+  section {
+    width: 100%;
+    max-width: 1200px;
+    padding: 4rem 2rem;
+    margin: 0 auto;
+
+    @media (max-width: 768px) {
+      padding: 2rem 1rem;
+    }
+  }
+}

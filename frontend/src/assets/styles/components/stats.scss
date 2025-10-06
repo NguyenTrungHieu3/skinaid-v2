@@ -1,0 +1,32 @@
+@import "../base/variables.scss";
+
+.stats {
+  display: flex; /* đổi từ grid sang flex */
+  justify-content: space-between; /* dàn đều 4 ô */
+  align-items: center; /* căn giữa theo chiều dọc */
+  padding: 1.5rem 8rem; /* giảm chiều cao khung */
+  background: rgba(124, 208, 188, 0.4);
+  text-align: center;
+
+  .stat-card {
+    flex: 1;
+     /* mỗi thẻ chiếm không gian đều nhau */
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $primary;
+      margin-bottom: 0;
+    }
+    p {
+      // margin-top: 0.3rem;
+      color: $text-light;
+      font-size: 0.8rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column; /* xuống hàng khi màn nhỏ */
+    gap: 1.5rem;
+    padding: 1.5rem 2rem;
+  }
+}
