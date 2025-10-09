@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_REQUESTS: int = Field(default=5, ge=1, le=50)
 
     # ==================== MODELS ====================
-    DETECTION_MODEL_PATH: Path = Path("detection/models/best.pt")
+    DETECTION_MODEL_PATH: Path = Path("ai_ml/detection/models/best.pt")
     CLASSIFICATION_MODEL_PATH: Path = Path("detection/models/efficientnet_v2.pt")
     CLASSIFICATION_ENABLED: bool = True
     MODEL_DEVICE: str = "cpu"  # "cpu" | "cuda"
@@ -56,14 +56,14 @@ class Settings(BaseSettings):
     MAX_IMAGE_HEIGHT: int = 4096
 
     # ==================== STORAGE ====================
-    TEMP_UPLOAD_DIR: Path = Path("detection/temp")
-    OUTPUT_DIR: Path = Path("detection/output")
+    TEMP_UPLOAD_DIR: Path = Path("ai_ml/detection/temp")
+    OUTPUT_DIR: Path = Path("ai_ml/detection/output")
 
     # ==================== BATCH ====================
     BATCH_SIZE: int = 8
     BATCH_WORKERS: str | int = "auto"
-    BATCH_INPUT_DIR: Path = Path("detection/data/test/images")
-    BATCH_OUTPUT_DIR: Path = Path("detection/output/batch_results")
+    BATCH_INPUT_DIR: Path = Path("ai_ml/detection/data/test/images")
+    BATCH_OUTPUT_DIR: Path = Path("ai_ml/detection/output/batch_results")
 
     # ==================== SECURITY ====================
     API_KEY_ENABLED: bool = False

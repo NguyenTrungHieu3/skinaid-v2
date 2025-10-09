@@ -124,7 +124,7 @@ class AIProcessingService:
                         
                         if "processing_time" not in result:
                             result["processing_time"] = round(request_time, 3)
-                        t
+
                         if "success" not in result:
                             result["success"] = True
                         
