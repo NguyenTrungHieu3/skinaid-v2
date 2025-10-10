@@ -1,12 +1,8 @@
-"""Success and error messages used throughout the application."""
+USER_REGISTERED_SUCCESS = "Người dùng đăng ký thành công"
+USER_LOGIN_SUCCESS = "Đăng nhập thành công"
+USER_LOGOUT_SUCCESS = "Đăng xuất thành công"
 
-# Success messages
-USER_REGISTERED_SUCCESS = "User registered successfully"
-USER_LOGIN_SUCCESS = "Login successful"
-USER_LOGOUT_SUCCESS = "Logout successful"
-
-# Error messages
-EMAIL_ALREADY_REGISTERED = "Email already registered"
-INVALID_EMAIL_PASSWORD = "Invalid email or password"
-ACCOUNT_DEACTIVATED = "Account is deactivated"
-PASSWORD_TOO_WEAK = "Password does not meet the security requirements"
+EMAIL_ALREADY_REGISTERED = "Email đã được đăng ký"
+INVALID_EMAIL_PASSWORD = "Email hoặc mật khẩu không hợp lệ"
+ACCOUNT_DEACTIVATED = "Tài khoản đã bị vô hiệu hóa"
+PASSWORD_TOO_WEAK = "Mật khẩu không đáp ứng yêu cầu bảo mật"

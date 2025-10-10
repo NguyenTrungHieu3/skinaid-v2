@@ -61,5 +61,4 @@ class MockEmailService:
         """Clear sent emails list"""
         self.sent_emails = []
 
-# Create mock instance
 mock_email_service = MockEmailService()

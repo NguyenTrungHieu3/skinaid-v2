@@ -1,6 +1,7 @@
 import smtplib
 import secrets
 import uuid
+import asyncio
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -9,14 +10,12 @@ import logging
 import os
 from urllib.parse import quote, quote_plus
 
-# Import settings to get SMTP configuration
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
-        # Load email configuration from settings
         self.smtp_server = getattr(settings, 'SMTP_SERVER', os.getenv("SMTP_SERVER", "smtp.gmail.com"))
         self.smtp_port = int(getattr(settings, 'SMTP_PORT', os.getenv("SMTP_PORT", "587")))
         self.sender_email = getattr(settings, 'SMTP_USERNAME', os.getenv("SMTP_USERNAME", "your-app-email@gmail.com")) 
@@ -28,7 +27,6 @@ class EmailService:
     def create_verification_email_content(self, email: str, token: str) -> tuple[str, str, str]:
         subject = "SkinAid - Xác thực tài khoản của bạn"
         
-        # URL encode email and token to handle special characters
         encoded_email = quote_plus(email)
         encoded_token = quote_plus(token)
         
@@ -77,7 +75,6 @@ class EmailService:
         </html>
         """
         
-        # Plain text version
         text_body = f"""
         SkinAid - Xác thực tài khoản của bạn
         
@@ -143,7 +140,6 @@ class EmailService:
         </html>
         """
         
-        # Plain text version
         text_body = f"""
         SkinAid - Đặt lại mật khẩu của bạn
         
@@ -164,9 +160,10 @@ class EmailService:
         return subject, html_body, text_body
     
     async def send_verification_email(self, email: str, token: str) -> bool:
+        """Send verification email synchronously (legacy method)"""
         try:
             subject, html_body, text_body = self.create_verification_email_content(email, token)
-            
+
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
             message["From"] = self.sender_email
@@ -174,7 +171,7 @@ class EmailService:
 
             text_part = MIMEText(text_body, "plain", "utf-8")
             html_part = MIMEText(html_body, "html", "utf-8")
-            
+
             message.attach(text_part)
             message.attach(html_part)
 
@@ -182,19 +179,67 @@ class EmailService:
                 server.starttls()
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(message)
-            
+
             logger.info(f"Verification email sent successfully to {email}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send verification email to {email}: {str(e)}")
             return False
+
+    async def send_verification_email_async(self, email: str, token: str) -> None:
+        """Send verification email asynchronously using thread pool"""
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._send_email_sync,
+                email,
+                token,
+                "verification"
+            )
+            logger.info(f"Verification email queued for {email}")
+        except Exception as e:
+            logger.error(f"Failed to queue verification email for {email}: {str(e)}")
+            raise
+
+    def _send_email_sync(self, email: str, token: str, email_type: str):
+        """Synchronous email sending executed in thread pool"""
+        try:
+            if email_type == "verification":
+                subject, html_body, text_body = self.create_verification_email_content(email, token)
+            elif email_type == "password_reset":
+                subject, html_body, text_body = self.create_password_reset_email_content(email, token)
+            else:
+                raise ValueError(f"Unknown email type: {email_type}")
+
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = self.sender_email
+            message["To"] = email
+
+            text_part = MIMEText(text_body, "plain", "utf-8")
+            html_part = MIMEText(html_body, "html", "utf-8")
+
+            message.attach(text_part)
+            message.attach(html_part)
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.sender_email, self.sender_password)
+                server.send_message(message)
+
+            logger.info(f"{email_type.title()} email sent successfully to {email}")
+
+        except Exception as e:
+            logger.error(f"Failed to send {email_type} email to {email}: {str(e)}")
+            raise
     
     async def send_welcome_email(self, email: str, display_name: str) -> bool:
-        """Send welcome email after successful verification"""
+        """Send welcome email after successful verification (legacy method)"""
         try:
             subject = "Chào mừng bạn đến với SkinAid! 🎉"
-            
+
             html_body = f"""
             <!DOCTYPE html>
             <html>
@@ -208,11 +253,11 @@ class EmailService:
                         <h1 style="color: #4CAF50;">🩹 SkinAid</h1>
                         <h2 style="color: #666;">Chào mừng bạn!</h2>
                     </div>
-                    
+
                     <div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px;">
                         <p>Xin chào <strong>{display_name}</strong>,</p>
                         <p>Chúc mừng! Tài khoản của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng SkinAid ngay bây giờ.</p>
-                        
+
                         <h3 style="color: #4CAF50;">Tính năng chính của SkinAid:</h3>
                         <ul>
                             <li>🔍 Phân tích và nhận diện vết thương bằng AI</li>
@@ -220,15 +265,15 @@ class EmailService:
                             <li>💡 Đưa ra khuyến nghị sơ cứu phù hợp</li>
                             <li>📊 Theo dõi quá trình hồi phục</li>
                         </ul>
-                        
+
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://localhost:3000/signin" 
+                            <a href="http://localhost:3000/signin"
                                style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                                 Đăng nhập ngay
                             </a>
                         </div>
                     </div>
-                    
+
                     <div style="text-align: center; color: #666; font-size: 12px; margin-top: 20px;">
                         <p>© 2024 SkinAid - Hệ thống chăm sóc vết thương thông minh</p>
                     </div>
@@ -240,27 +285,108 @@ class EmailService:
             message["Subject"] = subject
             message["From"] = self.sender_email
             message["To"] = email
-            
+
             html_part = MIMEText(html_body, "html", "utf-8")
             message.attach(html_part)
-            
+
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(message)
-            
+
             logger.info(f"Welcome email sent successfully to {email}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send welcome email to {email}: {str(e)}")
             return False
+
+    async def send_welcome_email_async(self, email: str, display_name: str) -> None:
+        """Send welcome email asynchronously using thread pool"""
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._send_welcome_email_sync,
+                email,
+                display_name
+            )
+            logger.info(f"Welcome email queued for {email}")
+        except Exception as e:
+            logger.error(f"Failed to queue welcome email for {email}: {str(e)}")
+            raise
+
+    def _send_welcome_email_sync(self, email: str, display_name: str):
+        """Synchronous welcome email sending executed in thread pool"""
+        try:
+            subject = "Chào mừng bạn đến với SkinAid! 🎉"
+
+            html_body = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Chào mừng đến với SkinAid</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #4CAF50;">🩹 SkinAid</h1>
+                        <h2 style="color: #666;">Chào mừng bạn!</h2>
+                    </div>
+
+                    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px;">
+                        <p>Xin chào <strong>{display_name}</strong>,</p>
+                        <p>Chúc mừng! Tài khoản của bạn đã được xác thực thành công. Bạn có thể bắt đầu sử dụng SkinAid ngay bây giờ.</p>
+
+                        <h3 style="color: #4CAF50;">Tính năng chính của SkinAid:</h3>
+                        <ul>
+                            <li>🔍 Phân tích và nhận diện vết thương bằng AI</li>
+                            <li>📋 Đánh giá mức độ nghiêm trọng</li>
+                            <li>💡 Đưa ra khuyến nghị sơ cứu phù hợp</li>
+                            <li>📊 Theo dõi quá trình hồi phục</li>
+                        </ul>
+
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="http://localhost:3000/signin"
+                               style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                                Đăng nhập ngay
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; color: #666; font-size: 12px; margin-top: 20px;">
+                        <p>© 2024 SkinAid - Hệ thống chăm sóc vết thương thông minh</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = self.sender_email
+            message["To"] = email
+
+            html_part = MIMEText(html_body, "html", "utf-8")
+            message.attach(html_part)
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.sender_email, self.sender_password)
+                server.send_message(message)
+
+            logger.info(f"Welcome email sent successfully to {email}")
+
+        except Exception as e:
+            logger.error(f"Failed to send welcome email to {email}: {str(e)}")
+            raise
     
     async def send_password_reset_email(self, email: str, token: str) -> bool:
-        """Send password reset email"""
+        """Send password reset email synchronously (legacy method)"""
         try:
             subject, html_body, text_body = self.create_password_reset_email_content(email, token)
-            
+
             message = MIMEMultipart("alternative")
             message["Subject"] = subject
             message["From"] = self.sender_email
@@ -268,7 +394,7 @@ class EmailService:
 
             text_part = MIMEText(text_body, "plain", "utf-8")
             html_part = MIMEText(html_body, "html", "utf-8")
-            
+
             message.attach(text_part)
             message.attach(html_part)
 
@@ -276,12 +402,28 @@ class EmailService:
                 server.starttls()
                 server.login(self.sender_email, self.sender_password)
                 server.send_message(message)
-            
+
             logger.info(f"Password reset email sent successfully to {email}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Failed to send password reset email to {email}: {str(e)}")
             return False
+
+    async def send_password_reset_email_async(self, email: str, token: str) -> None:
+        """Send password reset email asynchronously using thread pool"""
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._send_email_sync,
+                email,
+                token,
+                "password_reset"
+            )
+            logger.info(f"Password reset email queued for {email}")
+        except Exception as e:
+            logger.error(f"Failed to queue password reset email for {email}: {str(e)}")
+            raise
 
 email_service = EmailService()

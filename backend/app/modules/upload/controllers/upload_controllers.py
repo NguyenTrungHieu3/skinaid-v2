@@ -33,7 +33,7 @@ class UploadController:
             
             if result["success"]:
                 return SuccessResponse(
-                    message="Image uploaded successfully",
+                    message="Hình ảnh tải lên thành công",
                     data=result["data"]
                 )
             else:
@@ -52,7 +52,7 @@ class UploadController:
         except Exception as e:
             logger.error(f"Unexpected error in upload_image: {str(e)}")
             return ErrorResponse(
-                message="An unexpected error occurred during upload",
+                message="Có lỗi không mong muốn xảy ra trong quá trình tải lên",
                 error_code=FILE_UPLOAD_FAILED,
                 error_details=None
             )
@@ -62,10 +62,10 @@ class UploadController:
         image_id: str, 
         user_id: str
     ) -> Union[SuccessResponse[WoundImageDetail], ErrorResponse]:
-        """Get wound image analysis results."""
+        """Lấy kết quả phân tích hình ảnh vết thương."""
         try:
             result = await self.upload_service.get_image_by_id(image_id, user_id)
-            
+
             if result["success"]:
                 wound_image = result["data"]
                 wound_detail = WoundImageDetail(
@@ -88,14 +88,14 @@ class UploadController:
                     updated_at=wound_image.updated_at,
                     processed_at=wound_image.processed_at
                 )
-                
+
                 return SuccessResponse(
-                    message="Image analysis retrieved successfully",
+                    message="Lấy phân tích hình ảnh thành công",
                     data=wound_detail
                 )
             else:
                 return ErrorResponse(
-                    message=result.get("error_message", "Image not found"),
+                    message=result.get("error_message", "Không tìm thấy hình ảnh"),
                     error_code=result.get("error_code", "IMAGE_NOT_FOUND"),
                     error_details=None
                 )
@@ -109,7 +109,7 @@ class UploadController:
         except Exception as e:
             logger.error(f"Unexpected error in get_image_analysis: {str(e)}")
             return ErrorResponse(
-                message="An unexpected error occurred while retrieving image analysis",
+                message="Có lỗi không mong muốn xảy ra khi lấy phân tích hình ảnh",
                 error_code="IMAGE_RETRIEVAL_FAILED",
                 error_details=None
             )
@@ -120,10 +120,10 @@ class UploadController:
         limit: int = 20, 
         offset: int = 0
     ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Get all images uploaded by a user."""
+        """Lấy tất cả hình ảnh được tải lên bởi người dùng."""
         try:
             result = await self.upload_service.get_user_images(user_id, limit, offset)
-            
+
             if result["success"]:
                 images_data = []
                 for wound_image in result["data"]:
@@ -148,9 +148,9 @@ class UploadController:
                         processed_at=wound_image.processed_at
                     )
                     images_data.append(image_detail)
-                
+
                 return SuccessResponse(
-                    message="User images retrieved successfully",
+                    message="Lấy hình ảnh người dùng thành công",
                     data={
                         "images": images_data,
                         "total": result.get("total", len(images_data)),
@@ -160,7 +160,7 @@ class UploadController:
                 )
             else:
                 return ErrorResponse(
-                    message=result.get("error_message", "Failed to retrieve images"),
+                    message=result.get("error_message", "Không thể lấy hình ảnh"),
                     error_code=result.get("error_code", "IMAGES_RETRIEVAL_FAILED"),
                     error_details=None
                 )
@@ -174,7 +174,7 @@ class UploadController:
         except Exception as e:
             logger.error(f"Unexpected error in get_user_images: {str(e)}")
             return ErrorResponse(
-                message="An unexpected error occurred while retrieving user images",
+                message="Có lỗi không mong muốn xảy ra khi lấy hình ảnh người dùng",
                 error_code="IMAGES_RETRIEVAL_FAILED",
                 error_details=None
             )

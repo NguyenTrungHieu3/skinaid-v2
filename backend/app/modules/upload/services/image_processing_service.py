@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ImageProcessingService:
     """
-    🤖 ImageProcessingService - AI INTEGRATION SPECIALIST
+    ImageProcessingService - AI INTEGRATION SPECIALIST
 
     Trách nhiệm DUY NHẤT: Giao tiếp với AI service
     - Gọi AI service để phân tích ảnh
@@ -19,9 +19,6 @@ class ImageProcessingService:
     - Retry logic và error handling
     - Health check cho AI service
 
-    ✅ Độc lập: Có thể test riêng với mock AI service
-    ✅ Tái sử dụng: Có thể dùng ở nhiều nơi khác
-    ✅ Robust: Có retry và error handling tốt
     """
 
     def __init__(self):
@@ -50,10 +47,10 @@ class ImageProcessingService:
                 return False
 
         except (httpx.ConnectError, httpx.TimeoutException) as e:
-            logger.error(f"AI service health check failed: {e}")
+            logger.error(f"Kiểm tra trạng thái AI service thất bại: {e}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error during health check: {e}")
+            logger.error(f"Lỗi không mong muốn trong quá trình kiểm tra trạng thái: {e}")
             return False
 
     async def analyze_image(self, image_path: str) -> Dict[str, Any]:
@@ -65,24 +62,16 @@ class ImageProcessingService:
 
         Returns:
             Dict chứa kết quả từ AI service hoặc error
-
-        Error Codes:
-        - AI_SERVICE_UNAVAILABLE: AI service down
-        - AI_SERVICE_TIMEOUT: Request timeout
-        - AI_SERVICE_ERROR: AI service trả về lỗi
-        - AI_PROCESSING_FAILED: Lỗi xử lý ảnh
         """
         last_error = None
 
-        # Retry logic (nếu cần)
         for attempt in range(self.max_retries):
             try:
-                # Health check trước khi gửi (optional)
                 if attempt == 0:
                     if not await self.check_ai_service_health():
                         return {
                             "success": False,
-                            "error": "AI service is not available",
+                            "error": "AI service không khả dụng",
                             "error_code": "AI_SERVICE_UNAVAILABLE",
                             "num_detections": 0,
                             "detections": []
@@ -90,10 +79,8 @@ class ImageProcessingService:
 
                 start_time = time.time()
 
-                # Gửi request tới AI service
                 async with httpx.AsyncClient() as client:
                     with open(image_path, "rb") as f:
-                        # Xác định MIME type dựa trên extension
                         ext = image_path.split('.')[-1].lower()
                         mime_type = "image/jpeg" if ext in ['jpg', 'jpeg'] else "image/png"
 
@@ -101,7 +88,7 @@ class ImageProcessingService:
                             "file": (os.path.basename(image_path), f, mime_type)
                         }
 
-                        logger.info(f"Sending image to AI service (attempt {attempt + 1})")
+                        logger.info(f"Đang gửi hình ảnh tới AI service (lần thử {attempt + 1})")
 
                         response = await client.post(
                             f"{self.ai_service_url}/detect",
@@ -111,21 +98,19 @@ class ImageProcessingService:
 
                         request_time = time.time() - start_time
 
-                        # Thành công
                         if response.status_code == 200:
                             result = response.json()
 
                             logger.info(
-                                f"✅ AI analysis successful: {result.get('num_detections', 0)} detections "
-                                f"in {request_time:.3f}s"
+                                f"Phân tích AI thành công: {result.get('num_detections', 0)} phát hiện "
+                                f"trong {request_time:.3f}s"
                             )
 
                             return result
 
-                        # Lỗi HTTP
                         else:
                             error_detail = response.text
-                            logger.error(f"AI service HTTP error: {response.status_code}")
+                            logger.error(f"Lỗi HTTP từ AI service: {response.status_code}")
 
                             return {
                                 "success": False,
@@ -137,10 +122,10 @@ class ImageProcessingService:
 
             except httpx.ConnectError as e:
                 last_error = e
-                logger.error(f"Cannot connect to AI service (attempt {attempt + 1})")
+                logger.error(f"Không thể kết nối tới AI service (lần thử {attempt + 1})")
 
                 if attempt < self.max_retries - 1:
-                    await asyncio.sleep(1)  # Wait before retry
+                    await asyncio.sleep(1)
                     continue
 
             except httpx.TimeoutException as e:
@@ -151,11 +136,10 @@ class ImageProcessingService:
                     continue
 
             except FileNotFoundError as e:
-                # Không retry cho file not found
-                logger.error(f"Image file not found: {image_path}")
+                logger.error(f"Không tìm thấy file hình ảnh: {image_path}")
                 return {
                     "success": False,
-                    "error": f"Image file not found: {image_path}",
+                    "error": f"Không tìm thấy file hình ảnh: {image_path}",
                     "error_code": "FILE_NOT_FOUND",
                     "num_detections": 0,
                     "detections": []
@@ -163,18 +147,17 @@ class ImageProcessingService:
 
             except Exception as e:
                 last_error = e
-                logger.error(f"Unexpected error during AI analysis (attempt {attempt + 1}): {e}")
+                logger.error(f"Lỗi không mong muốn trong quá trình phân tích AI (lần thử {attempt + 1}): {e}")
 
                 if attempt < self.max_retries - 1:
                     continue
 
-        # Tất cả retries đều fail
-        error_message = str(last_error) if last_error else "Unknown error"
+        error_message = str(last_error) if last_error else "Lỗi không xác định"
         error_code = type(last_error).__name__ if last_error else "UNKNOWN_ERROR"
 
         return {
             "success": False,
-            "error": f"AI service request failed: {error_message}",
+            "error": f"Yêu cầu AI service thất bại: {error_message}",
             "error_code": error_code,
             "num_detections": 0,
             "detections": []
@@ -200,5 +183,5 @@ class ImageProcessingService:
                     return {"error": f"HTTP {response.status_code}"}
 
         except Exception as e:
-            logger.error(f"Failed to get model info: {e}")
+            logger.error(f"Không thể lấy thông tin model: {e}")
             return {"error": str(e)}

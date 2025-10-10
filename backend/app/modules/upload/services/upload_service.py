@@ -12,7 +12,6 @@ from app.utils.constants.error_codes import *
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.modules.upload.models.wound_images import WoundImages
 
-# Import các services chuyên biệt
 from app.modules.upload.services.file_service import FileService
 from app.modules.upload.services.image_processing_service import ImageProcessingService
 from app.modules.firstaid.services.first_aid_service import FirstAidService
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class UploadService:
     """
-    🔄 UploadService - ORCHESTRATION LAYER
+    UploadService - ORCHESTRATION LAYER
 
     Trách nhiệm DUY NHẤT: Điều phối workflow upload
     - Không chứa business logic phức tạp
@@ -47,7 +46,7 @@ class UploadService:
         user_agent: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        🔄 ORCHESTRATION METHOD - Điều phối toàn bộ workflow upload
+        ORCHESTRATION METHOD - Điều phối toàn bộ workflow upload
 
         Workflow:
         1. Validate file (giao cho validation service)
@@ -58,9 +57,9 @@ class UploadService:
         6. Get first aid guide (giao cho first aid service)
         7. Return complete response
 
-        ✅ Đơn giản: Chỉ orchestrate, không chứa business logic
-        ✅ Dễ test: Có thể mock từng service
-        ✅ Dễ maintain: Mỗi service thay đổi độc lập
+        Đơn giản: Chỉ orchestrate, không chứa business logic
+        De test: Có thể mock từng service
+        De maintain: Mỗi service thay đổi độc lập
         """
 
         file_path = None
@@ -68,7 +67,7 @@ class UploadService:
 
         try:
             # ===== STEP 1: VALIDATE FILE =====
-            logger.info(f"🔍 Validating file: {file.filename} for user: {user_id}")
+            logger.info(f"Validating file: {file.filename} for user: {user_id}")
 
             # Đọc chunk đầu tiên để validate (không cần đọc toàn bộ file)
             first_chunk = await file.read(1024)
@@ -90,7 +89,7 @@ class UploadService:
             await file.seek(0)
 
             # ===== STEP 2: SAVE FILE =====
-            logger.info("💾 Saving file to disk")
+            logger.info("Saving file to disk")
 
             file_path = self.file_service.generate_file_path(file.filename, user_id)
             save_result = await self.file_service.save_file(file, file_path)
@@ -101,10 +100,10 @@ class UploadService:
                     error_code=save_result["error_code"]
                 )
 
-            logger.info(f"✅ File saved: {file_path}")
+            logger.info(f"File saved: {file_path}")
 
             # ===== STEP 3: CREATE DATABASE RECORD =====
-            logger.info("🗄️ Creating database record")
+            logger.info("Creating database record")
 
             wound_image = await self._create_wound_image_record(
                 user_id=user_id,
@@ -116,7 +115,7 @@ class UploadService:
             wound_image_id = wound_image.id
 
             # ===== STEP 4: CALL AI SERVICE =====
-            logger.info(f"🤖 Calling AI service for image: {wound_image_id}")
+            logger.info(f"Calling AI service for image: {wound_image_id}")
 
             await self._update_image_status(wound_image_id, "processing")
             full_image_path = os.path.join(settings.UPLOAD_DIR, file_path)
@@ -124,7 +123,7 @@ class UploadService:
 
             # ===== STEP 5: PROCESS AI RESULTS =====
             if not ai_result["success"] or ai_result["num_detections"] == 0:
-                logger.warning("⚠️ No wounds detected or AI service error")
+                logger.warning("No wounds detected or AI service error")
 
                 await self._update_image_status(
                     wound_image_id,
@@ -144,7 +143,7 @@ class UploadService:
             detection = ai_result["detections"][0]
 
             # ===== STEP 6: UPDATE DATABASE WITH AI RESULTS =====
-            logger.info("💾 Updating database with AI results")
+            logger.info("Updating database with AI results")
 
             await self._update_wound_image_with_ai_result(
                 image_id=wound_image_id,
@@ -156,7 +155,7 @@ class UploadService:
             )
 
             # ===== STEP 7: GET FIRST AID GUIDE =====
-            logger.info("🩹 Getting first aid guide")
+            logger.info("Getting first aid guide")
 
             first_aid = await self.first_aid_service.get_first_aid_guide(
                 wound_type=detection["class_name"],
@@ -164,7 +163,7 @@ class UploadService:
             )
 
             # ===== STEP 8: RETURN COMPLETE RESPONSE =====
-            logger.info("✅ Upload workflow completed successfully")
+            logger.info("Upload workflow completed successfully")
 
             return {
                 "success": True,
@@ -186,9 +185,8 @@ class UploadService:
 
         except Exception as e:
             # Handle unexpected errors
-            logger.error(f"❌ Unexpected error in upload workflow: {e}")
+            logger.error(f"Unexpected error in upload workflow: {e}")
 
-            # Cleanup: update database status và delete file
             if wound_image_id:
                 await self._update_image_status(
                     wound_image_id,
@@ -245,37 +243,6 @@ class UploadService:
             logger.error(f"Failed to update wound image with AI result: {e}")
             raise
 
-    async def _get_first_aid_guide(
-        self,
-        wound_type: str,
-        severity: str
-    ) -> Optional[Dict[str, Any]]:
-        """Query first aid guide from database"""
-        try:
-            sql = text("""
-                SELECT *
-                FROM firstaidguides
-                WHERE wound_type = :wound_type AND severity = :severity
-                LIMIT 1
-            """)
-            
-            result = await self.db.execute(sql, {
-                "wound_type": wound_type,
-                "severity": severity
-            })
-            
-            row = result.mappings().first()
-            
-            if not row:
-                logger.warning(f"No first aid guide found for {wound_type}/{severity}")
-                return None
-            
-            return dict(row)
-            
-        except Exception as e:
-            logger.error(f"Failed to get first aid guide: {e}")
-            return None
-
     async def handle_image_upload(
         self,
         user_id: str,
@@ -284,7 +251,7 @@ class UploadService:
         user_agent: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        📤 SIMPLE UPLOAD - Upload không có AI processing
+        SIMPLE UPLOAD - Upload không có AI processing
 
         Workflow đơn giản:
         1. Validate file cơ bản
@@ -299,7 +266,7 @@ class UploadService:
 
         try:
             # ===== STEP 1: BASIC VALIDATION =====
-            logger.info(f"🔍 Basic validation for file: {file.filename}")
+            logger.info(f"Basic validation for file: {file.filename}")
 
             first_chunk = await file.read(1024)
             if not first_chunk:
@@ -318,7 +285,7 @@ class UploadService:
             await file.seek(0)
 
             # ===== STEP 2: SAVE FILE =====
-            logger.info("💾 Saving file")
+            logger.info("Saving file")
 
             file_path = self.file_service.generate_file_path(file.filename, user_id)
             save_result = await self.file_service.save_file(file, file_path)
@@ -330,7 +297,7 @@ class UploadService:
                 )
 
             # ===== STEP 3: CREATE DATABASE RECORD =====
-            logger.info("🗄️ Creating database record")
+            logger.info("Creating database record")
 
             wound_image = await self._create_wound_image_record(
                 user_id=user_id,
@@ -343,7 +310,7 @@ class UploadService:
             # Set status to completed (no AI processing)
             await self._update_image_status(wound_image.id, "completed")
 
-            logger.info(f"✅ Simple upload completed: {wound_image.id}")
+            logger.info(f"Simple upload completed: {wound_image.id}")
 
             return {"success": True, "data": wound_image}
 
@@ -351,7 +318,7 @@ class UploadService:
             raise
 
         except Exception as e:
-            logger.error(f"❌ Simple upload failed: {e}")
+            logger.error(f"Simple upload failed: {e}")
 
             # Cleanup
             if file_path:
@@ -500,71 +467,6 @@ class UploadService:
 
         except Exception as e:
             logger.error(f"Failed to update image status: {e}")
-            # Không raise exception vì đây là operation phụ
-
-    async def _update_wound_image_with_ai_result(
-        self,
-        image_id: str,
-        wound_type: str,
-        confidence_score: float,
-        severity: str,
-        ai_model_version: str,
-        processing_time_ms: int
-    ) -> None:
-        """
-        Cập nhật kết quả AI vào wound_images record
-
-        Args:
-            image_id: ID của record cần update
-            wound_type: Loại vết thương từ AI
-            confidence_score: Độ tin cậy từ AI (0-1)
-            severity: Mức độ nghiêm trọng (mild, moderate, severe)
-            ai_model_version: Version của AI model
-            processing_time_ms: Thời gian xử lý (milliseconds)
-        """
-        try:
-            sql = text("""
-                UPDATE wound_images
-                SET wound_type = :wound_type,
-                    confidence_score = :confidence_score,
-                    severity = :severity,
-                    ai_model_version = :ai_model_version,
-                    processing_time_ms = :processing_time_ms,
-                    upload_status = 'completed',
-                    processed_at = :processed_at,
-                    updated_at = :updated_at
-                WHERE id = :image_id
-            """)
-
-            await self.db.execute(sql, {
-                "wound_type": wound_type,
-                "confidence_score": confidence_score,
-                "severity": severity,
-                "ai_model_version": ai_model_version,
-                "processing_time_ms": processing_time_ms,
-                "processed_at": datetime.now(timezone.utc).replace(tzinfo=None),
-                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
-                "image_id": image_id
-            })
-
-            await self.db.commit()
-
-            logger.info(
-                f"Updated AI results for image {image_id}",
-                extra={
-                    "wound_type": wound_type,
-                    "confidence": confidence_score,
-                    "severity": severity,
-                    "processing_time_ms": processing_time_ms
-                }
-            )
-
-        except Exception as e:
-            logger.error(f"Failed to update wound image with AI result: {e}")
-            raise AppBaseException(
-                message="Failed to save AI results",
-                error_code="AI_RESULT_SAVE_FAILED"
-            )
     
     async def get_image_by_id(self, image_id: str, user_id: str) -> Dict[str, Any]:
         """
@@ -631,7 +533,6 @@ class UploadService:
             count_row = count_result.mappings().first()
             total = count_row["total"] if count_row else 0
 
-            # Lấy danh sách ảnh (có pagination)
             sql = text("""
                 SELECT * FROM wound_images
                 WHERE user_id = :user_id

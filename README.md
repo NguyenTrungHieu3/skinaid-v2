@@ -1,25 +1,33 @@
-SkinAid/
-│── README.md # Giới thiệu tổng quan dự án, hướng dẫn cài đặt & chạy
-│── docker-compose.yml # Orchestrate backend, frontend, AI service
-│── .gitignore
+C1SE.24_SkinAid_Capstone1/
 │
-├── backend/ # API & logic xử lý
+├── 📂 backend/  
+│ ├── 📂 app/
+│ │ ├── 📂 api/v1/  
+│ │ ├── 📂 core/  
+│ │ ├── 📂 middleware/  
+│ │ ├── 📂 modules/  
+│ │ │ ├── 📂 auth/  
+│ │ │ ├── 📂 profile/  
+│ │ │ ├── 📂 upload/  
+│ │ │ ├── 📂 ai/  
+│ │ │ └── 📂 firstaid/  
+│ │ ├── 📂 shared/  
+│ │ └── 📂 utils/  
+│ └── 📄 requirements.txt
 │
-├── frontend/ # ReactJS app
+├── 📂 ai_ml/  
+│ ├── 📂 detection/  
+│ │ ├── 📂 models/  
+│ │ └── 📂 image_test/  
+│ └── 📄 requirements.txt
 │
-├── ai-ml/ # Model training + inference
-│ ├── notebooks/ # Jupyter notebooks (EDA, thử nghiệm)
-│ ├── src/
-│ │ ├── detection/ # YOLOv11 training & inference
-│ │ ├── classification/ # EfficientNetV2 training & inference
-│ │ ├── utils/ # Preprocessing, augmentation, metrics
-│ │ ├── pipelines/ # End-to-end pipeline scripts
-│ │ └── api/ # Inference API (REST/gRPC) nếu deploy riêng
-│ ├── data/ # (gitignore: chỉ để lưu sample, không lưu full dataset)
-│ ├── models/ # Lưu trọng số model (.pt, .h5) (gitignore)
-│ ├── tests/ # Unit tests cho preprocessing, inference
-│ ├── requirements.txt # Python deps (torch, ultralytics, etc.)
-│ ├── Dockerfile
-│ └── README.md
+├── 📂 frontend/  
+│ ├── 📂 public/  
+│ ├── 📂 src/
+│ │ ├── 📂 assets/  
+│ │ ├── 📂 components/  
+│ │ ├── 📂 pages/  
+│ │ └── 📂 services/  
+│ └── 📄 package.json
 │
-└── docs/ # Tài liệu chung (design, báo cáo, UML, meeting notes)
+└── 📂 docs/

@@ -9,16 +9,11 @@ from app.modules.upload.services.file_service import FileService
 
 
 class TestFileService:
-    """Test FileService độc lập"""
-
     @pytest.fixture
     def file_service(self):
-        """Tạo FileService với temp directory"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Monkey patch upload_dir để dùng temp directory
             original_upload_dir = None
 
-            # Save original value
             if hasattr(file_service, 'upload_dir'):
                 original_upload_dir = file_service.upload_dir
 
@@ -27,7 +22,6 @@ class TestFileService:
 
             yield file_service
 
-            # Restore original value
             if original_upload_dir:
                 file_service.upload_dir = original_upload_dir
 

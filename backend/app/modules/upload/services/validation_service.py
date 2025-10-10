@@ -55,7 +55,7 @@ class ValidationService:
             try:
                 self.mime_validator = magic.Magic(mime=True)
             except Exception as e:
-                logger.warning(f"Failed to initialize magic library: {e}")
+                logger.warning(f"Không thể khởi tạo thư viện magic: {e}")
                 self.mime_validator = None
         else:
             self.mime_validator = None
@@ -89,7 +89,7 @@ class ValidationService:
             try:
                 return self.mime_validator.from_buffer(file_data)
             except Exception as e:
-                logger.warning(f"[Validation] libmagic failed: {e}")
+                logger.warning(f"[Xác thực] thư viện libmagic thất bại: {e}")
         return client_mime or "unknown"
 
     def _check_extension_mime_consistency(
@@ -102,8 +102,8 @@ class ValidationService:
                     "success": False,
                     "error_code": FILE_INVALID_TYPE,
                     "error_message": (
-                        f"Extension '{ext}' expects MIME '{expected_mime}', "
-                        f"but detected '{detected_mime}'"
+                        f"Extension '{ext}' mong đợi MIME '{expected_mime}', "
+                        f"nhưng phát hiện '{detected_mime}'"
                     ),
                 }
         return None
@@ -117,7 +117,7 @@ class ValidationService:
                 return {
                     "success": False,
                     "error_code": FILE_UNSAFE_FILENAME,
-                    "error_message": "Filename contains unsafe characters",
+                    "error_message": "Tên file chứa ký tự không an toàn",
                 }
 
             # 2. Validate file extension
@@ -126,8 +126,8 @@ class ValidationService:
                 return {
                     "success": False,
                     "error_code": FILE_INVALID_TYPE,
-                    "error_message": f"File extension '{file_ext}' not allowed. "
-                    f"Allowed: {', '.join(sorted(self.allowed_extensions))}",
+                    "error_message": f"Extension file '{file_ext}' không được phép. "
+                    f"Được phép: {', '.join(sorted(self.allowed_extensions))}",
                 }
 
             # 3. Detect MIME type
@@ -139,13 +139,13 @@ class ValidationService:
                 and actual_mime_type not in self.allowed_mime_types
             ):
                 logger.warning(
-                    f"[Validation] MIME not allowed: {actual_mime_type} | "
-                    f"filename={filename}, ext={file_ext}, client={mime_type}"
+                    f"[Xác thực] MIME không được phép: {actual_mime_type} | "
+                    f"tên file={filename}, ext={file_ext}, client={mime_type}"
                 )
                 return {
                     "success": False,
                     "error_code": FILE_INVALID_TYPE,
-                    "error_message": f"MIME type '{actual_mime_type}' not allowed",
+                    "error_message": f"Loại MIME '{actual_mime_type}' không được phép",
                 }
 
             # 5. Extension ↔ MIME consistency
@@ -168,8 +168,8 @@ class ValidationService:
                     return {
                         "success": False,
                         "error_code": FILE_INVALID_RESOLUTION,
-                        "error_message": f"Image resolution ({width}x{height}) "
-                        f"is below minimum ({self.min_width}x{self.min_height})",
+                        "error_message": f"Độ phân giải hình ảnh ({width}x{height}) "
+                        f"thấp hơn mức tối thiểu ({self.min_width}x{self.min_height})",
                     }
 
                 return {
@@ -187,15 +187,15 @@ class ValidationService:
                 return {
                     "success": False,
                     "error_code": FILE_CORRUPT,
-                    "error_message": f"Image file is corrupted or invalid: {str(e)}",
+                    "error_message": f"File hình ảnh bị hỏng hoặc không hợp lệ: {str(e)}",
                 }
 
         except Exception as e:
-            logger.error(f"[Validation] Unexpected error: {str(e)} | filename={filename}")
+            logger.error(f"[Xác thực] Lỗi không mong muốn: {str(e)} | tên file={filename}")
             return {
                 "success": False,
                 "error_code": VALIDATION_ERROR,
-                "error_message": f"Unexpected validation error: {str(e)}",
+                "error_message": f"Lỗi xác thực không mong muốn: {str(e)}",
             }
 
     def validate_file_size(self, file_size: int) -> Dict[str, Any]:
@@ -204,6 +204,6 @@ class ValidationService:
             return {
                 "success": False,
                 "error_code": FILE_TOO_LARGE,
-                "error_message": f"File size exceeds maximum allowed size ({size_mb:.2f} MB)",
+                "error_message": f"Kích thước file vượt quá kích thước tối đa cho phép ({size_mb:.2f} MB)",
             }
         return {"success": True}

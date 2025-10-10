@@ -92,7 +92,6 @@ class AuthController:
                 )
 
         except Exception as e:
-            print(f"Unexpected error in register_user: {str(e)}")
             return ErrorResponse(
                 message="Có lỗi xảy ra, vui lòng thử lại",
                 error_code="INTERNAL_ERROR",
@@ -161,7 +160,6 @@ class AuthController:
                 )
 
         except Exception as e:
-            print(f"Unexpected error in login_user: {str(e)}")
             return ErrorResponse(
                 message="Có lỗi xảy ra, vui lòng thử lại",
                 error_code="INTERNAL_ERROR",

@@ -19,18 +19,20 @@ RETRYABLE_EXCEPTIONS = (
     httpx.TimeoutException,
     httpx.NetworkError,
 )
-
 class AIProcessingService:
-    
-    @staticmethod
+
+    def __init__(self):
+        self.ai_service_url = AI_SERVICE_URL
+        self.ai_service_timeout = AI_SERVICE_TIMEOUT
+        self.ai_max_retries = AI_MAX_RETRIES
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(RETRYABLE_EXCEPTIONS),
         reraise=True
     )
-    async def _make_request(url: str, method: str = "GET", **kwargs) -> httpx.Response:
-        """Make HTTP request with retry logic."""
+    async def _make_request(self, url: str, method: str = "GET", **kwargs) -> httpx.Response:
         async with httpx.AsyncClient() as client:
             if method.upper() == "GET":
                 return await client.get(url, **kwargs)
@@ -39,11 +41,10 @@ class AIProcessingService:
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 
-    @staticmethod
-    async def check_ai_service_health() -> bool:
+    async def check_ai_service_health(self) -> bool:
         try:
-            response = await AIProcessingService._make_request(
-                f"{AI_SERVICE_URL}/health",
+            response = await self._make_request(
+                f"{self.ai_service_url}/health",
                 timeout=5.0
             )
             
@@ -63,20 +64,20 @@ class AIProcessingService:
             logger.error(f"AI service health check failed: {e}")
             return False
     
-    @staticmethod
     async def analyze_image(
+        self,
         image_path: str,
         max_retries: int = None
     ) -> Dict[str, Any]:
         if max_retries is None:
-            max_retries = AI_MAX_RETRIES
+            max_retries = self.ai_max_retries
             
         last_error = None
         
         for attempt in range(max_retries):
             try:
-                if attempt == 0:  
-                    if not await AIProcessingService.check_ai_service_health():
+                if attempt == 0:
+                    if not await self.check_ai_service_health():
                         return {
                             "success": False,
                             "error": "AI service is not available",
@@ -97,14 +98,14 @@ class AIProcessingService:
                     
                     logger.info(
                         f"Sending image to AI service (attempt {attempt + 1}/{max_retries})",
-                        extra={"image_path": image_path, "ai_service_url": AI_SERVICE_URL}
+                        extra={"image_path": image_path, "ai_service_url": self.ai_service_url}
                     )
                     
-                    response = await AIProcessingService._make_request(
-                        f"{AI_SERVICE_URL}/detect",
+                    response = await self._make_request(
+                        f"{self.ai_service_url}/detect",
                         method="POST",
                         files=files,
-                        timeout=AI_SERVICE_TIMEOUT
+                        timeout=self.ai_service_timeout
                     )
                     
                     request_time = time.time() - start_time
@@ -149,7 +150,7 @@ class AIProcessingService:
                 last_error = e
                 logger.error(
                     f"Cannot connect to AI service (attempt {attempt + 1}/{max_retries})",
-                    extra={"error": str(e), "ai_service_url": AI_SERVICE_URL}
+                    extra={"error": str(e), "ai_service_url": self.ai_service_url}
                 )
                 
                 if attempt < max_retries - 1:
@@ -159,7 +160,7 @@ class AIProcessingService:
             except httpx.TimeoutException as e:
                 last_error = e
                 logger.error(
-                    f"AI service timeout after {AI_SERVICE_TIMEOUT}s (attempt {attempt + 1}/{max_retries})"
+                    f"AI service timeout after {self.ai_service_timeout}s (attempt {attempt + 1}/{max_retries})"
                 )
                 
                 if attempt < max_retries - 1:
@@ -198,11 +199,10 @@ class AIProcessingService:
             "detections": []
         }
     
-    @staticmethod
-    async def get_model_info() -> Dict[str, Any]:
+    async def get_model_info(self) -> Dict[str, Any]:
         try:
-            response = await AIProcessingService._make_request(
-                f"{AI_SERVICE_URL}/model-info",
+            response = await self._make_request(
+                f"{self.ai_service_url}/model-info",
                 timeout=5.0
             )
             

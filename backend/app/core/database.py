@@ -43,7 +43,6 @@ def get_session_maker():
             )
     return async_session_maker
 
-# kết nối database đa ngôn ngữ 
 @asynccontextmanager
 async def get_db(): 
     session_maker = get_session_maker()
@@ -59,8 +58,7 @@ async def get_db():
     finally: 
         await session.close() 
 
-# kết nối database cho fastapi 
-async def get_session() -> AsyncGenerator[AsyncSession, None]: 
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     session_maker = get_session_maker()
     if not session_maker:
         raise RuntimeError("Database not configured")

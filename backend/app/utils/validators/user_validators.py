@@ -25,12 +25,10 @@ def validate_full_name(full_name: str) -> Optional[str]:
 
     if len(full_name) > 100:
         return "Full name must not exceed 100 characters"
-    
-    # Check for numbers
+
     if re.search(r'\d', full_name):
         return "Full name cannot contain numbers"
-    
-    # Check for invalid special characters (allow spaces, hyphens, apostrophes, dots)
+
     if not re.match(r"^[a-zA-Z\s\-\'\u00C0-\u017F\u1E00-\u1EFF\u4E00-\u9FFF]+$", full_name):
         return "Full name contains invalid characters"
 
@@ -48,7 +46,6 @@ def validate_username(username: str) -> Optional[str]:
     if len(username) > 50:
         return "Username must not exceed 50 characters"
 
-    # Check for valid characters (letters, numbers, underscore, hyphen)
     if not re.match(r'^[a-zA-Z0-9_-]+$', username):
         return "Username can only contain letters, numbers, underscore, and hyphen"
 

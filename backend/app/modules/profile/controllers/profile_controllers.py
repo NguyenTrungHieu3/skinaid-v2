@@ -38,7 +38,6 @@ class ProfileController:
             )
 
         except AppBaseException as e:
-            # Handle specific profile error codes
             if e.error_code == USER_NOT_FOUND:
                 return ErrorResponse(
                     message=e.message,
@@ -52,7 +51,6 @@ class ProfileController:
                     error_details={"validation_error": str(e)}
                 )
             else:
-                # Generic handling for other AppBaseException
                 return ErrorResponse(
                     message=e.message,
                     error_code=e.error_code or "UNKNOWN_ERROR",

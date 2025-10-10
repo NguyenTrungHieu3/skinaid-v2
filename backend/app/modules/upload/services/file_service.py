@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class FileService:
     """
-    📁 FileService - FILE OPERATIONS SPECIALIST
+    FileService - FILE OPERATIONS SPECIALIST
 
     Trách nhiệm DUY NHẤT: Xử lý tất cả thao tác liên quan đến file
     - File validation (size, format, dimensions)
@@ -21,9 +21,9 @@ class FileService:
     - File path generation
     - Directory management
 
-    ✅ Độc lập: Có thể test riêng biệt
-    ✅ Tái sử dụng: Có thể dùng ở nhiều nơi khác
-    ✅ Đơn giản: Chỉ focus vào file operations
+    Doc lap: Có thể test riêng biệt
+    Tai su dung: Có thể dùng ở nhiều nơi khác
+    Don gian: Chỉ focus vào file operations
     """
 
     def __init__(self):
@@ -34,7 +34,7 @@ class FileService:
     def _ensure_upload_directory(self) -> None:
         """Đảm bảo thư mục upload tồn tại"""
         os.makedirs(self.upload_dir, exist_ok=True)
-        logger.info(f"Upload directory ready: {self.upload_dir}")
+        logger.info(f"Thư mục tải lên đã sẵn sàng: {self.upload_dir}")
 
     def generate_file_path(self, original_filename: str, user_id: str) -> str:
         """
@@ -46,9 +46,6 @@ class FileService:
 
         Returns:
             str: Đường dẫn relative từ upload_dir
-
-        Example:
-            "2025/01/15/user123_1734567890_a1b2c3d4.jpg"
         """
         _, ext = os.path.splitext(original_filename)
         now = datetime.now(timezone.utc)
@@ -58,7 +55,7 @@ class FileService:
         new_filename = f"{user_id}_{timestamp}_{unique_id}{ext}"
 
         file_path = os.path.join(date_path, new_filename).replace("\\", "/")
-        logger.info(f"Generated file path: {file_path}")
+        logger.info(f"Đã tạo đường dẫn file: {file_path}")
 
         return file_path
 
@@ -93,7 +90,7 @@ class FileService:
                     await f.write(chunk)
                     file_size += len(chunk)
 
-            logger.info(f"✅ File saved successfully: {file_path} ({file_size} bytes)")
+            logger.info(f"Lưu file thành công: {file_path} ({file_size} bytes)")
             return {
                 "success": True,
                 "file_path": file_path,
@@ -102,11 +99,11 @@ class FileService:
             }
 
         except Exception as e:
-            logger.error(f"❌ Failed to save file {file_path}: {e}")
+            logger.error(f"Không thể lưu file {file_path}: {e}")
             return {
                 "success": False,
                 "error_code": FILE_SAVE_FAILED,
-                "error_message": f"Failed to save file: {str(e)}"
+                "error_message": f"Không thể lưu file: {str(e)}"
             }
 
     def delete_file(self, file_path: str) -> bool:
@@ -124,14 +121,14 @@ class FileService:
         try:
             if os.path.exists(full_path):
                 os.remove(full_path)
-                logger.info(f"🗑️ File deleted: {file_path}")
+                logger.info(f"Đã xóa file: {file_path}")
                 return True
             else:
-                logger.warning(f"⚠️ File not found for deletion: {file_path}")
+                logger.warning(f"Không tìm thấy file để xóa: {file_path}")
                 return False
 
         except Exception as e:
-            logger.error(f"❌ Failed to delete file {file_path}: {e}")
+            logger.error(f"Không thể xóa file {file_path}: {e}")
             return False
 
     def get_file_size(self, file_path: str) -> Optional[int]:
@@ -149,7 +146,7 @@ class FileService:
         try:
             return os.path.getsize(full_path)
         except Exception as e:
-            logger.error(f"❌ Failed to get file size {file_path}: {e}")
+            logger.error(f"Không thể lấy kích thước file {file_path}: {e}")
             return None
 
     def file_exists(self, file_path: str) -> bool:

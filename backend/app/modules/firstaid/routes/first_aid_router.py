@@ -19,14 +19,16 @@ async def get_first_aid_guide(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
-    return await FirstAidController.get_first_aid_guide(db, wound_type, severity)
+    controller = FirstAidController(db)
+    return await controller.get_first_aid_guide(wound_type, severity)
 
 @router.get("/wound-types", response_model=dict)
 async def get_available_wound_types(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
-    return await FirstAidController.get_available_wound_types(db)
+    controller = FirstAidController(db)
+    return await controller.get_available_wound_types()
 
 @router.get("/search", response_model=dict)
 async def search_first_aid_guides(
@@ -36,4 +38,5 @@ async def search_first_aid_guides(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
-    return await FirstAidController.search_first_aid_guides(db, wound_type, severity, limit)
+    controller = FirstAidController(db)
+    return await controller.search_first_aid_guides(wound_type, severity, limit)
