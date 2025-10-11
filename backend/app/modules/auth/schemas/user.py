@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 import uuid
 from datetime import datetime
@@ -11,12 +11,15 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=8, description="Password with at least 8 characters")
     confirm_password: str = Field(..., min_length=8, description="Confirm password must match password")
 
-    @field_validator('confirm_password')
+    @model_validator(mode='before')
     @classmethod
-    def validate_passwords_match(cls, v, info):
-        if 'password' in info.data and v != info.data['password']:
-            raise ValueError('Passwords do not match')
-        return v
+    def validate_passwords_match(cls, values):
+        if isinstance(values, dict):
+            password = values.get('password')
+            confirm_password = values.get('confirm_password')
+            if password and confirm_password and password != confirm_password:
+                raise ValueError('Passwords do not match')
+        return values
 
 class UserResponse(BaseModel):
     user_id: str 
@@ -45,25 +48,42 @@ class EmailVerificationResponse(BaseModel):
     message: str
     is_verified: bool
 
-
 class PasswordResetRequest(BaseModel):
     email: EmailStr
-
 
 class PasswordResetConfirm(BaseModel):
     email: EmailStr
     token: str
     new_password: str = Field(..., min_length=8, description="New password with at least 8 characters")
     confirm_password: str = Field(..., min_length=8, description="Confirm new password must match new password")
-
-    @field_validator('confirm_password')
+    @model_validator(mode='before')
     @classmethod
-    def validate_passwords_match(cls, v, info):
-        if 'new_password' in info.data and v != info.data['new_password']:
-            raise ValueError('Passwords do not match')
-        return v
-
+    def validate_passwords_match(cls, values):
+        if isinstance(values, dict):
+            new_password = values.get('new_password')
+            confirm_password = values.get('confirm_password')
+            if new_password and confirm_password and new_password != confirm_password:
+                raise ValueError('Passwords do not match')
+        return values
 
 class PasswordResetResponse(BaseModel):
+    message: str
+    success: bool
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=8, description= "Mật khẩu hiện tại")
+    new_password: str = Field(..., min_length=8, description= "Mật khẩu mới")
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_password_different(cls, values):
+        if isinstance(values, dict):
+            old_password = values.get('old_password')
+            new_password = values.get('new_password')
+            if old_password and new_password and old_password == new_password:
+                raise ValueError('Mật khẩu mới phải khác mật khẩu cũ')
+        return values
+
+class ChangePasswordResponse(BaseModel):
     message: str
     success: bool

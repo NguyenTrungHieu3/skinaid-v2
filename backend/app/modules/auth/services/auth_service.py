@@ -396,8 +396,12 @@ class AuthService:
             AppBaseException: Nếu không tìm thấy người dùng hoặc gửi email thất bại
         """
         try:
+            import random
+
             user = await self.get_user_by_email(email)
             if not user:
+                delay = random.uniform(0.5, 2.0)
+                await asyncio.sleep(delay)
                 return True
 
             reset_token = email_service.generate_verification_token()
@@ -551,3 +555,68 @@ class AuthService:
         except Exception as e:
             logger.error(f"Unexpected error during resend verification: {str(e)}")
             raise AppBaseException(message="Resend verification failed due to internal error", error_code=AUTH_INVALID_CREDENTIALS)
+        
+
+    async def change_password(self, user_id: str, old_password: str, new_password: str) -> bool: 
+        try: 
+
+            password_errors = validate_password_strength(new_password)
+            if password_errors: 
+                raise AppBaseException(
+                    message= password_errors,
+                    error_code= AUTH_PASSWORD_WEAK
+                )
+            
+            if old_password == new_password: 
+                raise AppBaseException(
+                    message="Mật khẩu mới phải khác mật khẩu cũ",
+                    error_code=AUTH_PASSWORD_WEAK
+                )
+            
+            user = await self.get_user_by_id(user_id= user_id)
+            if not user: 
+                raise AppBaseException(
+                    message="Không tìm thấy người dùng",
+                    error_code=USER_NOT_FOUND
+                )
+            
+            if not verify_password(old_password, user.hashed_password):
+                raise AppBaseException(
+                    message="Mật khẩu hiện tại không đúng",
+                    error_code=AUTH_INVALID_CREDENTIALS
+                )
+            
+            hashed_password = hash_password(new_password)
+
+            update_sql = text("""
+                UPDATE users 
+                SET hashed_password = :hashed_password, updated_at = :updated_at
+                WHERE id = :user_id
+            """ )
+
+            await self.db.execute(update_sql, {
+                "user_id": user_id, 
+                "hashed_password": hashed_password, 
+                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
+            })
+
+            await self.db.commit()
+            try:
+                asyncio.create_task(
+                    email_service.send_password_changed_notification_async(user.email, user.display_name or "")
+                )
+                logger.info(f"Password change notification queued for: {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to queue password change notification to {user.email}: {str(e)}")
+            
+            logger.info(f"Password changed successfully for user: {user_id}")
+            return True
+            
+        except AppBaseException:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during password change: {str(e)}")
+            raise AppBaseException(
+                message="Password change failed due to internal error",
+                error_code="PASSWORD_CHANGE_ERROR"
+            )

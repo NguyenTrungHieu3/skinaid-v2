@@ -12,7 +12,9 @@ from app.modules.auth.schemas.user import (
     EmailVerificationResponse,
     PasswordResetRequest,
     PasswordResetConfirm,
-    PasswordResetResponse
+    PasswordResetResponse, 
+    ChangePasswordRequest, 
+    ChangePasswordResponse
 )
 from app.modules.auth.schemas.token import TokenResponse
 from app.modules.auth.services.auth_service import AuthService
@@ -296,19 +298,11 @@ class AuthController:
             # Create new tokens
             new_access_token = jwt_handler.create_access_token(subject=str(user_id))
             new_refresh_token = jwt_handler.create_refresh_token(subject=str(user_id))
-            
-            user_response = UserResponse(
-                user_id=user_id,
-                email="",  
-                display_name="",
-                is_verified=False,
-                created_at=datetime.now(timezone.utc)
-            )
-            
+
             token_response = TokenResponse(
                 access_token=new_access_token,
-                refresh_token=new_refresh_token, 
-                user=user_response
+                refresh_token=new_refresh_token,
+                user=None 
             )
             
             return SuccessResponse(
@@ -392,3 +386,68 @@ class AuthController:
                 }
             }
         )
+    
+    async def change_password(
+            self,
+            current_user: User,
+            password_data: ChangePasswordRequest
+    ) -> Union[SuccessResponse[ChangePasswordResponse], ErrorResponse]:
+    
+        try: 
+            success = await self.auth_service.change_password(
+                user_id= str(current_user.id), 
+                old_password=password_data.old_password, 
+                new_password=password_data.new_password
+            )
+
+
+            if success: 
+                return SuccessResponse(
+                    message="Mật khẩu đã được thay đổi thành công", 
+                    data= ChangePasswordResponse(
+                        message="Password changed successfully",
+                        success=True
+                    )
+                )
+            else:
+                return ErrorResponse(
+                    message="Không thể thay đổi mật khẩu",
+                    error_code="PASSWORD_CHANGE_ERROR",
+                    error_details=None
+                )
+            
+        except AppBaseException as e:
+            if e.error_code == AUTH_PASSWORD_WEAK:
+                return ErrorResponse(
+                    message=e.message,
+                    error_code=e.error_code,
+                    error_details={
+                        "requirements": [
+                            "Ít nhất 8 ký tự",
+                            "Có chữ hoa",
+                            "Có chữ thường",
+                            "Có số",
+                            "Có ký tự đặc biệt"
+                        ]
+                    }
+                )
+            elif e.error_code == AUTH_INVALID_CREDENTIALS:
+                return ErrorResponse(
+                    message=e.message,
+                    error_code=e.error_code,
+                    error_details={"field": "old_password"}
+                )
+            else:
+                return ErrorResponse(
+                    message=e.message,
+                    error_code=e.error_code or "PASSWORD_CHANGE_ERROR",
+                    error_details=None
+                )
+                
+        except Exception as e:
+            logger.error(f"Unexpected error in change_password: {str(e)}")
+            return ErrorResponse(
+                message="Có lỗi xảy ra, vui lòng thử lại",
+                error_code="INTERNAL_ERROR",
+                error_details=None
+            )

@@ -12,7 +12,9 @@ from app.modules.auth.schemas.user import (
     EmailVerificationRequest,
     EmailVerificationResponse,
     PasswordResetRequest,
-    PasswordResetConfirm
+    PasswordResetConfirm, 
+    ChangePasswordRequest,
+    ChangePasswordResponse
 )
 from app.modules.auth.models.user import User
 from app.modules.auth.schemas.token import TokenResponse
@@ -163,3 +165,16 @@ async def resend_verification_email(
     controller: AuthController = Depends(get_auth_controller),
 ):
     return await controller.resend_verification_email(email_request.email)
+
+
+@router.post(
+    "/change-password", 
+    response_model= Union[SuccessResponse[ChangePasswordResponse], ErrorResponse],
+    summary="Thay đổi mật khẩu (khi đã đăng nhập)"
+)
+async def change_password(
+    password_data: ChangePasswordRequest, 
+    controller: AuthController = Depends(get_auth_controller), 
+    current_user: User = Depends(get_current_active_user)
+): 
+    return await controller.change_password(current_user, password_data)
