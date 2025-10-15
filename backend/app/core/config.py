@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     AI_SERVICE_URL: str = "http://localhost:8001"
     AI_SERVICE_TIMEOUT: int = 30
     AI_MAX_RETRIES: int = 1
+    AI_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env", 

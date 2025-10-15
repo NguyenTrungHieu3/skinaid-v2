@@ -90,9 +90,15 @@ class ImageProcessingService:
 
                         logger.info(f"Đang gửi hình ảnh tới AI service (lần thử {attempt + 1})")
 
+                        headers = {}
+                        ai_api_key = getattr(settings, 'AI_API_KEY', None)
+                        if ai_api_key:
+                            headers["X-API-Key"] = ai_api_key
+                        
                         response = await client.post(
-                            f"{self.ai_service_url}/detect",
+                            f"{self.ai_service_url}/detect_and_classify",
                             files=files,
+                            headers=headers,
                             timeout=self.ai_service_timeout
                         )
 

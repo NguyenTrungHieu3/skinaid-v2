@@ -1,0 +1,17 @@
+# YOLO Detection Configuration
+model:
+  name: "yolov11"
+  type: "detection"
+  weights_path: "../detection/models/model_2_class_v1.pt"
+  
+inference:
+  conf_threshold: 0.25
+  iou_threshold: 0.45
+  device: "cpu"
+  
+classes:
+  - "wound"
+  - "non_wound"
+  
+image:
+  img_size: 640

@@ -1,0 +1,30 @@
+# EfficientNet Classification Configuration
+model:
+  name: "efficientnet_b0"
+  type: "classification"
+  weights_path: "../classification/models/final_model.pth"
+  num_classes: 7
+  pretrained: false
+  
+classes:
+  - "abrasion_mild"
+  - "abrasion_moderate"
+  - "bruise_mild"
+  - "bruise_moderate"
+  - "burn_mild"
+  - "burn_moderate_blister"
+  - "burn_moderate_skintear"
+
+inference:
+  device: "cpu"  # or "cuda" for GPU
+  batch_size: 1
+  
+image:
+  size: 224
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  
+output:
+  save_results: true
+  save_dir: "../outputs/efficientnet_classification"
+  return_confidence: true

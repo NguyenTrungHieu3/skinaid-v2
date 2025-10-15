@@ -217,6 +217,7 @@ datasets/
 data/raw/
 data/processed/
 notebooks/.ipynb_checkpoints
+data/
 
 # Media files (large files that shouldn't be in git)
 *.mp4

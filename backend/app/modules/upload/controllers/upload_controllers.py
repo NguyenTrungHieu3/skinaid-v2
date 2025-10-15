@@ -24,7 +24,7 @@ class UploadController:
     ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
 
         try:
-            result = await self.upload_service.handle_image_upload(
+            result = await self.upload_service.handle_image_upload_with_ai(
                 user_id=user_id,
                 file=file,
                 ip_address=ip_address,
