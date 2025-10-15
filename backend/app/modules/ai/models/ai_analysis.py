@@ -1,16 +1,16 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List, TYPE_CHECKING, Dict, Any
-from datetime import datetime, timezone
+from app.shared.models.basemodel import TimestampMixin
 import uuid
 
 if TYPE_CHECKING:
     from app.modules.auth.models.user import User
 
-class AIAnalysisResult(SQLModel, table=True):
+class AIAnalysisResult(SQLModel, TimestampMixin, table=True):
     __tablename__ = "ai_analysis_results"
 
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
-    user_id: str = Field(foreign_key="users.id", index=True)
+    analysis_id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    user_id: str = Field(foreign_key="users.user_id", index=True)
 
     image_path: str = Field(index=True)
     image_size: Optional[Dict[str, int]] = Field(default=None, sa_column_kwargs={"type_": "JSON"})
@@ -25,9 +25,6 @@ class AIAnalysisResult(SQLModel, table=True):
     is_success: bool = Field(default=True)
     error_message: Optional[str] = Field(default=None)
     error_code: Optional[str] = Field(default=None)
-
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     user: Optional["User"] = Relationship(back_populates="ai_analyses")
 

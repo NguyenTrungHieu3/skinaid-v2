@@ -4,7 +4,7 @@ from app.core.database import get_session
 from typing import Optional
 from fastapi import Depends, Header, HTTPException, status
 from app.modules.auth.models.user import User
-from app.core.security import JWTHandler
+from app.core.Security.jwt import JWTHandler
 from sqlmodel import text
 jwt = JWTHandler()
 get_db = get_session
@@ -60,7 +60,6 @@ async def get_current_user(token: Optional[str] = Depends(get_token) ,db: AsyncS
                 detail="Invalid user",
                 headers={"WWW-Authenticate": "Bearer"}
             )
-        
         # Convert row to User object
         user_data = dict(user_row)
         user = User.model_validate(user_data)

@@ -5,22 +5,22 @@ from pydantic import BaseModel
 from datetime import datetime, timezone
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.auth.schemas.user import (
+from app.modules.auth.schemas.user_schemas import (
     UserCreate,
     UserLogin,
     UserResponse,
     EmailVerificationRequest,
     EmailVerificationResponse,
     PasswordResetRequest,
-    PasswordResetConfirm, 
+    PasswordResetConfirm,
     ChangePasswordRequest,
     ChangePasswordResponse
 )
 from app.modules.auth.models.user import User
-from app.modules.auth.schemas.token import TokenResponse
+from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.controllers.auth_controllers import AuthController
 from app.api.v1.deps import get_db, get_current_active_user, get_token
-from app.core.security import JWTHandler
+from app.core.Security.jwt import JWTHandler
 
 jwt_handler = JWTHandler()
 

@@ -31,8 +31,8 @@ else:
 
 from app.utils.validators.auth_validators import validate_password_strength, validate_email
 
-from app.core.security import hash_password, verify_password
-from app.modules.auth.schemas.user import UserCreate
+from app.core.Security.password import hash_password, verify_password
+from app.modules.auth.schemas.user_schemas import UserCreate
 from datetime import datetime, timedelta, timezone
 
 class AuthService:

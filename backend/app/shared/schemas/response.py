@@ -1,6 +1,5 @@
-
 from pydantic import BaseModel, Field
-from typing import Optional, Any, Dict, Generic, TypeVar
+from typing import Optional, Any, Dict, Generic, TypeVar, List
 from datetime import datetime, timezone
 
 T = TypeVar('T')
@@ -17,3 +16,4 @@ class ErrorResponse(BaseModel):
     error_code: Optional[str] = Field(None, description="Mã lỗi để gỡ lỗi")
     error_details: Optional[Dict[str, Any]] = Field(None, description="Chi tiết lỗi bổ sung")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+

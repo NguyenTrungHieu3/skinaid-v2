@@ -4,19 +4,19 @@ from datetime import datetime, timezone
 import logging
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.auth.schemas.user import (
-    UserCreate, 
-    UserLogin, 
-    UserResponse, 
-    EmailVerificationRequest, 
+from app.modules.auth.schemas.user_schemas import (
+    UserCreate,
+    UserLogin,
+    UserResponse,
+    EmailVerificationRequest,
     EmailVerificationResponse,
     PasswordResetRequest,
     PasswordResetConfirm,
-    PasswordResetResponse, 
-    ChangePasswordRequest, 
+    PasswordResetResponse,
+    ChangePasswordRequest,
     ChangePasswordResponse
 )
-from app.modules.auth.schemas.token import TokenResponse
+from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.services.auth_service import AuthService
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import (
@@ -27,7 +27,7 @@ from app.utils.constants.error_codes import (
     AUTH_VERIFICATION_REQUIRED,
     USER_INVALID_DATA
 )
-from app.core.security import JWTHandler, blacklist_token
+from app.core.Security.jwt import JWTHandler, blacklist_token
 from app.modules.auth.models.user import User
 from fastapi import HTTPException, status
 
