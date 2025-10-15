@@ -28,6 +28,10 @@ class MockEmailService:
         logger.info(f"Mock: Verification link: http://localhost:3000/verify-email?token={token}&email={email}")
         self.sent_emails.append(email_data)
         return True
+
+    async def send_verification_email_async(self, email: str, token: str) -> None:
+        """Mock async verification email"""
+        await self.send_verification_email(email, token)
     
     async def send_welcome_email(self, email: str, display_name: str) -> bool:
         """Mock sending welcome email"""
@@ -52,6 +56,30 @@ class MockEmailService:
         logger.info(f"Mock: Reset link: http://localhost:3000/reset-password?token={token}&email={email}")
         self.sent_emails.append(email_data)
         return True
+
+    async def send_password_reset_email_async(self, email: str, token: str) -> None:
+        """Mock async password reset email"""
+        await self.send_password_reset_email(email, token)
+
+    async def send_welcome_email_async(self, email: str, display_name: str) -> None:
+        """Mock async welcome email"""
+        email_data = {
+            "type": "welcome",
+            "email": email,
+            "display_name": display_name
+        }
+        logger.info(f"Mock: Sending welcome email to {email} for {display_name}")
+        self.sent_emails.append(email_data)
+
+    async def send_password_changed_notification_async(self, email: str, display_name: str) -> None:
+        """Mock async password changed notification"""
+        email_data = {
+            "type": "password_changed",
+            "email": email,
+            "display_name": display_name
+        }
+        logger.info(f"Mock: Sending password changed notification to {email}")
+        self.sent_emails.append(email_data)
     
     def get_sent_emails(self):
         """Get list of sent emails for testing"""

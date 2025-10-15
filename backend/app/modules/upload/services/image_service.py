@@ -1,7 +1,6 @@
-import os
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
@@ -11,33 +10,39 @@ from app.core.config import settings
 from app.utils.constants.error_codes import *
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.modules.upload.models.wound_images import ImageInformation
+from app.modules.upload.models.upload_validations import UploadValidation
+from app.modules.upload.schemas.validation import (
+    UploadValidationCreate,
+    UploadValidationResponse
+)
 
 from app.modules.upload.services.file_service import FileService
 from app.modules.upload.services.image_processing_service import ImageProcessingService
+from app.modules.upload.services.image_validation_service import ImageValidationService
 from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 logger = logging.getLogger(__name__)
 
-class UploadService:
+class ImageService:
     """
-    UploadService - ORCHESTRATION LAYER
+    ImageService - UNIFIED IMAGE MANAGEMENT SERVICE
 
-    Trách nhiệm DUY NHẤT: Điều phối workflow upload
-    - Không chứa business logic phức tạp
-    - Không thao tác trực tiếp với file system
-    - Không gọi AI service trực tiếp
-    - Không query database trực tiếp
+    Trách nhiệm DUY NHẤT: Quản lý toàn bộ vòng đời của hình ảnh
+    - Upload và xử lý file
+    - Quản lý database records (image information + validation)
+    - Giao tiếp với AI service
+    - Orchestration của toàn bộ workflow
 
-    Pattern: Route → Controller → Service → Specialized Services
+    Pattern: Single Responsibility - một service duy nhất cho toàn bộ image management
     """
 
     def __init__(self, db: AsyncSession):
         self.db = db
-        # Inject các specialized services
         self.file_service = FileService()
         self.image_processing_service = ImageProcessingService()
         self.first_aid_service = FirstAidService(db)
-    
+        self.validation_service = ImageValidationService()
+
     async def handle_image_upload_with_ai(
         self,
         user_id: str,
@@ -46,49 +51,29 @@ class UploadService:
         user_agent: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        ORCHESTRATION METHOD - Điều phối toàn bộ workflow upload
-
-        Workflow:
-        1. Validate file (giao cho validation service)
-        2. Save file (giao cho file service)
-        3. Create database record (giao cho database)
-        4. Call AI service (giao cho image processing service)
-        5. Update record with AI results
-        6. Get first aid guide (giao cho first aid service)
-        7. Return complete response
-
-        Đơn giản: Chỉ orchestrate, không chứa business logic
-        De test: Có thể mock từng service
-        De maintain: Mỗi service thay đổi độc lập
+        ORCHESTRATION METHOD - Điều phối toàn bộ workflow upload với AI
         """
 
         file_path = None
         wound_image_id = None
 
         try:
-            # ===== STEP 1: VALIDATE FILE =====
             logger.info(f"Validating file: {file.filename} for user: {user_id}")
 
-            # Đọc chunk đầu tiên để validate (không cần đọc toàn bộ file)
             first_chunk = await file.read(1024)
             if not first_chunk:
                 raise AppBaseException(
                     message="Cannot upload empty file",
                     error_code=FILE_EMPTY
                 )
-
-            # Validate file (sẽ implement validation service sau)
             validation_result = await self._validate_file_basic(file, first_chunk)
             if not validation_result["success"]:
                 raise AppBaseException(
                     message=validation_result["error_message"],
                     error_code=validation_result["error_code"]
                 )
-
-            # Reset file pointer về đầu để đọc lại
             await file.seek(0)
 
-            # ===== STEP 2: SAVE FILE =====
             logger.info("Saving file to disk")
 
             file_path = self.file_service.generate_file_path(file.filename, user_id)
@@ -102,14 +87,11 @@ class UploadService:
 
             logger.info(f"File saved: {file_path}")
 
-            # ===== STEP 3: CREATE DATABASE RECORD =====
             logger.info("Creating database record")
-
-            # Get image dimensions (simplified - in real implementation, you'd analyze the image)
-            width, height = 512, 512  # Default values for now
+            width, height = 512, 512  
 
             image_information = await self._create_image_information_record(
-                woundhistory_id=user_id,  # Using user_id as woundhistory_id for now
+                woundhistory_id=user_id,
                 filename=file.filename,
                 file_path=file_path,
                 file_size=save_result["file_size"],
@@ -118,15 +100,11 @@ class UploadService:
                 height=height
             )
             image_id = image_information.wound_images_id
-
-            # ===== STEP 4: CALL AI SERVICE =====
             logger.info(f"Calling AI service for image: {image_id}")
 
             await self._update_image_status(image_id, "processing")
             full_image_path = os.path.join(settings.UPLOAD_DIR, file_path)
             ai_result = await self.image_processing_service.analyze_image(full_image_path)
-
-            # ===== STEP 5: PROCESS AI RESULTS =====
             if not ai_result["success"] or ai_result["num_detections"] == 0:
                 logger.warning("No wounds detected or AI service error")
 
@@ -144,13 +122,10 @@ class UploadService:
                     "first_aid": None
                 }
 
-            # Lấy detection đầu tiên (highest confidence)
             detection = ai_result["detections"][0]
 
-            # ===== STEP 6: SAVE AI RESULTS TO MODEL_RESULT TABLE =====
             logger.info("Saving AI results to model_result table")
 
-            # Create ModelResult record
             model_result = await self._create_model_result(
                 wound_images_id=image_id,
                 wound_type=detection["class_name"],
@@ -160,7 +135,6 @@ class UploadService:
                 processing_time_ms=int(ai_result.get("processing_time", 0) * 1000)
             )
 
-            # ===== STEP 7: GET FIRST AID GUIDE =====
             logger.info("Getting first aid guide")
 
             first_aid = await self.first_aid_service.get_first_aid_guide(
@@ -168,7 +142,6 @@ class UploadService:
                 severity=detection["severity"]
             )
 
-            # ===== STEP 8: RETURN COMPLETE RESPONSE =====
             logger.info("Upload workflow completed successfully")
 
             return {
@@ -187,11 +160,9 @@ class UploadService:
             }
 
         except AppBaseException:
-            # Re-raise business exceptions
             raise
 
         except Exception as e:
-            # Handle unexpected errors
             logger.error(f"Unexpected error in upload workflow: {e}")
 
             if image_id:
@@ -209,38 +180,6 @@ class UploadService:
                 error_code=FILE_UPLOAD_FAILED
             )
 
-    async def _create_model_result(
-        self,
-        wound_images_id: str,
-        wound_type: str,
-        confidence_score: float,
-        severity: str,
-        ai_model_version: str,
-        processing_time_ms: int
-    ):
-        """Create model_result record with AI detection results"""
-        try:
-            from app.modules.ai.models.ai_analysis import ModelResult
-
-            model_result = ModelResult(
-                wound_images_id=wound_images_id,
-                wound_type=wound_type,
-                confidence_score=confidence_score,
-                severity=severity,
-                ai_model_version=ai_model_version,
-                processing_time_ms=processing_time_ms
-            )
-
-            self.db.add(model_result)
-            await self.db.commit()
-            await self.db.refresh(model_result)
-
-            return model_result
-
-        except Exception as e:
-            logger.error(f"Failed to create model result: {e}")
-            raise
-
     async def handle_image_upload(
         self,
         user_id: str,
@@ -250,20 +189,11 @@ class UploadService:
     ) -> Dict[str, Any]:
         """
         SIMPLE UPLOAD - Upload không có AI processing
-
-        Workflow đơn giản:
-        1. Validate file cơ bản
-        2. Save file
-        3. Create database record
-        4. Return success response
-
-        Dùng cho trường hợp chỉ cần upload mà không cần AI analysis
         """
 
         file_path = None
 
         try:
-            # ===== STEP 1: BASIC VALIDATION =====
             logger.info(f"Basic validation for file: {file.filename}")
 
             first_chunk = await file.read(1024)
@@ -282,7 +212,6 @@ class UploadService:
 
             await file.seek(0)
 
-            # ===== STEP 2: SAVE FILE =====
             logger.info("Saving file")
 
             file_path = self.file_service.generate_file_path(file.filename, user_id)
@@ -294,14 +223,12 @@ class UploadService:
                     error_code=save_result["error_code"]
                 )
 
-            # ===== STEP 3: CREATE DATABASE RECORD =====
             logger.info("Creating database record")
 
-            # Get image dimensions (simplified - in real implementation, you'd analyze the image)
-            width, height = 512, 512  # Default values for now
+            width, height = 512, 512  
 
             image_information = await self._create_image_information_record(
-                woundhistory_id=user_id,  # Using user_id as woundhistory_id for now
+                woundhistory_id=user_id,
                 filename=file.filename,
                 file_path=file_path,
                 file_size=save_result["file_size"],
@@ -310,7 +237,6 @@ class UploadService:
                 height=height
             )
 
-            # Set status to completed (no AI processing)
             await self._update_image_status(image_information.wound_images_id, "completed")
 
             logger.info(f"Simple upload completed: {image_information.wound_images_id}")
@@ -323,7 +249,6 @@ class UploadService:
         except Exception as e:
             logger.error(f"Simple upload failed: {e}")
 
-            # Cleanup
             if file_path:
                 self.file_service.delete_file(file_path)
 
@@ -332,18 +257,234 @@ class UploadService:
                 error_code=FILE_UPLOAD_FAILED
             )
 
+    async def get_image_by_id(self, wound_images_id: str, woundhistory_id: str) -> Dict[str, Any]:
+        """
+        Lấy thông tin ảnh theo ID với kiểm tra quyền truy cập
+        """
+        try:
+            sql = text("""
+                SELECT * FROM image_information
+                WHERE wound_images_id = :wound_images_id AND woundhistory_id = :woundhistory_id
+            """)
+
+            result = await self.db.execute(sql, {
+                "wound_images_id": wound_images_id,
+                "woundhistory_id": woundhistory_id
+            })
+
+            row = result.mappings().first()
+
+            if not row:
+                return {
+                    "success": False,
+                    "error_code": "IMAGE_NOT_FOUND",
+                    "error_message": "Image not found or access denied"
+                }
+
+            image_information = ImageInformation.model_validate(dict(row))
+            return {"success": True, "data": image_information}
+
+        except Exception as e:
+            logger.error(f"Failed to get image by ID: {e}")
+            return {
+                "success": False,
+                "error_code": "IMAGE_RETRIEVAL_FAILED",
+                "error_message": f"Failed to retrieve image: {str(e)}"
+            }
+
+    async def get_user_images(self, woundhistory_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
+        """
+        Lấy danh sách ảnh của user với pagination
+        """
+        try:
+            count_sql = text("""
+                SELECT COUNT(*) as total FROM image_information
+                WHERE woundhistory_id = :woundhistory_id
+            """)
+
+            count_result = await self.db.execute(count_sql, {"woundhistory_id": woundhistory_id})
+            count_row = count_result.mappings().first()
+            total = count_row["total"] if count_row else 0
+
+            sql = text("""
+                SELECT * FROM image_information
+                WHERE woundhistory_id = :woundhistory_id
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+            """)
+
+            result = await self.db.execute(sql, {
+                "woundhistory_id": woundhistory_id,
+                "limit": limit,
+                "offset": offset
+            })
+
+            rows = result.mappings().all()
+            images = [ImageInformation.model_validate(dict(row)) for row in rows]
+
+            return {
+                "success": True,
+                "data": images,
+                "total": total,
+                "limit": limit,
+                "offset": offset
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get user images: {e}")
+            return {
+                "success": False,
+                "error_code": "IMAGES_RETRIEVAL_FAILED",
+                "error_message": f"Failed to retrieve user images: {str(e)}"
+            }
+
+    async def get_image_statistics(self, woundhistory_id: str) -> Dict[str, Any]:
+        """
+        Lấy thống kê ảnh của user
+        """
+        try:
+            total_sql = text("""
+                SELECT COUNT(*) as total FROM image_information
+                WHERE woundhistory_id = :woundhistory_id
+            """)
+
+            total_result = await self.db.execute(total_sql, {"woundhistory_id": woundhistory_id})
+            total_row = total_result.mappings().first()
+            total_images = total_row["total"] if total_row else 0
+
+            status_counts = {}
+            for status in ["pending", "processing", "completed", "failed"]:
+                status_sql = text("""
+                    SELECT COUNT(*) as count FROM image_information
+                    WHERE woundhistory_id = :woundhistory_id AND upload_status = :status
+                """)
+
+                status_result = await self.db.execute(status_sql, {
+                    "woundhistory_id": woundhistory_id,
+                    "status": status
+                })
+                status_row = status_result.mappings().first()
+                status_counts[status] = status_row["count"] if status_row else 0
+
+            return {
+                "total_images": total_images,
+                "status_breakdown": status_counts,
+                "success_rate": (
+                    status_counts.get("completed", 0) / total_images * 100
+                    if total_images > 0 else 0
+                )
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get image statistics for {woundhistory_id}: {e}")
+            return {
+                "total_images": 0,
+                "status_breakdown": {},
+                "success_rate": 0
+            }
+
+    async def create_validation_record(
+        self,
+        validation_data: UploadValidationCreate,
+        request_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
+    ) -> UploadValidation:
+        """
+        Tạo bản ghi validation mới (đơn giản hóa - chỉ tạo record cơ bản)
+        """
+        try:
+            sql = text("""
+                INSERT INTO upload_validations (upload_validations_id, user_id, file_name, file_size, file_type, validation_passed, validation_errors, ip_address, user_agent, request_id, attempt_count, created_at, updated_at)
+                VALUES (:upload_validations_id, :user_id, :file_name, :file_size, :file_type, :validation_passed, :validation_errors, :ip_address, :user_agent, :request_id, :attempt_count, :created_at, :updated_at)
+                RETURNING *
+            """)
+
+            params = {
+                "upload_validations_id": str(uuid.uuid4()),
+                "user_id": validation_data.user_id,
+                "file_name": validation_data.file_name,
+                "file_size": validation_data.file_size,
+                "file_type": validation_data.file_type,
+                "validation_passed": validation_data.validation_passed,
+                "validation_errors": validation_data.validation_errors,
+                "ip_address": ip_address,
+                "user_agent": user_agent,
+                "request_id": request_id or str(uuid.uuid4()),
+                "attempt_count": 1,
+                "created_at": datetime.now(timezone.utc).replace(tzinfo=None),
+                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
+            }
+
+            result = await self.db.execute(sql, params)
+            row = result.mappings().first()
+
+            if not row:
+                raise Exception("Failed to get returning row after insert.")
+
+            return UploadValidation.model_validate(dict(row))
+
+        except Exception as e:
+            logger.error(f"Failed to create validation record: {e}")
+            await self.db.rollback()
+            raise
+
+    async def get_validation_by_id(self, validation_id: str) -> Optional[UploadValidation]:
+        """
+        Lấy validation record theo ID
+        """
+        try:
+            sql = text("""
+                SELECT * FROM upload_validations
+                WHERE upload_validations_id = :validation_id
+            """)
+
+            result = await self.db.execute(sql, {"validation_id": validation_id})
+            row = result.mappings().first()
+
+            if not row:
+                return None
+
+            return UploadValidation.model_validate(dict(row))
+
+        except Exception as e:
+            logger.error(f"Failed to get validation by ID {validation_id}: {e}")
+            return None
+
+    async def get_user_validations(
+        self,
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0
+    ) -> List[UploadValidation]:
+        """
+        Lấy danh sách validation records của user
+        """
+        try:
+            sql = text("""
+                SELECT * FROM upload_validations
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+            """)
+
+            result = await self.db.execute(sql, {
+                "user_id": user_id,
+                "limit": limit,
+                "offset": offset
+            })
+
+            rows = result.mappings().all()
+            return [UploadValidation.model_validate(dict(row)) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Failed to get user validations for {user_id}: {e}")
+            return []
+
     async def _validate_file_basic(self, file: UploadFile, first_chunk: bytes) -> Dict[str, Any]:
         """
-        Basic file validation (đơn giản hơn validation service đầy đủ)
-
-        Args:
-            file: UploadFile từ FastAPI
-            first_chunk: 1024 bytes đầu tiên của file
-
-        Returns:
-            Dict chứa kết quả validation
+        Enhanced file validation sử dụng ImageValidationService
         """
-        # Check filename
         if not file.filename:
             return {
                 "success": False,
@@ -351,34 +492,16 @@ class UploadService:
                 "error_message": "Filename is missing"
             }
 
-        # Check MIME type cơ bản
-        allowed_types = ["image/jpeg", "image/png", "image/jpg"]
-        if file.content_type not in allowed_types:
-            return {
-                "success": False,
-                "error_code": "INVALID_FILE_TYPE",
-                "error_message": f"Invalid file type: {file.content_type}"
-            }
+        validation_result = self.validation_service.validate_file(
+            file_data=first_chunk,
+            filename=file.filename,
+            mime_type=file.content_type
+        )
 
-        # Check file size cơ bản (dưới 5MB)
-        file_size = len(first_chunk)
-        max_size = 5 * 1024 * 1024  # 5MB
+        if validation_result["success"]:
+            validation_result["file_info"]["size"] = len(first_chunk)
 
-        if file_size > max_size:
-            return {
-                "success": False,
-                "error_code": "FILE_TOO_LARGE",
-                "error_message": f"File too large: {file_size / 1024 / 1024:.2f}MB (max: 5MB)"
-            }
-
-        return {
-            "success": True,
-            "file_info": {
-                "filename": file.filename,
-                "size": file_size,
-                "mime_type": file.content_type
-            }
-        }
+        return validation_result
 
     async def _create_image_information_record(
         self,
@@ -392,18 +515,6 @@ class UploadService:
     ) -> ImageInformation:
         """
         Tạo record trong bảng image_information
-
-        Args:
-            woundhistory_id: ID của wound history
-            filename: Tên file gốc
-            file_path: Đường dẫn file đã lưu
-            file_size: Kích thước file (bytes)
-            file_type: MIME type
-            width: Chiều rộng ảnh
-            height: Chiều cao ảnh
-
-        Returns:
-            ImageInformation object
         """
         try:
             sql = text("""
@@ -450,11 +561,6 @@ class UploadService:
     ) -> None:
         """
         Cập nhật trạng thái của image_information
-
-        Args:
-            wound_images_id: ID của record cần update
-            status: Trạng thái mới (pending, processing, completed, failed)
-            error_message: Thông báo lỗi (optional)
         """
         try:
             sql = text("""
@@ -478,100 +584,35 @@ class UploadService:
         except Exception as e:
             logger.error(f"Failed to update image status: {e}")
             await self.db.rollback()
-    
-    async def get_image_by_id(self, wound_images_id: str, woundhistory_id: str) -> Dict[str, Any]:
-        """
-        Lấy thông tin ảnh theo ID
 
-        Args:
-            wound_images_id: ID của ảnh
-            woundhistory_id: ID của wound history (để kiểm tra quyền truy cập)
-
-        Returns:
-            Dict chứa kết quả hoặc error
-        """
+    async def _create_model_result(
+        self,
+        wound_images_id: str,
+        wound_type: str,
+        confidence_score: float,
+        severity: str,
+        ai_model_version: str,
+        processing_time_ms: int
+    ):
+        """Create model_result record with AI detection results"""
         try:
-            sql = text("""
-                SELECT * FROM image_information
-                WHERE wound_images_id = :wound_images_id AND woundhistory_id = :woundhistory_id
-            """)
+            from app.modules.ai.models.ai_analysis import ModelResult
 
-            result = await self.db.execute(sql, {
-                "wound_images_id": wound_images_id,
-                "woundhistory_id": woundhistory_id
-            })
+            model_result = ModelResult(
+                wound_images_id=wound_images_id,
+                wound_type=wound_type,
+                confidence_score=confidence_score,
+                severity=severity,
+                ai_model_version=ai_model_version,
+                processing_time_ms=processing_time_ms
+            )
 
-            row = result.mappings().first()
+            self.db.add(model_result)
+            await self.db.commit()
+            await self.db.refresh(model_result)
 
-            if not row:
-                return {
-                    "success": False,
-                    "error_code": "IMAGE_NOT_FOUND",
-                    "error_message": "Image not found or access denied"
-                }
-
-            image_information = ImageInformation.model_validate(dict(row))
-            return {"success": True, "data": image_information}
+            return model_result
 
         except Exception as e:
-            logger.error(f"Failed to get image by ID: {e}")
-            return {
-                "success": False,
-                "error_code": "IMAGE_RETRIEVAL_FAILED",
-                "error_message": f"Failed to retrieve image: {str(e)}"
-            }
-
-    async def get_user_images(self, woundhistory_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        """
-        Lấy danh sách ảnh của user với pagination
-
-        Args:
-            woundhistory_id: ID của wound history
-            limit: Số lượng ảnh tối đa (default: 20)
-            offset: Số ảnh bỏ qua (default: 0)
-
-        Returns:
-            Dict chứa danh sách ảnh và tổng số
-        """
-        try:
-            # Đếm tổng số ảnh
-            count_sql = text("""
-                SELECT COUNT(*) as total FROM image_information
-                WHERE woundhistory_id = :woundhistory_id
-            """)
-
-            count_result = await self.db.execute(count_sql, {"woundhistory_id": woundhistory_id})
-            count_row = count_result.mappings().first()
-            total = count_row["total"] if count_row else 0
-
-            sql = text("""
-                SELECT * FROM image_information
-                WHERE woundhistory_id = :woundhistory_id
-                ORDER BY created_at DESC
-                LIMIT :limit OFFSET :offset
-            """)
-
-            result = await self.db.execute(sql, {
-                "woundhistory_id": woundhistory_id,
-                "limit": limit,
-                "offset": offset
-            })
-
-            rows = result.mappings().all()
-            images = [ImageInformation.model_validate(dict(row)) for row in rows]
-
-            return {
-                "success": True,
-                "data": images,
-                "total": total,
-                "limit": limit,
-                "offset": offset
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get user images: {e}")
-            return {
-                "success": False,
-                "error_code": "IMAGES_RETRIEVAL_FAILED",
-                "error_message": f"Failed to retrieve user images: {str(e)}"
-            }
+            logger.error(f"Failed to create model result: {e}")
+            raise

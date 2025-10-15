@@ -2,14 +2,12 @@
 
 from .file_service import FileService
 from .image_processing_service import ImageProcessingService
-from .upload_service import UploadService
-from .upload_validation_service import UploadValidationService
-from .image_information_service import ImageInformationService
+from .image_validation_service import ImageValidationService
+from .image_service import ImageService
 
 __all__ = [
     "FileService",
     "ImageProcessingService",
-    "UploadService",
-    "UploadValidationService",
-    "ImageInformationService"
+    "ImageValidationService",
+    "ImageService"
 ]

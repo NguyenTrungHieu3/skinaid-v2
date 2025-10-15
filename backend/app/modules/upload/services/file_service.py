@@ -20,10 +20,6 @@ class FileService:
     - File saving và cleanup
     - File path generation
     - Directory management
-
-    Doc lap: Có thể test riêng biệt
-    Tai su dung: Có thể dùng ở nhiều nơi khác
-    Don gian: Chỉ focus vào file operations
     """
 
     def __init__(self):
@@ -76,15 +72,10 @@ class FileService:
         full_path = os.path.join(self.upload_dir, file_path)
 
         try:
-            # Đảm bảo thư mục tồn tại
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
             file_size = 0
-
-            # Reset file pointer về đầu
             await file.seek(0)
-
-            # Lưu file theo chunks để tránh memory issues
             async with aiofiles.open(full_path, 'wb') as f:
                 while chunk := await file.read(self.chunk_size):
                     await f.write(chunk)
