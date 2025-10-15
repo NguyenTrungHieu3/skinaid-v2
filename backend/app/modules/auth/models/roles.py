@@ -1,14 +1,14 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from app.shared.models.basemodel import TimestampMixin
+from datetime import datetime, timezone
 import uuid
 
 if TYPE_CHECKING:
-    from models.user_roles import UserRole
-    from models.role_permissions import RolePermission
+    from app.modules.auth.models.user_roles import UserRole
+    from app.modules.auth.models.role_permissions import RolePermission
 
 
-class Role(SQLModel, TimestampMixin, table=True):
+class Role(SQLModel, table=True):
     __tablename__ = "roles"
 
     role_id: str = Field(
@@ -26,6 +26,9 @@ class Role(SQLModel, TimestampMixin, table=True):
 
     is_active: bool = Field(default=True)
 
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    
     user_roles: list["UserRole"] = Relationship(
         back_populates="role", 
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}

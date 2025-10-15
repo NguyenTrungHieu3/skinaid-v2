@@ -73,7 +73,7 @@ class TestProfileService:
         result = await profile_service.get_profile_by_user_id("test_user_id")
 
         assert result is not None
-        assert result["id"] == "test_profile_id"
+        assert result.profile_id == "test_profile_id"
 
     @pytest.mark.asyncio
     async def test_get_profile_by_user_id_not_found(self, profile_service):

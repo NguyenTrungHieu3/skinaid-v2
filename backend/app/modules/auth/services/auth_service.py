@@ -57,16 +57,19 @@ class AuthService:
             email_error = validate_email(email)
             if email_error:
                 raise AppBaseException(message=f"Invalid email format: {email_error}", error_code=USER_INVALID_DATA)
-            
-            statement = select(User).where(User.email == email)
-            result = await self.db.execute(statement)
-            user = result.scalars().first()
 
-            if user is None:
+            sql = text("""
+                SELECT * FROM users WHERE email = :email
+            """)
+
+            result = await self.db.execute(sql, {"email": email})
+            row = result.mappings().first()
+
+            if not row:
                 return None
 
-            return user
-            
+            return User.model_validate(dict(row))
+
         except Exception as e:
             logger.error(f"Error getting user by email {email}: {str(e)}")
             raise
@@ -87,7 +90,7 @@ class AuthService:
             sql = text("""
                 SELECT
                     u.*,
-                    p.id as profile_id,
+                    p.profile_id as profile_id,
                     p.full_name,
                     p.phone,
                     p.date_of_birth,
@@ -97,21 +100,22 @@ class AuthService:
                     p.created_at as profile_created_at,
                     p.updated_at as profile_updated_at
                 FROM users u
-                LEFT JOIN user_profiles p ON u.id = p.user_id
-                WHERE u.id = :user_id
+                LEFT JOIN user_profiles p ON u.user_id = p.user_id
+                WHERE u.user_id = :user_id
             """)
 
             result = await self.db.execute(sql, {"user_id": user_id})
             row = result.mappings().first()
 
-            if not row: 
-                return None 
-            
+            if not row:
+                return None
+
             # Create user object
             user_data = {
-                "id": row["id"],
+                "user_id": row["user_id"],
                 "email": row["email"],
                 "hashed_password": row["hashed_password"],
+                "display_name": row["display_name"],
                 "is_active": row["is_active"],
                 "is_verified": row["is_verified"],
                 "created_at": row["created_at"],
@@ -121,8 +125,8 @@ class AuthService:
 
             if row["profile_id"]:
                 profile_data = {
-                    "id": row["profile_id"],
-                    "user_id": row["id"],
+                    "profile_id": row["profile_id"],
+                    "user_id": row["user_id"],
                     "full_name": row["full_name"],
                     "phone": row["phone"],
                     "date_of_birth": row["date_of_birth"],
@@ -172,11 +176,12 @@ class AuthService:
             hashed_password = hash_password(user_data.password)
             verification_token = email_service.generate_verification_token()
 
+            # Insert user
             await self.db.execute(text("""
-                INSERT INTO users (id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
-                VALUES (:id, :email, :hashed_password, :display_name, :is_active, :is_verified, :created_at, :updated_at)
+                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
+                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :created_at, :updated_at)
             """), {
-                "id": user_id,
+                "user_id": user_id,
                 "email": user_data.email,
                 "hashed_password": hashed_password,
                 "display_name": user_data.email.split('@')[0],
@@ -186,44 +191,60 @@ class AuthService:
                 "updated_at": current_time
             })
 
+            # Insert user profile
             await self.db.execute(text("""
-                INSERT INTO user_profiles (id, user_id, created_at, updated_at)
-                VALUES(:id, :user_id, :created_at, :updated_at)
+                INSERT INTO user_profiles (profile_id, user_id, created_at, updated_at)
+                VALUES(:profile_id, :user_id, :created_at, :updated_at)
             """), {
-                "id": profile_id,
+                "profile_id": profile_id,
                 "user_id": user_id,
                 "created_at": current_time,
                 "updated_at": current_time
             })
 
+            # Insert verification token
             await self.db.execute(text("""
-                INSERT INTO verification_tokens (id, email, token, token_type, expires_at, is_used, created_at)
-                VALUES (:id, :email, :token, :token_type, :expires_at, :is_used, :created_at)
+                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
             """), {
-                "id": str(uuid.uuid4()),
+                "token_id": str(uuid.uuid4()),
+                "user_id": user_id,
                 "email": user_data.email,
                 "token": verification_token,
                 "token_type": "email_verification",
                 "expires_at": current_time + timedelta(hours=24),
                 "is_used": False,
-                "created_at": current_time
+                "created_at": current_time,
+                "updated_at": current_time
             })
 
-            await self.db.commit()
+            try:
+                await self.db.commit()
+                logger.info(f"Database transaction committed for user: {user_data.email}")
+            except Exception as commit_error:
+                logger.error(f"Failed to commit transaction for user {user_data.email}: {str(commit_error)}")
+                raise AppBaseException(message="Failed to save user to database", error_code=USER_INVALID_DATA)
 
+            # Get created user
             user_result = await self.db.execute(text("""
-                SELECT u.id, u.email, u.hashed_password, u.display_name, u.is_verified, u.created_at
-                FROM users u WHERE u.id = :user_id
+                SELECT user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at
+                FROM users WHERE user_id = :user_id
             """), {"user_id": user_id})
             user_mapping = user_result.mappings().first()
             if not user_mapping:
-                raise AppBaseException(message="Failed to create user", error_code=USER_INVALID_DATA)
+                logger.error(f"User not found after creation: {user_id}")
+                raise AppBaseException(message="Failed to retrieve created user", error_code=USER_INVALID_DATA)
 
             user = User.model_validate(dict(user_mapping))
 
-            asyncio.create_task(
-                email_service.send_verification_email_async(user_data.email, verification_token)
-            )
+            try:
+                asyncio.create_task(
+                    email_service.send_verification_email_async(user_data.email, verification_token)
+                )
+                logger.info(f"Verification email queued for: {user_data.email}")
+            except Exception as email_error:
+                logger.error(f"Failed to queue verification email for {user_data.email}: {str(email_error)}")
+                # Don't fail user creation if email fails, just log it
 
             logger.info(f"Successfully created user with email: {user_data.email}")
             return user
@@ -231,7 +252,14 @@ class AuthService:
         except AppBaseException:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error creating user: {str(e)}")
+            logger.error(f"Unexpected error creating user {user_data.email}: {str(e)}", exc_info=True)
+            # Rollback transaction if needed
+            try:
+                await self.db.rollback()
+                logger.info("Transaction rolled back due to error")
+            except Exception as rollback_error:
+                logger.error(f"Failed to rollback transaction: {str(rollback_error)}")
+
             raise AppBaseException(message="Failed to create user due to internal error", error_code=USER_INVALID_DATA)
     
     async def authenticate_user(self, email: str, password: str) -> User:
@@ -269,15 +297,16 @@ class AuthService:
             update_sql = text("""
                 UPDATE users
                 SET updated_at = :updated_at
-                WHERE id = :user_id
+                WHERE user_id = :user_id
             """)
-            
+
             await self.db.execute(
                 update_sql,
-                {"updated_at": datetime.now(timezone.utc).replace(tzinfo=None), "user_id": user.id}
+                {"updated_at": datetime.now(timezone.utc).replace(tzinfo=None), "user_id": user.user_id}
             )
-            
-            updated_user = await self.get_user_by_id(str(user.id))
+
+            await self.db.commit()
+            updated_user = await self.get_user_by_id(str(user.user_id))
             if updated_user is None:
                 raise AppBaseException(message="User not found after authentication", error_code=USER_NOT_FOUND)
             logger.info(f"User authenticated successfully: {email}")
@@ -329,11 +358,11 @@ class AuthService:
             update_token_sql = text("""
                 UPDATE verification_tokens
                 SET is_used = true, updated_at = :updated_at
-                WHERE id = :token_id
+                WHERE token_id = :token_id
             """)
 
             await self.db.execute(update_token_sql, {
-                "token_id": verification_token.id,
+                "token_id": verification_token.token_id,
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             })
 
@@ -407,20 +436,23 @@ class AuthService:
             reset_token = email_service.generate_verification_token()
 
             token_sql = text("""
-                INSERT INTO verification_tokens (id, email, token, token_type, expires_at, is_used, created_at)
-                VALUES (:id, :email, :token, :token_type, :expires_at, :is_used, :created_at)
+                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
                 RETURNING *
             """)
 
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+
             token_params = {
-                "id": str(uuid.uuid4()),
+                "token_id": str(uuid.uuid4()),
+                "user_id": user.user_id,
                 "email": email,
                 "token": reset_token,
                 "token_type": "password_reset",
                 "expires_at": current_time + timedelta(hours=1),
                 "is_used": False,
-                "created_at": current_time
+                "created_at": current_time,
+                "updated_at": current_time
             }
 
             await self.db.execute(token_sql, token_params)
@@ -480,11 +512,11 @@ class AuthService:
             update_token_sql = text("""
                 UPDATE verification_tokens
                 SET is_used = true, updated_at = :updated_at
-                WHERE id = :token_id
+                WHERE token_id = :token_id
             """)
 
             await self.db.execute(update_token_sql, {
-                "token_id": verification_token.id,
+                "token_id": verification_token.token_id,
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             })
 
@@ -515,28 +547,30 @@ class AuthService:
         try:
             user = await self.get_user_by_email(email)
             if not user:
-
                 return True
-            
+
             if user.is_verified:
                 return True
-            
+
             verification_token = email_service.generate_verification_token()
-            
+
             token_sql = text("""
-                INSERT INTO verification_tokens (id, email, token, token_type, expires_at, is_used, created_at)
-                VALUES (:id, :email, :token, :token_type, :expires_at, :is_used, :created_at)
+                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
             """)
-            
+
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+
             token_params = {
-                "id": str(uuid.uuid4()),
+                "token_id": str(uuid.uuid4()),
+                "user_id": user.user_id,
                 "email": email,
                 "token": verification_token,
                 "token_type": "email_verification",
                 "expires_at": current_time + timedelta(hours=24),
                 "is_used": False,
-                "created_at": current_time
+                "created_at": current_time,
+                "updated_at": current_time
             }
             
             await self.db.execute(token_sql, token_params)
@@ -589,14 +623,14 @@ class AuthService:
             hashed_password = hash_password(new_password)
 
             update_sql = text("""
-                UPDATE users 
+                UPDATE users
                 SET hashed_password = :hashed_password, updated_at = :updated_at
-                WHERE id = :user_id
+                WHERE user_id = :user_id
             """ )
 
             await self.db.execute(update_sql, {
-                "user_id": user_id, 
-                "hashed_password": hashed_password, 
+                "user_id": user_id,
+                "hashed_password": hashed_password,
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             })
 

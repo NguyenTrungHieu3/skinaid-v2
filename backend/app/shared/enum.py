@@ -14,7 +14,7 @@ class PermissionEnum(str, Enum):
 
     #First-Aid Content Permissions
     CREATE_FIRSTAID = "create_firstaid"
-    READ_FIRSTAID = "read_firsaid"
+    READ_FIRSTAID = "read_firstaid"
     UPDATE_FIRSTAID = "update_firstaid"
     DELETE_FIRSTAID = "delete_firstaid"
 

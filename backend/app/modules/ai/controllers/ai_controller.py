@@ -6,6 +6,7 @@ import os
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.ai.schemas.ai_schemas import AIAnalysisResult
+from app.modules.ai.models.ai_analysis import AIModelInfo
 from app.modules.ai.services.ai_processing_service import AIProcessingService
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_INVALID_DATA
@@ -116,7 +117,7 @@ class AIController:
                 error_details={"error": str(e)}
             )
 
-    async def get_model_info(self) -> Union[SuccessResponse[dict], ErrorResponse]:
+    async def get_model_info(self) -> Union[SuccessResponse[AIModelInfo], ErrorResponse]:
         """
         Lấy thông tin mô hình AI
 

@@ -44,11 +44,13 @@ class AuthController:
             user: User = await self.auth_service.create_user(user_data)
             
             user_response: UserResponse = UserResponse(
-                user_id=user.id,
+                user_id=user.user_id,
                 email=user.email,
                 display_name=user.display_name or "",
+                is_active=user.is_active,
                 is_verified=user.is_verified,
                 created_at=user.created_at,
+                updated_at=user.updated_at,
                 full_name=user.profile.full_name if user.profile else None,
                 phone=user.profile.phone if user.profile else None,
                 avatar_url=user.profile.avatar_url if user.profile else None
@@ -107,15 +109,17 @@ class AuthController:
                 credentials.password
             )
 
-            access_token = jwt_handler.create_access_token(subject=str(user.id))
-            refresh_token = jwt_handler.create_refresh_token(subject=str(user.id))
+            access_token = jwt_handler.create_access_token(subject=str(user.user_id))
+            refresh_token = jwt_handler.create_refresh_token(subject=str(user.user_id))
 
             user_response = UserResponse(
-                user_id=user.id,
+                user_id=user.user_id,
                 email=user.email,
                 display_name=user.display_name or "",
+                is_active=user.is_active,
                 is_verified=user.is_verified,
                 created_at=user.created_at,
+                updated_at=user.updated_at,
                 full_name=user.profile.full_name if user.profile else None,
                 phone=user.profile.phone if user.profile else None,
                 avatar_url=user.profile.avatar_url if user.profile else None
@@ -282,29 +286,50 @@ class AuthController:
             payload = jwt_handler.verify_token(refresh_request.refresh_token)
             user_id = payload.get("sub")
             token_type = payload.get("type")
-            
+
             if token_type != "refresh":
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token type"
                 )
-            
+
             if not user_id:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token"
                 )
-            
+
+            # Get user information
+            user = await self.auth_service.get_user_by_id(user_id)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found"
+                )
+
             # Create new tokens
             new_access_token = jwt_handler.create_access_token(subject=str(user_id))
             new_refresh_token = jwt_handler.create_refresh_token(subject=str(user_id))
 
+            user_response = UserResponse(
+                user_id=user.user_id,
+                email=user.email,
+                display_name=user.display_name or "",
+                is_active=user.is_active,
+                is_verified=user.is_verified,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+                full_name=user.profile.full_name if user.profile else None,
+                phone=user.profile.phone if user.profile else None,
+                avatar_url=user.profile.avatar_url if user.profile else None
+            )
+
             token_response = TokenResponse(
                 access_token=new_access_token,
                 refresh_token=new_refresh_token,
-                user=None 
+                user=user_response
             )
-            
+
             return SuccessResponse(
                 message="Token refreshed successfully",
                 data=token_response
@@ -323,13 +348,12 @@ class AuthController:
 
             jti = payload.get("jti")
             if jti:
-
                 blacklist_token(jti)
-            
+
             return SuccessResponse(
                 message="Đăng xuất thành công",
                 data={
-                    "logout_time": datetime.now(timezone.utc),
+                    "logout_time": datetime.now(timezone.utc).isoformat(),
                     "message": "Token has been revoked"
                 }
             )
@@ -337,7 +361,7 @@ class AuthController:
             return SuccessResponse(
                 message="Đăng xuất thành công",
                 data={
-                    "logout_time": datetime.now(timezone.utc),
+                    "logout_time": datetime.now(timezone.utc).isoformat(),
                     "message": "Session terminated"
                 }
             )
@@ -395,8 +419,8 @@ class AuthController:
     
         try: 
             success = await self.auth_service.change_password(
-                user_id= str(current_user.id), 
-                old_password=password_data.old_password, 
+                user_id= str(current_user.user_id),
+                old_password=password_data.old_password,
                 new_password=password_data.new_password
             )
 

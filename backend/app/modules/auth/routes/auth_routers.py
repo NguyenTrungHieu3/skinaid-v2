@@ -82,19 +82,26 @@ async def verify_email_get(
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=SuccessResponse[UserResponse],
     summary="Thông tin user hiện tại",
 )
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
-    return UserResponse(
-        user_id=current_user.id,
+    user_response = UserResponse(
+        user_id=current_user.user_id,
         email=current_user.email,
         display_name=current_user.display_name or "",
+        is_active=current_user.is_active,
         is_verified=current_user.is_verified,
         created_at=current_user.created_at,
+        updated_at=current_user.updated_at,
         full_name=current_user.profile.full_name if current_user.profile else None,
         phone=current_user.profile.phone if current_user.profile else None,
         avatar_url=current_user.profile.avatar_url if current_user.profile else None
+    )
+
+    return SuccessResponse(
+        message="User information retrieved successfully",
+        data=user_response
     )
 
 
@@ -161,7 +168,7 @@ async def logout_user(
     summary="Gửi lại email xác thực",
 )
 async def resend_verification_email(
-    email_request: EmailVerificationRequest,
+    email_request: PasswordResetRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
     return await controller.resend_verification_email(email_request.email)

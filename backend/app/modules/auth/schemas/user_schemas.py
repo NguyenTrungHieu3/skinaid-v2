@@ -22,11 +22,13 @@ class UserCreate(UserBase):
         return values
 
 class UserResponse(BaseModel):
-    user_id: str 
+    user_id: str
     email: EmailStr
     display_name: Optional[str] = None
+    is_active: bool = Field(default=True, description="User account status")
     is_verified: bool
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     # Profile information
     full_name: Optional[str] = None

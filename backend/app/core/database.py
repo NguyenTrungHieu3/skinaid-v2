@@ -75,7 +75,7 @@ async def init_db():
     from app.modules.auth.models.user import User
     from app.modules.profile.models.user_profile import UserProfile
     from app.modules.auth.models.verification_token import VerificationToken
-    from app.modules.upload.models.wound_images import WoundImages
+    from app.modules.upload.models.wound_images import ImageInformation
     from app.modules.upload.models.upload_validations import UploadValidation
     from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
     from app.modules.auth.models.permissions import Permission

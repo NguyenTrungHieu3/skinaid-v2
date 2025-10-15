@@ -46,9 +46,9 @@ async def get_current_user(token: Optional[str] = Depends(get_token) ,db: AsyncS
                 headers={"WWW-Authenticate": "Bearer"}
             )
         
-        select_sql = text("SELECT * FROM users WHERE id = :id")
+        select_sql = text("SELECT * FROM users WHERE user_id = :user_id")
         params = {
-            "id": user_id 
+            "user_id": user_id
         }
 
         result = await db.execute(select_sql, params)

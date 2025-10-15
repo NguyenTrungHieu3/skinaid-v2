@@ -4,16 +4,14 @@ import logging
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile import UserProfileUpdate, UserProfileResponse
-from app.modules.auth.services.auth_service import AuthService
 from app.modules.profile.services.profile_service import ProfileService
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_INVALID_DATA, USER_NOT_FOUND
 
 logger = logging.getLogger(__name__)
 
-class ProfileController:  
+class ProfileController:
     def __init__(self, db: AsyncSession):
-        self.auth_service = AuthService(db)
         self.profile_service = ProfileService(db)
     
     async def update_profile(self, user_id: str, profile_data: UserProfileUpdate) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:

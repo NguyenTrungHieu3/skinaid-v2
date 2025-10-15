@@ -1,7 +1,10 @@
 from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, select
+from sqlmodel import select
 import logging
+
+from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,7 @@ class FirstAidService:
 
     def _format_guide_response(self, guide: Dict[str, Any]) -> Dict[str, Any]:
         return {
-            "id": guide.get("firstaidguides_id"),
+            "firstaidguides_id": guide.get("firstaidguides_id"),
             "wound_type": guide.get("wound_type"),
             "severity": guide.get("severity"),
             "information": {
@@ -166,4 +169,121 @@ class FirstAidService:
 
         except Exception as e:
             logger.error(f"Failed to search first aid guides: {e}")
+            return []
+
+    # === ORM-based methods (improved versions) ===
+
+    async def get_first_aid_guide_orm(
+        self,
+        wound_type: str,
+        severity: str
+    ) -> Optional[FirstAidGuide]:
+        """Get first aid guide using ORM (improved version)."""
+        try:
+            statement = select(FirstAidGuide).where(
+                FirstAidGuide.wound_type == wound_type,
+                FirstAidGuide.severity == severity
+            )
+            result = await self.db.execute(statement)
+            guide = result.scalar_one_or_none()
+
+            if guide:
+                logger.info(
+                    f"Found first aid guide using ORM for {wound_type}/{severity}",
+                    extra={
+                        "wound_type": wound_type,
+                        "severity": severity,
+                        "guide_id": guide.firstaidguides_id
+                    }
+                )
+            else:
+                logger.warning(
+                    f"No first aid guide found using ORM for {wound_type}/{severity}",
+                    extra={
+                        "wound_type": wound_type,
+                        "severity": severity
+                    }
+                )
+
+            return guide
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get first aid guide using ORM: {e}",
+                extra={
+                    "wound_type": wound_type,
+                    "severity": severity,
+                    "error": str(e)
+                }
+            )
+            return None
+
+    async def create_first_aid_guide(
+        self,
+        wound_type: str,
+        severity: str,
+        cause: Optional[str] = None,
+        symptoms: Optional[str] = None,
+        risks: Optional[str] = None,
+        first_aid_do: Optional[str] = None,
+        first_aid_dont: Optional[str] = None,
+        tip_easy_remember: Optional[str] = None
+    ) -> Optional[FirstAidGuide]:
+        """Create a new first aid guide using ORM."""
+        try:
+            guide = FirstAidGuide.create_guide(
+                wound_type=wound_type,
+                severity=severity,
+                cause=cause,
+                symptoms=symptoms,
+                risks=risks,
+                first_aid_do=first_aid_do,
+                first_aid_dont=first_aid_dont,
+                tip_easy_remember=tip_easy_remember
+            )
+
+            self.db.add(guide)
+            await self.db.commit()
+            await self.db.refresh(guide)
+
+            logger.info(
+                f"Created first aid guide using ORM for {wound_type}/{severity}",
+                extra={
+                    "wound_type": wound_type,
+                    "severity": severity,
+                    "guide_id": guide.firstaidguides_id
+                }
+            )
+
+            return guide
+
+        except Exception as e:
+            logger.error(f"Failed to create first aid guide using ORM: {e}")
+            await self.db.rollback()
+            return None
+
+    async def get_available_wound_types_orm(self) -> List[Dict[str, Any]]:
+        """Get available wound types using ORM (improved version)."""
+        try:
+            statement = select(FirstAidGuide.wound_type, FirstAidGuide.severity).distinct()
+            result = await self.db.execute(statement)
+            rows = result.all()
+
+            wound_types = {}
+            for row in rows:
+                wound_type = row.wound_type
+                severity = row.severity
+
+                if wound_type not in wound_types:
+                    wound_types[wound_type] = {
+                        "wound_type": wound_type,
+                        "severities": []
+                    }
+
+                wound_types[wound_type]["severities"].append(severity)
+
+            return list(wound_types.values())
+
+        except Exception as e:
+            logger.error(f"Failed to get available wound types using ORM: {e}")
             return []

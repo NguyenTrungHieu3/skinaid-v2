@@ -25,7 +25,7 @@ async def update_profile(
     controller: ProfileController = Depends(get_profile_controller),
     current_user: User = Depends(get_current_active_user)
 ):
-    return await controller.update_profile(str(current_user.id), profile_data)
+    return await controller.update_profile(str(current_user.user_id), profile_data)
 
 @router.get(
     "/me",
@@ -37,4 +37,4 @@ async def get_my_profile(
     controller: ProfileController = Depends(get_profile_controller),
     current_user: User = Depends(get_current_active_user)
 ):
-    return await controller.get_profile(str(current_user.id))
+    return await controller.get_profile(str(current_user.user_id))

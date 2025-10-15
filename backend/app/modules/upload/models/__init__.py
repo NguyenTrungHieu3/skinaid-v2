@@ -1,6 +1,6 @@
 # Upload Models
 
 from .upload_validations import UploadValidation
-from .wound_images import WoundImages
+from .wound_images import ImageInformation
 
-__all__ = ["UploadValidation", "WoundImages"]
+__all__ = ["UploadValidation", "ImageInformation"]

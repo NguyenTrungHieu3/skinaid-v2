@@ -5,6 +5,7 @@ import logging
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.upload.schemas.upload import ImageUploadResponse, WoundImageDetail
+from app.modules.upload.models.wound_images import ImageInformation
 from app.modules.upload.services.upload_service import UploadService
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import *
@@ -67,26 +68,20 @@ class UploadController:
             result = await self.upload_service.get_image_by_id(image_id, user_id)
 
             if result["success"]:
-                wound_image = result["data"]
+                image_information = result["data"]
                 wound_detail = WoundImageDetail(
-                    id=wound_image.id,
-                    user_id=wound_image.user_id,
-                    file_name=wound_image.file_name,
-                    file_path=wound_image.file_path,
-                    file_size=wound_image.file_size,
-                    file_type=wound_image.file_type,
-                    width=wound_image.width,
-                    height=wound_image.height,
-                    upload_status=wound_image.upload_status,
-                    wound_type=wound_image.wound_type,
-                    confidence_score=wound_image.confidence_score,
-                    severity=wound_image.severity,
-                    ai_model_version=wound_image.ai_model_version,
-                    processing_time_ms=wound_image.processing_time_ms,
-                    error_message=wound_image.error_message,
-                    created_at=wound_image.created_at,
-                    updated_at=wound_image.updated_at,
-                    processed_at=wound_image.processed_at
+                    id=image_information.wound_images_id,
+                    user_id=image_information.woundhistory_id,  # Using woundhistory_id as user_id for now
+                    file_name=image_information.file_name,
+                    file_path=image_information.file_path,
+                    file_size=image_information.file_size,
+                    file_type=image_information.file_type,
+                    width=image_information.width,
+                    height=image_information.height,
+                    upload_status=image_information.upload_status,
+                    error_message=image_information.error_message,
+                    created_at=image_information.created_at,
+                    updated_at=image_information.updated_at
                 )
 
                 return SuccessResponse(
@@ -126,26 +121,20 @@ class UploadController:
 
             if result["success"]:
                 images_data = []
-                for wound_image in result["data"]:
+                for image_information in result["data"]:
                     image_detail = WoundImageDetail(
-                        id=wound_image.id,
-                        user_id=wound_image.user_id,
-                        file_name=wound_image.file_name,
-                        file_path=wound_image.file_path,
-                        file_size=wound_image.file_size,
-                        file_type=wound_image.file_type,
-                        width=wound_image.width,
-                        height=wound_image.height,
-                        upload_status=wound_image.upload_status,
-                        wound_type=wound_image.wound_type,
-                        confidence_score=wound_image.confidence_score,
-                        severity=wound_image.severity,
-                        ai_model_version=wound_image.ai_model_version,
-                        processing_time_ms=wound_image.processing_time_ms,
-                        error_message=wound_image.error_message,
-                        created_at=wound_image.created_at,
-                        updated_at=wound_image.updated_at,
-                        processed_at=wound_image.processed_at
+                        id=image_information.wound_images_id,
+                        user_id=image_information.woundhistory_id,
+                        file_name=image_information.file_name,
+                        file_path=image_information.file_path,
+                        file_size=image_information.file_size,
+                        file_type=image_information.file_type,
+                        width=image_information.width,
+                        height=image_information.height,
+                        upload_status=image_information.upload_status,
+                        error_message=image_information.error_message,
+                        created_at=image_information.created_at,
+                        updated_at=image_information.updated_at
                     )
                     images_data.append(image_detail)
 

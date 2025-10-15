@@ -12,7 +12,7 @@ class FirstAidInformation(BaseModel):
     risks: Optional[str] = Field(None, description="Risks associated with the wound")
 
 class FirstAidGuideResponse(BaseModel):
-    id: str = Field(..., description="First aid guide ID")
+    firstaidguides_id: str = Field(..., description="First aid guide ID")
     wound_type: str = Field(..., description="Type of wound")
     severity: str = Field(..., description="Severity level")
     information: FirstAidInformation = Field(..., description="Information about the wound")

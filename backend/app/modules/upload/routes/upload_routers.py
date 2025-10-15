@@ -34,7 +34,7 @@ async def upload_image(
         user_agent = request.headers.get("user-agent")
         
         result = await controller.upload_image(
-            user_id=str(current_user.id),
+            user_id=str(current_user.user_id),
             file=file,
             ip_address=ip_address,
             user_agent=user_agent
@@ -62,7 +62,7 @@ async def get_image_analysis(
     current_user: User = Depends(get_current_active_user)
 ):
     try:
-        result = await controller.get_image_analysis(image_id, str(current_user.id))
+        result = await controller.get_image_analysis(image_id, str(current_user.user_id))  # Using user_id as woundhistory_id for now
         return result
     except Exception as e:
         logger.error(f"Error getting image analysis: {str(e)}")
@@ -86,7 +86,7 @@ async def get_user_images(
 ):
     try:
         result = await controller.get_user_images(
-            user_id=str(current_user.id),
+            user_id=str(current_user.user_id),  # Using user_id as woundhistory_id for now
             limit=limit,
             offset=offset
         )

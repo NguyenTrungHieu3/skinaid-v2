@@ -1,9 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import ForeignKey
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
-
-from app.shared.models.basemodel import utcnow
+from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from app.modules.auth.models.user import User
@@ -35,7 +33,7 @@ class UserRole(SQLModel, table=True):
     )
     
     assigned_at: datetime = Field(
-        default_factory=utcnow,
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False
     )
     
@@ -43,7 +41,10 @@ class UserRole(SQLModel, table=True):
         default=None,
         description="Role expiry date. NULL = permanent"
     )
-    user: "User" = Relationship(back_populates="user_roles")
+    user: "User" = Relationship(
+        back_populates="user_roles",
+        sa_relationship_kwargs={"foreign_keys": "[UserRole.user_id]"}
+    )
     
     role: "Role" = Relationship(back_populates="user_roles")
     
@@ -52,4 +53,4 @@ class UserRole(SQLModel, table=True):
         """Check if temporary role has expired"""
         if self.expires_at is None:
             return False
-        return utcnow() > self.expires_at
+        return datetime.now(timezone.utc).replace(tzinfo=None) > self.expires_at

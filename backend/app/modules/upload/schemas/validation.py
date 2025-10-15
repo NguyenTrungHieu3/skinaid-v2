@@ -18,6 +18,8 @@ class UploadValidationCreate(BaseModel):
     user_agent: Optional[str] = Field(None, description="User agent")
 
 class UploadValidationResponse(UploadValidationCreate):
-    id: str = Field(..., description="ID bản ghi xác thực")
+    upload_validations_id: str = Field(..., description="ID bản ghi xác thực")
     request_id: str = Field(..., description="ID yêu cầu")
+    attempt_count: int = Field(..., description="Số lần thử")
     created_at: datetime = Field(..., description="Thời gian tạo")
+    updated_at: Optional[datetime] = Field(None, description="Thời gian cập nhật cuối cùng")

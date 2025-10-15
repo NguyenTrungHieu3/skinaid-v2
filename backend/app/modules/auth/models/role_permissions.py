@@ -1,9 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import ForeignKey
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
-
-from app.shared.models.basemodel import utcnow
+from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from app.modules.auth.models.roles import Role
@@ -34,7 +32,12 @@ class RolePermission(SQLModel, table=True):
     )
     
     granted_at: datetime = Field(
-        default_factory=utcnow,
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        nullable=False
+    )
+
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False
     )
     

@@ -10,7 +10,7 @@ from sqlalchemy import text
 from app.core.config import settings
 from app.utils.constants.error_codes import *
 from app.utils.exceptions.base_exceptions import AppBaseException
-from app.modules.upload.models.wound_images import WoundImages
+from app.modules.upload.models.wound_images import ImageInformation
 
 from app.modules.upload.services.file_service import FileService
 from app.modules.upload.services.image_processing_service import ImageProcessingService
@@ -105,19 +105,24 @@ class UploadService:
             # ===== STEP 3: CREATE DATABASE RECORD =====
             logger.info("Creating database record")
 
-            wound_image = await self._create_wound_image_record(
-                user_id=user_id,
+            # Get image dimensions (simplified - in real implementation, you'd analyze the image)
+            width, height = 512, 512  # Default values for now
+
+            image_information = await self._create_image_information_record(
+                woundhistory_id=user_id,  # Using user_id as woundhistory_id for now
                 filename=file.filename,
                 file_path=file_path,
                 file_size=save_result["file_size"],
-                file_type=file.content_type
+                file_type=file.content_type,
+                width=width,
+                height=height
             )
-            wound_image_id = wound_image.id
+            image_id = image_information.wound_images_id
 
             # ===== STEP 4: CALL AI SERVICE =====
-            logger.info(f"Calling AI service for image: {wound_image_id}")
+            logger.info(f"Calling AI service for image: {image_id}")
 
-            await self._update_image_status(wound_image_id, "processing")
+            await self._update_image_status(image_id, "processing")
             full_image_path = os.path.join(settings.UPLOAD_DIR, file_path)
             ai_result = await self.image_processing_service.analyze_image(full_image_path)
 
@@ -126,7 +131,7 @@ class UploadService:
                 logger.warning("No wounds detected or AI service error")
 
                 await self._update_image_status(
-                    wound_image_id,
+                    image_id,
                     "completed",
                     error_message="Không phát hiện vết thương hoặc AI service lỗi"
                 )
@@ -134,7 +139,7 @@ class UploadService:
                 return {
                     "success": True,
                     "message": "Upload thành công nhưng không phát hiện vết thương",
-                    "wound_image": wound_image,
+                    "image_information": image_information,
                     "ai_result": None,
                     "first_aid": None
                 }
@@ -142,16 +147,17 @@ class UploadService:
             # Lấy detection đầu tiên (highest confidence)
             detection = ai_result["detections"][0]
 
-            # ===== STEP 6: UPDATE DATABASE WITH AI RESULTS =====
-            logger.info("Updating database with AI results")
+            # ===== STEP 6: SAVE AI RESULTS TO MODEL_RESULT TABLE =====
+            logger.info("Saving AI results to model_result table")
 
-            await self._update_wound_image_with_ai_result(
-                image_id=wound_image_id,
+            # Create ModelResult record
+            model_result = await self._create_model_result(
+                wound_images_id=image_id,
                 wound_type=detection["class_name"],
                 confidence_score=detection["confidence"],
                 severity=detection["severity"],
-                ai_model_version=ai_result["ai_model_version"],
-                processing_time_ms=int(ai_result["processing_time"] * 1000)
+                ai_model_version=ai_result.get("ai_model_version", "unknown"),
+                processing_time_ms=int(ai_result.get("processing_time", 0) * 1000)
             )
 
             # ===== STEP 7: GET FIRST AID GUIDE =====
@@ -168,7 +174,8 @@ class UploadService:
             return {
                 "success": True,
                 "message": "Phân tích thành công",
-                "wound_image": wound_image,
+                "image_information": image_information,
+                "model_result": model_result.to_response_dict() if model_result else None,
                 "ai_result": {
                     "wound_type": detection["class_name"],
                     "confidence": detection["confidence"],
@@ -187,9 +194,9 @@ class UploadService:
             # Handle unexpected errors
             logger.error(f"Unexpected error in upload workflow: {e}")
 
-            if wound_image_id:
+            if image_id:
                 await self._update_image_status(
-                    wound_image_id,
+                    image_id,
                     "failed",
                     error_message=str(e)
                 )
@@ -202,45 +209,36 @@ class UploadService:
                 error_code=FILE_UPLOAD_FAILED
             )
 
-    async def _update_wound_image_with_ai_result(
+    async def _create_model_result(
         self,
-        image_id: str,
+        wound_images_id: str,
         wound_type: str,
         confidence_score: float,
         severity: str,
         ai_model_version: str,
         processing_time_ms: int
-    ) -> None:
-        """Update wound_images record with AI detection results"""
+    ):
+        """Create model_result record with AI detection results"""
         try:
-            sql = text("""
-                UPDATE wound_images
-                SET wound_type = :wound_type,
-                    confidence_score = :confidence_score,
-                    severity = :severity,
-                    ai_model_version = :ai_model_version,
-                    processing_time_ms = :processing_time_ms,
-                    upload_status = 'completed',
-                    processed_at = :processed_at,
-                    updated_at = :updated_at
-                WHERE id = :image_id
-            """)
-            
-            await self.db.execute(sql, {
-                "wound_type": wound_type,
-                "confidence_score": confidence_score,
-                "severity": severity,
-                "ai_model_version": ai_model_version,
-                "processing_time_ms": processing_time_ms,
-                "processed_at": datetime.now(timezone.utc).replace(tzinfo=None),
-                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
-                "image_id": image_id
-            })
-            
+            from app.modules.ai.models.ai_analysis import ModelResult
+
+            model_result = ModelResult(
+                wound_images_id=wound_images_id,
+                wound_type=wound_type,
+                confidence_score=confidence_score,
+                severity=severity,
+                ai_model_version=ai_model_version,
+                processing_time_ms=processing_time_ms
+            )
+
+            self.db.add(model_result)
             await self.db.commit()
-            
+            await self.db.refresh(model_result)
+
+            return model_result
+
         except Exception as e:
-            logger.error(f"Failed to update wound image with AI result: {e}")
+            logger.error(f"Failed to create model result: {e}")
             raise
 
     async def handle_image_upload(
@@ -299,20 +297,25 @@ class UploadService:
             # ===== STEP 3: CREATE DATABASE RECORD =====
             logger.info("Creating database record")
 
-            wound_image = await self._create_wound_image_record(
-                user_id=user_id,
+            # Get image dimensions (simplified - in real implementation, you'd analyze the image)
+            width, height = 512, 512  # Default values for now
+
+            image_information = await self._create_image_information_record(
+                woundhistory_id=user_id,  # Using user_id as woundhistory_id for now
                 filename=file.filename,
                 file_path=file_path,
                 file_size=save_result["file_size"],
-                file_type=file.content_type
+                file_type=file.content_type,
+                width=width,
+                height=height
             )
 
             # Set status to completed (no AI processing)
-            await self._update_image_status(wound_image.id, "completed")
+            await self._update_image_status(image_information.wound_images_id, "completed")
 
-            logger.info(f"Simple upload completed: {wound_image.id}")
+            logger.info(f"Simple upload completed: {image_information.wound_images_id}")
 
-            return {"success": True, "data": wound_image}
+            return {"success": True, "data": image_information}
 
         except AppBaseException:
             raise
@@ -377,42 +380,48 @@ class UploadService:
             }
         }
 
-    async def _create_wound_image_record(
+    async def _create_image_information_record(
         self,
-        user_id: str,
+        woundhistory_id: str,
         filename: str,
         file_path: str,
         file_size: int,
-        file_type: str
-    ) -> WoundImages:
+        file_type: str,
+        width: int,
+        height: int
+    ) -> ImageInformation:
         """
-        Tạo record trong bảng wound_images
+        Tạo record trong bảng image_information
 
         Args:
-            user_id: ID của user upload
+            woundhistory_id: ID của wound history
             filename: Tên file gốc
             file_path: Đường dẫn file đã lưu
             file_size: Kích thước file (bytes)
             file_type: MIME type
+            width: Chiều rộng ảnh
+            height: Chiều cao ảnh
 
         Returns:
-            WoundImages object
+            ImageInformation object
         """
         try:
             sql = text("""
-                INSERT INTO wound_images (id, user_id, file_name, file_path, file_size, file_type, upload_status, created_at, updated_at)
-                VALUES (:id, :user_id, :file_name, :file_path, :file_size, :file_type, :upload_status, :created_at, :updated_at)
+                INSERT INTO image_information (wound_images_id, woundhistory_id, upload_status, file_name, file_path, file_size, file_type, width, height, created_at, updated_at)
+                VALUES (:wound_images_id, :woundhistory_id, :upload_status, :file_name, :file_path, :file_size, :file_type, :width, :height, :created_at, :updated_at)
                 RETURNING *
             """)
 
             params = {
-                "id": str(uuid.uuid4()),
-                "user_id": user_id,
+                "wound_images_id": str(uuid.uuid4()),
+                "woundhistory_id": woundhistory_id,
+                "upload_status": "pending",
                 "file_name": filename,
                 "file_path": file_path,
                 "file_size": file_size,
                 "file_type": file_type,
-                "upload_status": "pending",
+                "width": width,
+                "height": height,
                 "created_at": datetime.now(timezone.utc).replace(tzinfo=None),
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             }
@@ -423,10 +432,11 @@ class UploadService:
             if not row:
                 raise Exception("Failed to get returning row after insert.")
 
-            return WoundImages.model_validate(dict(row))
+            return ImageInformation.model_validate(dict(row))
 
         except Exception as e:
             logger.error(f"Failed to create wound image record: {e}")
+            await self.db.rollback()
             raise AppBaseException(
                 message="Could not save image record",
                 error_code=FILE_UPLOAD_FAILED
@@ -434,60 +444,61 @@ class UploadService:
 
     async def _update_image_status(
         self,
-        image_id: str,
+        wound_images_id: str,
         status: str,
         error_message: Optional[str] = None
     ) -> None:
         """
-        Cập nhật trạng thái của wound_image
+        Cập nhật trạng thái của image_information
 
         Args:
-            image_id: ID của record cần update
+            wound_images_id: ID của record cần update
             status: Trạng thái mới (pending, processing, completed, failed)
             error_message: Thông báo lỗi (optional)
         """
         try:
             sql = text("""
-                UPDATE wound_images
+                UPDATE image_information
                 SET upload_status = :status, error_message = :error_message, updated_at = :updated_at
-                WHERE id = :image_id
+                WHERE wound_images_id = :wound_images_id
             """)
 
             params = {
                 "status": status,
                 "error_message": error_message,
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
-                "image_id": image_id
+                "wound_images_id": wound_images_id
             }
 
             await self.db.execute(sql, params)
             await self.db.commit()
 
-            logger.info(f"Updated image {image_id} status to: {status}")
+            logger.info(f"Updated image {wound_images_id} status to: {status}")
 
         except Exception as e:
             logger.error(f"Failed to update image status: {e}")
+            await self.db.rollback()
     
-    async def get_image_by_id(self, image_id: str, user_id: str) -> Dict[str, Any]:
+    async def get_image_by_id(self, wound_images_id: str, woundhistory_id: str) -> Dict[str, Any]:
         """
-        Lấy thông tin ảnh theo ID (cho user đó)
+        Lấy thông tin ảnh theo ID
 
         Args:
-            image_id: ID của ảnh
-            user_id: ID của user (để kiểm tra quyền truy cập)
+            wound_images_id: ID của ảnh
+            woundhistory_id: ID của wound history (để kiểm tra quyền truy cập)
 
         Returns:
             Dict chứa kết quả hoặc error
         """
         try:
             sql = text("""
-                SELECT * FROM wound_images
-                WHERE id = :image_id AND user_id = :user_id
+                SELECT * FROM image_information
+                WHERE wound_images_id = :wound_images_id AND woundhistory_id = :woundhistory_id
             """)
 
             result = await self.db.execute(sql, {
-                "image_id": image_id,
-                "user_id": user_id
+                "wound_images_id": wound_images_id,
+                "woundhistory_id": woundhistory_id
             })
 
             row = result.mappings().first()
@@ -499,8 +510,8 @@ class UploadService:
                     "error_message": "Image not found or access denied"
                 }
 
-            wound_image = WoundImages.model_validate(dict(row))
-            return {"success": True, "data": wound_image}
+            image_information = ImageInformation.model_validate(dict(row))
+            return {"success": True, "data": image_information}
 
         except Exception as e:
             logger.error(f"Failed to get image by ID: {e}")
@@ -510,12 +521,12 @@ class UploadService:
                 "error_message": f"Failed to retrieve image: {str(e)}"
             }
 
-    async def get_user_images(self, user_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
+    async def get_user_images(self, woundhistory_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
         """
         Lấy danh sách ảnh của user với pagination
 
         Args:
-            user_id: ID của user
+            woundhistory_id: ID của wound history
             limit: Số lượng ảnh tối đa (default: 20)
             offset: Số ảnh bỏ qua (default: 0)
 
@@ -525,29 +536,29 @@ class UploadService:
         try:
             # Đếm tổng số ảnh
             count_sql = text("""
-                SELECT COUNT(*) as total FROM wound_images
-                WHERE user_id = :user_id
+                SELECT COUNT(*) as total FROM image_information
+                WHERE woundhistory_id = :woundhistory_id
             """)
 
-            count_result = await self.db.execute(count_sql, {"user_id": user_id})
+            count_result = await self.db.execute(count_sql, {"woundhistory_id": woundhistory_id})
             count_row = count_result.mappings().first()
             total = count_row["total"] if count_row else 0
 
             sql = text("""
-                SELECT * FROM wound_images
-                WHERE user_id = :user_id
+                SELECT * FROM image_information
+                WHERE woundhistory_id = :woundhistory_id
                 ORDER BY created_at DESC
                 LIMIT :limit OFFSET :offset
             """)
 
             result = await self.db.execute(sql, {
-                "user_id": user_id,
+                "woundhistory_id": woundhistory_id,
                 "limit": limit,
                 "offset": offset
             })
 
             rows = result.mappings().all()
-            images = [WoundImages.model_validate(dict(row)) for row in rows]
+            images = [ImageInformation.model_validate(dict(row)) for row in rows]
 
             return {
                 "success": True,

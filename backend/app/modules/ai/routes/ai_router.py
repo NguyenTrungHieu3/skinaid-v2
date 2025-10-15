@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
 from typing import Union
 from app.modules.ai.controllers.ai_controller import AIController
 from app.modules.ai.schemas.ai_schemas import AIAnalysisResult
+from app.modules.ai.models.ai_analysis import AIModelInfo
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +23,7 @@ async def analyze_image(file: UploadFile = File(...), db: AsyncSession = Depends
     controller = AIController(db)
     return await controller.analyze_image(file)
 
-@router.get("/model-info", response_model=Union[SuccessResponse[dict], ErrorResponse])
+@router.get("/model-info", response_model=Union[SuccessResponse[AIModelInfo], ErrorResponse])
 async def get_model_info(db: AsyncSession = Depends(get_db)):
     """Lấy thông tin mô hình AI"""
     controller = AIController(db)

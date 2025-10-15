@@ -12,6 +12,10 @@ class UserProfileBase(BaseModel):
     avatar_url: Optional[str] = None
 
 
+class UserProfileResponse(UserProfileBase):
+    id: Optional[str] = None  # profile_id from model
+
+
 class UserProfileUpdate(UserProfileBase):
     pass
 
