@@ -1,7 +1,3 @@
-"""
-Upload route - Backend integration endpoint
-Endpoint: POST /detect_and_classify
-"""
 from fastapi import APIRouter, UploadFile, File, Header, HTTPException
 from typing import Dict, Any
 from dotenv import load_dotenv

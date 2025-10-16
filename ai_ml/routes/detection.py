@@ -8,18 +8,15 @@ import cv2
 
 router = APIRouter(prefix="/detect", tags=["YOLO Detection"])
 
-# Load API key
 load_dotenv()
 AI_API_KEY = os.getenv("AI_API_KEY")
 
-# Add project root
 ai_ml_root = Path(__file__).parent.parent
 sys.path.insert(0, str(ai_ml_root))
 
 from models.detection.wound_detector import WoundDetector
 from schemas.detection_schema import DetectionBox, YOLODetectionResponse
 
-# Khởi tạo YOLO model
 detector = WoundDetector(str(ai_ml_root / "models/detection/weights/model_2_class_v1.pt"))
 
 @router.post("/", response_model=YOLODetectionResponse)

@@ -31,9 +31,6 @@ async def analyze_wound(
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     try:
-        start_time = time.time()
-
-        # Đọc file ảnh
         contents = await file.read()
         np_array = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
@@ -41,7 +38,6 @@ async def analyze_wound(
         if img is None:
             raise HTTPException(status_code=400, detail="Invalid image")
 
-        # 🔹 Gọi pipeline phân tích AI
         results_raw = analyzer.analyze(img)
 
         detections = []
@@ -51,7 +47,6 @@ async def analyze_wound(
             class_name = parts[0] if len(parts) > 0 else det.get("class_name", "")
             severity = parts[1] if len(parts) > 1 else "unknown"
 
-            # --- Tạo object theo schema ---
             detection = WoundDetectionAndClassification(
                 class_name=class_name,
                 confidence=det.get("wound_confidence", det.get("confidence", 0.0)),
@@ -61,7 +56,6 @@ async def analyze_wound(
             )
             detections.append(detection)
 
-        # --- Tạo response chuẩn schema ---
         response = CombinedResponse(
             success=True,
             num_detections=len(detections),

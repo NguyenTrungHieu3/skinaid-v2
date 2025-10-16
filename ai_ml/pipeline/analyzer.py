@@ -1,16 +1,28 @@
-import cv2
 import sys
 from pathlib import Path
-from models.detection.wound_detector import WoundDetector
-from models.classification.wound_classifier import SeverityClassifier
+from typing import Optional
 
 ai_ml_root = Path(__file__).parent.parent
 sys.path.insert(0, str(ai_ml_root))
 
+from models.detection.wound_detector import WoundDetector
+from models.classification.wound_classifier import SeverityClassifier
+from configs.config import settings
+
 class WoundAnalyzer:
-    def __init__(self, yolo_model_path, efficientnet_model_path):
-        self.detector = WoundDetector(yolo_model_path)
-        self.classifier = SeverityClassifier(efficientnet_model_path)
+    def __init__(self, yolo_model_path: Optional[str] = None, efficientnet_model_path: Optional[str] = None):
+        if yolo_model_path is None:
+            yolo_model_path = Path(settings.YOLO_MODEL_PATH)
+        else: 
+            yolo_model_path = Path(yolo_model_path)
+
+        if efficientnet_model_path is None:
+            efficientnet_model_path = Path(settings.EFFICIENTNET_MODEL_PATH)
+        else: 
+            efficientnet_model_path = Path(efficientnet_model_path)
+            
+        self.detector = WoundDetector(str(yolo_model_path))
+        self.classifier = SeverityClassifier(str(efficientnet_model_path))
 
     def crop_boxes(self, image, boxes):
         crops = []
@@ -22,7 +34,10 @@ class WoundAnalyzer:
             crops.append(image[y1:y2, x1:x2])
         return crops
 
-    def analyze(self, image, conf_threshold=0.25):
+    def analyze(self, image, conf_threshold: Optional[float] = None):
+        if conf_threshold is None:
+            conf_threshold = settings.YOLO_CONF_THRESHOLD
+
         detections = self.detector.detect(image, conf_threshold)
         boxes = [d["bbox"] for d in detections]
         crops = self.crop_boxes(image, boxes)
