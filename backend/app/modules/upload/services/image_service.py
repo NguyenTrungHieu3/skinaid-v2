@@ -1,4 +1,5 @@
 import uuid
+import os
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from fastapi import UploadFile
@@ -105,7 +106,11 @@ class ImageService:
             await self._update_image_status(image_id, "processing")
             full_image_path = os.path.join(settings.UPLOAD_DIR, file_path)
             ai_result = await self.image_processing_service.analyze_image(full_image_path)
-            if not ai_result["success"] or ai_result["num_detections"] == 0:
+
+            logger.info(f"AI service response structure: {list(ai_result.keys())}")
+            logger.info(f"AI service response: {ai_result}")
+
+            if not ai_result.get("success", False) or ai_result.get("num_detections", 0) == 0:
                 logger.warning("No wounds detected or AI service error")
 
                 await self._update_image_status(
@@ -124,22 +129,55 @@ class ImageService:
 
             detection = ai_result["detections"][0]
 
+            logger.info(f"Detection structure: {list(detection.keys())}")
+            logger.info(f"Detection data: {detection}")
+
             logger.info("Saving AI results to model_result table")
 
-            model_result = await self._create_model_result(
-                wound_images_id=image_id,
-                wound_type=detection["class_name"],
-                confidence_score=detection["confidence"],
-                severity=detection["severity"],
-                ai_model_version=ai_result.get("ai_model_version", "unknown"),
-                processing_time_ms=int(ai_result.get("processing_time", 0) * 1000)
-            )
+            # Xử lý detection với error handling
+            try:
+                wound_type = detection.get("class_name") or detection.get("class") or detection.get("label") or "unknown"
+                confidence_score = detection.get("confidence", 0.0)
+                severity = detection.get("severity", "unknown")
+
+                # Nếu confidence không có, thử các field khác
+                if confidence_score == 0.0:
+                    confidence_score = detection.get("score", detection.get("conf", 0.0))
+
+                # Nếu severity không có, suy đoán từ confidence
+                if severity == "unknown":
+                    if confidence_score > 0.8:
+                        severity = "high"
+                    elif confidence_score > 0.6:
+                        severity = "medium"
+                    else:
+                        severity = "low"
+
+                model_result = await self._create_model_result(
+                    wound_images_id=image_id,
+                    wound_type=wound_type,
+                    confidence_score=confidence_score,
+                    severity=severity,
+                    ai_model_version=ai_result.get("ai_model_version", "unknown"),
+                    processing_time_ms=int(ai_result.get("processing_time", 0) * 1000)
+                )
+            except Exception as e:
+                logger.error(f"Error processing detection data: {e}")
+                # Tạo model result với dữ liệu mặc định
+                model_result = await self._create_model_result(
+                    wound_images_id=image_id,
+                    wound_type="unknown",
+                    confidence_score=0.0,
+                    severity="unknown",
+                    ai_model_version=ai_result.get("ai_model_version", "unknown"),
+                    processing_time_ms=int(ai_result.get("processing_time", 0) * 1000)
+                )
 
             logger.info("Getting first aid guide")
 
             first_aid = await self.first_aid_service.get_first_aid_guide(
-                wound_type=detection["class_name"],
-                severity=detection["severity"]
+                wound_type=wound_type,
+                severity=severity
             )
 
             logger.info("Upload workflow completed successfully")
@@ -150,11 +188,11 @@ class ImageService:
                 "image_information": image_information,
                 "model_result": model_result.to_response_dict() if model_result else None,
                 "ai_result": {
-                    "wound_type": detection["class_name"],
-                    "confidence": detection["confidence"],
-                    "severity": detection["severity"],
-                    "bbox": detection["bbox"],
-                    "num_detections": ai_result["num_detections"]
+                    "wound_type": wound_type,
+                    "confidence": confidence_score,
+                    "severity": severity,
+                    "bbox": detection.get("bbox", []),
+                    "num_detections": ai_result.get("num_detections", 1)
                 },
                 "first_aid": first_aid
             }

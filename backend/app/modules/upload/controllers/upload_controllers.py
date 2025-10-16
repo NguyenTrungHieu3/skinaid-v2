@@ -35,13 +35,19 @@ class UploadController:
             )
             
             if result["success"]:
+                logger.info(f"Upload successful for user {user_id}, returning response")
                 return SuccessResponse(
-                    message="Hình ảnh tải lên thành công",
-                    data=result["data"]
+                    message=result.get("message", "Hình ảnh tải lên thành công"),
+                    data={
+                        "image_information": result.get("image_information"),
+                        "model_result": result.get("model_result"),
+                        "ai_result": result.get("ai_result"),
+                        "first_aid": result.get("first_aid")
+                    }
                 )
             else:
                 return ErrorResponse(
-                    message=result.get("error_message", "Upload failed"),
+                    message=result.get("message", result.get("error_message", "Upload failed")),
                     error_code=result.get("error_code", FILE_UPLOAD_FAILED),
                     error_details=None
                 )

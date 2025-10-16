@@ -377,7 +377,8 @@ class AuthService:
                 "email": email,
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             })
- 
+
+            await self.db.commit()
             logger.info(f"Database changes committed successfully for {email}")
 
             verification_check_sql = text("""
@@ -533,6 +534,7 @@ class AuthService:
                 "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
             })
 
+            await self.db.commit()
             logger.info(f"Password reset successful for user: {email}")
             return True
             
