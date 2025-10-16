@@ -5,7 +5,7 @@ import tempfile
 import os
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.ai.schemas.ai_schemas import AIAnalysisResult
+from app.modules.ai.schemas.ai_schemas import AIAnalysisResult, AIDetectionResult, BoundingBox
 from app.modules.ai.models.ai_analysis import AIModelInfo
 from app.modules.ai.services.ai_processing_service import AIProcessingService
 from app.utils.exceptions.base_exceptions import AppBaseException
@@ -17,6 +17,42 @@ class AIController:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.ai_service = AIProcessingService()
+
+    def _transform_bbox_format(self, detections):
+        """
+        Transform bbox từ List[float] sang BoundingBox object
+
+        Args:
+            detections: List các detection từ AI service
+
+        Returns:
+            List các detection với bbox đã được transform
+        """
+        transformed_detections = []
+
+        for detection in detections:
+            bbox_data = detection.get("bbox", [])
+            if isinstance(bbox_data, list) and len(bbox_data) >= 4:
+                x, y, width, height = bbox_data[:4]
+                bbox_obj = BoundingBox(
+                    x=float(x),
+                    y=float(y),
+                    width=float(width),
+                    height=float(height)
+                )
+            else:
+                bbox_obj = BoundingBox(x=0, y=0, width=0, height=0)
+
+            transformed_detection = {
+                "class_name": detection.get("class_name", ""),
+                "confidence": detection.get("confidence", 0.0),
+                "bbox": bbox_obj,
+                "severity": detection.get("severity", "unknown"),
+                "severity_confidence": detection.get("severity_confidence", 0.0)
+            }
+            transformed_detections.append(transformed_detection)
+
+        return transformed_detections
 
     async def analyze_image(self, file) -> Union[SuccessResponse[AIAnalysisResult], ErrorResponse]:
         """
@@ -58,6 +94,10 @@ class AIController:
                     error_code=error_code,
                     error_details={"ai_error": error_msg}
                 )
+
+            # Transform bbox format từ List[float] sang BoundingBox object
+            if "detections" in result:
+                result["detections"] = self._transform_bbox_format(result["detections"])
 
             analysis_result = AIAnalysisResult(**result)
 

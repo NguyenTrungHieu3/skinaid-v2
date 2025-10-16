@@ -13,6 +13,8 @@ from app.core.config import settings
 AI_SERVICE_URL = getattr(settings, 'AI_SERVICE_URL', "http://localhost:8001")
 AI_SERVICE_TIMEOUT = getattr(settings, 'AI_SERVICE_TIMEOUT', 30)
 AI_MAX_RETRIES = getattr(settings, 'AI_MAX_RETRIES', 3)
+AI_API_KEY = getattr(settings, 'AI_API_KEY', '')
+headers = {"X-API-Key": AI_API_KEY}
 
 RETRYABLE_EXCEPTIONS = (
     httpx.ConnectError,
@@ -21,10 +23,13 @@ RETRYABLE_EXCEPTIONS = (
 )
 class AIProcessingService:
 
+    
+
     def __init__(self):
         self.ai_service_url = AI_SERVICE_URL
         self.ai_service_timeout = AI_SERVICE_TIMEOUT
         self.ai_max_retries = AI_MAX_RETRIES
+        self.headers = headers
 
     @retry(
         stop=stop_after_attempt(3),
@@ -102,10 +107,11 @@ class AIProcessingService:
                     )
                     
                     response = await self._make_request(
-                        f"{self.ai_service_url}/detect",
+                        f"{self.ai_service_url}/analyze/",
                         method="POST",
                         files=files,
-                        timeout=self.ai_service_timeout
+                        timeout=self.ai_service_timeout,
+                        headers=self.headers
                     )
                     
                     request_time = time.time() - start_time

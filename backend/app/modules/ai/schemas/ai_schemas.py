@@ -2,10 +2,10 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class BoundingBox(BaseModel):
-    x: int = Field(..., description="Top-left X coordinate")
-    y: int = Field(..., description="Top-left Y coordinate")
-    width: int = Field(..., description="Box width")
-    height: int = Field(..., description="Box height")
+    x: float = Field(..., description="Top-left X coordinate")
+    y: float = Field(..., description="Top-left Y coordinate")
+    width: float = Field(..., description="Box width")
+    height: float = Field(..., description="Box height")
 
 class AIDetectionResult(BaseModel):
     class_name: str = Field(..., description="Wound type (burn, abrasion, etc.)")
