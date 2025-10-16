@@ -65,3 +65,26 @@ SkinAid/
 │ └── README.md
 │
 └── docs/ # Tài liệu chung (design, báo cáo, UML, meeting notes)
+```
+
+## Cách chạy
+
+### Bước 1
+
+Chạy lệnh sau trong terminal:
+
+```bash
+python run.py
+```
+
+### Bước 2
+
+Mở trình duyệt và truy cập một trong hai địa chỉ sau:
+
+- [http://localhost:8001](http://localhost:8001)
+- [http://127.0.0.1:8001](http://127.0.0.1:8001)
+
+```
+
+
+```
