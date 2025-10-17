@@ -7,5 +7,6 @@ class DetectionBox(BaseModel):
     bbox: List[float]
 
 class YOLODetectionResponse(BaseModel):
-    predictor_name: str = "YOLO"
+    success: bool = True
+    predictor_name: str = "YOLOv11"
     detections: List[DetectionBox] = []

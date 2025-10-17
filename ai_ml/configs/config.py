@@ -8,6 +8,7 @@ class AISettings(BaseSettings):
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    AI_MODEL_VERSION: str = "YOLOv11 and EfficientnetB0"
     
     # ================== YOLO Detection Model ==================
     YOLO_MODEL_NAME: str = "yolov11"
@@ -43,6 +44,9 @@ class AISettings(BaseSettings):
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
+
+    # ================== Rate Limiting Configuration ==================
+    RATE_LIMIT: str = "100/day"
     
     # ================== Pydantic Settings Configuration ==================
     model_config = SettingsConfigDict(

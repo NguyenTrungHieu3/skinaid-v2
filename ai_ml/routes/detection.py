@@ -35,9 +35,12 @@ async def detect_wound(file: UploadFile = File(...), x_api_key: str = Header(Non
         detections = [DetectionBox(**det) for det in detections_raw]
 
         return YOLODetectionResponse(
+            success=True,
             predictor_name="YOLO v11",
             detections=detections
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Detection error: {str(e)}")

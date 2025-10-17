@@ -1,15 +1,16 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 
 class WoundDetectionAndClassification(BaseModel):
-    class_name: str
-    confidence: float
-    bbox: List[float]
+    wound_type: str
     severity: str
-    severity_confidence: float
+    confidence_score: float
+    bbox: Dict
 
 class CombinedResponse(BaseModel):
     success: bool = True
-    num_detections: int
+    ai_model_version: str
+    total_detections: int
+    processing_time_ms: int 
+    primary_wound_type: str
     detections: List[WoundDetectionAndClassification]
-    ai_model_version: str = "YOLO + EfficientNet"

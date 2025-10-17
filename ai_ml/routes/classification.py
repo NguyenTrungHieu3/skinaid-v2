@@ -43,8 +43,12 @@ async def classify_wound(
         )
 
         return EfficientNetResponse(
+            success=True,
+            classifier_name="EfficientnetB0",
             classifications=[classification_result]
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Classification error: {str(e)}")

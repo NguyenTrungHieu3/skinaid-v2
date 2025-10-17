@@ -38,20 +38,22 @@ class SeverityClassifier:
         self.transform = transforms.Compose([
             transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=img_mean,
-                                 std=img_std)
+            transforms.Normalize(mean=img_mean, std=img_std)
         ])
 
     def classify(self, cropped_image):
-        img = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        input_tensor = self.transform(img).unsqueeze(0)
+        try:
+            img = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(img)
+            input_tensor = self.transform(img).unsqueeze(0)
 
-        with torch.no_grad():
-            outputs = self.model(input_tensor)
-            probs = torch.softmax(outputs, dim=1)
-            confidence, predicted = torch.max(probs, dim=1)
+            with torch.no_grad():
+                outputs = self.model(input_tensor)
+                probs = torch.softmax(outputs, dim=1)
+                confidence, predicted = torch.max(probs, dim=1)
 
-        severity_class = self.classes[predicted.item()]
-        confidence_score = round(confidence.item(), 2)    
-        return severity_class, confidence_score
+            severity_class = self.classes[predicted.item()]
+            confidence_score = round(confidence.item(), 2)    
+            return severity_class, confidence_score
+        except Exception:
+            return "unknown", 0.0

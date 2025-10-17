@@ -17,23 +17,26 @@ class WoundDetector:
             raise FileNotFoundError(f"YOLO model not found: {model_path}")
 
         self.model = YOLO(str(model_path))
-
         self.default_conf_threshold = settings.YOLO_CONF_THRESHOLD
 
     def detect(self, image, conf_threshold: Optional[float] = None):
-        if conf_threshold is None:
-            conf_threshold = self.default_conf_threshold
+        try:
+            if conf_threshold is None:
+                conf_threshold = self.default_conf_threshold
 
-        results = self.model.predict(source=image, conf=conf_threshold, save=False)
-        detections = []
-        for result in results:
-            for box in result.boxes:
-                cls_id = int(box.cls)
-                conf = float(box.conf)
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                detections.append({
-                    "class_name": self.model.names[cls_id],
-                    "confidence": round(conf, 2),
-                    "bbox": [x1, y1, x2, y2],
-                })
-        return detections
+            results = self.model.predict(source=image, conf=conf_threshold, save=False, verbose=False)
+            detections = []
+            
+            for result in results:
+                for box in result.boxes:
+                    cls_id = int(box.cls)
+                    conf = float(box.conf)
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    detections.append({
+                        "class_name": self.model.names[cls_id],
+                        "confidence": round(conf, 2),
+                        "bbox": [x1, y1, x2, y2],
+                    })
+            return detections
+        except Exception:
+            return []

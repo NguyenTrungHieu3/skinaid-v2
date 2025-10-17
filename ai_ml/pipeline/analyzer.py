@@ -26,30 +26,43 @@ class WoundAnalyzer:
 
     def crop_boxes(self, image, boxes):
         crops = []
-        h, w, _ = image.shape
-        for box in boxes:
-            x1, y1, x2, y2 = map(int, box)
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(w, x2), min(h, y2)
-            crops.append(image[y1:y2, x1:x2])
-        return crops
+        try:
+            h, w, _ = image.shape
+            for box in boxes:
+                x1, y1, x2, y2 = map(int, box)
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(w, x2), min(h, y2)
+                if x2 > x1 and y2 > y1:
+                    crops.append(image[y1:y2, x1:x2])
+            return crops
+        except Exception:
+            return []
 
     def analyze(self, image, conf_threshold: Optional[float] = None):
-        if conf_threshold is None:
-            conf_threshold = settings.YOLO_CONF_THRESHOLD
+        try:
+            if conf_threshold is None:
+                conf_threshold = settings.YOLO_CONF_THRESHOLD
 
-        detections = self.detector.detect(image, conf_threshold)
-        boxes = [d["bbox"] for d in detections]
-        crops = self.crop_boxes(image, boxes)
+            detections = self.detector.detect(image, conf_threshold)
+            if not detections:
+                return []
+            
+            boxes = [d["bbox"] for d in detections]
+            crops = self.crop_boxes(image, boxes)
 
-        results = []
-        for i, crop in enumerate(crops):
-            severity, conf = self.classifier.classify(crop)
-            results.append({
-                "bbox": detections[i]["bbox"],
-                "class_name": detections[i]["class_name"],
-                "wound_confidence": detections[i]["confidence"],
-                "severity": severity,
-                "severity_confidence": conf
-            })
-        return results
+            results = []
+            for i, crop in enumerate(crops):
+                try:
+                    severity, conf = self.classifier.classify(crop)
+                    results.append({
+                        "bbox": detections[i]["bbox"],
+                        "class_name": detections[i]["class_name"],
+                        "wound_confidence": detections[i]["confidence"],
+                        "severity": severity,
+                        "severity_confidence": conf
+                    })
+                except Exception:
+                    continue
+            return results
+        except Exception:
+            return []

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Header, HTTPException
+from fastapi import APIRouter, UploadFile, File, Header, HTTPException, Request
 from typing import Dict, Any
 from dotenv import load_dotenv
 from pathlib import Path
@@ -6,9 +6,11 @@ import os, sys, time
 import numpy as np
 import cv2
 
+from middleware.rate_limiter import limiter
 from schemas.detection_and_classification_schema import CombinedResponse, WoundDetectionAndClassification 
+from configs.config import settings
 
-router = APIRouter(prefix="/analyze", tags=["YOLO + EfficientNet"])
+router = APIRouter(prefix="/analyze", tags=["Detect and Classify"])
 
 load_dotenv()
 AI_API_KEY = os.getenv("AI_API_KEY")
@@ -18,52 +20,86 @@ sys.path.insert(0, str(ai_ml_root))
 
 from pipeline.analyzer import WoundAnalyzer
 analyzer = WoundAnalyzer(
-    yolo_model_path=str(ai_ml_root / "models/detection/weights/model_2_class_v1.pt"),
-    efficientnet_model_path=str(ai_ml_root / "models/classification/weights/final_model.pth")
+    yolo_model_path=str(ai_ml_root / settings.YOLO_MODEL_PATH),
+    efficientnet_model_path=str(ai_ml_root / settings.EFFICIENTNET_MODEL_PATH)
 )
 
 @router.post("/", response_model=CombinedResponse)
+@limiter.limit(settings.RATE_LIMIT)
 async def analyze_wound(
+    request: Request,
     file: UploadFile = File(...),
     x_api_key: str = Header(None, alias="X-API-Key")
 ) -> CombinedResponse:
+    start_time = time.time()
+    
     if not x_api_key or x_api_key != AI_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     try:
+        # Read and decode image
         contents = await file.read()
         np_array = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
 
         if img is None:
-            raise HTTPException(status_code=400, detail="Invalid image")
+            raise HTTPException(status_code=400, detail="Invalid image format")
 
+        # Analyze image
         results_raw = analyzer.analyze(img)
-
-        detections = []
-        for det in results_raw:
-            severity_label = det.get("severity", "")
-            parts = severity_label.split(" ", 1)
-            class_name = parts[0] if len(parts) > 0 else det.get("class_name", "")
-            severity = parts[1] if len(parts) > 1 else "unknown"
-
-            detection = WoundDetectionAndClassification(
-                class_name=class_name,
-                confidence=det.get("wound_confidence", det.get("confidence", 0.0)),
-                bbox=det.get("bbox", []),
-                severity=severity,
-                severity_confidence=det.get("severity_confidence", 0.0)
+        
+        if not results_raw:
+            # No detections found
+            processing_time = time.time() - start_time
+            return CombinedResponse(
+                success=True,
+                ai_model_version=settings.AI_MODEL_VERSION,
+                total_detections=0,
+                processing_time_ms=int(processing_time * 1000),
+                primary_wound_type="none",
+                detections=[]
             )
-            detections.append(detection)
 
+        # Process detections
+        detections = []
+        primary_wound = results_raw[0].get("class_name", "wound") if results_raw else "none"
+        
+        for det in results_raw:
+            try:
+                severity_label = det.get("severity", "")
+                parts = severity_label.split("_", 1)
+                wound_type = parts[0] if len(parts) > 0 else det.get("class_name", "wound")
+                severity = parts[1] if len(parts) > 1 else "unknown"
+
+                detection = WoundDetectionAndClassification(
+                    wound_type=wound_type,
+                    severity=severity,
+                    confidence_score=round(det.get("severity_confidence", 0.0), 2),
+                    bbox={
+                        "x": int(det["bbox"][0]),
+                        "y": int(det["bbox"][1]),
+                        "width": int(det["bbox"][2] - det["bbox"][0]),
+                        "height": int(det["bbox"][3] - det["bbox"][1])
+                    }
+                )
+                detections.append(detection)
+            except Exception:
+                # Skip invalid detection
+                continue
+
+        processing_time = time.time() - start_time
         response = CombinedResponse(
             success=True,
-            num_detections=len(detections),
-            detections=detections,
-            ai_model_version="YOLO + EfficientNet"
+            ai_model_version=settings.AI_MODEL_VERSION,
+            total_detections=len(detections),
+            processing_time_ms=int(processing_time * 1000),
+            primary_wound_type=primary_wound,
+            detections=detections
         )
 
         return response
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
