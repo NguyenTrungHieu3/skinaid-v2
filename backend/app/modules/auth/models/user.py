@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 if TYPE_CHECKING:
-    from app.modules.profile.models.user_profile import UserProfile
+    from app.modules.auth.models.user_profile import UserProfile
     from app.modules.auth.models.user_roles import UserRole
     from app.modules.auth.models.verification_token import VerificationToken
 
@@ -20,7 +20,6 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
-    # Relationship to profile
     profile: Optional["UserProfile"] = Relationship(back_populates="user")
     user_roles: List["UserRole"] = Relationship(
         back_populates="user",
@@ -28,10 +27,4 @@ class User(SQLModel, table=True):
             "cascade": "all, delete-orphan",
             "foreign_keys": "[UserRole.user_id]"
         }
-    )
-
-    # Relationship to verification tokens
-    verification_tokens: List["VerificationToken"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )

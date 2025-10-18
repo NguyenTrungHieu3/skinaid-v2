@@ -2,12 +2,13 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 from app.modules.firstaid.services.first_aid_service import FirstAidService
+from app.modules.firstaid.schemas.first_aid_schemas import FirstAidGuideResponse, WoundTypeResponse
+from app.shared.schemas.response import SuccessResponse, ErrorResponse
 import logging
 
 logger = logging.getLogger(__name__)
 
 class FirstAidController:
-    """Controller xử lý các yêu cầu first aid"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -17,65 +18,229 @@ class FirstAidController:
         self,
         wound_type: str,
         severity: str
-    ) -> Dict[str, Any]:
+    ) -> SuccessResponse[FirstAidGuideResponse]:
 
         try:
             guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity)
 
             if not guide:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy hướng dẫn sơ cứu cho {wound_type}/{severity}"
+                return ErrorResponse(
+                    message=f"Không tìm thấy hướng dẫn sơ cứu cho vết thương loại '{wound_type}' mức độ '{severity}'",
+                    error_code="FIRSTAID_GUIDE_NOT_FOUND",
+                    error_details={
+                        "wound_type": wound_type,
+                        "severity": severity,
+                        "available_types": await self._get_available_combinations()
+                    }
                 )
 
-            return {
-                "success": True,
-                "data": guide
-            }
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to get first aid guide: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Không thể lấy hướng dẫn sơ cứu"
+            guide_response = FirstAidGuideResponse(
+                firstaidguide_id=guide.get("firstaidguide_id", ""),
+                wound_type=guide.get("wound_type", wound_type),
+                severity=guide.get("severity", severity),
+                severity_display=self._get_severity_display(guide.get("severity", severity)),
+                title=guide.get("title", ""),
+                description=guide.get("description"),
+                steps=guide.get("steps"),
+                warnings=guide.get("warnings"),
+                dos=guide.get("dos"),
+                donts=guide.get("donts"),
+                supplies_needed=guide.get("supplies_needed"),
+                estimated_healing_time=guide.get("estimated_healing_time"),
+                is_active=guide.get("is_active", True),
+                version=guide.get("version", 1),
+                created_by=guide.get("created_by"),
+                created_at=guide.get("created_at"),
+                updated_at=guide.get("updated_at"),
+                has_complete_instructions=bool(guide.get("dos") and guide.get("donts")),
+                instructions_count=self._count_instructions(guide.get("steps")),
+                supplies_count=self._count_supplies(guide.get("supplies_needed"))
             )
 
-    async def get_available_wound_types(self) -> Dict[str, Any]:
+            return SuccessResponse(
+                message=f"Lấy hướng dẫn sơ cứu thành công cho {wound_type}/{severity}",
+                data=guide_response
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get first aid guide: {e}")
+            return ErrorResponse(
+                message="Không thể lấy hướng dẫn sơ cứu",
+                error_code="FIRSTAID_GUIDE_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def get_available_wound_types(self) -> SuccessResponse[List[WoundTypeResponse]]:
         try:
             wound_types = await self.first_aid_service.get_available_wound_types()
 
-            return {
-                "success": True,
-                "data": wound_types
-            }
+            wound_type_responses = [
+                WoundTypeResponse(**wt) for wt in wound_types
+            ]
+
+            return SuccessResponse(
+                message="Lấy danh sách loại vết thương thành công",
+                data=wound_type_responses
+            )
 
         except Exception as e:
             logger.error(f"Failed to get available wound types: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Không thể lấy loại vết thương"
+            return ErrorResponse(
+                message="Không thể lấy loại vết thương",
+                error_code="WOUND_TYPES_ERROR",
+                error_details={"error": str(e)}
             )
 
     async def search_first_aid_guides(
         self,
         wound_type: Optional[str] = None,
         severity: Optional[str] = None,
-        limit: int = 20
-    ) -> Dict[str, Any]:
+        limit: int = 20,
+        offset: int = 0
+    ) -> SuccessResponse[List[FirstAidGuideResponse]]:
 
         try:
             guides = await self.first_aid_service.search_first_aid_guides(wound_type, severity, limit)
 
-            return {
-                "success": True,
-                "data": guides
-            }
+            guide_responses = []
+            for guide in guides:
+                guide_response = FirstAidGuideResponse(
+                    firstaidguide_id=guide.get("firstaidguide_id", ""),
+                    wound_type=guide.get("wound_type", ""),
+                    severity=guide.get("severity", ""),
+                    severity_display=self._get_severity_display(guide.get("severity", "")),
+                    title=guide.get("title", ""),
+                    description=guide.get("description"),
+                    steps=guide.get("steps"),
+                    warnings=guide.get("warnings"),
+                    dos=guide.get("dos"),
+                    donts=guide.get("donts"),
+                    supplies_needed=guide.get("supplies_needed"),
+                    estimated_healing_time=guide.get("estimated_healing_time"),
+                    is_active=guide.get("is_active", True),
+                    version=guide.get("version", 1),
+                    created_by=guide.get("created_by"),
+                    created_at=guide.get("created_at"),
+                    updated_at=guide.get("updated_at"),
+                    has_complete_instructions=bool(guide.get("dos") and guide.get("donts")),
+                    instructions_count=self._count_instructions(guide.get("steps")),
+                    supplies_count=self._count_supplies(guide.get("supplies_needed"))
+                )
+                guide_responses.append(guide_response)
+
+            return SuccessResponse(
+                message=f"Tìm thấy {len(guide_responses)} hướng dẫn sơ cứu",
+                data=guide_responses
+            )
 
         except Exception as e:
             logger.error(f"Failed to search first aid guides: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Không thể tìm kiếm hướng dẫn sơ cứu"
+            return ErrorResponse(
+                message="Không thể tìm kiếm hướng dẫn sơ cứu",
+                error_code="FIRSTAID_SEARCH_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    def _get_severity_display(self, severity: str) -> str:
+        """Chuyển đổi severity sang tiếng Việt."""
+        severity_map = {
+            "mild": "Nhẹ",
+            "moderate": "Trung bình",
+            "severe": "Nặng"
+        }
+        return severity_map.get(severity.lower(), severity)
+
+    def _count_instructions(self, steps: Optional[Dict[str, Any]]) -> int:
+        """Đếm số bước hướng dẫn."""
+        if not steps:
+            return 0
+        if isinstance(steps, list):
+            return len(steps)
+        elif isinstance(steps, dict):
+            return len(steps.get('items', []))
+        return 0
+
+    def _count_supplies(self, supplies: Optional[Dict[str, Any]]) -> int:
+        """Đếm số vật dụng cần thiết."""
+        if not supplies:
+            return 0
+        if isinstance(supplies, list):
+            return len(supplies)
+        elif isinstance(supplies, dict):
+            return len(supplies.get('items', []))
+        return 0
+
+    async def _get_available_combinations(self) -> List[str]:
+        """Lấy danh sách các combination wound_type/severity có sẵn."""
+        try:
+            wound_types = await self.first_aid_service.get_available_wound_types()
+            combinations = []
+            for wt in wound_types:
+                for severity in wt.get("severities", []):
+                    combinations.append(f"{wt['wound_type']}/{severity}")
+            return combinations
+        except Exception:
+            return []
+
+    async def get_statistics(self) -> SuccessResponse[Dict[str, Any]]:
+        """Lấy thống kê về first aid knowledge base."""
+        try:
+            stats = await self.first_aid_service.get_guide_statistics()
+
+            return SuccessResponse(
+                message="Lấy thống kê first aid thành công",
+                data=stats
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get first aid statistics: {e}")
+            return ErrorResponse(
+                message="Không thể lấy thống kê first aid",
+                error_code="FIRSTAID_STATISTICS_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def validate_guide_availability(
+        self,
+        wound_type: str,
+        severity: str
+    ) -> SuccessResponse[Dict[str, Any]]:
+        """Kiểm tra tính khả dụng của first aid guide."""
+        try:
+            guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity)
+
+            if guide:
+                return SuccessResponse(
+                    message=f"Hướng dẫn sơ cứu cho {wound_type}/{severity} khả dụng",
+                    data={
+                        "available": True,
+                        "guide_id": guide.get("firstaidguide_id"),
+                        "version": guide.get("version"),
+                        "last_updated": guide.get("updated_at")
+                    }
+                )
+            else:
+                available_types = await self.first_aid_service.get_available_wound_types()
+                alternatives = []
+
+                for wt in available_types:
+                    for sev in wt.get("severities", []):
+                        if not (wt["wound_type"] == wound_type and sev == severity):
+                            alternatives.append(f"{wt['wound_type']}/{sev}")
+
+                return SuccessResponse(
+                    message=f"Hướng dẫn sơ cứu cho {wound_type}/{severity} không khả dụng",
+                    data={
+                        "available": False,
+                        "alternatives": alternatives[:5], 
+                        "total_alternatives": len(alternatives)
+                    }
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to validate guide availability: {e}")
+            return ErrorResponse(
+                message="Không thể kiểm tra tính khả dụng của hướng dẫn",
+                error_code="FIRSTAID_VALIDATION_ERROR",
+                error_details={"error": str(e)}
             )

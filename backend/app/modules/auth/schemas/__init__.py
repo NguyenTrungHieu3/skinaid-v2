@@ -5,6 +5,10 @@ from app.modules.auth.schemas.user_schemas import (
     EmailVerificationRequest, EmailVerificationResponse
 )
 
+from app.modules.auth.schemas.user_profile import (
+    UserProfileBase, UserProfileResponse, UserProfileUpdate
+)
+
 from app.modules.auth.schemas.token_schemas import(
     TokenResponse
 )

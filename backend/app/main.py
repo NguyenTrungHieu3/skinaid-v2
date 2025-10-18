@@ -43,16 +43,16 @@ def debug_email_config_in_server():
         try:
             with smtplib.SMTP(email_service.smtp_server, email_service.smtp_port) as server:
                 server.starttls()
-                print("✅ SMTP connection test: SUCCESS")
+                print("SMTP connection test: SUCCESS")
         except Exception as e:
-            print(f"❌ SMTP connection test: FAILED - {str(e)}")
+            print(f"SMTP connection test: FAILED - {str(e)}")
 
         print("=== EMAIL CONFIG DEBUG END ===")
 
     except ImportError as e:
-        print(f"⚠️  Email service not available: {str(e)}")
+        print(f"Email service not available: {str(e)}")
     except Exception as e:
-        print(f"⚠️  Email config debug error: {str(e)}")
+        print(f"Email config debug error: {str(e)}")
 
 
 app = FastAPI(
@@ -62,7 +62,7 @@ app = FastAPI(
 )
 
 origins = [
-    "http://localhost:3000",  # React frontend
+    "http://localhost:3000",  
     "http://127.0.0.1:3000",
 ]
 

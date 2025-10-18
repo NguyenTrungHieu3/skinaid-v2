@@ -41,6 +41,7 @@ async def register_user(
     user_data: UserCreate,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Đăng ký tài khoản mới. Sau khi đăng ký sẽ gửi email xác thực."""
     return await controller.register_user(user_data)
 
 
@@ -53,6 +54,7 @@ async def login_user(
     credentials: UserLogin,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Đăng nhập hệ thống và trả về token xác thực."""
     return await controller.login_user(credentials)
 
 @router.post(
@@ -64,6 +66,7 @@ async def verify_email_post(
     verification_data: EmailVerificationRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Xác thực email thông qua mã token."""
     return await controller.verify_email(verification_data)
 
 @router.get(
@@ -76,6 +79,7 @@ async def verify_email_get(
     token: str = Query(..., description="Token xác thực email"),
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Xác thực email qua liên kết (GET request)."""
     verification_data = EmailVerificationRequest(email=email, token=token)
     return await controller.verify_email(verification_data)
 
@@ -86,6 +90,7 @@ async def verify_email_get(
     summary="Thông tin user hiện tại",
 )
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    """Lấy thông tin cá nhân của user hiện tại."""
     user_response = UserResponse(
         user_id=current_user.user_id,
         email=current_user.email,
@@ -114,6 +119,7 @@ async def request_password_reset(
     reset_request: PasswordResetRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Gửi yêu cầu đặt lại mật khẩu qua email."""
     return await controller.request_password_reset(reset_request)
 
 
@@ -126,6 +132,7 @@ async def confirm_password_reset(
     reset_data: PasswordResetConfirm,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Xác nhận đặt lại mật khẩu với token từ email."""
     return await controller.reset_password(reset_data)
 
 
@@ -135,6 +142,7 @@ async def confirm_password_reset(
     summary="Kiểm tra tình trạng service",
 )
 async def health_check(controller: AuthController = Depends(get_auth_controller)):
+    """Kiểm tra trạng thái hoạt động của service."""
     return await controller.health_check()
 
 
@@ -147,6 +155,7 @@ async def refresh_token(
     refresh_request: RefreshTokenRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Làm mới access token bằng refresh token."""
     return await controller.refresh_token(refresh_request)
 
 
@@ -159,6 +168,7 @@ async def logout_user(
     token: str = Depends(get_token),
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Đăng xuất khỏi hệ thống và vô hiệu hóa token."""
     return await controller.logout_user(token)
 
 
@@ -171,6 +181,7 @@ async def resend_verification_email(
     email_request: PasswordResetRequest,
     controller: AuthController = Depends(get_auth_controller),
 ):
+    """Gửi lại email xác thực tài khoản."""
     return await controller.resend_verification_email(email_request.email)
 
 
@@ -180,8 +191,9 @@ async def resend_verification_email(
     summary="Thay đổi mật khẩu (khi đã đăng nhập)"
 )
 async def change_password(
-    password_data: ChangePasswordRequest, 
-    controller: AuthController = Depends(get_auth_controller), 
+    password_data: ChangePasswordRequest,
+    controller: AuthController = Depends(get_auth_controller),
     current_user: User = Depends(get_current_active_user)
-): 
+):
+    """Thay đổi mật khẩu tài khoản (đã đăng nhập)."""
     return await controller.change_password(current_user, password_data)

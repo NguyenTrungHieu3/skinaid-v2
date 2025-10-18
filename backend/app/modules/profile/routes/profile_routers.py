@@ -1,15 +1,14 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union
-import uuid
+from typing import Union, List, Dict, Any, Optional
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.profile.schemas.user_profile import UserProfileUpdate, UserProfileResponse
+from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 from app.modules.profile.controllers.profile_controllers import ProfileController
 from app.api.v1.deps import get_db, get_current_active_user
 from app.modules.auth.models.user import User
 
-router = APIRouter(prefix="/profile", tags=["User Profile"])
+router = APIRouter(prefix="/profile", tags=["User Profile Management"])
 
 async def get_profile_controller(db: AsyncSession = Depends(get_db)) -> ProfileController:
     return ProfileController(db)
@@ -25,6 +24,7 @@ async def update_profile(
     controller: ProfileController = Depends(get_profile_controller),
     current_user: User = Depends(get_current_active_user)
 ):
+    """Cập nhật thông tin profile cá nhân."""
     return await controller.update_profile(str(current_user.user_id), profile_data)
 
 @router.get(
@@ -37,4 +37,54 @@ async def get_my_profile(
     controller: ProfileController = Depends(get_profile_controller),
     current_user: User = Depends(get_current_active_user)
 ):
+    """Lấy thông tin profile cá nhân."""
     return await controller.get_profile(str(current_user.user_id))
+
+@router.get(
+    "/statistics",
+    response_model=Union[SuccessResponse[ProfileStatisticsResponse], ErrorResponse],
+    summary="Lấy thống kê profile",
+    description="Lấy thống kê tổng quan về user profiles trong hệ thống"
+)
+async def get_profile_statistics(
+    controller: ProfileController = Depends(get_profile_controller),
+    current_user: User = Depends(get_current_active_user)
+):
+    return await controller.get_profile_statistics()
+
+@router.get(
+    "/search",
+    response_model=Union[SuccessResponse[List[UserProfileResponse]], ErrorResponse],
+    summary="Tìm kiếm profiles",
+    description="Tìm kiếm user profiles với bộ lọc"
+)
+async def search_profiles(
+    full_name: Optional[str] = Query(None, description="Tìm theo tên"),
+    gender: Optional[str] = Query(None, description="Lọc theo giới tính"),
+    min_age: Optional[int] = Query(None, description="Tuổi tối thiểu", ge=0),
+    max_age: Optional[int] = Query(None, description="Tuổi tối đa", ge=0),
+    limit: int = Query(20, description="Số lượng tối đa", le=100, ge=1),
+    offset: int = Query(0, description="Số bản ghi bỏ qua", ge=0),
+    controller: ProfileController = Depends(get_profile_controller),
+    current_user: User = Depends(get_current_active_user)
+):
+    return await controller.search_profiles(
+        full_name=full_name,
+        gender=gender,
+        min_age=min_age,
+        max_age=max_age,
+        limit=limit,
+        offset=offset
+    )
+
+@router.get(
+    "/completion-suggestions",
+    response_model=Union[SuccessResponse[Dict[str, Any]], ErrorResponse],
+    summary="Gợi ý hoàn thiện profile",
+    description="Lấy gợi ý các trường cần điền để hoàn thiện profile"
+)
+async def get_completion_suggestions(
+    controller: ProfileController = Depends(get_profile_controller),
+    current_user: User = Depends(get_current_active_user)
+):
+    return await controller.get_profile_completion_suggestions(str(current_user.user_id))

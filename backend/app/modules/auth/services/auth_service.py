@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models.user import User
 from app.modules.auth.models.verification_token import VerificationToken
-from app.modules.profile.models.user_profile import UserProfile
+from app.modules.auth.models.user_profile import UserProfile
 import uuid
 import asyncio
 import logging
@@ -43,15 +43,6 @@ class AuthService:
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """
         Lấy thông tin người dùng theo email sử dụng truy vấn SQL có tham số.
-
-        Tham số:
-            email: Địa chỉ email của người dùng
-
-        Trả về:
-            Đối tượng User nếu tìm thấy, None nếu không tìm thấy
-
-        Lỗi:
-            AppBaseException: Nếu định dạng email không hợp lệ
         """
         try:
             email_error = validate_email(email)
@@ -79,18 +70,11 @@ class AuthService:
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
         Lấy thông tin người dùng theo ID kèm hồ sơ sử dụng truy vấn SQL tối ưu.
-
-        Tham số:
-            user_id: UUID của người dùng
-
-        Trả về:
-            Đối tượng User kèm hồ sơ nếu tìm thấy, None nếu không tìm thấy
         """
         try:
             sql = text("""
                 SELECT
                     u.*,
-                    p.profile_id as profile_id,
                     p.full_name,
                     p.phone,
                     p.date_of_birth,
@@ -123,9 +107,8 @@ class AuthService:
             }
             user = User.model_validate(user_data)
 
-            if row["profile_id"]:
+            if row["full_name"]:
                 profile_data = {
-                    "profile_id": row["profile_id"],
                     "user_id": row["user_id"],
                     "full_name": row["full_name"],
                     "phone": row["phone"],
@@ -147,15 +130,6 @@ class AuthService:
     async def create_user(self, user_data: UserCreate) -> User:
         """
         Tạo người dùng mới kèm hồ sơ sử dụng quản lý giao dịch phù hợp.
-
-        Tham số:
-            user_data: Dữ liệu tạo người dùng
-
-        Trả về:
-            Đối tượng User đã tạo kèm hồ sơ
-
-        Lỗi:
-            AppBaseException: Nếu xác thực thất bại, email đã tồn tại, hoặc mật khẩu yếu
         """
         try:
             email_errors = validate_email(user_data.email)
@@ -171,7 +145,6 @@ class AuthService:
                 raise AppBaseException(message=password_errors, error_code=AUTH_PASSWORD_WEAK)
 
             user_id = str(uuid.uuid4())
-            profile_id = str(uuid.uuid4())
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
             hashed_password = hash_password(user_data.password)
             verification_token = email_service.generate_verification_token()
@@ -193,10 +166,9 @@ class AuthService:
 
             # Insert user profile
             await self.db.execute(text("""
-                INSERT INTO user_profiles (profile_id, user_id, created_at, updated_at)
-                VALUES(:profile_id, :user_id, :created_at, :updated_at)
+                INSERT INTO user_profiles (user_id, created_at, updated_at)
+                VALUES(:user_id, :created_at, :updated_at)
             """), {
-                "profile_id": profile_id,
                 "user_id": user_id,
                 "created_at": current_time,
                 "updated_at": current_time
@@ -204,11 +176,10 @@ class AuthService:
 
             # Insert verification token
             await self.db.execute(text("""
-                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
-                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
+                INSERT INTO verification_tokens (token_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
             """), {
                 "token_id": str(uuid.uuid4()),
-                "user_id": user_id,
                 "email": user_data.email,
                 "token": verification_token,
                 "token_type": "email_verification",
@@ -244,7 +215,6 @@ class AuthService:
                 logger.info(f"Verification email queued for: {user_data.email}")
             except Exception as email_error:
                 logger.error(f"Failed to queue verification email for {user_data.email}: {str(email_error)}")
-                # Don't fail user creation if email fails, just log it
 
             logger.info(f"Successfully created user with email: {user_data.email}")
             return user
@@ -253,7 +223,6 @@ class AuthService:
             raise
         except Exception as e:
             logger.error(f"Unexpected error creating user {user_data.email}: {str(e)}", exc_info=True)
-            # Rollback transaction if needed
             try:
                 await self.db.rollback()
                 logger.info("Transaction rolled back due to error")
@@ -265,16 +234,6 @@ class AuthService:
     async def authenticate_user(self, email: str, password: str) -> User:
         """
         Xác thực người dùng với xử lý lỗi phù hợp.
-
-        Tham số:
-            email: Email của người dùng
-            password: Mật khẩu của người dùng
-
-        Trả về:
-            Đối tượng User đã xác thực kèm hồ sơ
-
-        Lỗi:
-            AppBaseException: Nếu thông tin xác thực không hợp lệ, tài khoản bị vô hiệu hóa, hoặc cần xác thực
         """
         try:
             email_error = validate_email(email)
@@ -321,16 +280,6 @@ class AuthService:
     async def verify_email(self, email: str, token: str) -> bool:
         """
         Xác thực email người dùng sử dụng mã xác thực
-
-        Tham số:
-            email: Email người dùng
-            token: Mã xác thực
-
-        Trả về:
-            True nếu xác thực thành công
-
-        Lỗi:
-            AppBaseException: Nếu mã xác thực không hợp lệ, hết hạn, hoặc đã được sử dụng
         """
         try:
             logger.info(f"Starting email verification for {email} with token {token[:20]}...")
@@ -415,15 +364,6 @@ class AuthService:
     async def initiate_password_reset(self, email: str) -> bool:
         """
         Khởi tạo quá trình đặt lại mật khẩu bằng cách gửi mã đặt lại
-
-        Tham số:
-            email: Địa chỉ email của người dùng
-
-        Trả về:
-            True nếu mã đặt lại được gửi thành công
-
-        Lỗi:
-            AppBaseException: Nếu không tìm thấy người dùng hoặc gửi email thất bại
         """
         try:
             import random
@@ -437,8 +377,8 @@ class AuthService:
             reset_token = email_service.generate_verification_token()
 
             token_sql = text("""
-                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
-                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
+                INSERT INTO verification_tokens (token_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
                 RETURNING *
             """)
 
@@ -446,7 +386,6 @@ class AuthService:
 
             token_params = {
                 "token_id": str(uuid.uuid4()),
-                "user_id": user.user_id,
                 "email": email,
                 "token": reset_token,
                 "token_type": "password_reset",
@@ -477,17 +416,6 @@ class AuthService:
     async def reset_password(self, email: str, token: str, new_password: str) -> bool:
         """
         Đặt lại mật khẩu người dùng sử dụng mã xác thực
-
-        Tham số:
-            email: Email người dùng
-            token: Mã đặt lại mật khẩu
-            new_password: Mật khẩu mới
-
-        Trả về:
-            True nếu đặt lại mật khẩu thành công
-
-        Lỗi:
-            AppBaseException: Nếu mã xác thực không hợp lệ, hết hạn, đã được sử dụng, hoặc mật khẩu yếu
         """
         try:
             password_errors = validate_password_strength(new_password)
@@ -557,15 +485,14 @@ class AuthService:
             verification_token = email_service.generate_verification_token()
 
             token_sql = text("""
-                INSERT INTO verification_tokens (token_id, user_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
-                VALUES (:token_id, :user_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
+                INSERT INTO verification_tokens (token_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
             """)
 
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
             token_params = {
                 "token_id": str(uuid.uuid4()),
-                "user_id": user.user_id,
                 "email": email,
                 "token": verification_token,
                 "token_type": "email_verification",

@@ -64,27 +64,22 @@ ROLE_PERMISSIONS = {
 }
 
 PERMISSION_DESCRIPTIONS ={
-    # User management
     PermissionEnum.CREATE_USER: "Create new user accounts",
     PermissionEnum.READ_USER: "View user information",
     PermissionEnum.UPDATE_USER: "Modify user data",
     PermissionEnum.DELETE_USER: "Delete user accounts",
     
-    # First-aid content
     PermissionEnum.CREATE_FIRSTAID: "Create first-aid guides",
     PermissionEnum.READ_FIRSTAID: "View first-aid guides",
     PermissionEnum.UPDATE_FIRSTAID: "Modify first-aid guides",
     PermissionEnum.DELETE_FIRSTAID: "Delete first-aid guides",
     
-    # AI & Upload
     PermissionEnum.UPLOAD_IMAGE: "Upload wound images",
     PermissionEnum.AI_ANALYZE: "Request AI analysis",
     
-    # History
     PermissionEnum.READ_OWN_HISTORY: "View own wound history",
     PermissionEnum.READ_ALL_HISTORY: "View all users' history",
     
-    # System
     PermissionEnum.READ_SYSTEM_LOGS: "View system logs",
     PermissionEnum.MANAGE_ROLES: "Manage roles and role assignments",
 }

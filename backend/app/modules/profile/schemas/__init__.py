@@ -1,4 +1,4 @@
-from app.modules.profile.schemas.user_profile import(
+from app.modules.auth.schemas.user_profile import(
     UserProfileBase, UserProfileResponse, UserProfileUpdate
 )
 

@@ -1,3 +1,0 @@
-"""
-Profile Tests Package
-"""

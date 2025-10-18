@@ -11,21 +11,17 @@ class VerificationToken(SQLModel, table=True):
     __tablename__ = "verification_tokens"  # type: ignore
 
     token_id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
-    user_id: str = Field(
+    email: str = Field(
         sa_column=Column(
-            ForeignKey("users.user_id", ondelete="CASCADE")
+            ForeignKey("users.email", ondelete="CASCADE")
         )
     )
-    email: str = Field(index=True)
     token: str = Field(unique=True)
     token_type: str  # 'email_verification', 'password_reset', etc.
     expires_at: datetime
     is_used: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-
-    # Relationship to user
-    user: "User" = Relationship(back_populates="verification_tokens")
     
     @property
     def is_expired(self) -> bool:
@@ -40,7 +36,6 @@ class VerificationToken(SQLModel, table=True):
     @classmethod
     def create_token(
         cls,
-        user_id: str,
         email: str,
         token_type: str,
         expires_in_hours: int = 24
@@ -48,7 +43,6 @@ class VerificationToken(SQLModel, table=True):
         """Create a new verification token."""
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
         return cls(
-            user_id=user_id,
             email=email,
             token=cls._generate_token(),
             token_type=token_type,

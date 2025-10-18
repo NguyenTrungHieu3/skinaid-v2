@@ -3,27 +3,45 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class FirstAidInstruction(BaseModel):
-    do: List[str] = Field(..., description="List of things to do")
-    dont: List[str] = Field(..., description="List of things not to do")
+    do: List[str] = Field(..., description="Những việc nên làm")
+    dont: List[str] = Field(..., description="Những việc không nên làm")
 
 class FirstAidInformation(BaseModel):
-    cause: Optional[str] = Field(None, description="Cause of the wound")
-    symptoms: Optional[str] = Field(None, description="Symptoms of the wound")
-    risks: Optional[str] = Field(None, description="Risks associated with the wound")
+    cause: Optional[str] = Field(None, description="Nguyên nhân gây vết thương")
+    symptoms: Optional[str] = Field(None, description="Triệu chứng")
+    risks: Optional[str] = Field(None, description="Rủi ro liên quan")
 
 class FirstAidGuideResponse(BaseModel):
-    firstaidguides_id: str = Field(..., description="First aid guide ID")
-    wound_type: str = Field(..., description="Type of wound")
-    severity: str = Field(..., description="Severity level")
-    information: FirstAidInformation = Field(..., description="Information about the wound")
-    instructions: FirstAidInstruction = Field(..., description="First aid instructions")
-    tip: Optional[str] = Field(None, description="Easy to remember tip")
-    created_at: Optional[datetime] = Field(None, description="Creation timestamp")
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
+    firstaidguide_id: str = Field(..., description="ID hướng dẫn sơ cứu")
+    wound_type: str = Field(..., description="Loại vết thương")
+    severity: str = Field(..., description="Mức độ nghiêm trọng")
+    severity_display: str = Field(..., description="Tên mức độ tiếng Việt")
+    title: str = Field(..., description="Tiêu đề hướng dẫn")
+    description: Optional[str] = Field(None, description="Mô tả chi tiết")
+
+    steps: Optional[Dict[str, Any]] = Field(None, description="Các bước thực hiện")
+    warnings: Optional[Dict[str, Any]] = Field(None, description="Cảnh báo")
+    dos: Optional[Dict[str, Any]] = Field(None, description="Những việc nên làm")
+    donts: Optional[Dict[str, Any]] = Field(None, description="Những việc không nên làm")
+    supplies_needed: Optional[Dict[str, Any]] = Field(None, description="Vật dụng cần thiết")
+
+    estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
+    is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
+    version: int = Field(..., description="Phiên bản")
+
+    created_by: Optional[str] = Field(None, description="Người tạo")
+    created_at: datetime = Field(..., description="Ngày tạo")
+    updated_at: datetime = Field(..., description="Ngày cập nhật cuối")
+
+    has_complete_instructions: bool = Field(..., description="Có đầy đủ hướng dẫn")
+    instructions_count: int = Field(..., description="Số bước hướng dẫn")
+    supplies_count: int = Field(..., description="Số vật dụng cần thiết")
 
 class WoundTypeResponse(BaseModel):
-    wound_type: str = Field(..., description="Type of wound")
-    severities: List[str] = Field(..., description="Available severity levels")
+    wound_type: str = Field(..., description="Loại vết thương")
+    severities: List[str] = Field(..., description="Các mức độ có sẵn")
 
 class FirstAidSearchResponse(BaseModel):
-    results: List[FirstAidGuideResponse] = Field(..., description="List of first aid guides")
+    results: List[FirstAidGuideResponse] = Field(..., description="Danh sách hướng dẫn sơ cứu")
+    total: int = Field(..., description="Tổng số kết quả")
+    limit: int = Field(..., description="Số lượng tối đa")

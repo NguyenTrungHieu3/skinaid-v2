@@ -66,8 +66,8 @@ async def analyze_wound(
         
         for det in results_raw:
             try:
-                severity_label = det.get("severity", "")
-                parts = severity_label.split("_", 1)
+                severity_label = det.get("severity", "") # burn_moderate
+                parts = severity_label.split("_", 1) # parts = [burn, moderate]
                 wound_type = parts[0] if len(parts) > 0 else det.get("class_name", "wound")
                 severity = parts[1] if len(parts) > 1 else "unknown"
 

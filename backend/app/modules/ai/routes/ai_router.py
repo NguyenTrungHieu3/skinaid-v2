@@ -1,11 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status
-from typing import Union
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Query
+from typing import Union, List, Dict, Any
 from app.modules.ai.controllers.ai_controller import AIController
-from app.modules.ai.schemas.ai_schemas import AIAnalysisResult
-from app.modules.ai.models.ai_analysis import AIModelInfo
+from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.v1.deps import get_current_active_user, get_db
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,18 +12,42 @@ router = APIRouter(prefix="/ai", tags=["AI Processing"])
 
 @router.get("/health")
 async def check_ai_health(db: AsyncSession = Depends(get_db)):
-    """Kiểm tra trạng thái dịch vụ AI"""
+    """Kiểm tra trạng thái AI models"""
     controller = AIController(db)
     return await controller.check_health()
 
-@router.post("/analyze", response_model=Union[SuccessResponse[AIAnalysisResult], ErrorResponse])
-async def analyze_image(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
-    """Phân tích hình ảnh vết thương bằng AI"""
+@router.post("/analyze", response_model=Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse])
+async def analyze_image(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Phân tích hình ảnh vết thương bằng AI
+    """
     controller = AIController(db)
-    return await controller.analyze_image(file)
+    return await controller.analyze_image(file, str(current_user.user_id))
 
-@router.get("/model-info", response_model=Union[SuccessResponse[AIModelInfo], ErrorResponse])
-async def get_model_info(db: AsyncSession = Depends(get_db)):
-    """Lấy thông tin mô hình AI"""
+@router.get("/history", response_model=Union[SuccessResponse[Dict[str, Any]], ErrorResponse])
+async def get_analysis_history(
+    limit: int = Query(20, description="Số lượng records tối đa", le=100),
+    offset: int = Query(0, description="Số records bỏ qua", ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Lấy lịch sử phân tích của user với thống kê chi tiết
+    """
     controller = AIController(db)
-    return await controller.get_model_info()
+    return await controller.get_analysis_history(str(current_user.user_id))
+
+@router.get("/statistics", response_model=Union[SuccessResponse[Dict[str, Any]], ErrorResponse])
+async def get_ai_statistics(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user)
+):
+    """
+    Lấy thống kê AI analysis của user
+    """
+    controller = AIController(db)
+    return await controller.get_analysis_history(str(current_user.user_id))

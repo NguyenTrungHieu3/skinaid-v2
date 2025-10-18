@@ -7,13 +7,9 @@ class UserProfileBase(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
-    gender: Optional[str] = None  # Changed from GenderEnum to str
+    gender: Optional[str] = None  
     address: Optional[str] = None
     avatar_url: Optional[str] = None
-
-
-class UserProfileResponse(UserProfileBase):
-    id: Optional[str] = None  # profile_id from model
 
 
 class UserProfileUpdate(UserProfileBase):
@@ -21,4 +17,6 @@ class UserProfileUpdate(UserProfileBase):
 
 
 class UserProfileResponse(UserProfileBase):
-    pass
+    user_id: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None

@@ -1,23 +1,43 @@
-# Auth Module
+from .models.user import User
+from .models.user_profile import UserProfile
+from .models.verification_token import VerificationToken
+from .models.roles import Role
+from .models.permissions import Permission
+from .models.user_roles import UserRole
+from .models.role_permissions import RolePermission
 
-from .models import User, VerificationToken, UserRole, Permission, Role, RolePermission
-from .services import AuthService, UserService
-from .controllers import AuthController
-from .schemas import (
+# Services
+from .services.auth_service import AuthService
+from .services.user_service import UserService
+
+# Controllers
+from .controllers.auth_controllers import AuthController
+
+# Schemas
+from .schemas.user_schemas import (
     UserBase, UserCreate, UserLogin, UserResponse,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
     ChangePasswordRequest, ChangePasswordResponse,
     EmailVerificationRequest, EmailVerificationResponse
 )
-from .routes import router
+from .schemas.user_profile import UserProfileUpdate, UserProfileResponse
+
+# Routes
+from .routes.auth_routers import router as auth_router
 
 __all__ = [
-    "User", "VerificationToken", "UserRole", "Permission", "Role", "RolePermission",
+    "User", "UserProfile", "VerificationToken",
+    "Role", "Permission", "UserRole", "RolePermission",
+
     "AuthService", "UserService",
+
     "AuthController",
+
     "UserBase", "UserCreate", "UserLogin", "UserResponse",
+    "UserProfileUpdate", "UserProfileResponse",
     "PasswordResetRequest", "PasswordResetConfirm", "PasswordResetResponse",
     "ChangePasswordRequest", "ChangePasswordResponse",
     "EmailVerificationRequest", "EmailVerificationResponse",
-    "router"
+
+    "auth_router"
 ]

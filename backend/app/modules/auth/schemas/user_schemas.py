@@ -30,7 +30,6 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    # Profile information
     full_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None

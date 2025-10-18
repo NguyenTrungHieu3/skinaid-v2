@@ -1,14 +1,14 @@
-from .models import FirstAidGuide
-from .services import FirstAidService
-from .controllers import FirstAidController
-from .schemas import (
+from .models.firstaid_guide import FirstAidGuide
+from .services.first_aid_service import FirstAidService
+from .controllers.first_aid_controller import FirstAidController
+from .schemas.first_aid_schemas import (
     FirstAidGuideResponse,
     FirstAidInformation,
     FirstAidInstruction,
     WoundTypeResponse,
     FirstAidSearchResponse
 )
-from .routes import router
+from .routes.first_aid_router import router as first_aid_router
 
 __all__ = [
     "FirstAidGuide",
@@ -19,5 +19,5 @@ __all__ = [
     "FirstAidInstruction",
     "WoundTypeResponse",
     "FirstAidSearchResponse",
-    "router"
+    "first_aid_router"
 ]

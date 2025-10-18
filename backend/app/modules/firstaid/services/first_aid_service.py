@@ -9,6 +9,7 @@ from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 logger = logging.getLogger(__name__)
 
 class FirstAidService:
+    
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -20,8 +21,9 @@ class FirstAidService:
         try:
             sql = text("""
                 SELECT *
-                FROM firstaidguides
-                WHERE wound_type = :wound_type AND severity = :severity
+                FROM firstaid_guides
+                WHERE wound_type = :wound_type AND severity = :severity AND is_active = true
+                ORDER BY version DESC
                 LIMIT 1
             """)
 
@@ -49,7 +51,7 @@ class FirstAidService:
                 extra={
                     "wound_type": wound_type,
                     "severity": severity,
-                    "guide_id": guide.get("firstaidguides_id")
+                    "guide_id": guide.get("firstaidguide_id")
                 }
             )
 
@@ -68,19 +70,20 @@ class FirstAidService:
 
     def _format_guide_response(self, guide: Dict[str, Any]) -> Dict[str, Any]:
         return {
-            "firstaidguides_id": guide.get("firstaidguides_id"),
+            "firstaidguide_id": guide.get("firstaidguide_id"),
             "wound_type": guide.get("wound_type"),
             "severity": guide.get("severity"),
-            "information": {
-                "cause": guide.get("cause"),
-                "symptoms": guide.get("symptoms"),
-                "risks": guide.get("risks")
-            },
-            "instructions": {
-                "do": self._parse_instructions(guide.get("first_aid_do", "")),
-                "dont": self._parse_instructions(guide.get("first_aid_dont", ""))
-            },
-            "tip": guide.get("tip_easy_remember"),
+            "title": guide.get("title"),
+            "description": guide.get("description"),
+            "steps": guide.get("steps"),
+            "warnings": guide.get("warnings"),
+            "dos": guide.get("dos"),
+            "donts": guide.get("donts"),
+            "supplies_needed": guide.get("supplies_needed"),
+            "estimated_healing_time": guide.get("estimated_healing_time"),
+            "is_active": guide.get("is_active"),
+            "version": guide.get("version"),
+            "created_by": guide.get("created_by"),
             "created_at": guide.get("created_at"),
             "updated_at": guide.get("updated_at")
         }
@@ -103,7 +106,8 @@ class FirstAidService:
         try:
             sql = text("""
                 SELECT DISTINCT wound_type, severity
-                FROM firstaidguides
+                FROM firstaid_guides
+                WHERE is_active = true
                 ORDER BY wound_type, severity
             """)
 
@@ -150,8 +154,8 @@ class FirstAidService:
             where_clause = " WHERE " + " AND ".join(where_conditions) if where_conditions else ""
 
             sql = text(f"""
-                SELECT * FROM firstaidguides
-                {where_clause}
+                SELECT * FROM firstaid_guides
+                WHERE is_active = true {where_clause.replace('WHERE', 'AND') if where_clause else ''}
                 ORDER BY wound_type, severity
                 LIMIT :limit
             """)
@@ -171,7 +175,7 @@ class FirstAidService:
             logger.error(f"Failed to search first aid guides: {e}")
             return []
 
-    # === ORM-based methods (improved versions) ===
+    # ORM-based methods
 
     async def get_first_aid_guide_orm(
         self,
@@ -193,7 +197,7 @@ class FirstAidService:
                     extra={
                         "wound_type": wound_type,
                         "severity": severity,
-                        "guide_id": guide.firstaidguides_id
+                        "guide_id": guide.firstaidguide_id
                     }
                 )
             else:
@@ -222,24 +226,30 @@ class FirstAidService:
         self,
         wound_type: str,
         severity: str,
-        cause: Optional[str] = None,
-        symptoms: Optional[str] = None,
-        risks: Optional[str] = None,
-        first_aid_do: Optional[str] = None,
-        first_aid_dont: Optional[str] = None,
-        tip_easy_remember: Optional[str] = None
+        title: str,
+        description: Optional[str] = None,
+        steps: Optional[Dict[str, Any]] = None,
+        warnings: Optional[Dict[str, Any]] = None,
+        dos: Optional[Dict[str, Any]] = None,
+        donts: Optional[Dict[str, Any]] = None,
+        supplies_needed: Optional[Dict[str, Any]] = None,
+        estimated_healing_time: Optional[str] = None,
+        created_by: Optional[str] = None
     ) -> Optional[FirstAidGuide]:
         """Create a new first aid guide using ORM."""
         try:
             guide = FirstAidGuide.create_guide(
                 wound_type=wound_type,
                 severity=severity,
-                cause=cause,
-                symptoms=symptoms,
-                risks=risks,
-                first_aid_do=first_aid_do,
-                first_aid_dont=first_aid_dont,
-                tip_easy_remember=tip_easy_remember
+                title=title,
+                description=description,
+                steps=steps,
+                warnings=warnings,
+                dos=dos,
+                donts=donts,
+                supplies_needed=supplies_needed,
+                estimated_healing_time=estimated_healing_time,
+                created_by=created_by
             )
 
             self.db.add(guide)
@@ -251,7 +261,7 @@ class FirstAidService:
                 extra={
                     "wound_type": wound_type,
                     "severity": severity,
-                    "guide_id": guide.firstaidguides_id
+                    "guide_id": guide.firstaidguide_id
                 }
             )
 
@@ -287,3 +297,101 @@ class FirstAidService:
         except Exception as e:
             logger.error(f"Failed to get available wound types using ORM: {e}")
             return []
+
+    async def get_guide_statistics(self) -> Dict[str, Any]:
+        """Lấy thống kê về first aid knowledge base."""
+        try:
+            total_query = "SELECT COUNT(*) as total FROM firstaid_guides WHERE is_active = true"
+            total_result = await self.db.execute(total_query)
+            total_guides = total_result.scalar()
+
+            type_query = """
+                SELECT wound_type, COUNT(*) as count
+                FROM firstaid_guides
+                WHERE is_active = true
+                GROUP BY wound_type
+                ORDER BY count DESC
+            """
+            type_result = await self.db.execute(type_query)
+            type_stats = type_result.fetchall()
+
+            severity_query = """
+                SELECT severity, COUNT(*) as count
+                FROM firstaid_guides
+                WHERE is_active = true
+                GROUP BY severity
+                ORDER BY count DESC
+            """
+            severity_result = await self.db.execute(severity_query)
+            severity_stats = severity_result.fetchall()
+
+            return {
+                "total_guides": total_guides,
+                "wound_type_breakdown": {row.wound_type: row.count for row in type_stats},
+                "severity_breakdown": {row.severity: row.count for row in severity_stats},
+                "coverage_percentage": min(100, (total_guides / 15) * 100) 
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get guide statistics: {e}")
+            return {
+                "total_guides": 0,
+                "wound_type_breakdown": {},
+                "severity_breakdown": {},
+                "coverage_percentage": 0
+            }
+
+    async def validate_guide_completeness(self, guide_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Kiểm tra tính đầy đủ của first aid guide."""
+        issues = []
+
+        required_fields = ["wound_type", "severity", "title"]
+        for field in required_fields:
+            if not guide_data.get(field):
+                issues.append(f"Missing required field: {field}")
+
+        if not guide_data.get("steps"):
+            issues.append("Missing steps information")
+
+        if not guide_data.get("dos"):
+            issues.append("Missing 'dos' (things to do)")
+
+        if not guide_data.get("donts"):
+            issues.append("Missing 'donts' (things not to do)")
+
+        if guide_data.get("severity") == "severe" and not guide_data.get("warnings"):
+            issues.append("Severe wounds should have warnings")
+
+        return {
+            "is_complete": len(issues) == 0,
+            "issues": issues,
+            "completeness_score": max(0, 100 - len(issues) * 20)
+        }
+
+    async def get_recommended_guides_for_wound_types(self, wound_types: List[str]) -> Dict[str, Any]:
+        """Lấy các guides được khuyến nghị cho các loại vết thương."""
+        try:
+            essential_wound_types = ["scratch", "bruise", "burn", "cut", "wound"]
+
+            recommendations = {}
+            for wound_type in essential_wound_types:
+                if wound_type in wound_types:
+                    # Đã có hướng dẫn
+                    recommendations[wound_type] = "available"
+                else:
+                    # Thiếu hướng dẫn
+                    recommendations[wound_type] = "missing"
+
+            return {
+                "essential_coverage": recommendations,
+                "coverage_percentage": (len([r for r in recommendations.values() if r == "available"]) / len(recommendations)) * 100,
+                "missing_guides": [wt for wt, status in recommendations.items() if status == "missing"]
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get recommendations: {e}")
+            return {
+                "essential_coverage": {},
+                "coverage_percentage": 0,
+                "missing_guides": []
+            }

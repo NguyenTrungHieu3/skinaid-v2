@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict 
 
-
 class Settings(BaseSettings):  
 
     APP_NAME: str = "Wound Detection API"
@@ -16,24 +15,23 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Email configuration
     SMTP_SERVER: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = "your-app-email@gmail.com"
     SMTP_PASSWORD: str = "your-app-password"
 
-    # Upload configuration
     UPLOAD_MAX_FILE_SIZE: int = 5 * 1024 * 1024
     UPLOAD_ALLOWED_FORMATS: str = ".jpg,.jpeg,.png"
     UPLOAD_MIN_WIDTH: int = 224
     UPLOAD_MIN_HEIGHT: int = 224
     UPLOAD_DIR: str = "uploads"
 
-    # AI Service configuration
     AI_SERVICE_URL: str = "http://localhost:8001"
     AI_SERVICE_TIMEOUT: int = 30
     AI_MAX_RETRIES: int = 1
     AI_API_KEY: str = ""
+
+    BASE_URL: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(
         env_file=".env", 

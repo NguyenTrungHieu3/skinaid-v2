@@ -7,8 +7,8 @@ from app.modules.firstaid.routes.first_aid_router import router as first_aid_rou
 
 router = APIRouter()
 
-router.include_router(auth_router)
-router.include_router(profile_router)
-router.include_router(upload_router)
-router.include_router(ai_router)
-router.include_router(first_aid_router)
+router.include_router(auth_router, tags=["Authentication"])
+router.include_router(profile_router, tags=["User Profile Management"])
+router.include_router(upload_router, tags=["Upload Logs"])
+router.include_router(ai_router, tags=["AI Processing"])
+router.include_router(first_aid_router, tags=["First Aid Knowledge"])

@@ -35,11 +35,6 @@ class RolePermission(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False
     )
-
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
-        nullable=False
-    )
     
     role: "Role" = Relationship(back_populates="role_permissions")
     

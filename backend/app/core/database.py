@@ -71,17 +71,18 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close() 
 
-async def init_db(): 
+async def init_db():
     from app.modules.auth.models.user import User
-    from app.modules.profile.models.user_profile import UserProfile
+    from app.modules.auth.models.user_profile import UserProfile
     from app.modules.auth.models.verification_token import VerificationToken
-    from app.modules.upload.models.wound_images import ImageInformation
-    from app.modules.upload.models.upload_validations import UploadValidation
+    from app.modules.upload.models.upload_logs import UploadLog
     from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
     from app.modules.auth.models.permissions import Permission
     from app.modules.auth.models.role_permissions import RolePermission
     from app.modules.auth.models.roles import Role
     from app.modules.auth.models.user_roles import UserRole
+    from app.modules.ai.models.wound_analysis import WoundAnalysis
+    from app.modules.ai.models.wound_detection import WoundDetection
     engine = get_engine()
     if not engine:
         raise RuntimeError("Database not configured")

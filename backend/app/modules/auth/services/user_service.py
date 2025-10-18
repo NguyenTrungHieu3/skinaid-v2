@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.modules.auth.models.user import User
-from app.modules.profile.models.user_profile import UserProfile
+from app.modules.auth.models.user_profile import UserProfile
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_NOT_FOUND, USER_INVALID_DATA
 
@@ -14,20 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
-    """Service chuyên biệt để quản lý User model"""
-
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """
         Lấy thông tin user theo ID kèm profile
-
-        Args:
-            user_id: ID của user
-
-        Returns:
-            User object kèm profile hoặc None nếu không tìm thấy
         """
         try:
             sql = text("""
@@ -90,12 +82,6 @@ class UserService:
     async def get_user_by_email(self, email: str) -> Optional[User]:
         """
         Lấy thông tin user theo email
-
-        Args:
-            email: Email của user
-
-        Returns:
-            User object hoặc None nếu không tìm thấy
         """
         try:
             sql = text("""
@@ -124,16 +110,6 @@ class UserService:
     ) -> User:
         """
         Tạo mới một user
-
-        Args:
-            email: Email của user
-            hashed_password: Mật khẩu đã hash
-            display_name: Tên hiển thị (optional)
-            is_active: Trạng thái active (default: True)
-            is_verified: Trạng thái verified (default: False)
-
-        Returns:
-            User object đã được tạo
         """
         try:
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -178,14 +154,6 @@ class UserService:
     ) -> Optional[User]:
         """
         Cập nhật trạng thái user
-
-        Args:
-            user_id: ID của user
-            is_active: Trạng thái active (optional)
-            is_verified: Trạng thái verified (optional)
-
-        Returns:
-            User object đã được cập nhật hoặc None nếu không tìm thấy
         """
         try:
             update_fields = []
@@ -229,13 +197,6 @@ class UserService:
     async def update_user_password(self, user_id: str, hashed_password: str) -> bool:
         """
         Cập nhật mật khẩu user
-
-        Args:
-            user_id: ID của user
-            hashed_password: Mật khẩu mới đã hash
-
-        Returns:
-            True nếu cập nhật thành công, False nếu không tìm thấy user
         """
         try:
             sql = text("""
@@ -267,15 +228,6 @@ class UserService:
     ) -> List[User]:
         """
         Lấy danh sách users theo trạng thái
-
-        Args:
-            is_active: Lọc theo trạng thái active (optional)
-            is_verified: Lọc theo trạng thái verified (optional)
-            limit: Số lượng users tối đa
-            offset: Số users bỏ qua
-
-        Returns:
-            List các User objects
         """
         try:
             where_conditions = []
@@ -310,12 +262,6 @@ class UserService:
     async def delete_user(self, user_id: str) -> bool:
         """
         Xóa user (soft delete bằng cách set is_active = False)
-
-        Args:
-            user_id: ID của user cần xóa
-
-        Returns:
-            True nếu xóa thành công, False nếu không tìm thấy
         """
         try:
             sql = text("""
@@ -340,30 +286,23 @@ class UserService:
     async def get_user_statistics(self) -> Dict[str, Any]:
         """
         Lấy thống kê tổng quan về users
-
-        Returns:
-            Dict chứa các thống kê
         """
         try:
-            # Tổng số users
             total_sql = text("SELECT COUNT(*) as total FROM users")
             total_result = await self.db.execute(total_sql)
             total_row = total_result.mappings().first()
             total_users = total_row["total"] if total_row else 0
 
-            # Số users active
             active_sql = text("SELECT COUNT(*) as active FROM users WHERE is_active = true")
             active_result = await self.db.execute(active_sql)
             active_row = active_result.mappings().first()
             active_users = active_row["active"] if active_row else 0
 
-            # Số users verified
             verified_sql = text("SELECT COUNT(*) as verified FROM users WHERE is_verified = true")
             verified_result = await self.db.execute(verified_sql)
             verified_row = verified_result.mappings().first()
             verified_users = verified_row["verified"] if verified_row else 0
 
-            # Số users inactive
             inactive_users = total_users - active_users
 
             return {
