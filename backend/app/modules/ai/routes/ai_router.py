@@ -1,13 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, status, Query
-from typing import Union, List, Dict, Any
+from fastapi import APIRouter, UploadFile, File, Depends, Query
+from typing import Union, Dict, Any
 from app.modules.ai.controllers.ai_controller import AIController
 from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps import get_current_active_user, get_db
-import logging
 
-logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["AI Processing"])
 
 @router.get("/health")
@@ -37,17 +35,6 @@ async def get_analysis_history(
 ):
     """
     Lấy lịch sử phân tích của user với thống kê chi tiết
-    """
-    controller = AIController(db)
-    return await controller.get_analysis_history(str(current_user.user_id))
-
-@router.get("/statistics", response_model=Union[SuccessResponse[Dict[str, Any]], ErrorResponse])
-async def get_ai_statistics(
-    db: AsyncSession = Depends(get_db),
-    current_user = Depends(get_current_active_user)
-):
-    """
-    Lấy thống kê AI analysis của user
     """
     controller = AIController(db)
     return await controller.get_analysis_history(str(current_user.user_id))

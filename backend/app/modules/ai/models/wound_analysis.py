@@ -47,12 +47,17 @@ class WoundAnalysis(SQLModel, table=True):
     @property
     def is_successful_analysis(self) -> bool:
         """Check if analysis was successful."""
+        # Kiểm tra cơ bản
         basic_checks = (
             self.total_detections >= 0 and
             self.primary_wound_type in ["wound", "not_wound"] and
             self.primary_severity in ["mild", "moderate", "severe"]
         )
-        
+
+        # Kiểm tra confidence threshold nếu có detections
+        if self.total_detections > 0:
+            return basic_checks and self.meets_accuracy_threshold
+
         return basic_checks
 
     @property
@@ -72,11 +77,21 @@ class WoundAnalysis(SQLModel, table=True):
 
     @property
     def average_confidence(self) -> float:
+        """Calculate average confidence from wound detections."""
+        # Avoid lazy loading issues by checking if relationship is loaded
+        if not hasattr(self, '_sa_instance_state') or not self.wound_detections:
+            return 0.0
 
-        return 0.0  
+        try:
+            total_confidence = sum(detection.confidence_score for detection in self.wound_detections)
+            return total_confidence / len(self.wound_detections)
+        except Exception:
+            # Fallback if relationship not loaded
+            return 0.0
 
     @property
     def meets_accuracy_threshold(self) -> bool:
+        """Check if analysis meets minimum accuracy threshold."""
         return self.average_confidence >= 0.65
 
     @classmethod

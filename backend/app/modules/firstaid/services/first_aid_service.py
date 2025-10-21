@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, select
-from sqlmodel import select
+from sqlalchemy import text
 import logging
 
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
@@ -16,13 +15,87 @@ class FirstAidService:
     async def get_first_aid_guide(
         self,
         wound_type: str,
-        severity: str
+        severity: str,
+        sub_type: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
+        """
+        Lấy first aid guide với support cho sub_type.
+        """
+        try:
+            logger.info(
+                f"🔍 Getting first aid guide: wound_type={wound_type}, "
+                f"severity={severity}, sub_type={sub_type}"
+            )
+
+            # Strategy 1: Tìm guide cụ thể với sub_type
+            if sub_type:
+                specific_guide = await self._find_guide_specific(wound_type, severity, sub_type)
+                if specific_guide:
+                    logger.info(f"Found specific guide with sub_type={sub_type}")
+                    return self._format_guide_response(specific_guide)
+
+                logger.warning(f"No guide found with sub_type={sub_type}, trying general guide")
+
+            # Strategy 2: Fallback - tìm guide chung (sub_type = NULL hoặc bất kỳ)
+            general_guide = await self._find_guide_general(wound_type, severity)
+
+            if general_guide:
+                logger.info(f"Found general guide")
+                return self._format_guide_response(general_guide)
+
+            logger.warning(f"No guide found for {wound_type}/{severity}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error getting first aid guide: {e}", exc_info=True)
+            return None
+
+    async def _find_guide_specific(
+        self,
+        wound_type: str,
+        severity: str,
+        sub_type: str
+    ) -> Optional[Dict[str, Any]]:
+        """Tìm guide cụ thể với sub_type."""
         try:
             sql = text("""
                 SELECT *
                 FROM firstaid_guides
-                WHERE wound_type = :wound_type AND severity = :severity AND is_active = true
+                WHERE wound_type = :wound_type
+                  AND severity = :severity
+                  AND sub_type = :sub_type
+                  AND is_active = true
+                ORDER BY version DESC
+                LIMIT 1
+            """)
+
+            result = await self.db.execute(sql, {
+                "wound_type": wound_type,
+                "severity": severity,
+                "sub_type": sub_type
+            })
+
+            row = result.mappings().first()
+            return dict(row) if row else None
+
+        except Exception as e:
+            logger.error(f"Error finding specific guide: {e}")
+            return None
+
+    async def _find_guide_general(
+        self,
+        wound_type: str,
+        severity: str
+    ) -> Optional[Dict[str, Any]]:
+        """Tìm guide chung (không có sub_type hoặc sub_type rỗng)."""
+        try:
+            sql = text("""
+                SELECT *
+                FROM firstaid_guides
+                WHERE wound_type = :wound_type
+                  AND severity = :severity
+                  AND is_active = true
+                  AND (sub_type IS NULL OR sub_type = '')
                 ORDER BY version DESC
                 LIMIT 1
             """)
@@ -33,53 +106,32 @@ class FirstAidService:
             })
 
             row = result.mappings().first()
-
-            if not row:
-                logger.warning(
-                    f"No first aid guide found for {wound_type}/{severity}",
-                    extra={
-                        "wound_type": wound_type,
-                        "severity": severity
-                    }
-                )
-                return None
-
-            guide = dict(row)
-
-            logger.info(
-                f"Found first aid guide for {wound_type}/{severity}",
-                extra={
-                    "wound_type": wound_type,
-                    "severity": severity,
-                    "guide_id": guide.get("firstaidguide_id")
-                }
-            )
-
-            return self._format_guide_response(guide)
+            return dict(row) if row else None
 
         except Exception as e:
-            logger.error(
-                f"Failed to get first aid guide: {e}",
-                extra={
-                    "wound_type": wound_type,
-                    "severity": severity,
-                    "error": str(e)
-                }
-            )
+            logger.error(f"Error finding general guide: {e}")
             return None
 
     def _format_guide_response(self, guide: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Format guide thành response dict.
+        Sử dụng helper methods từ model để trả về lists thay vì dict.
+        """
+        # Tạo FirstAidGuide instance tạm thời để sử dụng helper methods
+        guide_model = FirstAidGuide(**guide)
+
         return {
             "firstaidguide_id": guide.get("firstaidguide_id"),
             "wound_type": guide.get("wound_type"),
             "severity": guide.get("severity"),
+            "sub_type": guide.get("sub_type"),
             "title": guide.get("title"),
             "description": guide.get("description"),
-            "steps": guide.get("steps"),
-            "warnings": guide.get("warnings"),
-            "dos": guide.get("dos"),
-            "donts": guide.get("donts"),
-            "supplies_needed": guide.get("supplies_needed"),
+            "steps": guide_model.get_steps_list(),
+            "warnings": guide_model.get_warnings_list(),
+            "dos": guide_model.get_dos_list(),
+            "donts": guide_model.get_donts_list(),
+            "supplies_needed": guide_model.get_supplies_list(),
             "estimated_healing_time": guide.get("estimated_healing_time"),
             "is_active": guide.get("is_active"),
             "version": guide.get("version"),
@@ -174,54 +226,7 @@ class FirstAidService:
         except Exception as e:
             logger.error(f"Failed to search first aid guides: {e}")
             return []
-
-    # ORM-based methods
-
-    async def get_first_aid_guide_orm(
-        self,
-        wound_type: str,
-        severity: str
-    ) -> Optional[FirstAidGuide]:
-        """Get first aid guide using ORM (improved version)."""
-        try:
-            statement = select(FirstAidGuide).where(
-                FirstAidGuide.wound_type == wound_type,
-                FirstAidGuide.severity == severity
-            )
-            result = await self.db.execute(statement)
-            guide = result.scalar_one_or_none()
-
-            if guide:
-                logger.info(
-                    f"Found first aid guide using ORM for {wound_type}/{severity}",
-                    extra={
-                        "wound_type": wound_type,
-                        "severity": severity,
-                        "guide_id": guide.firstaidguide_id
-                    }
-                )
-            else:
-                logger.warning(
-                    f"No first aid guide found using ORM for {wound_type}/{severity}",
-                    extra={
-                        "wound_type": wound_type,
-                        "severity": severity
-                    }
-                )
-
-            return guide
-
-        except Exception as e:
-            logger.error(
-                f"Failed to get first aid guide using ORM: {e}",
-                extra={
-                    "wound_type": wound_type,
-                    "severity": severity,
-                    "error": str(e)
-                }
-            )
-            return None
-
+        
     async def create_first_aid_guide(
         self,
         wound_type: str,
@@ -271,32 +276,6 @@ class FirstAidService:
             logger.error(f"Failed to create first aid guide using ORM: {e}")
             await self.db.rollback()
             return None
-
-    async def get_available_wound_types_orm(self) -> List[Dict[str, Any]]:
-        """Get available wound types using ORM (improved version)."""
-        try:
-            statement = select(FirstAidGuide.wound_type, FirstAidGuide.severity).distinct()
-            result = await self.db.execute(statement)
-            rows = result.all()
-
-            wound_types = {}
-            for row in rows:
-                wound_type = row.wound_type
-                severity = row.severity
-
-                if wound_type not in wound_types:
-                    wound_types[wound_type] = {
-                        "wound_type": wound_type,
-                        "severities": []
-                    }
-
-                wound_types[wound_type]["severities"].append(severity)
-
-            return list(wound_types.values())
-
-        except Exception as e:
-            logger.error(f"Failed to get available wound types using ORM: {e}")
-            return []
 
     async def get_guide_statistics(self) -> Dict[str, Any]:
         """Lấy thống kê về first aid knowledge base."""

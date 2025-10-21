@@ -1,29 +1,20 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from datetime import datetime
-
-class FirstAidInstruction(BaseModel):
-    do: List[str] = Field(..., description="Những việc nên làm")
-    dont: List[str] = Field(..., description="Những việc không nên làm")
-
-class FirstAidInformation(BaseModel):
-    cause: Optional[str] = Field(None, description="Nguyên nhân gây vết thương")
-    symptoms: Optional[str] = Field(None, description="Triệu chứng")
-    risks: Optional[str] = Field(None, description="Rủi ro liên quan")
-
 class FirstAidGuideResponse(BaseModel):
     firstaidguide_id: str = Field(..., description="ID hướng dẫn sơ cứu")
     wound_type: str = Field(..., description="Loại vết thương")
     severity: str = Field(..., description="Mức độ nghiêm trọng")
+    sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ dành cho burn)")
     severity_display: str = Field(..., description="Tên mức độ tiếng Việt")
     title: str = Field(..., description="Tiêu đề hướng dẫn")
     description: Optional[str] = Field(None, description="Mô tả chi tiết")
 
-    steps: Optional[Dict[str, Any]] = Field(None, description="Các bước thực hiện")
-    warnings: Optional[Dict[str, Any]] = Field(None, description="Cảnh báo")
-    dos: Optional[Dict[str, Any]] = Field(None, description="Những việc nên làm")
-    donts: Optional[Dict[str, Any]] = Field(None, description="Những việc không nên làm")
-    supplies_needed: Optional[Dict[str, Any]] = Field(None, description="Vật dụng cần thiết")
+    steps: Optional[List[str]] = Field(None, description="Các bước thực hiện")
+    warnings: Optional[List[str]] = Field(None, description="Cảnh báo")
+    dos: Optional[List[str]] = Field(None, description="Những việc nên làm")
+    donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
+    supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
 
     estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
@@ -40,8 +31,3 @@ class FirstAidGuideResponse(BaseModel):
 class WoundTypeResponse(BaseModel):
     wound_type: str = Field(..., description="Loại vết thương")
     severities: List[str] = Field(..., description="Các mức độ có sẵn")
-
-class FirstAidSearchResponse(BaseModel):
-    results: List[FirstAidGuideResponse] = Field(..., description="Danh sách hướng dẫn sơ cứu")
-    total: int = Field(..., description="Tổng số kết quả")
-    limit: int = Field(..., description="Số lượng tối đa")

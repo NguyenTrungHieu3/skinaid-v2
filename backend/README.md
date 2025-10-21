@@ -6,6 +6,9 @@ A FastAPI-based backend service for the SkinAid skin condition detection applica
 
 - **User Authentication**: JWT-based authentication with email verification
 - **User Profiles**: Complete user profile management
+- **AI-Powered Wound Analysis**: Advanced wound detection and classification
+- **Burn Sub-types Support**: Specialized handling for burn blisters and skin tears
+- **First Aid Knowledge Base**: Comprehensive first aid guides with severity levels
 - **Database Integration**: PostgreSQL with SQLModel ORM
 - **Testing**: Comprehensive test suite with pytest
 - **API Documentation**: Auto-generated OpenAPI/Swagger docs
@@ -72,6 +75,25 @@ Run with coverage:
 pytest tests/ --cov=app --cov-report=html
 ```
 
+## Burn Sub-types Support
+
+The system now supports specialized handling for burn wounds with sub-types:
+
+### Supported Burn Sub-types
+- **Blister** (`blister`): Burns with blisters - requires careful handling
+- **Skin Tear** (`skintear`): Burns with skin tears - needs immediate attention
+
+### How It Works
+1. **AI Detection**: AI model detects burn severity as `moderate_blister` or `moderate_skintear`
+2. **Smart Parsing**: System automatically extracts sub-type from severity string
+3. **Guide Matching**: Searches for specialized first aid guide first, falls back to general burn guide
+4. **Response**: Returns appropriate first aid instructions based on sub-type
+
+### Example AI Classifications
+- `burn_moderate_blister` → Searches for blister-specific guide
+- `burn_moderate_skintear` → Searches for skintear-specific guide
+- `burn_severe` → Uses general severe burn guide
+
 ## API Endpoints
 
 ### Authentication
@@ -83,6 +105,15 @@ pytest tests/ --cov=app --cov-report=html
 ### User Profile
 - `GET /api/v1/profile/me` - Get current user profile
 - `PUT /api/v1/profile/me` - Update user profile
+
+### AI Analysis
+- `POST /api/v1/ai/analyze` - Analyze wound image with AI (supports burn sub-types)
+- `GET /api/v1/ai/health` - Check AI service health
+- `GET /api/v1/ai/history` - Get user's analysis history
+
+### First Aid
+- `GET /api/v1/firstaid/guides` - Get first aid guides
+- `GET /api/v1/firstaid/wound-types` - Get available wound types
 
 ## Database Schema
 

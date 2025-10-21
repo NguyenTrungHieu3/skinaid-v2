@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List, Dict, Any
 
 from app.modules.firstaid.controllers.first_aid_controller import FirstAidController
 from app.modules.firstaid.schemas.first_aid_schemas import (
     FirstAidGuideResponse,
-    WoundTypeResponse,
-    FirstAidSearchResponse
+    WoundTypeResponse
 )
 from app.api.v1.deps import get_db, get_current_active_user
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
@@ -17,22 +16,15 @@ router = APIRouter(prefix="/first-aid")
 async def get_first_aid_guide(
     wound_type: str,
     severity: str,
+    sub_type: Optional[str] = Query(None, description="Loại phụ (chỉ dành cho burn: blister, skintear)"),
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_active_user)
 ):
     """
     Lấy hướng dẫn sơ cứu cho loại và mức độ vết thương cụ thể.
-
-    Args:
-        wound_type: Loại vết thương (scratch, bruise, burn, cut, etc.)
-        severity: Mức độ (mild, moderate, severe)
-        current_user: User hiện tại (tự động inject)
-
-    Returns:
-        FirstAidGuideResponse với đầy đủ thông tin hướng dẫn
     """
     controller = FirstAidController(db)
-    return await controller.get_first_aid_guide(wound_type, severity)
+    return await controller.get_first_aid_guide(wound_type, severity, sub_type)
 
 @router.get("/wound-types", response_model=SuccessResponse[List[WoundTypeResponse]])
 async def get_available_wound_types(
@@ -40,9 +32,6 @@ async def get_available_wound_types(
 ):
     """
     Lấy danh sách các loại vết thương có hướng dẫn sơ cứu.
-
-    Returns:
-        Danh sách wound types với các mức độ có sẵn
     """
     controller = FirstAidController(db)
     return await controller.get_available_wound_types()
@@ -75,10 +64,11 @@ async def get_first_aid_statistics(
 async def validate_guide_availability(
     wound_type: str,
     severity: str,
+    sub_type: Optional[str] = Query(None, description="Loại phụ (chỉ dành cho burn: blister, skintear)"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Kiểm tra tính khả dụng của hướng dẫn sơ cứu.
     """
     controller = FirstAidController(db)
-    return await controller.validate_guide_availability(wound_type, severity)
+    return await controller.validate_guide_availability(wound_type, severity, sub_type)

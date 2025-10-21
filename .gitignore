@@ -155,7 +155,8 @@ backend/User_Guidelines.md
 .vim/
 .netrwhist
 .qoder/
-
+.kilocode/
+backend/tests/image_test
 
 # OS specific
 .DS_Store

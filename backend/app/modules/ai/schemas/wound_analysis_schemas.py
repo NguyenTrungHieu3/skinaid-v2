@@ -1,25 +1,21 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
 class WoundAnalysisBase(BaseModel):
     user_id: str
-    image_url: str  
-    file_name: str  
-    file_size: int  
-    ai_model_version: str = "YOLOv11_EfficientNetV2_1.0"  
-    total_detections: int = 0  
-    processing_time_ms: int  
-    primary_wound_type: str = "not_wound"  
-    primary_severity: str = "mild"  
-    primary_firstaidguide_id: Optional[str] = None  
-    firstaid_snapshot: Dict[str, Any]  
+    image_url: str
+    file_name: str
+    file_size: int
+    ai_model_version: str = "YOLOv11_EfficientNetV2_1.0"
+    total_detections: int = 0
+    processing_time_ms: int
+    primary_wound_type: str = "not_wound"
+    primary_severity: str = "mild"
+    primary_firstaidguide_id: Optional[str] = None
+    firstaid_snapshot: Dict[str, Any]
     analyzed_at: Optional[datetime] = None
-
-
-class WoundAnalysisCreate(WoundAnalysisBase):
-    pass
 
 
 class WoundAnalysisUpdate(BaseModel):
