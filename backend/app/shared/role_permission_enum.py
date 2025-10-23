@@ -83,3 +83,37 @@ PERMISSION_DESCRIPTIONS ={
     PermissionEnum.READ_SYSTEM_LOGS: "View system logs",
     PermissionEnum.MANAGE_ROLES: "Manage roles and role assignments",
 }
+
+GUEST_ALLOWED_FEATURES = [
+    "read_firstaid",
+    "upload_image", 
+    "ai_analyze",
+]
+
+GUEST_LIMITS = {
+    "max_uploads_per_session": 3,
+    "max_analyses_per_session": 3, 
+    "session_duration_minutes": 60, 
+    "max_file_size_mb": 5,
+}
+
+def get_permission_for_role(role: RoleEnum) -> list[PermissionEnum]: 
+    return ROLE_PERMISSIONS.get(role, [])
+
+def get_permission_description(permission: PermissionEnum) -> str:
+    return PERMISSION_DESCRIPTIONS.get(permission, "No description available")
+
+def is_guest_feature_allowed(feature: str) -> bool:
+    """kiểm tra user có permission đó không """
+    return feature in GUEST_ALLOWED_FEATURES
+
+
+# print(RoleEnum.Admin)  
+# print(RoleEnum.User)   
+
+# print(PermissionEnum.AI_ANALYZE) 
+
+# print(len(ROLE_PERMISSIONS[RoleEnum.Admin]))  
+# print(len(ROLE_PERMISSIONS[RoleEnum.User]))  
+
+# print(GUEST_LIMITS["max_analyses_per_session"])  

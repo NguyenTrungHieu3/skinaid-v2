@@ -2,9 +2,9 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
-
 class WoundAnalysisBase(BaseModel):
-    user_id: str
+    user_id: Optional[str] = None
+    
     image_url: str
     file_name: str
     file_size: int
@@ -48,8 +48,9 @@ class WoundAnalysisResponse(WoundAnalysisBase):
     processing_time_seconds: Optional[float] = None
     average_confidence: float
     meets_accuracy_threshold: bool
+    
+    is_guest_analysis: bool = False
 
-    # Thông tin về tất cả vết thương được phát hiện
     significant_wounds: List[WoundDetectionSummary] = []
     
     class Config:

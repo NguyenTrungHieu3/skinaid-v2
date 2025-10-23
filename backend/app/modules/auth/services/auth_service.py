@@ -188,7 +188,7 @@ class AuthService:
                 "created_at": current_time,
                 "updated_at": current_time
             })
-
+            
             try:
                 await self.db.commit()
                 logger.info(f"Database transaction committed for user: {user_data.email}")

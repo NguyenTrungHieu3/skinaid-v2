@@ -7,7 +7,7 @@ from app.modules.firstaid.schemas.first_aid_schemas import (
     FirstAidGuideResponse,
     WoundTypeResponse
 )
-from app.api.v1.deps import get_db, get_current_active_user
+from app.api.v1.deps import get_db, require_auth, allow_guest
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
 router = APIRouter(prefix="/first-aid")
@@ -18,7 +18,7 @@ async def get_first_aid_guide(
     severity: str,
     sub_type: Optional[str] = Query(None, description="Loại phụ (chỉ dành cho burn: blister, skintear)"),
     db: AsyncSession = Depends(get_db),
-    current_user = Depends(get_current_active_user)
+    current_user = Depends(require_auth)
 ):
     """
     Lấy hướng dẫn sơ cứu cho loại và mức độ vết thương cụ thể.

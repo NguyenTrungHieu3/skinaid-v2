@@ -1,9 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import UploadFile
-from typing import Union, Dict, Any
+from fastapi import UploadFile, HTTPException, status
+from typing import Union, Dict, Any, Optional
 import logging
 from datetime import datetime
-from sqlalchemy import text
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
@@ -13,50 +12,50 @@ from app.modules.ai.services.detection_processor import DetectionProcessor
 from app.modules.ai.services.file_upload_service import FileUploadService
 from app.modules.ai.services.response_mapper import ResponseMapper
 from app.utils.exceptions.base_exceptions import AppBaseException
+from app.api.v1.deps import check_user_has_role
 
 logger = logging.getLogger(__name__)
 
 
 class AIController:
-
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.ai_service = WoundAIService()
         self.analysis_service = WoundAnalysisService(db)
-        self.file_service = FileUploadService
-        self.response_mapper = ResponseMapper
-        self.processor = DetectionProcessor
 
     async def analyze_image(
         self,
         file: UploadFile,
-        user_id: str
+        user_id: Optional[str]  
     ) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:
-        """
-        Endpoint: Phân tích hình ảnh vết thương.
-        """
         file_path = None
 
         try:
             # Step 1: File handling
-            file_path, relative_path, image_url = self.file_service.generate_image_path(
-                user_id, file.filename
+            display_user_id = user_id or "anonymous"
+            
+            file_path, relative_path, image_url = FileUploadService.generate_image_path(
+                display_user_id, file.filename
             )
             
-            content = await self.file_service.save_file(file, file_path)
+            content = await FileUploadService.save_file(file, file_path)
 
             # Validate file
-            validation_error = self.file_service.validate_file(file, content)
+            validation_error = FileUploadService.validate_file(file, content)
             if validation_error:
-                self.file_service.cleanup_file(file_path)
+                FileUploadService.cleanup_file(file_path)
                 return validation_error
 
             # Step 2: AI analysis
-            logger.info(f"[ANALYZE] Starting: {file.filename} (user: {user_id})")
-            ai_result = await self.ai_service.analyze_wound_image(file_path)
+            logger.info(
+                f"[ANALYZE] Starting: {file.filename} "
+                f"(user: {user_id or 'guest'})"
+            )
+            
+            async with WoundAIService() as ai_service:
+                ai_result = await ai_service.analyze_wound_image(file_path)
 
             if not ai_result.get("success", False):
-                self.file_service.cleanup_file(file_path)
+                FileUploadService.cleanup_file(file_path)
                 return ErrorResponse(
                     message=f"AI analysis failed: {ai_result.get('error', 'Unknown')}",
                     error_code=ai_result.get("error_code", "AI_ERROR"),
@@ -64,38 +63,43 @@ class AIController:
                 )
 
             # Extract AI result info
-            ai_model_version = ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0")
+            ai_model_version = ai_result.get(
+                "ai_model_version", 
+                "YOLOv11_EfficientNetV2_1.0"
+            )
             processing_time_ms = int(ai_result.get("processing_time", 0) * 1000)
             total_detections = ai_result.get("num_detections", 0)
 
             # Step 3: Process detections
-            primary, secondary = self.processor.determine_primary_and_secondary_detections(
+            primary, secondary = DetectionProcessor.determine_primary_and_secondary_detections(
                 ai_result.get("detections", [])
             )
 
             # Step 4: Business logic - Create analysis
             if not primary:
-                # No valid detections
                 logger.info("[ANALYZE] No valid detections")
                 analysis = await self.analysis_service.create_no_wound_analysis(
-                    user_id, image_url, file.filename, len(content),
-                    ai_model_version, processing_time_ms, total_detections
+                    user_id=user_id,  
+                    image_url=image_url,
+                    file_name=file.filename,
+                    file_size=len(content),
+                    ai_model_version=ai_model_version,
+                    processing_time_ms=processing_time_ms,
+                    total_detections=total_detections
                 )
                 
-                response = self.response_mapper.to_wound_analysis_response(analysis, [])
+                response = ResponseMapper.to_wound_analysis_response(analysis, [])
                 
                 return SuccessResponse(
                     message="Phân tích hoàn thành - không phát hiện vết thương",
                     data=response
                 )
 
-            # Valid detections found
             logger.info(
                 f"[ANALYZE] Detections: primary={primary.get('wound_type')}, "
                 f"secondary={len(secondary)}"
             )
 
-            # Get first aid guide
             first_aid_guide = await self.analysis_service.get_first_aid_guide_for_detection(
                 primary
             )
@@ -110,9 +114,15 @@ class AIController:
 
             # Create analysis record
             analysis = await self.analysis_service.create_wound_analysis(
-                user_id, image_url, file.filename, len(content),
-                ai_model_version, total_detections, processing_time_ms,
-                primary, first_aid_guide
+                user_id=user_id,  
+                image_url=image_url,
+                file_name=file.filename,
+                file_size=len(content),
+                ai_model_version=ai_model_version,
+                total_detections=total_detections,
+                processing_time_ms=processing_time_ms,
+                primary_detection=primary,
+                first_aid_guide=first_aid_guide
             )
 
             # Save detections
@@ -123,7 +133,7 @@ class AIController:
             )
 
             # Step 5: Map response
-            response = self.response_mapper.to_wound_analysis_response(
+            response = ResponseMapper.to_wound_analysis_response(
                 analysis, all_detections
             )
 
@@ -139,7 +149,7 @@ class AIController:
 
         except AppBaseException as e:
             logger.error(f"[ANALYZE] AppBaseException: {e}")
-            self.file_service.cleanup_file(file_path)
+            FileUploadService.cleanup_file(file_path)
             return ErrorResponse(
                 message=e.message,
                 error_code=e.error_code,
@@ -148,7 +158,7 @@ class AIController:
 
         except Exception as e:
             logger.error(f"[ANALYZE] Unexpected: {e}", exc_info=True)
-            self.file_service.cleanup_file(file_path)
+            FileUploadService.cleanup_file(file_path)
             return ErrorResponse(
                 message="Có lỗi xảy ra trong quá trình phân tích",
                 error_code="INTERNAL_ERROR",
@@ -160,10 +170,12 @@ class AIController:
         try:
             logger.debug("[HEALTH] Checking...")
             
-            model_health = await self.ai_service.check_model_health()
+            async with WoundAIService() as ai_service:
+                model_health = await ai_service.check_model_health()
 
             db_healthy = True
             try:
+                from sqlmodel import text
                 await self.db.execute(text("SELECT 1"))
             except Exception:
                 db_healthy = False
@@ -174,7 +186,7 @@ class AIController:
                 "status": "healthy" if overall_healthy else "unhealthy",
                 "ai_models": model_health,
                 "database": "healthy" if db_healthy else "unhealthy",
-                "accuracy_threshold": self.processor.MIN_CONFIDENCE_THRESHOLD,
+                "accuracy_threshold": DetectionProcessor.MIN_CONFIDENCE_THRESHOLD,
                 "supported_wound_types": model_health["supported_wound_types"],
                 "timestamp": datetime.now().isoformat()
             }
@@ -196,15 +208,23 @@ class AIController:
 
     async def get_analysis_history(
         self,
-        user_id: str
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0
     ) -> Union[SuccessResponse[dict], ErrorResponse]:
-        """Endpoint: Get user analysis history."""
+        """
+        Endpoint: Get user analysis history.
+        """
         try:
-            logger.debug(f"[HISTORY] User: {user_id}")
+            logger.debug(f"[HISTORY] User: {user_id}, limit: {limit}, offset: {offset}")
             
-            analyses = await self.analysis_service.get_user_analysis_history(user_id)
+            analyses = await self.analysis_service.get_user_analysis_history(
+                user_id=user_id,
+                limit=limit,
+                offset=offset
+            )
 
-            response_data = self.response_mapper.to_analysis_history_response(analyses)
+            response_data = ResponseMapper.to_analysis_history_response(analyses)
 
             logger.info(
                 f"[HISTORY] Retrieved {len(analyses)} analyses "
@@ -221,5 +241,104 @@ class AIController:
             return ErrorResponse(
                 message="Không thể lấy lịch sử",
                 error_code="HISTORY_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def get_analysis_detail(
+        self,
+        analysis_id: str,
+        user_id: str
+    ) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:
+        """
+        Endpoint: Get analysis detail.
+        """
+        try:
+            logger.debug(f"[DETAIL] Analysis: {analysis_id}, User: {user_id}")
+            
+            analysis = await self.analysis_service.get_analysis_by_id(analysis_id)
+            
+            if not analysis:
+                return ErrorResponse(
+                    message="Analysis not found",
+                    error_code="ANALYSIS_NOT_FOUND",
+                    error_details={"analysis_id": analysis_id}
+                )
+            
+            # Check ownership (admin can view all)
+            is_admin = await check_user_has_role(self.db, user_id, "admin")
+            
+            if analysis.user_id != user_id and not is_admin:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only access your own analyses"
+                )
+            
+            # Get detections
+            detections = await self.analysis_service.get_detections_for_analysis(
+                analysis_id
+            )
+            
+            response = ResponseMapper.to_wound_analysis_response(
+                analysis,
+                detections
+            )
+            
+            return SuccessResponse(
+                message="Lấy chi tiết analysis thành công",
+                data=response
+            )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"[DETAIL] Error: {e}")
+            return ErrorResponse(
+                message="Không thể lấy chi tiết analysis",
+                error_code="GET_DETAIL_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def delete_analysis(
+        self,
+        analysis_id: str,
+        user_id: str
+    ) -> Union[SuccessResponse[Dict[str, str]], ErrorResponse]:
+        """
+        Endpoint: Soft delete analysis.
+        """
+        try:
+            logger.debug(f"[DELETE] Analysis: {analysis_id}, User: {user_id}")
+            
+            analysis = await self.analysis_service.get_analysis_by_id(analysis_id)
+            
+            if not analysis:
+                return ErrorResponse(
+                    message="Analysis not found",
+                    error_code="ANALYSIS_NOT_FOUND",
+                    error_details={"analysis_id": analysis_id}
+                )
+            
+            is_admin = await check_user_has_role(self.db, user_id, "admin")
+            
+            if analysis.user_id != user_id and not is_admin:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only delete your own analyses"
+                )
+            
+            await self.analysis_service.soft_delete_analysis(analysis_id)
+            
+            return SuccessResponse(
+                message="Xóa analysis thành công",
+                data={"analysis_id": analysis_id, "deleted": True}
+            )
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"[DELETE] Error: {e}")
+            return ErrorResponse(
+                message="Không thể xóa analysis",
+                error_code="DELETE_ERROR",
                 error_details={"error": str(e)}
             )

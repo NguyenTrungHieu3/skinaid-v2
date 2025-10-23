@@ -5,7 +5,7 @@ from typing import Union, List, Dict, Any, Optional
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 from app.modules.profile.controllers.profile_controllers import ProfileController
-from app.api.v1.deps import get_db, get_current_active_user
+from app.api.v1.deps import get_db, get_current_active_user, require_admin, require_permission
 from app.modules.auth.models.user import User
 
 router = APIRouter(prefix="/profile", tags=["User Profile Management"])
@@ -48,7 +48,7 @@ async def get_my_profile(
 )
 async def get_profile_statistics(
     controller: ProfileController = Depends(get_profile_controller),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_admin)
 ):
     return await controller.get_profile_statistics()
 
@@ -66,7 +66,7 @@ async def search_profiles(
     limit: int = Query(20, description="Số lượng tối đa", le=100, ge=1),
     offset: int = Query(0, description="Số bản ghi bỏ qua", ge=0),
     controller: ProfileController = Depends(get_profile_controller),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_admin)
 ):
     return await controller.search_profiles(
         full_name=full_name,
