@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 from datetime import datetime
+import uuid
 
 class ValidationErrorDetail(BaseModel):
     error_code: str = Field(..., description="Mã lỗi xác thực")
@@ -8,7 +9,7 @@ class ValidationErrorDetail(BaseModel):
     field_name: Optional[str] = Field(None, description="Tên trường dữ liệu có lỗi")
 
 class UploadValidationCreate(BaseModel):
-    user_id: Optional[str] = Field(None, description="ID người dùng (nếu có)")
+    user_id: Optional[uuid.UUID] = Field(None, description="ID người dùng (nếu có)")
     file_name: Optional[str] = Field(None, description="Tên file")
     file_size: Optional[int] = Field(None, description="Kích thước file")
     file_type: Optional[str] = Field(None, description="Loại file")

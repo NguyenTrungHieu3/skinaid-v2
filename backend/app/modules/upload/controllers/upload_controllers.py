@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, Dict, Any, Optional
 import logging
+import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.upload.models.upload_logs import UploadLog
@@ -13,7 +14,7 @@ class UploadController:
     
     async def create_upload_log(
         self,
-        user_id: Optional[str],
+        user_id: Optional[uuid.UUID],
         file_name: str,
         file_size: int,
         mime_type: str,
@@ -41,7 +42,7 @@ class UploadController:
 
     async def get_upload_logs(
         self,
-        user_id: str,
+        user_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0
     ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
@@ -76,11 +77,11 @@ class UploadController:
 
     async def update_upload_log_status(
         self,
-        upload_log_id: str,
+        upload_log_id: uuid.UUID,
         status: str,
         error_message: Optional[str] = None,
         validation_errors: Optional[Dict[str, Any]] = None,
-        analysis_id: Optional[str] = None
+        analysis_id: Optional[uuid.UUID] = None
     ) -> bool:
         """Cập nhật trạng thái upload log."""
         try:
@@ -113,7 +114,7 @@ class UploadController:
             await self.db.rollback()
             return False
 
-    async def get_upload_statistics(self, user_id: str) -> Dict[str, Any]:
+    async def get_upload_statistics(self, user_id: uuid.UUID) -> Dict[str, Any]:
         """Lấy thống kê upload của user."""
         try:
             # Tổng số uploads

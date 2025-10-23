@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 import uuid
@@ -11,17 +12,18 @@ if TYPE_CHECKING:
 class WoundDetection(SQLModel, table=True):
     __tablename__ = "wound_detections"
 
-    detection_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), 
+    detection_id: uuid.UUID = Field(
+        default_factory=uuid.uuid4,
         primary_key=True
     )
-    analysis_id: str = Field(
-        foreign_key="wound_analyses.analysis_id", 
+    analysis_id: uuid.UUID = Field(
+        foreign_key="wound_analyses.analysis_id",
         index=True
     )
 
     wound_type: str = Field(max_length=100)
-    severity: str = Field(max_length=50)
+    severity: str = Field(max_length=100)
+    sub_type: Optional[str] = Field(max_length=100, default=None)
     confidence_score: float = Field(ge=0.0, le=1.0)
 
     bounding_box: dict = Field(sa_column=Column(JSONB, nullable=False))
@@ -29,7 +31,7 @@ class WoundDetection(SQLModel, table=True):
     detection_index: int = Field(default=0, ge=0)
     is_primary: bool = Field(default=False)
     
-    firstaidguide_id: Optional[str] = Field(
+    firstaidguide_id: Optional[uuid.UUID] = Field(
         default=None,
         nullable=True,
         foreign_key="firstaid_guides.firstaidguide_id"
@@ -46,21 +48,23 @@ class WoundDetection(SQLModel, table=True):
     @classmethod
     def create_detection(
         cls,
-        analysis_id: str,
+        analysis_id: uuid.UUID,
         wound_type: str,
         severity: str,
-        confidence_score: float,
-        bounding_box: dict,
+        sub_type: Optional[str] = None,
+        confidence_score: float = 0.0,
+        bounding_box: dict = None,
         detection_index: int = 0,
         is_primary: bool = False,
-        firstaidguide_id: Optional[str] = None
+        firstaidguide_id: Optional[uuid.UUID] = None
     ) -> "WoundDetection":
         return cls(
             analysis_id=analysis_id,
             wound_type=wound_type,
             severity=severity,
+            sub_type=sub_type,
             confidence_score=confidence_score,
-            bounding_box=bounding_box,
+            bounding_box=bounding_box or {},
             detection_index=detection_index,
             is_primary=is_primary,
             firstaidguide_id=firstaidguide_id,

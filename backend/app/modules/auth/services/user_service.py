@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, UUID
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -17,7 +17,7 @@ class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         """
         Lấy thông tin user theo ID kèm profile
         """
@@ -113,7 +113,7 @@ class UserService:
         """
         try:
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-            user_id = str(uuid.uuid4())
+            user_id = uuid.uuid4()
 
             sql = text("""
                 INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
@@ -148,7 +148,7 @@ class UserService:
 
     async def update_user_status(
         self,
-        user_id: str,
+        user_id: uuid.UUID,
         is_active: Optional[bool] = None,
         is_verified: Optional[bool] = None
     ) -> Optional[User]:
@@ -194,7 +194,7 @@ class UserService:
             await self.db.rollback()
             return None
 
-    async def update_user_password(self, user_id: str, hashed_password: str) -> bool:
+    async def update_user_password(self, user_id: uuid.UUID, hashed_password: str) -> bool:
         """
         Cập nhật mật khẩu user
         """
@@ -259,7 +259,7 @@ class UserService:
             logger.error(f"Failed to get users by status: {e}")
             return []
 
-    async def delete_user(self, user_id: str) -> bool:
+    async def delete_user(self, user_id: uuid.UUID) -> bool:
         """
         Xóa user (soft delete bằng cách set is_active = False)
         """

@@ -29,7 +29,7 @@ async def get_upload_logs(
 ):
     """Lấy lịch sử upload ảnh của user hiện tại."""
     return await controller.get_upload_logs(
-        user_id=str(current_user.user_id),
+        user_id=current_user.user_id,
         limit=limit,
         offset=offset
     )
@@ -47,5 +47,5 @@ async def get_upload_statistics(
     """Lấy thống kê tổng quan về hoạt động upload."""
     return SuccessResponse(
         message="Lấy thống kê upload thành công",
-        data=await controller.get_upload_statistics(str(current_user.user_id))
+        data=await controller.get_upload_statistics(current_user.user_id)
     )

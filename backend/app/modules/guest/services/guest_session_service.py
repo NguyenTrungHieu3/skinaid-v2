@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
+from sqlalchemy import UUID
 from typing import Optional, Dict, Tuple
 from datetime import datetime, timedelta, timezone
 import uuid
@@ -8,12 +9,12 @@ class GuestSessionService:
 
     @staticmethod
     async def create_session(
-        db: AssertionError, 
-        ip_address: Optional[str] = None, 
+        db: AsyncSession,
+        ip_address: Optional[str] = None,
         user_agent: Optional[str] = None
-    ) -> str: 
+    ) -> uuid.UUID:
         """Tạo guest session mới"""
-        session_id = str(uuid.uuid4())
+        session_id = uuid.uuid4()
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
         expires_at = expires_at.replace(tzinfo=None)
         
@@ -43,9 +44,9 @@ class GuestSessionService:
     
     @staticmethod
     async def get_session(
-        db: AsyncSession, 
-        session_id: str
-    ) -> Optional[str]: 
+        db: AsyncSession,
+        session_id: uuid.UUID
+    ) -> Optional[Dict]:
         """Lấy thông tin session"""
         query = text("""
             SELECT * FROM guest_sessions
@@ -61,9 +62,9 @@ class GuestSessionService:
     
     @staticmethod
     async def is_valid_session(
-        db: AsyncSession, 
-        session_id: str
-    ) -> bool: 
+        db: AsyncSession,
+        session_id: uuid.UUID
+    ) -> bool:
         """kiểm tra sessiong có hợp lệ không"""
         query = text("""
             SELECT session_id FROM guest_sessions
@@ -79,7 +80,7 @@ class GuestSessionService:
     
     async def update_activity(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> bool:
         """Cập nhật last_activity_at"""
         query = text("""
@@ -99,7 +100,7 @@ class GuestSessionService:
     @staticmethod
     async def can_upload(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> Tuple[bool, Optional[str]]:
         """
         Kiểm tra session còn được upload không
@@ -135,7 +136,7 @@ class GuestSessionService:
     @staticmethod
     async def can_analyze(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> Tuple[bool, Optional[str]]:
         """
         Kiểm tra session còn được analyze không
@@ -171,7 +172,7 @@ class GuestSessionService:
     @staticmethod
     async def increment_upload_count(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> int:
         """Tăng upload counter"""
         query = text("""
@@ -190,7 +191,7 @@ class GuestSessionService:
     @staticmethod
     async def increment_analysis_count(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> int:
         """Tăng analysis counter"""
         query = text("""
@@ -209,14 +210,14 @@ class GuestSessionService:
     @staticmethod
     async def log_upload(
         db: AsyncSession,
-        session_id: str,
+        session_id: uuid.UUID,
         file_path: str,
         file_name: str,
         file_size: int,
         mime_type: Optional[str] = None
-    ) -> str:
+    ) -> uuid.UUID:
         """Log guest upload"""
-        upload_id = str(uuid.uuid4())
+        upload_id = uuid.uuid4()
         
         query = text("""
             INSERT INTO guest_uploads (
@@ -245,17 +246,17 @@ class GuestSessionService:
     @staticmethod
     async def log_analysis(
         db: AsyncSession,
-        session_id: str,
-        upload_id: Optional[str],
+        session_id: uuid.UUID,
+        upload_id: Optional[uuid.UUID],
         wound_type: str,
         severity: str,
         confidence: float,
         result_json: dict
-    ) -> str:
+    ) -> uuid.UUID:
         """Log guest analysis"""
         import json
-        
-        analysis_id = str(uuid.uuid4())
+
+        analysis_id = uuid.uuid4()
         
         query = text("""
             INSERT INTO guest_analyses (
@@ -287,7 +288,7 @@ class GuestSessionService:
     @staticmethod
     async def get_session_history(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> Dict:
         """Lấy lịch sử uploads và analyses của session"""
         # Get uploads
@@ -327,7 +328,7 @@ class GuestSessionService:
     @staticmethod
     async def get_session_stats(
         db: AsyncSession,
-        session_id: str
+        session_id: uuid.UUID
     ) -> Dict:
         """Lấy thống kê của session"""
         from app.shared.role_permission_enum import GUEST_LIMITS

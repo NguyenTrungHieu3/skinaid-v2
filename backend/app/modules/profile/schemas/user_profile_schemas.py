@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import date, datetime
+import uuid
 
 class UserProfileBase(BaseModel):
     full_name: Optional[str] = Field(None, max_length=255, description="Họ tên đầy đủ")
@@ -14,7 +15,7 @@ class UserProfileUpdate(UserProfileBase):
     pass
 
 class UserProfileResponse(UserProfileBase):
-    user_id: str = Field(..., description="ID người dùng")
+    user_id: uuid.UUID = Field(..., description="ID người dùng")
     age: Optional[int] = Field(None, description="Tuổi tính từ ngày sinh")
     gender_display: str = Field(..., description="Giới tính hiển thị tiếng Việt")
     has_complete_profile: bool = Field(..., description="Profile có đầy đủ thông tin")

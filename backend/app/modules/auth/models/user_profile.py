@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import date, datetime, timezone
 import uuid
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
 class UserProfile(SQLModel, table=True):
     __tablename__ = "user_profiles"  # type: ignore
 
-    user_id: str = Field(primary_key=True, foreign_key="users.user_id")
+    user_id: uuid.UUID = Field(primary_key=True, foreign_key="users.user_id")
     full_name: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
@@ -62,7 +63,7 @@ class UserProfile(SQLModel, table=True):
     @classmethod
     def create_profile(
         cls,
-        user_id: str,
+        user_id: uuid.UUID,
         full_name: Optional[str] = None,
         phone: Optional[str] = None,
         date_of_birth: Optional[date] = None,

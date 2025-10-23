@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 class VerificationToken(SQLModel, table=True):
     __tablename__ = "verification_tokens"  # type: ignore
 
-    token_id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    token_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     email: str = Field(
         sa_column=Column(
             ForeignKey("users.email", ondelete="CASCADE")

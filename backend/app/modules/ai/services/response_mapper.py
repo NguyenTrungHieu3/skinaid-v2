@@ -26,7 +26,7 @@ class ResponseMapper:
         for detection in significant_detections:
             det_wound_type = detection.get("wound_type", "unknown")
             mapped_wound_type = DetectionProcessor.map_wound_type_for_database(det_wound_type)
-            parsed_severity = DetectionProcessor.get_parsed_severity_for_storage(
+            parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
                 det_wound_type,
                 detection.get("severity", "mild")
             )
@@ -34,6 +34,7 @@ class ResponseMapper:
             wound_summary = WoundDetectionSummary(
                 wound_type=mapped_wound_type,
                 severity=parsed_severity,
+                sub_type=sub_type,
                 confidence_score=detection.get("confidence", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
                 is_primary=detection.get("is_primary", False)

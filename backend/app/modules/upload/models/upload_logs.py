@@ -1,5 +1,7 @@
+
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy.dialects.postgresql import INET, JSONB
+from sqlalchemy import UUID
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 import uuid
@@ -8,10 +10,10 @@ import uuid
 class UploadLog(SQLModel, table=True):
     __tablename__ = "upload_logs"  # type: ignore
 
-    upload_log_id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    upload_log_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
-    user_id: Optional[str] = Field(default=None, foreign_key="users.user_id", index=True)
-    analysis_id: Optional[str] = Field(default=None, foreign_key="wound_analyses.analysis_id", index=True)
+    user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="users.user_id", index=True)
+    analysis_id: Optional[uuid.UUID] = Field(default=None, foreign_key="wound_analyses.analysis_id", index=True)
 
     file_name: str = Field(max_length=255)
     file_size: int = Field(gt=0)
@@ -63,8 +65,8 @@ class UploadLog(SQLModel, table=True):
     @classmethod
     def create_log(
         cls,
-        user_id: Optional[str] = None,
-        analysis_id: Optional[str] = None,
+        user_id: Optional[uuid.UUID] = None,
+        analysis_id: Optional[uuid.UUID] = None,
         file_name: str = "",
         file_size: int = 0,
         mime_type: str = "",
@@ -99,7 +101,7 @@ class UploadLog(SQLModel, table=True):
         if validation_errors:
             self.validation_errors = validation_errors
 
-    def update_analysis_id(self, analysis_id: str) -> None:
+    def update_analysis_id(self, analysis_id: uuid.UUID) -> None:
         """Update the analysis_id when analysis is completed."""
         self.analysis_id = analysis_id
 

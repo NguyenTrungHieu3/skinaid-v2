@@ -1,8 +1,9 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
+import uuid
 class FirstAidGuideResponse(BaseModel):
-    firstaidguide_id: str = Field(..., description="ID hướng dẫn sơ cứu")
+    firstaidguide_id: uuid.UUID = Field(..., description="ID hướng dẫn sơ cứu")
     wound_type: str = Field(..., description="Loại vết thương")
     severity: str = Field(..., description="Mức độ nghiêm trọng")
     sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ dành cho burn)")
@@ -20,7 +21,7 @@ class FirstAidGuideResponse(BaseModel):
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
     version: int = Field(..., description="Phiên bản")
 
-    created_by: Optional[str] = Field(None, description="Người tạo")
+    created_by: Optional[uuid.UUID] = Field(None, description="Người tạo")
     created_at: datetime = Field(..., description="Ngày tạo")
     updated_at: datetime = Field(..., description="Ngày cập nhật cuối")
 

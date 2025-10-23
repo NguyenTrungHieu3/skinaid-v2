@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import UUID
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
 import uuid
@@ -11,15 +12,13 @@ if TYPE_CHECKING:
 class WoundAnalysis(SQLModel, table=True):
     __tablename__ = "wound_analyses"
 
-    analysis_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()), 
+    analysis_id: uuid.UUID = Field(
+        default_factory=uuid.uuid4,
         primary_key=True
     )
-    user_id: Optional[str] = Field(
-        default=None,
+    user_id: Optional[uuid.UUID] = Field(
         foreign_key="users.user_id",
-        index=True,
-        nullable=True
+        index=True
     )
 
     image_url: str = Field(max_length=500)
@@ -31,8 +30,8 @@ class WoundAnalysis(SQLModel, table=True):
     processing_time_ms: int = Field(gt=0)
 
     primary_wound_type: str = Field(max_length=100)
-    primary_severity: str = Field(max_length=50)
-    primary_firstaidguide_id: Optional[str] = Field(
+    primary_severity: str = Field(max_length=100)
+    primary_firstaidguide_id: Optional[uuid.UUID] = Field(
         default=None,
         nullable=True,
         foreign_key="firstaid_guides.firstaidguide_id"
@@ -73,7 +72,7 @@ class WoundAnalysis(SQLModel, table=True):
     @classmethod
     def create_analysis(
         cls,
-        user_id: Optional[str],
+        user_id: Optional[uuid.UUID],
         image_url: str,
         file_name: str,
         file_size: int,
@@ -82,7 +81,7 @@ class WoundAnalysis(SQLModel, table=True):
         processing_time_ms: int = 0,
         primary_wound_type: str = "not_wound",
         primary_severity: str = "mild",
-        primary_firstaidguide_id: Optional[str] = None,
+        primary_firstaidguide_id: Optional[uuid.UUID] = None,
         firstaid_snapshot: dict = None,
         analyzed_at: Optional[datetime] = None
     ) -> "WoundAnalysis":

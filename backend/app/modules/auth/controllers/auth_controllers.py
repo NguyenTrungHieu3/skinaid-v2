@@ -419,7 +419,7 @@ class AuthController:
     
         try: 
             success = await self.auth_service.change_password(
-                user_id= str(current_user.user_id),
+                user_id=current_user.user_id,
                 old_password=password_data.old_password,
                 new_password=password_data.new_password
             )

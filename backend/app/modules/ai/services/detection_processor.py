@@ -13,9 +13,6 @@ class DetectionProcessor:
         "abrasion": "abrasion",
         "bruise": "bruise",
         "burn": "burn",
-        "scrape": "abrasion",
-        "graze": "abrasion",
-        "contusion": "bruise",
     }
 
     AVAILABLE_WOUND_TYPES = ["abrasion", "bruise", "burn"]
@@ -90,15 +87,43 @@ class DetectionProcessor:
         return mapped_type
 
     @classmethod
-    def get_parsed_severity_for_storage(cls, wound_type: str, severity: str) -> str:
+    def get_parsed_severity_for_storage(cls, wound_type: str, severity: str) -> tuple[str, Optional[str]]:
         """
-        Lấy parsed severity để lưu vào database.
+        Lấy base_severity và sub_type để lưu vào database.
         """
-        if wound_type.lower() == "burn":
-            _, parsed_severity, _ = cls.parse_burn_classification(wound_type, severity)
-            return parsed_severity
+        if not severity:
+            return "mild", None
 
-        return cls.extract_base_severity(severity)
+        # For burn, use specific parsing
+        if wound_type.lower() == "burn":
+            _, base_severity, sub_type = cls.parse_burn_classification(wound_type, severity)
+            return base_severity, sub_type
+
+        # For other wound types, extract base severity and check for sub_type
+        base_severity = cls.extract_base_severity(severity)
+        sub_type = cls.extract_sub_type(severity, wound_type)
+        return base_severity, sub_type
+
+    @classmethod
+    def extract_sub_type(cls, severity_str: str, wound_type: str) -> Optional[str]:
+        """
+        Extract sub_type from severity string for non-burn wounds.
+        """
+        if not severity_str:
+            return None
+
+        severity_lower = severity_str.lower().strip()
+        parts = severity_lower.split("_")
+
+        # For burn, sub_types are blister, skintear
+        if wound_type.lower() == "burn":
+            burn_subtypes = ["blister", "skintear"]
+            for part in parts[1:]:  # Skip first part as it's base severity
+                if part in burn_subtypes:
+                    return part
+
+        # For other wounds, assume no sub_type for now
+        return None
 
     @classmethod
     def calculate_detection_priority(cls, detection: Dict[str, Any]) -> Tuple[int, int, float]:

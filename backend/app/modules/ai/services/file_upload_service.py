@@ -20,7 +20,7 @@ class FileUploadService:
     @classmethod
     def generate_image_path(
         cls,
-        user_id: str,
+        user_id: uuid.UUID,
         original_filename: str
     ) -> Tuple[str, str, str]:
         """

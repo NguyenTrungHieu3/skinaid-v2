@@ -1,13 +1,14 @@
 from fastapi import APIRouter, UploadFile, File, Depends, Query
 from typing import Union, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
 
 from app.modules.ai.controllers.ai_controller import AIController
 from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.auth.models.user import User
 
-from app.api.v1.deps import allow_guest, require_auth
+from app.api.v1.deps import allow_guest, require_auth, require_verified, get_current_active_user
 from app.core.database import get_session as get_db
 
 router = APIRouter(prefix="/ai", tags=["AI Processing"])
@@ -36,7 +37,7 @@ async def analyze_image(
     Phân tích hình ảnh vết thương bằng AI.
     """
     controller = AIController(db)
-    user_id = str(current_user.user_id) if current_user else None
+    user_id = current_user.user_id if current_user else None
     return await controller.analyze_image(file, user_id)
 
 
@@ -49,7 +50,7 @@ async def get_analysis_history(
     limit: int = Query(20, description="Số lượng records tối đa", le=100, ge=1),
     offset: int = Query(0, description="Số records bỏ qua", ge=0),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth)  
+    current_user: User = Depends(get_current_active_user)  
 ):
     """
     Lấy lịch sử phân tích của user với thống kê chi tiết.
@@ -57,7 +58,7 @@ async def get_analysis_history(
     controller = AIController(db)
     
     return await controller.get_analysis_history(
-        user_id=str(current_user.user_id),
+        user_id=current_user.user_id,
         limit=limit,
         offset=offset
     )
@@ -69,9 +70,9 @@ async def get_analysis_history(
     summary="Lấy chi tiết 1 analysis"
 )
 async def get_analysis_detail(
-    analysis_id: str,
+    analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth)
+    current_user: User = Depends(get_current_active_user)
 ):
     """
     Lấy chi tiết của 1 analysis cụ thể.
@@ -89,7 +90,7 @@ async def get_analysis_detail(
     summary="Xóa 1 analysis"
 )
 async def delete_analysis(
-    analysis_id: str,
+    analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth)
 ):

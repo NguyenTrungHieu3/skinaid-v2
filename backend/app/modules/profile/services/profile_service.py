@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, UUID
 from typing import Optional, Dict, Any, List
 import uuid
 import logging
@@ -16,7 +16,7 @@ class ProfileService:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    async def get_profile_by_user_id(self, user_id: str) -> Optional[UserProfile]:
+    async def get_profile_by_user_id(self, user_id: uuid.UUID) -> Optional[UserProfile]:
         """
         Lấy profile của user theo user_id
 
@@ -27,9 +27,6 @@ class ProfileService:
             UserProfile object hoặc None nếu không tìm thấy
         """
         try:
-            if isinstance(user_id, uuid.UUID):
-                user_id = str(user_id)
-
             sql = text("""
                 SELECT * FROM user_profiles
                 WHERE user_id = :user_id
@@ -47,7 +44,7 @@ class ProfileService:
             logger.error(f"Error getting profile by user_id {user_id}: {str(e)}")
             return None
     
-    async def update_profile(self, user_id: str, profile_data: UserProfileUpdate) -> UserProfile:
+    async def update_profile(self, user_id: uuid.UUID, profile_data: UserProfileUpdate) -> UserProfile:
         """
         Cập nhật thông tin profile của user
 
@@ -62,9 +59,6 @@ class ProfileService:
             AppBaseException: Nếu user không tồn tại hoặc dữ liệu không hợp lệ
         """
         try:
-            if isinstance(user_id, uuid.UUID):
-                user_id = str(user_id)
-
             existing_profile = await self.get_profile_by_user_id(user_id)
 
             update_data = {}
@@ -288,7 +282,7 @@ class ProfileService:
             logger.error(f"Failed to search profiles: {e}")
             return []
 
-    async def get_profile_completion_suggestions(self, user_id: str) -> Dict[str, Any]:
+    async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> Dict[str, Any]:
         """Gợi ý các trường cần điền để hoàn thiện profile."""
         try:
             profile = await self.get_profile_by_user_id(user_id)

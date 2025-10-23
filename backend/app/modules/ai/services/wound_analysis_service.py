@@ -3,6 +3,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select, desc
 from typing import Dict, Any, List, Optional
 import logging
+import uuid
 
 from app.modules.ai.models.wound_analysis import WoundAnalysis
 from app.modules.ai.models.wound_detection import WoundDetection
@@ -32,14 +33,17 @@ class WoundAnalysisService:
         if original_wound_type.lower() == "burn":
             return await self._get_burn_guide(original_wound_type, detection_severity)
 
+        # For non-burn, use base severity to match firstaid_guides
+        base_severity = DetectionProcessor.extract_base_severity(detection_severity)
+
         logger.info(
             f"Getting guide for {original_wound_type}/{detection_severity} "
-            f"(mapped: {mapped_wound_type})"
+            f"(mapped: {mapped_wound_type}, base_severity: {base_severity})"
         )
 
         return await self.first_aid_service.get_first_aid_guide(
             wound_type=mapped_wound_type,
-            severity=detection_severity
+            severity=base_severity
         )
 
     async def _get_burn_guide(
@@ -73,10 +77,13 @@ class WoundAnalysisService:
         return guide
 
     @staticmethod
-    def extract_guide_id(guide: Optional[Dict[str, Any]]) -> Optional[str]:
+    def extract_guide_id(guide: Optional[Dict[str, Any]]) -> Optional[uuid.UUID]:
         if not guide:
             return None
-        return guide.get("firstaidguide_id")
+        guide_id_str = guide.get("firstaidguide_id")
+        if guide_id_str:
+            return uuid.UUID(guide_id_str)
+        return None
 
     @staticmethod
     def extract_snapshot(guide: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -103,7 +110,7 @@ class WoundAnalysisService:
 
     async def create_no_wound_analysis(
         self,
-        user_id: Optional[str],
+        user_id: Optional[uuid.UUID],
         image_url: str,
         file_name: str,
         file_size: int,
@@ -149,7 +156,7 @@ class WoundAnalysisService:
 
     async def create_wound_analysis(
         self,
-        user_id: Optional[str],
+        user_id: Optional[uuid.UUID],
         image_url: str,
         file_name: str,
         file_size: int,
@@ -166,7 +173,7 @@ class WoundAnalysisService:
         mapped_wound_type = DetectionProcessor.map_wound_type_for_database(
             original_wound_type
         )
-        parsed_severity = DetectionProcessor.get_parsed_severity_for_storage(
+        parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
             original_wound_type,
             primary_detection.get("severity", "mild")
         )
@@ -198,9 +205,9 @@ class WoundAnalysisService:
 
     async def save_detections(
         self,
-        analysis_id: str,
+        analysis_id: uuid.UUID,
         detections: List[Dict[str, Any]],
-        primary_guide_id: Optional[str] = None
+        primary_guide_id: Optional[uuid.UUID] = None
     ) -> None:
         for detection in detections:
             original_wound_type = detection.get("wound_type", "unknown")
@@ -208,9 +215,11 @@ class WoundAnalysisService:
                 original_wound_type
             )
 
-            guide_id = primary_guide_id if detection.get("is_primary") else None
+            # Get guide for each detection
+            guide = await self.get_first_aid_guide_for_detection(detection)
+            guide_id = self.extract_guide_id(guide)
 
-            parsed_severity = DetectionProcessor.get_parsed_severity_for_storage(
+            parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
                 original_wound_type,
                 detection.get("severity", "mild")
             )
@@ -219,6 +228,7 @@ class WoundAnalysisService:
                 analysis_id=analysis_id,
                 wound_type=mapped_wound_type,
                 severity=parsed_severity,
+                sub_type=sub_type,
                 confidence_score=detection.get("confidence", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
                 detection_index=detection.get("detection_index", 0),
@@ -232,7 +242,7 @@ class WoundAnalysisService:
 
     async def get_user_analysis_history(
         self,
-        user_id: str,
+        user_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0
     ) -> List[WoundAnalysis]:
@@ -260,7 +270,7 @@ class WoundAnalysisService:
 
     async def get_analysis_by_id(
         self,
-        analysis_id: str
+        analysis_id: uuid.UUID
     ) -> Optional[WoundAnalysis]:
         query = (
             select(WoundAnalysis)
@@ -276,7 +286,7 @@ class WoundAnalysisService:
 
     async def get_detections_for_analysis(
         self,
-        analysis_id: str
+        analysis_id: uuid.UUID
     ) -> List[Dict[str, Any]]:
         query = (
             select(WoundDetection)
@@ -291,6 +301,7 @@ class WoundAnalysisService:
             {
                 "wound_type": d.wound_type,
                 "severity": d.severity,
+                "sub_type": d.sub_type,
                 "confidence": d.confidence_score,
                 "bounding_box": d.bounding_box,
                 "is_primary": d.is_primary,
@@ -299,7 +310,7 @@ class WoundAnalysisService:
             for d in detections
         ]
 
-    async def soft_delete_analysis(self, analysis_id: str) -> None:
+    async def soft_delete_analysis(self, analysis_id: uuid.UUID) -> None:
         analysis = await self.get_analysis_by_id(analysis_id)
 
         if analysis:

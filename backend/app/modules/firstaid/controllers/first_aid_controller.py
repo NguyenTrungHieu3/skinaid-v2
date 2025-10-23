@@ -4,6 +4,7 @@ from app.modules.firstaid.services.first_aid_service import FirstAidService
 from app.modules.firstaid.schemas.first_aid_schemas import FirstAidGuideResponse, WoundTypeResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -133,8 +134,11 @@ class FirstAidController:
 
     def _create_guide_response(self, guide: Dict[str, Any], expected_wound_type: str, expected_severity: str) -> FirstAidGuideResponse:
         """Tạo FirstAidGuideResponse từ guide data (DRY principle)."""
+        firstaidguide_id_str = guide.get("firstaidguide_id", "")
+        created_by_str = guide.get("created_by")
+
         return FirstAidGuideResponse(
-            firstaidguide_id=guide.get("firstaidguide_id", ""),
+            firstaidguide_id=uuid.UUID(firstaidguide_id_str) if firstaidguide_id_str else uuid.UUID("00000000-0000-0000-0000-000000000000"),
             wound_type=guide.get("wound_type", expected_wound_type),
             severity=guide.get("severity", expected_severity),
             sub_type=guide.get("sub_type"),
@@ -149,7 +153,7 @@ class FirstAidController:
             estimated_healing_time=guide.get("estimated_healing_time"),
             is_active=guide.get("is_active", True),
             version=guide.get("version", 1),
-            created_by=guide.get("created_by"),
+            created_by=uuid.UUID(created_by_str) if created_by_str else None,
             created_at=guide.get("created_at"),
             updated_at=guide.get("updated_at"),
             has_complete_instructions=bool(guide.get("dos") and guide.get("donts")),

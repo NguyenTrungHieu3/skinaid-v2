@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
+from sqlalchemy import UUID
 import uuid
 from datetime import datetime
 
@@ -22,7 +23,7 @@ class UserCreate(UserBase):
         return values
 
 class UserResponse(BaseModel):
-    user_id: str
+    user_id: uuid.UUID
     email: EmailStr
     display_name: Optional[str] = None
     is_active: bool = Field(default=True, description="User account status")

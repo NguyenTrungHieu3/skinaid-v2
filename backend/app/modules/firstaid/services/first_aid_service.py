@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
 import logging
+import uuid
 
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 
@@ -111,8 +112,11 @@ class FirstAidService:
             return None
 
     def _format_guide_response(self, guide: Dict[str, Any]) -> Dict[str, Any]:
+        firstaidguide_id_str = guide.get("firstaidguide_id")
+        created_by_str = guide.get("created_by")
+
         return {
-            "firstaidguide_id": guide.get("firstaidguide_id"),
+            "firstaidguide_id": str(firstaidguide_id_str) if firstaidguide_id_str else None,
             "wound_type": guide.get("wound_type"),
             "severity": guide.get("severity"),
             "sub_type": guide.get("sub_type"),
@@ -126,7 +130,7 @@ class FirstAidService:
             "estimated_healing_time": guide.get("estimated_healing_time"),
             "is_active": guide.get("is_active"),
             "version": guide.get("version"),
-            "created_by": guide.get("created_by"),
+            "created_by": str(created_by_str) if created_by_str else None,
             "created_at": guide.get("created_at"),
             "updated_at": guide.get("updated_at")
         }

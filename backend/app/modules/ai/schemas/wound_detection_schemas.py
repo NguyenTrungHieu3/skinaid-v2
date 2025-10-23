@@ -1,23 +1,24 @@
 from pydantic import BaseModel, Field, computed_field
 from typing import Optional, Dict, Any
 from datetime import datetime
+import uuid
 
 
 class WoundDetectionBase(BaseModel):
-    analysis_id: str
+    analysis_id: uuid.UUID
     wound_type: str
     severity: str
     confidence_score: float = Field(ge=0.0, le=1.0)
     bounding_box: Dict[str, Any]
     detection_index: int = 0
     is_primary: bool = False
-    firstaidguide_id: Optional[str] = None
+    firstaidguide_id: Optional[uuid.UUID] = None
 
 
 class WoundDetectionCreate(WoundDetectionBase):
     pass
 class WoundDetectionResponse(WoundDetectionBase):
-    detection_id: str
+    detection_id: uuid.UUID
     created_at: datetime
 
     @computed_field
@@ -52,10 +53,7 @@ class WoundDetectionResponse(WoundDetectionBase):
             "moderate": "Trung bình",
             "severe": "Nặng"
         }
-        return severity_map.get(
-            self.severity.lower() if self.severity else "", 
-            "Không xác định"
-        )
+        return severity_map.get(self.severity.lower() if self.severity else "", "Không xác định")
 
     class Config:
         from_attributes = True
@@ -63,9 +61,13 @@ class WoundDetectionResponse(WoundDetectionBase):
 class WoundDetectionSummary(BaseModel):
     wound_type: str
     severity: str
+    sub_type: Optional[str] = None
     confidence_score: float
     bounding_box: Dict[str, Any]
     is_primary: bool
+
+    class Config:
+        from_attributes = True
     
     @computed_field
     @property

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models.user import User
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.models.user_profile import UserProfile
+from sqlalchemy import UUID
 import uuid
 import asyncio
 import logging
@@ -67,7 +68,7 @@ class AuthService:
 
 
 
-    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         """
         Lấy thông tin người dùng theo ID kèm hồ sơ sử dụng truy vấn SQL tối ưu.
         """
@@ -144,7 +145,7 @@ class AuthService:
             if password_errors:
                 raise AppBaseException(message=password_errors, error_code=AUTH_PASSWORD_WEAK)
 
-            user_id = str(uuid.uuid4())
+            user_id = uuid.uuid4()
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
             hashed_password = hash_password(user_data.password)
             verification_token = email_service.generate_verification_token()
@@ -520,7 +521,7 @@ class AuthService:
             raise AppBaseException(message="Resend verification failed due to internal error", error_code=AUTH_INVALID_CREDENTIALS)
         
 
-    async def change_password(self, user_id: str, old_password: str, new_password: str) -> bool: 
+    async def change_password(self, user_id: uuid.UUID, old_password: str, new_password: str) -> bool:
         try: 
 
             password_errors = validate_password_strength(new_password)

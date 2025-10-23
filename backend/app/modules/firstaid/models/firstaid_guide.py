@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import UUID
 import uuid
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
@@ -11,8 +12,8 @@ logger = logging.getLogger(__name__)
 class FirstAidGuide(SQLModel, table=True):
     __tablename__ = "firstaid_guides"
 
-    firstaidguide_id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
+    firstaidguide_id: uuid.UUID = Field(
+        default_factory=uuid.uuid4,
         primary_key=True
     )
 
@@ -32,7 +33,7 @@ class FirstAidGuide(SQLModel, table=True):
     estimated_healing_time: Optional[str] = None
     is_active: bool = Field(default=True, index=True)
     version: int = Field(default=1)
-    created_by: Optional[str] = Field(default=None, foreign_key="users.user_id")
+    created_by: Optional[uuid.UUID] = Field(default=None, foreign_key="users.user_id")
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

@@ -1,10 +1,11 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
+import uuid
 
 class WoundAnalysisBase(BaseModel):
-    user_id: Optional[str] = None
-    
+    user_id: Optional[uuid.UUID] = None
+
     image_url: str
     file_name: str
     file_size: int
@@ -13,7 +14,7 @@ class WoundAnalysisBase(BaseModel):
     processing_time_ms: int
     primary_wound_type: str = "not_wound"
     primary_severity: str = "mild"
-    primary_firstaidguide_id: Optional[str] = None
+    primary_firstaidguide_id: Optional[uuid.UUID] = None
     firstaid_snapshot: Dict[str, Any]
     analyzed_at: Optional[datetime] = None
 
@@ -23,7 +24,7 @@ class WoundAnalysisUpdate(BaseModel):
     processing_time_ms: Optional[int] = None
     primary_wound_type: Optional[str] = None
     primary_severity: Optional[str] = None
-    primary_firstaidguide_id: Optional[str] = None
+    primary_firstaidguide_id: Optional[uuid.UUID] = None
     firstaid_snapshot: Optional[Dict[str, Any]] = None
 
 
@@ -36,7 +37,7 @@ class WoundDetectionSummary(BaseModel):
 
 
 class WoundAnalysisResponse(WoundAnalysisBase):
-    analysis_id: str
+    analysis_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
     is_deleted: bool

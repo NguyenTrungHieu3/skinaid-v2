@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
 import logging
+import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
@@ -15,7 +16,7 @@ class ProfileController:
         self.db = db
         self.profile_service = ProfileService(db)
 
-    async def update_profile(self, user_id: str, profile_data: UserProfileUpdate) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+    async def update_profile(self, user_id: uuid.UUID, profile_data: UserProfileUpdate) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
         """
         Cập nhật thông tin profile của user.
 
@@ -64,7 +65,7 @@ class ProfileController:
                 error_details=None
             )
 
-    async def get_profile(self, user_id: str) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+    async def get_profile(self, user_id: uuid.UUID) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
         """Lấy thông tin profile của user."""
         try:
             profile = await self.profile_service.get_profile_by_user_id(user_id)
@@ -147,7 +148,7 @@ class ProfileController:
                 error_details={"error": str(e)}
             )
 
-    async def get_profile_completion_suggestions(self, user_id: str) -> SuccessResponse[Dict[str, Any]]:
+    async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> SuccessResponse[Dict[str, Any]]:
         """Lấy gợi ý hoàn thiện profile."""
         try:
             suggestions = await self.profile_service.get_profile_completion_suggestions(user_id)
@@ -193,9 +194,11 @@ class ProfileController:
                 error_details=None
             )
     
-    async def get_profile(self, user_id: str) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+    async def get_profile_by_str_id(self, user_id: str) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
         try:
-            profile = await self.profile_service.get_profile_by_user_id(user_id)
+            # Convert string to UUID before calling service
+            uuid_user_id = uuid.UUID(user_id)
+            profile = await self.profile_service.get_profile_by_user_id(uuid_user_id)
 
             if not profile:
                 return ErrorResponse(

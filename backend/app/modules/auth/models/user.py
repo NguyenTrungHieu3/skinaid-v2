@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import UUID
 from typing import Optional, TYPE_CHECKING, List
 import uuid
 from datetime import datetime, timezone
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 class User(SQLModel, table=True):
     __tablename__ = "users"  # type: ignore
 
-    user_id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    user_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
     display_name: Optional[str] = None

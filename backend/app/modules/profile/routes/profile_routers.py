@@ -25,7 +25,7 @@ async def update_profile(
     current_user: User = Depends(get_current_active_user)
 ):
     """Cập nhật thông tin profile cá nhân."""
-    return await controller.update_profile(str(current_user.user_id), profile_data)
+    return await controller.update_profile(current_user.user_id, profile_data)
 
 @router.get(
     "/me",
@@ -38,7 +38,7 @@ async def get_my_profile(
     current_user: User = Depends(get_current_active_user)
 ):
     """Lấy thông tin profile cá nhân."""
-    return await controller.get_profile(str(current_user.user_id))
+    return await controller.get_profile(current_user.user_id)
 
 @router.get(
     "/statistics",
@@ -87,4 +87,4 @@ async def get_completion_suggestions(
     controller: ProfileController = Depends(get_profile_controller),
     current_user: User = Depends(get_current_active_user)
 ):
-    return await controller.get_profile_completion_suggestions(str(current_user.user_id))
+    return await controller.get_profile_completion_suggestions(current_user.user_id)
