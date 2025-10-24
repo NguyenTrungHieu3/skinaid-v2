@@ -72,15 +72,16 @@ async def get_analysis_history(
 async def get_analysis_detail(
     analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: Optional[User] = Depends(allow_guest)
 ):
     """
-    Lấy chi tiết của 1 analysis cụ thể.
+    Lấy chi tiết của 1 analysis cụ thể. Guest có thể truy cập nếu là owner.
     """
     controller = AIController(db)
+    user_id = current_user.user_id if current_user else None
     return await controller.get_analysis_detail(
         analysis_id=analysis_id,
-        user_id=str(current_user.user_id)
+        user_id=str(user_id) if user_id else None
     )
 
 

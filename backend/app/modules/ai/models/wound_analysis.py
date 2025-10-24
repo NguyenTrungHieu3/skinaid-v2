@@ -29,15 +29,7 @@ class WoundAnalysis(SQLModel, table=True):
     total_detections: int = Field(default=0, ge=0)
     processing_time_ms: int = Field(gt=0)
 
-    primary_wound_type: str = Field(max_length=100)
-    primary_severity: str = Field(max_length=100)
-    primary_firstaidguide_id: Optional[uuid.UUID] = Field(
-        default=None,
-        nullable=True,
-        foreign_key="firstaid_guides.firstaidguide_id"
-    )
-
-    firstaid_snapshot: dict = Field(sa_column=Column(JSONB, nullable=False))
+    # Removed primary fields and firstaid_snapshot as per schema update
 
     analyzed_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
@@ -79,23 +71,9 @@ class WoundAnalysis(SQLModel, table=True):
         ai_model_version: str = "YOLOv11_EfficientNetV2_1.0",
         total_detections: int = 0,
         processing_time_ms: int = 0,
-        primary_wound_type: str = "not_wound",
-        primary_severity: str = "mild",
-        primary_firstaidguide_id: Optional[uuid.UUID] = None,
-        firstaid_snapshot: dict = None,
         analyzed_at: Optional[datetime] = None
     ) -> "WoundAnalysis":
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-
-        if firstaid_snapshot is None:
-            firstaid_snapshot = {
-                "title": "Không phát hiện vết thương",
-                "description": "Không có hướng dẫn sơ cứu cần thiết",
-                "steps": [],
-                "warnings": [],
-                "dos": [],
-                "donts": []
-            }
 
         return cls(
             user_id=user_id,
@@ -105,10 +83,6 @@ class WoundAnalysis(SQLModel, table=True):
             ai_model_version=ai_model_version,
             total_detections=total_detections,
             processing_time_ms=processing_time_ms,
-            primary_wound_type=primary_wound_type,
-            primary_severity=primary_severity,
-            primary_firstaidguide_id=primary_firstaidguide_id,
-            firstaid_snapshot=firstaid_snapshot,
             analyzed_at=analyzed_at or current_time,
             created_at=current_time,
             updated_at=current_time,

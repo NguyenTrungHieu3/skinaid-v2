@@ -37,8 +37,8 @@ def decode_token(token: str) -> Optional[str]:
 async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
     """Lấy user từ DB (raw SQL)"""
     query = text("""
-        SELECT * FROM users 
-        WHERE user_id = :user_id 
+        SELECT * FROM users
+        WHERE user_id = CAST(:user_id AS UUID)
         AND is_active = true
     """)
 
@@ -66,7 +66,7 @@ async def check_user_has_role(db: AsyncSession, user_id: str, role_name: str) ->
         SELECT ur.user_id
         FROM user_roles ur
         JOIN roles r ON ur.role_id = r.role_id
-        WHERE ur.user_id = :user_id
+        WHERE ur.user_id = CAST(:user_id AS UUID)
         AND r.role_name = :role_name
         AND r.is_active = true
         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
@@ -84,7 +84,7 @@ async def check_user_has_permission(
         FROM permissions p
         JOIN role_permissions rp ON p.permission_id = rp.permission_id
         JOIN user_roles ur ON rp.role_id = ur.role_id
-        WHERE ur.user_id = :user_id
+        WHERE ur.user_id = CAST(:user_id AS UUID)
         AND p.permission_name = :permission_name
         AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
     """)

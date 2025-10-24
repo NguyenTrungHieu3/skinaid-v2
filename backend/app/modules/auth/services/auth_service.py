@@ -189,6 +189,20 @@ class AuthService:
                 "created_at": current_time,
                 "updated_at": current_time
             })
+
+            role_result = await self.db.execute(text("""
+                SELECT role_id FROM roles WHERE role_name = 'user' AND is_active = true
+            """))
+            role_row = role_result.mappings().first()
+            if role_row:
+                await self.db.execute(text("""
+                    INSERT INTO user_roles (user_id, role_id, assigned_at)
+                    VALUES (:user_id, :role_id, :assigned_at)
+                """), {
+                    "user_id": user_id,
+                    "role_id": role_row["role_id"],
+                    "assigned_at": current_time
+                })
             
             try:
                 await self.db.commit()

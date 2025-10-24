@@ -8,11 +8,12 @@ class WoundDetectionBase(BaseModel):
     analysis_id: uuid.UUID
     wound_type: str
     severity: str
+    sub_type: Optional[str] = None
     confidence_score: float = Field(ge=0.0, le=1.0)
     bounding_box: Dict[str, Any]
     detection_index: int = 0
-    is_primary: bool = False
     firstaidguide_id: Optional[uuid.UUID] = None
+    firstaid_snapshot: Optional[Dict[str, Any]] = None
 
 
 class WoundDetectionCreate(WoundDetectionBase):
@@ -64,7 +65,7 @@ class WoundDetectionSummary(BaseModel):
     sub_type: Optional[str] = None
     confidence_score: float
     bounding_box: Dict[str, Any]
-    is_primary: bool
+    firstaid_snapshot: Optional[Dict[str, Any]] = None
 
     class Config:
         from_attributes = True

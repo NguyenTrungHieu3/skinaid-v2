@@ -72,15 +72,13 @@ class AIController:
             total_detections = ai_result.get("num_detections", 0)
 
             # Step 3: Process detections
-            primary, secondary = DetectionProcessor.determine_primary_and_secondary_detections(
-                ai_result.get("detections", [])
-            )
+            detections = ai_result.get("detections", [])
 
             # Step 4: Business logic - Create analysis
-            if not primary:
+            if not detections:
                 logger.info("[ANALYZE] No valid detections")
                 analysis = await self.analysis_service.create_no_wound_analysis(
-                    user_id=user_id,  
+                    user_id=user_id,
                     image_url=image_url,
                     file_name=file.filename,
                     file_size=len(content),
@@ -88,54 +86,35 @@ class AIController:
                     processing_time_ms=processing_time_ms,
                     total_detections=total_detections
                 )
-                
+
                 response = ResponseMapper.to_wound_analysis_response(analysis, [])
-                
+
                 return SuccessResponse(
                     message="Phân tích hoàn thành - không phát hiện vết thương",
                     data=response
                 )
 
-            logger.info(
-                f"[ANALYZE] Detections: primary={primary.get('wound_type')}, "
-                f"secondary={len(secondary)}"
-            )
-
-            first_aid_guide = await self.analysis_service.get_first_aid_guide_for_detection(
-                primary
-            )
-
-            if first_aid_guide:
-                logger.info(f"[GUIDE] {first_aid_guide.get('title')}")
-            else:
-                logger.warning(
-                    f"[GUIDE] Not found for {primary.get('wound_type')}/"
-                    f"{primary.get('severity')}"
-                )
+            logger.info(f"[ANALYZE] Detections: {len(detections)}")
 
             # Create analysis record
             analysis = await self.analysis_service.create_wound_analysis(
-                user_id=user_id,  
+                user_id=user_id,
                 image_url=image_url,
                 file_name=file.filename,
                 file_size=len(content),
                 ai_model_version=ai_model_version,
                 total_detections=total_detections,
-                processing_time_ms=processing_time_ms,
-                primary_detection=primary,
-                first_aid_guide=first_aid_guide
+                processing_time_ms=processing_time_ms
             )
 
             # Save detections
-            all_detections = [primary] + secondary
-            guide_id = self.analysis_service.extract_guide_id(first_aid_guide)
             await self.analysis_service.save_detections(
-                analysis.analysis_id, all_detections, guide_id
+                analysis.analysis_id, detections
             )
 
             # Step 5: Map response
             response = ResponseMapper.to_wound_analysis_response(
-                analysis, all_detections
+                analysis, detections
             )
 
             logger.info(
@@ -248,43 +227,53 @@ class AIController:
     async def get_analysis_detail(
         self,
         analysis_id: uuid.UUID,
-        user_id: uuid.UUID
+        user_id: Optional[str]
     ) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:
         """
         Endpoint: Get analysis detail.
+        Authorization:
+        - Authenticated users can view their own analyses or all if admin.
+        - Guests can only view guest analyses (user_id is None).
         """
         try:
             logger.debug(f"[DETAIL] Analysis: {analysis_id}, User: {user_id}")
-            
+
             analysis = await self.analysis_service.get_analysis_by_id(analysis_id)
-            
+
             if not analysis:
                 return ErrorResponse(
                     message="Analysis not found",
                     error_code="ANALYSIS_NOT_FOUND",
                     error_details={"analysis_id": analysis_id}
                 )
-            
-            # Check ownership (admin can view all)
-            # không test bỏ comment
-            # is_admin = await check_user_has_role(self.db, user_id, "admin")
-            
-            # if analysis.user_id != user_id and not is_admin:
-            #     raise HTTPException(
-            #         status_code=status.HTTP_403_FORBIDDEN,
-            #         detail="You can only access your own analyses"
-            #     )
-            
+
+            # Check authorization
+            if user_id:
+                # Authenticated user
+                is_admin = await check_user_has_role(self.db, user_id, "admin")
+                if str(analysis.user_id) != user_id and not is_admin:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="You can only access your own analyses or all if admin"
+                    )
+            else:
+                # Guest user
+                if analysis.user_id is not None:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Guests can only access guest analyses"
+                    )
+
             # Get detections
             detections = await self.analysis_service.get_detections_for_analysis(
                 analysis_id
             )
-            
+
             response = ResponseMapper.to_wound_analysis_response(
                 analysis,
                 detections
             )
-            
+
             return SuccessResponse(
                 message="Lấy chi tiết analysis thành công",
                 data=response
@@ -321,8 +310,8 @@ class AIController:
                 )
             
             is_admin = await check_user_has_role(self.db, user_id, "admin")
-            
-            if analysis.user_id != user_id and not is_admin:
+
+            if str(analysis.user_id) != user_id and not is_admin:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You can only delete your own analyses"

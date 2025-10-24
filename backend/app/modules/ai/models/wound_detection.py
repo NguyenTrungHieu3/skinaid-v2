@@ -29,13 +29,14 @@ class WoundDetection(SQLModel, table=True):
     bounding_box: dict = Field(sa_column=Column(JSONB, nullable=False))
 
     detection_index: int = Field(default=0, ge=0)
-    is_primary: bool = Field(default=False)
-    
+
     firstaidguide_id: Optional[uuid.UUID] = Field(
         default=None,
         nullable=True,
         foreign_key="firstaid_guides.firstaidguide_id"
     )
+
+    firstaid_snapshot: dict = Field(sa_column=Column(JSONB, nullable=True))
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
@@ -55,8 +56,8 @@ class WoundDetection(SQLModel, table=True):
         confidence_score: float = 0.0,
         bounding_box: dict = None,
         detection_index: int = 0,
-        is_primary: bool = False,
-        firstaidguide_id: Optional[uuid.UUID] = None
+        firstaidguide_id: Optional[uuid.UUID] = None,
+        firstaid_snapshot: dict = None
     ) -> "WoundDetection":
         return cls(
             analysis_id=analysis_id,
@@ -66,7 +67,7 @@ class WoundDetection(SQLModel, table=True):
             confidence_score=confidence_score,
             bounding_box=bounding_box or {},
             detection_index=detection_index,
-            is_primary=is_primary,
             firstaidguide_id=firstaidguide_id,
+            firstaid_snapshot=firstaid_snapshot,
             created_at=datetime.now(timezone.utc).replace(tzinfo=None)
         )

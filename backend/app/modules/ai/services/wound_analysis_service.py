@@ -125,22 +125,7 @@ class WoundAnalysisService:
             file_size=file_size,
             ai_model_version=ai_model_version,
             total_detections=total_detections,
-            processing_time_ms=processing_time_ms,
-            primary_wound_type="not_wound",
-            primary_severity="mild",
-            primary_firstaidguide_id=None,
-            firstaid_snapshot={
-                "title": "Không phát hiện vết thương",
-                "description": (
-                    "Không có vết thương được phát hiện trong hình ảnh"
-                    if total_detections == 0
-                    else "Không có vết thương đạt ngưỡng độ tin cậy"
-                ),
-                "steps": [],
-                "warnings": [],
-                "dos": [],
-                "donts": []
-            }
+            processing_time_ms=processing_time_ms
         )
 
         self.db.add(analysis)
@@ -162,22 +147,8 @@ class WoundAnalysisService:
         file_size: int,
         ai_model_version: str,
         total_detections: int,
-        processing_time_ms: int,
-        primary_detection: Dict[str, Any],
-        first_aid_guide: Optional[Dict[str, Any]]
+        processing_time_ms: int
     ) -> WoundAnalysis:
-        guide_id = self.extract_guide_id(first_aid_guide)
-        snapshot = self.extract_snapshot(first_aid_guide)
-
-        original_wound_type = primary_detection.get("wound_type", "unknown")
-        mapped_wound_type = DetectionProcessor.map_wound_type_for_database(
-            original_wound_type
-        )
-        parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
-            original_wound_type,
-            primary_detection.get("severity", "mild")
-        )
-
         analysis = WoundAnalysis.create_analysis(
             user_id=user_id,
             image_url=image_url,
@@ -185,11 +156,7 @@ class WoundAnalysisService:
             file_size=file_size,
             ai_model_version=ai_model_version,
             total_detections=total_detections,
-            processing_time_ms=processing_time_ms,
-            primary_wound_type=mapped_wound_type,
-            primary_severity=parsed_severity,
-            primary_firstaidguide_id=guide_id,
-            firstaid_snapshot=snapshot
+            processing_time_ms=processing_time_ms
         )
 
         self.db.add(analysis)
@@ -198,7 +165,7 @@ class WoundAnalysisService:
 
         logger.info(
             f"Created wound analysis: {analysis.analysis_id} "
-            f"({mapped_wound_type}/{parsed_severity}, user: {user_id or 'guest'})"
+            f"(user: {user_id or 'guest'})"
         )
 
         return analysis
@@ -206,8 +173,7 @@ class WoundAnalysisService:
     async def save_detections(
         self,
         analysis_id: uuid.UUID,
-        detections: List[Dict[str, Any]],
-        primary_guide_id: Optional[uuid.UUID] = None
+        detections: List[Dict[str, Any]]
     ) -> None:
         for detection in detections:
             original_wound_type = detection.get("wound_type", "unknown")
@@ -218,6 +184,7 @@ class WoundAnalysisService:
             # Get guide for each detection
             guide = await self.get_first_aid_guide_for_detection(detection)
             guide_id = self.extract_guide_id(guide)
+            snapshot = self.extract_snapshot(guide)
 
             parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
                 original_wound_type,
@@ -232,8 +199,8 @@ class WoundAnalysisService:
                 confidence_score=detection.get("confidence", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
                 detection_index=detection.get("detection_index", 0),
-                is_primary=detection.get("is_primary", False),
-                firstaidguide_id=guide_id
+                firstaidguide_id=guide_id,
+                firstaid_snapshot=snapshot
             )
             self.db.add(wound_detection)
 
@@ -288,27 +255,43 @@ class WoundAnalysisService:
         self,
         analysis_id: uuid.UUID
     ) -> List[Dict[str, Any]]:
+        from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
+
         query = (
-            select(WoundDetection)
+            select(WoundDetection, FirstAidGuide)
+            .outerjoin(FirstAidGuide, WoundDetection.firstaidguide_id == FirstAidGuide.firstaidguide_id)
             .where(WoundDetection.analysis_id == analysis_id)
             .order_by(WoundDetection.detection_index)
         )
 
         result = await self.db.execute(query)
-        detections = result.scalars().all()
+        rows = result.all()
 
-        return [
-            {
-                "wound_type": d.wound_type,
-                "severity": d.severity,
-                "sub_type": d.sub_type,
-                "confidence": d.confidence_score,
-                "bounding_box": d.bounding_box,
-                "is_primary": d.is_primary,
-                "detection_index": d.detection_index
-            }
-            for d in detections
-        ]
+        detections = []
+        for detection, guide in rows:
+            snapshot = self.extract_snapshot({
+                "title": guide.title if guide else "Không có hướng dẫn",
+                "description": guide.description if guide else "",
+                "steps": guide.steps if guide else [],
+                "warnings": guide.warnings if guide else [],
+                "dos": guide.dos if guide else [],
+                "donts": guide.donts if guide else [],
+                "supplies_needed": guide.supplies_needed if guide else [],
+                "estimated_healing_time": guide.estimated_healing_time if guide else ""
+            })
+
+            detections.append({
+                "detection_id": str(detection.detection_id),
+                "wound_type": detection.wound_type,
+                "severity": detection.severity,
+                "sub_type": detection.sub_type,
+                "confidence_score": detection.confidence_score,
+                "bounding_box": detection.bounding_box,
+                "detection_index": detection.detection_index,
+                "firstaid_snapshot": snapshot
+            })
+
+        return detections
 
     async def soft_delete_analysis(self, analysis_id: uuid.UUID) -> None:
         analysis = await self.get_analysis_by_id(analysis_id)

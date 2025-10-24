@@ -216,7 +216,8 @@ backend/
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
 | GET | `/health` | Kiểm tra trạng thái AI models |
-| POST | `/analyze` | Phân tích hình ảnh vết thương |
+| POST | `/analyze` | Phân tích hình ảnh vết thương (trả về summary) |
+| GET | `/analysis/{analysis_id}` | Lấy chi tiết phân tích với first aid cho tất cả wounds |
 | GET | `/history` | Lịch sử phân tích của user |
 
 ### First Aid (`/api/v1/first-aid`)
@@ -250,8 +251,8 @@ backend/
 - **role_permissions**: Liên kết role-permission
 
 #### AI Analysis
-- **wound_analyses**: Kết quả phân tích vết thương
-- **wound_detections**: Thông tin phát hiện vết thương
+- **wound_analyses**: Kết quả phân tích vết thương (không còn primary fields)
+- **wound_detections**: Thông tin phát hiện vết thương với firstaid_snapshot cho mỗi detection
 
 #### First Aid
 - **firstaid_guides**: Hướng dẫn sơ cứu
@@ -316,19 +317,21 @@ pytest tests/test_auth.py -v
 pytest tests/test_ai.py -v
 ```
 
-## 🔥 Tính năng đặc biệt: Burn Sub-types
+## 🔥 Tính năng đặc biệt: Multiple Wound First Aid
 
-Hệ thống hỗ trợ xử lý đặc biệt cho vết bỏng với các loại phụ:
+Hệ thống hỗ trợ hiển thị hướng dẫn sơ cứu cho tất cả vết thương được phát hiện, không chỉ vết chính:
 
-### Các loại phụ được hỗ trợ
-- **Blister** (`blister`): Vết bỏng có mụn nước
-- **Skin Tear** (`skintear`): Vết bỏng kèm rách da
+### Các tính năng mới
+- **Per-Detection First Aid**: Mỗi detection có firstaid_snapshot riêng
+- **Modular Schema**: Loại bỏ primary fields để tăng tính linh hoạt
+- **Guest Access**: Guest có thể truy cập chi tiết phân tích của mình
+- **Wound Grouping**: Nhóm hướng dẫn theo wound_type cho frontend
 
 ### Cách hoạt động
-1. **AI Detection**: Model AI phát hiện mức độ `moderate_blister` hoặc `moderate_skintear`
-2. **Smart Parsing**: Hệ thống tự động trích xuất loại phụ từ kết quả
-3. **Guide Matching**: Tìm hướng dẫn chuyên biệt trước, fallback về hướng dẫn chung
-4. **Response**: Trả về hướng dẫn phù hợp với loại phụ
+1. **AI Detection**: Model AI phát hiện nhiều vết thương
+2. **First Aid Matching**: Tìm hướng dẫn cho mỗi detection
+3. **Response Structure**: Trả về first aid cho tất cả wounds
+4. **API Endpoints**: POST cho summary, GET cho chi tiết đầy đủ
 
 ## 🤝 Contributing
 
@@ -353,5 +356,5 @@ Dự án này là một phần của SkinAid Capstone project.
 ---
 
 **Nhóm phát triển**: SkinAid Team
-**Version**: 0.1.0
-**Last Updated**: 2025-01-22
+**Version**: 0.2.0
+**Last Updated**: 2025-10-24

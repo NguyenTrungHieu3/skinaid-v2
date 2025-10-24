@@ -17,35 +17,39 @@ class ResponseMapper:
         significant_detections: List[Dict[str, Any]]
     ) -> WoundAnalysisResponse:
         avg_confidence = (
-            sum(d.get("confidence", 0.0) for d in significant_detections) /
+            sum(d.get("confidence_score", 0.0) for d in significant_detections) /
             len(significant_detections)
             if significant_detections else 0.0
         )
 
         significant_wounds = []
+        wound_guides = {}
         for detection in significant_detections:
             det_wound_type = detection.get("wound_type", "unknown")
             mapped_wound_type = DetectionProcessor.map_wound_type_for_database(det_wound_type)
-            parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
-                det_wound_type,
-                detection.get("severity", "mild")
-            )
+            parsed_severity = detection.get("severity", "mild")
+            sub_type = detection.get("sub_type")
 
             wound_summary = WoundDetectionSummary(
                 wound_type=mapped_wound_type,
                 severity=parsed_severity,
                 sub_type=sub_type,
-                confidence_score=detection.get("confidence", 0.0),
+                confidence_score=detection.get("confidence_score", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
-                is_primary=detection.get("is_primary", False)
+                firstaid_snapshot=detection.get("firstaid_snapshot")
             )
             significant_wounds.append(wound_summary)
 
-        is_successful = (
-            analysis.total_detections >= 0 and 
-            analysis.primary_wound_type in ["wound", "not_wound"] and 
-            analysis.primary_severity in ["mild", "moderate", "severe"]
-        )
+            # Group by wound_type for wound_guides
+            if mapped_wound_type not in wound_guides:
+                wound_guides[mapped_wound_type] = []
+            wound_guides[mapped_wound_type].append({
+                "severity": parsed_severity,
+                "sub_type": sub_type,
+                "firstaid_snapshot": detection.get("firstaid_snapshot")
+            })
+
+        is_successful = analysis.total_detections >= 0
 
         response_data = {
             "analysis_id": analysis.analysis_id,
@@ -57,14 +61,10 @@ class ResponseMapper:
             "total_detections": analysis.total_detections,
             "processing_time_ms": analysis.processing_time_ms,
             "processing_time_seconds": (
-                round(analysis.processing_time_ms / 1000, 3) 
-                if analysis.processing_time_ms > 0 
+                round(analysis.processing_time_ms / 1000, 3)
+                if analysis.processing_time_ms > 0
                 else None
             ),
-            "primary_wound_type": analysis.primary_wound_type,
-            "primary_severity": analysis.primary_severity,
-            "primary_firstaidguide_id": analysis.primary_firstaidguide_id,
-            "firstaid_snapshot": analysis.firstaid_snapshot,
             "analyzed_at": analysis.analyzed_at,
             "created_at": analysis.created_at,
             "updated_at": analysis.updated_at,
@@ -72,16 +72,17 @@ class ResponseMapper:
 
             "is_successful_analysis": is_successful,
             "has_multiple_wounds": analysis.total_detections > 1,
-            "is_wound_detected": analysis.primary_wound_type == "wound",
+            "is_wound_detected": analysis.total_detections > 0,
             "is_guest_analysis": analysis.user_id is None,
-            
+
             "average_confidence": avg_confidence,
             "meets_accuracy_threshold": avg_confidence >= DetectionProcessor.MIN_CONFIDENCE_THRESHOLD,
-            
+
             "significant_wounds": [
-                w.model_dump() if hasattr(w, 'model_dump') else w.dict() 
+                w.model_dump() if hasattr(w, 'model_dump') else w.dict()
                 for w in significant_wounds
-            ]
+            ],
+            "wound_guides": wound_guides
         }
 
         logger.debug(
@@ -99,11 +100,12 @@ class ResponseMapper:
             analysis_id=detection.analysis_id,
             wound_type=detection.wound_type,
             severity=detection.severity,
+            sub_type=detection.sub_type,
             confidence_score=detection.confidence_score,
             bounding_box=detection.bounding_box,
             detection_index=detection.detection_index,
-            is_primary=detection.is_primary,
             firstaidguide_id=detection.firstaidguide_id,
+            firstaid_snapshot=detection.firstaid_snapshot,
             created_at=detection.created_at
         )
 
@@ -112,12 +114,8 @@ class ResponseMapper:
         
         total = len(analyses)
         successful = sum(
-            1 for a in analyses 
-            if (
-                a.total_detections >= 0 and 
-                a.primary_wound_type in ["wound", "not_wound"] and 
-                a.primary_severity in ["mild", "moderate", "severe"]
-            )
+            1 for a in analyses
+            if a.total_detections >= 0
         )
         
         total_confidence = 0.0
@@ -143,21 +141,13 @@ class ResponseMapper:
                 "total_detections": a.total_detections,
                 "processing_time_ms": a.processing_time_ms,
                 "processing_time_seconds": round(a.processing_time_ms / 1000, 3) if a.processing_time_ms > 0 else None,
-                "primary_wound_type": a.primary_wound_type,
-                "primary_severity": a.primary_severity,
-                "primary_firstaidguide_id": a.primary_firstaidguide_id,
-                "firstaid_snapshot": a.firstaid_snapshot,
                 "analyzed_at": a.analyzed_at,
                 "created_at": a.created_at,
                 "updated_at": a.updated_at,
                 "is_deleted": a.is_deleted,
-                "is_successful_analysis": (
-                    a.total_detections >= 0 and 
-                    a.primary_wound_type in ["wound", "not_wound"] and 
-                    a.primary_severity in ["mild", "moderate", "severe"]
-                ),
+                "is_successful_analysis": a.total_detections >= 0,
                 "has_multiple_wounds": a.total_detections > 1,
-                "is_wound_detected": a.primary_wound_type == "wound",
+                "is_wound_detected": a.total_detections > 0,
                 "average_confidence": a.average_confidence,
                 "meets_accuracy_threshold": a.average_confidence >= 0.65,
             })
