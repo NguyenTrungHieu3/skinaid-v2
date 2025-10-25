@@ -1,0 +1,20 @@
+.admin-dashboard-container {
+    display: flex;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #f1f5f9, #dbeafe);
+    font-family: "Poppins", sans-serif;
+    overflow: hidden;
+
+    .admin-main-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        
+        .admin-page-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+    }
+}

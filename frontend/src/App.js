@@ -6,6 +6,7 @@ import Home from "./pages/Homepage";
 import SignupPage from "./pages/SignupPage";
 import UploadImgPage from "./pages/UploadImgPage";
 import VerifyForm from "./components/Verify/VerifyForm";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/upload" element={<UploadImgPage />} />
           <Route path="/verify-email" element={<VerifyForm />} />
+          <Route path="/admin/*" element={<AdminPage />} />
         </Routes>
       </div>
     </Router>

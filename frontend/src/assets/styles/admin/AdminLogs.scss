@@ -1,0 +1,28 @@
+// Admin Logs Specific Styles
+// Log Table User Cell
+.admin-log-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .log-user-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(to bottom right, #06b6d4, #3b82f6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+      color: white;
+    }
+  }
+  
+  span {
+    font-weight: 500;
+    color: #0f172a;
+  }
+}
