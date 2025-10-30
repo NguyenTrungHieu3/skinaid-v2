@@ -9,7 +9,8 @@ sys.path.insert(0, parent_dir)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager 
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 
 from app.core.database import init_db
 from app.core.config import settings
@@ -81,6 +82,9 @@ async def log_requests(request: Request, call_next):
     return response
 
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 @app.get("/")
 async def root():
     return {

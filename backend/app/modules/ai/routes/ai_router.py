@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 
 from app.modules.ai.controllers.ai_controller import AIController
-from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
+from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse, SimpleAnalysisResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.auth.models.user import User
 
@@ -25,7 +25,7 @@ async def check_ai_health(db: AsyncSession = Depends(get_db)):
 
 @router.post(
     "/analyze",
-    response_model=Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse],
+    response_model=Union[SuccessResponse[SimpleAnalysisResponse], ErrorResponse],
     summary="Phân tích hình ảnh vết thương"
 )
 async def analyze_image(

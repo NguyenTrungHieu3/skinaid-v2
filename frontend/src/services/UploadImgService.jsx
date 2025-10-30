@@ -17,7 +17,17 @@ const UploadImgService = {
           Authorization: `Bearer ${token}`, // gửi token lên backend
         },
       });
-      // backend trả về { success, error_code?, error_message?, file_info? }
+      
+      if (response.data.success && response.data.data && response.data.data.analysis_id) {
+        const analysisId = response.data.data.analysis_id;
+        const detailResponse = await axios.get(`http://127.0.0.1:8000/api/v1/ai/analysis/${analysisId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        return detailResponse.data;
+      }
+      
       return response.data;
     } catch (error) {
       console.error(

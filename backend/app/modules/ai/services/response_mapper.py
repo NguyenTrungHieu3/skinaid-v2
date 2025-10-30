@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
+from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse, SimpleAnalysisResponse
 from app.modules.ai.schemas.wound_detection_schemas import (
     WoundDetectionSummary,
     WoundDetectionResponse 
@@ -92,6 +92,16 @@ class ResponseMapper:
         )
 
         return WoundAnalysisResponse(**response_data)
+
+    @staticmethod
+    def to_simple_analysis_response(analysis) -> SimpleAnalysisResponse:
+        
+        response_data = {
+            "analysis_id": analysis.analysis_id,
+            "created_at": analysis.created_at,
+            "updated_at": analysis.updated_at
+        }
+        return SimpleAnalysisResponse(**response_data)
 
     @staticmethod
     def to_detection_response(detection) -> WoundDetectionResponse:

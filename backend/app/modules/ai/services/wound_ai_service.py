@@ -175,6 +175,19 @@ class WoundAIService:
             processing_time_ms = ai_result.get("processing_time_ms", 0)
             processing_time = processing_time_ms / 1000.0
 
+            # Check if primary_wound_type is "normal skin" - if so, ignore all detections
+            primary_wound_type = ai_result.get("primary_wound_type", "")
+            if primary_wound_type and "normal" in primary_wound_type.lower() and "skin" in primary_wound_type.lower():
+                logger.info(f"[ANALYZE] Primary wound type is '{primary_wound_type}', treating as no wound detected")
+                return {
+                    "success": True,
+                    "num_detections": 0,
+                    "detections": [],
+                    "processing_time": processing_time,
+                    "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
+                    "message": "Không phát hiện vết thương nào - ảnh chứa da bình thường"
+                }
+
             if not raw_detections:
                 return {
                     "success": True,
@@ -222,7 +235,6 @@ class WoundAIService:
                     
                     # Additional validation for burn sub-types
                     if wound_type.lower() == "burn" and "_" in severity:
-                        # Extract sub-type from severity (e.g., "moderate_blister")
                         parts = severity.split("_")
                         if len(parts) > 1:
                             sub_type = parts[-1]  # "blister" or "skintear"

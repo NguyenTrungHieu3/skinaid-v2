@@ -6,7 +6,7 @@ from datetime import datetime
 import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse
+from app.modules.ai.schemas.wound_analysis_schemas import WoundAnalysisResponse, SimpleAnalysisResponse
 from app.modules.ai.services.wound_ai_service import WoundAIService
 from app.modules.ai.services.wound_analysis_service import WoundAnalysisService
 from app.modules.ai.services.detection_processor import DetectionProcessor
@@ -27,7 +27,7 @@ class AIController:
         self,
         file: UploadFile,
         user_id: Optional[uuid.UUID]
-    ) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:
+    ) -> Union[SuccessResponse[SimpleAnalysisResponse], ErrorResponse]:
         file_path = None
 
         try:
@@ -76,10 +76,8 @@ class AIController:
                     processing_time_ms=processing_time_ms,
                     total_detections=0 # Đảm bảo là 0
                 )
-                # Tạo response với analysis và danh sách detections rỗng
-                response_no_wound = ResponseMapper.to_wound_analysis_response(
-                    analysis_no_wound, [] # Truyền danh sách rỗng
-                )
+                # Tạo response đơn giản chỉ chứa analysis_id, created_at, updated_at
+                response_no_wound = ResponseMapper.to_simple_analysis_response(analysis_no_wound)
                 return SuccessResponse(
                     message="Phân tích hoàn thành - không phát hiện vết thương",
                     data=response_no_wound
@@ -114,19 +112,15 @@ class AIController:
             logger.info(f"[ANALYZE] Fetched {len(saved_detections_models)} detections from DB for response mapping.")
 
 
-            # Step 5: Map response SỬ DỤNG DỮ LIỆU TỪ DB
-            # Truyền analysis model và SAVED detection models vào mapper
-            response = ResponseMapper.to_wound_analysis_response(
-                analysis, saved_detections_models # <-- Sửa ở đây
-            )
+            # Step 5: Tạo response đơn giản chỉ chứa analysis_id, created_at, updated_at
+            simple_response = ResponseMapper.to_simple_analysis_response(analysis)
 
             logger.info(
                 f"[ANALYZE] Success: {analysis.analysis_id} "
-                f"(confidence: {response.average_confidence:.2%})"
             )
             return SuccessResponse(
                 message="Phân tích hình ảnh thành công",
-                data=response
+                data=simple_response
             )
 
         except HTTPException:

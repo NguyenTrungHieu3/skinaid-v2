@@ -50,3 +50,12 @@ class WoundAnalysisResponse(WoundAnalysisBase):
     
     class Config:
         from_attributes = True
+
+
+class SimpleAnalysisResponse(BaseModel):
+    analysis_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
