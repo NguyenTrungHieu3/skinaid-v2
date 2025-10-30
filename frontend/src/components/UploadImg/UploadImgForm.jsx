@@ -1,94 +1,108 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import UploadImgService from "../../services/UploadImgService";
+import ErrorBanner from "../Verify/ErrorBanner";
+import "../../assets/styles/UploadImg.scss"; // nhớ import file CSS
 
 function UploadImgForm() {
   const [file, setFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // ✅ thêm state loading
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const location = useLocation();
+  const hasOpened = useRef(false);
 
-  const handleFileChange = async (e) => {
-    const uploadedFile = e.target.files[0];
+  useEffect(() => {
+    if (
+      location.state?.autoOpen &&
+      fileInputRef.current &&
+      !hasOpened.current
+    ) {
+      hasOpened.current = true;
+      fileInputRef.current.click();
+    }
+  }, [location.state]);
+
+  const showError = (msg) => setErrorMessage(msg);
+
+  const handleFileChange = async (uploadedFile) => {
     if (!uploadedFile) return;
 
     const allowedTypes = ["image/jpeg", "image/png"];
     if (!allowedTypes.includes(uploadedFile.type)) {
-      alert("Only JPEG and PNG are allowed.");
+      showError("Only JPEG and PNG are allowed.");
       return;
     }
     if (uploadedFile.size > 5 * 1024 * 1024) {
-      alert("File must be smaller than 5MB.");
+      showError("File must be smaller than 5MB.");
       return;
     }
 
     setFile(uploadedFile);
+    setIsLoading(true); // ✅ bật loading
 
     try {
-       const token = localStorage.getItem("token");
-       if (!token) {
-         alert("Please log in to upload images");
-         navigate("/signin");
-         return;
-       }
+      const result = await UploadImgService.uploadFile(uploadedFile);
+      console.log("Upload result:", result);
 
-       const result = await UploadImgService.uploadFile(uploadedFile);
-       console.log("Upload result:", result);
+      if (!result.success) {
+        showError(`Upload failed: ${result.error_message}`);
+        setIsLoading(false);
+        return;
+      }
 
-       if (!result.success) {
-         console.error("Upload failed with response:", result);
-         alert(`Upload failed: ${result.message}`);
-         return;
-       }
-
-       console.log("Upload successful, navigating to result page...");
-
-      navigate("/result", {
+      navigate("/results", {
         state: {
           fileUrl: URL.createObjectURL(uploadedFile),
           result: result.data,
-          imageInfo: result.data?.image_information,
-          aiResult: result.data?.ai_result,
-          firstAid: result.data?.first_aid,
         },
       });
     } catch (err) {
-       console.error("Upload error:", err);
-
-       let backendMessage = "Upload failed";
-
-       if (err.response) {
-         // Server trả về lỗi
-         if (err.response.data?.message) {
-           backendMessage = err.response.data.message;
-         } else if (err.response.data?.error_message) {
-           backendMessage = err.response.data.error_message;
-         } else if (err.response.data?.detail) {
-           backendMessage = err.response.data.detail;
-         } else if (err.response.status === 401) {
-           backendMessage = "Unauthorized: Please log in again";
-         } else if (err.response.status === 403) {
-           backendMessage = "Forbidden: Account verification required";
-         } else if (err.response.status >= 500) {
-           backendMessage = "Server error: Please try again later";
-         } else {
-           backendMessage = `Server error (${err.response.status})`;
-         }
-       } else if (err.request) {
-         // Network error
-         backendMessage = "Network error: Please check your connection";
-       } else {
-         // Other error
-         backendMessage = err.message || "Upload failed";
-       }
-
-       alert(`Upload failed: ${backendMessage}`);
-     }
+      console.error("Upload error:", err);
+      const backendMessage =
+        err.response?.data?.error_message ||
+        err.response?.data?.detail ||
+        err.message ||
+        "Upload failed";
+      showError(`Upload failed HTTP: ${backendMessage}`);
+      setIsLoading(false);
+    }
   };
+
+  const handleInputChange = (e) => handleFileChange(e.target.files[0]);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileChange(e.dataTransfer.files[0]);
+  };
+
+  const handleDragOver = (e) => e.preventDefault() || setIsDragging(true);
+  const handleDragLeave = (e) => e.preventDefault() || setIsDragging(false);
+
+  // ✅ GIAI ĐOẠN LOADING
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <i className="fa-solid fa-spinner fa-spin"></i>
+        <p>Analyzing image, please wait...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="upload-form">
-      {/* Upload Box */}
-      <div className="upload-box">
+      <ErrorBanner message={errorMessage} onClose={() => setErrorMessage("")} />
+
+      <div
+        className={`upload-box ${isDragging ? "dragging" : ""}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
         <label className="upload-dropzone">
           <div className="upload-icon">
             <i className="fa-solid fa-arrow-up-from-bracket"></i>
@@ -110,11 +124,16 @@ function UploadImgForm() {
           </div>
 
           <p className="file-note">Maximum file size: 5MB per image</p>
-          <input type="file" hidden onChange={handleFileChange} />
+          <input
+            type="file"
+            hidden
+            accept=".jpg,.jpeg,.png,.tiff,.webp"
+            ref={fileInputRef}
+            onChange={handleInputChange}
+          />
         </label>
       </div>
 
-      {/* Footer */}
       <div className="upload-footer">
         <h4>Ready for Wound Documentation</h4>
         <p>
@@ -129,6 +148,12 @@ function UploadImgForm() {
         </div>
         <p className="copyright">© 2025 SkinAid. All rights reserved.</p>
       </div>
+
+      {isDragging && (
+        <div className="drag-overlay">
+          <span>Drop your image here</span>
+        </div>
+      )}
     </div>
   );
 }

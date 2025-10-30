@@ -1,0 +1,142 @@
+.forgot-password-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(to bottom, #e9f8f4, #f8fbfa);
+
+  header {
+    flex-shrink: 0; /* Giữ header cố định ở trên */
+  }
+
+  .forgot-page {
+    flex: 1; /* Cho phần còn lại chiếm hết chiều cao */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 60px;
+  }
+}
+
+/* Forgot Box */
+.forgot-box {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  width: 310px;
+  height: 320px;
+  padding: 10px 15px;
+  text-align: center;
+  //   margin-top: 80px;
+  border: 2px solid #26b894;
+
+  .icon-lock {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    background-color: #8adec9;
+    border: 3px solid #26b894; /* viền xanh đậm */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    i {
+      font-size: 20px;
+      color: #26b894; /* màu icon cùng tông với giao diện */
+    }
+  }
+
+  h2 {
+    color: #26b894;
+    margin-bottom: 5px;
+    font-size: 20px;
+    margin-top: 5px;
+  }
+
+  p#sub-title {
+    color: #555;
+    font-size: 11px;
+    line-height: 18px;
+  }
+
+  label {
+    font-size: 13px;
+    font-weight: bold;
+    display: block;
+    text-align: left;
+    margin-bottom: 8px;
+  }
+
+  input {
+    width: 95%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    // margin-bottom: 5px;
+    font-size: 13px;
+
+    &:focus {
+      outline: none;
+      border-color: #26b894;
+    }
+  }
+
+  p#form {
+    color: #555;
+    font-size: 11px;
+    line-height: 18px;
+  }
+
+  button {
+    width: 100%;
+    padding: 7px;
+    background-color: #26b894;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-bottom: 10px;
+    font-family: inherit;
+
+    &:hover {
+      background-color: #1f9f7d;
+    }
+
+    &:disabled {
+      background-color: #9fe0cc;
+      cursor: not-allowed;
+    }
+  }
+
+  .message {
+    margin-top: 15px;
+    color: #333;
+    font-size: 14px;
+  }
+
+  .block-backsignin {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    color: #26b894;
+    font-size: 13px;
+    text-decoration: none;
+    justify-content: center;
+
+    .back-signin {
+      display: inline-block;
+      color: #26b894;
+      font-size: 13px;
+      text-decoration: none;
+      font-weight: 500;
+      justify-content: center;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}

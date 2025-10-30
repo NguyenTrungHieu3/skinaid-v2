@@ -26,6 +26,7 @@ class WoundDetectionSummary(BaseModel):
     sub_type: Optional[str] = None
     confidence_score: float
     bounding_box: Dict[str, Any]
+    firstaid_snapshot: Optional[Dict[str, Any]] = None
 
 
 class WoundAnalysisResponse(WoundAnalysisBase):

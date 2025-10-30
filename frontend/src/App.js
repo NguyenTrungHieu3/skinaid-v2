@@ -7,6 +7,9 @@ import SignupPage from "./pages/SignupPage";
 import UploadImgPage from "./pages/UploadImgPage";
 import VerifyForm from "./components/Verify/VerifyForm";
 import AdminPage from "./pages/AdminPage";
+import AnalysisResultsPage from "./pages/AnalysisResultsPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+
 
 function App() {
   return (
@@ -27,9 +30,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/signin" element={<SigninPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-pass" element={<ForgotPasswordPage />} />
           <Route path="/upload" element={<UploadImgPage />} />
           <Route path="/verify-email" element={<VerifyForm />} />
           <Route path="/admin/*" element={<AdminPage />} />
+          <Route path="/results" element={<AnalysisResultsPage />} />
         </Routes>
       </div>
     </Router>
