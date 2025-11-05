@@ -5,12 +5,15 @@ import uuid
 from datetime import datetime
 
 class UserBase(BaseModel):
+    user_name: str = Field(..., min_length=3, max_length=50, description="Username must be 3-50 characters")
     email: EmailStr
 
 class UserCreate(UserBase):
+    user_name: str = Field(..., min_length=3, max_length=50, description="Username must be 3-50 characters")
     email: EmailStr
     password: str = Field(..., min_length=8, description="Password with at least 8 characters")
     confirm_password: str = Field(..., min_length=8, description="Confirm password must match password")
+    gender: Optional[str] = Field(None, description="Gender: male, female, or other")
 
     @model_validator(mode='before')
     @classmethod
@@ -24,8 +27,8 @@ class UserCreate(UserBase):
 
 class UserResponse(BaseModel):
     user_id: uuid.UUID
+    user_name: str
     email: EmailStr
-    display_name: Optional[str] = None
     is_active: bool = Field(default=True, description="User account status")
     is_verified: bool
     created_at: datetime
@@ -33,22 +36,23 @@ class UserResponse(BaseModel):
 
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    gender: Optional[str] = None
     avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    user_name: str
     password: str
 
-class EmailVerificationRequest(BaseModel):
-    email: EmailStr
-    token: str
+# class EmailVerificationRequest(BaseModel):
+#     email: EmailStr
+#     token: str
 
-class EmailVerificationResponse(BaseModel):
-    message: str
-    is_verified: bool
+# class EmailVerificationResponse(BaseModel):
+#     message: str
+#     is_verified: bool
 
 class PasswordResetRequest(BaseModel):
     email: EmailStr

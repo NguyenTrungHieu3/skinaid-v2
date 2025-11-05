@@ -9,8 +9,8 @@ from app.modules.auth.schemas.user_schemas import (
     UserCreate,
     UserLogin,
     UserResponse,
-    EmailVerificationRequest,
-    EmailVerificationResponse,
+    # EmailVerificationRequest,
+    # EmailVerificationResponse,
     PasswordResetRequest,
     PasswordResetConfirm,
     ChangePasswordRequest,
@@ -18,7 +18,7 @@ from app.modules.auth.schemas.user_schemas import (
 )
 from app.modules.auth.models.user import User
 from app.modules.auth.schemas.token_schemas import TokenResponse
-from app.modules.auth.controllers.auth_controllers import AuthController
+from app.modules.auth.controllers.auth_controller import AuthController
 from app.api.v1.deps import get_db, get_current_active_user, get_token
 from app.core.Security.jwt import JWTHandler
 
@@ -57,33 +57,6 @@ async def login_user(
     """Đăng nhập hệ thống và trả về token xác thực."""
     return await controller.login_user(credentials)
 
-@router.post(
-    "/verify-email",
-    response_model=Union[SuccessResponse[EmailVerificationResponse], ErrorResponse],
-    summary="Xác thực email (POST)",
-)
-async def verify_email_post(
-    verification_data: EmailVerificationRequest,
-    controller: AuthController = Depends(get_auth_controller),
-):
-    """Xác thực email thông qua mã token."""
-    return await controller.verify_email(verification_data)
-
-@router.get(
-    "/verify-email",
-    response_model=Union[SuccessResponse[EmailVerificationResponse], ErrorResponse],
-    summary="Xác thực email qua link",
-)
-async def verify_email_get(
-    email: str = Query(..., description="Email cần xác thực"),
-    token: str = Query(..., description="Token xác thực email"),
-    controller: AuthController = Depends(get_auth_controller),
-):
-    """Xác thực email qua liên kết (GET request)."""
-    verification_data = EmailVerificationRequest(email=email, token=token)
-    return await controller.verify_email(verification_data)
-
-
 @router.get(
     "/me",
     response_model=SuccessResponse[UserResponse],
@@ -93,14 +66,15 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """Lấy thông tin cá nhân của user hiện tại."""
     user_response = UserResponse(
         user_id=current_user.user_id,
+        user_name=current_user.user_name,
         email=current_user.email,
-        display_name=current_user.display_name or "",
         is_active=current_user.is_active,
         is_verified=current_user.is_verified,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
         full_name=current_user.profile.full_name if current_user.profile else None,
         phone=current_user.profile.phone if current_user.profile else None,
+        gender=current_user.profile.gender if current_user.profile else None,
         avatar_url=current_user.profile.avatar_url if current_user.profile else None
     )
 
@@ -171,20 +145,6 @@ async def logout_user(
     """Đăng xuất khỏi hệ thống và vô hiệu hóa token."""
     return await controller.logout_user(token)
 
-
-@router.post(
-    "/resend-verification",
-    response_model=Union[SuccessResponse[dict], ErrorResponse],
-    summary="Gửi lại email xác thực",
-)
-async def resend_verification_email(
-    email_request: PasswordResetRequest,
-    controller: AuthController = Depends(get_auth_controller),
-):
-    """Gửi lại email xác thực tài khoản."""
-    return await controller.resend_verification_email(email_request.email)
-
-
 @router.post(
     "/change-password", 
     response_model= Union[SuccessResponse[ChangePasswordResponse], ErrorResponse],
@@ -197,3 +157,43 @@ async def change_password(
 ):
     """Thay đổi mật khẩu tài khoản (đã đăng nhập)."""
     return await controller.change_password(current_user, password_data)
+
+# ============= Email Verification Endpoints =============
+# @router.post(
+#     "/verify-email",
+#     response_model=Union[SuccessResponse[EmailVerificationResponse], ErrorResponse],
+#     summary="Xác thực email (POST)",
+# )
+# async def verify_email_post(
+#     verification_data: EmailVerificationRequest,
+#     controller: AuthController = Depends(get_auth_controller),
+# ):
+#     """Xác thực email thông qua mã token."""
+#     return await controller.verify_email(verification_data)
+
+# @router.get(
+#     "/verify-email",
+#     response_model=Union[SuccessResponse[EmailVerificationResponse], ErrorResponse],
+#     summary="Xác thực email qua link",
+# )
+# async def verify_email_get(
+#     email: str = Query(..., description="Email cần xác thực"),
+#     token: str = Query(..., description="Token xác thực email"),
+#     controller: AuthController = Depends(get_auth_controller),
+# ):
+#     """Xác thực email qua liên kết (GET request)."""
+#     verification_data = EmailVerificationRequest(email=email, token=token)
+#     return await controller.verify_email(verification_data)
+
+# @router.post(
+#     "/resend-verification",
+#     response_model=Union[SuccessResponse[dict], ErrorResponse],
+#     summary="Gửi lại email xác thực",
+# )
+# async def resend_verification_email(
+#     email_request: PasswordResetRequest,
+#     controller: AuthController = Depends(get_auth_controller),
+# ):
+#     """Gửi lại email xác thực tài khoản."""
+#     return await controller.resend_verification_email(email_request.email)
+# ============= Email Verification Endpoints =============

@@ -50,7 +50,6 @@ class UserService:
                 "user_id": row["user_id"],
                 "email": row["email"],
                 "hashed_password": row["hashed_password"],
-                "display_name": row["display_name"],
                 "is_active": row["is_active"],
                 "is_verified": row["is_verified"],
                 "created_at": row["created_at"],
@@ -104,7 +103,6 @@ class UserService:
         self,
         email: str,
         hashed_password: str,
-        display_name: Optional[str] = None,
         is_active: bool = True,
         is_verified: bool = False
     ) -> User:
@@ -116,8 +114,8 @@ class UserService:
             user_id = uuid.uuid4()
 
             sql = text("""
-                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
-                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :created_at, :updated_at)
+                INSERT INTO users (user_id, email, hashed_password, is_active, is_verified, created_at, updated_at)
+                VALUES (:user_id, :email, :hashed_password, :is_active, :is_verified, :created_at, :updated_at)
                 RETURNING *
             """)
 
@@ -125,7 +123,6 @@ class UserService:
                 "user_id": user_id,
                 "email": email,
                 "hashed_password": hashed_password,
-                "display_name": display_name or email.split('@')[0],
                 "is_active": is_active,
                 "is_verified": is_verified,
                 "created_at": current_time,

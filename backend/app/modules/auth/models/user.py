@@ -13,11 +13,11 @@ class User(SQLModel, table=True):
     __tablename__ = "users"  # type: ignore
 
     user_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_name: str = Field(unique=True, index=True, nullable= True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
-    display_name: Optional[str] = None
     is_active: bool = Field(default=True)
-    is_verified: bool = Field(default=False)
+    is_verified: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 

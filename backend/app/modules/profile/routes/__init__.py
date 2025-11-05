@@ -1,3 +1,3 @@
-from .profile_routers import router
+from .profile_router import router
 
 __all__ = ["router"]

@@ -1,3 +1,3 @@
-from .auth_routers import router
+from .auth_router import router
 
 __all__ = ["router"]

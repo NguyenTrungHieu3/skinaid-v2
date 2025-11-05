@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from app.modules.auth.routes.auth_routers import router as auth_router
-from app.modules.profile.routes.profile_routers import router as profile_router
-from app.modules.upload.routes.upload_routers import router as upload_router
+from app.modules.auth.routes.auth_router import router as auth_router
+from app.modules.profile.routes.profile_router import router as profile_router
+from app.modules.upload.routes.upload_router import router as upload_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.firstaid.routes.first_aid_router import router as first_aid_router
 from app.modules.guest.routes.guest_router import router as guest_router

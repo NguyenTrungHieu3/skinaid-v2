@@ -4,7 +4,7 @@ from typing import Union, Dict, Any
 import logging
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.upload.controllers.upload_controllers import UploadController
+from app.modules.upload.controllers.upload_controller import UploadController
 from app.api.v1.deps import get_db, get_current_active_user
 from app.modules.auth.models.user import User
 

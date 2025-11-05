@@ -1,3 +1,3 @@
-from .auth_controllers import AuthController
+from .auth_controller import AuthController
 
 __all__ = ["AuthController"]

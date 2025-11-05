@@ -1,3 +1,3 @@
-from .profile_controllers import ProfileController
+from .profile_controller import ProfileController
 
 __all__ = ["ProfileController"]

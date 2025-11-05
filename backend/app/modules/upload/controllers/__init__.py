@@ -1,5 +1,5 @@
 # Upload Controllers
 
-from .upload_controllers import UploadController
+from .upload_controller import UploadController
 
 __all__ = ["UploadController"]

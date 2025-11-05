@@ -11,19 +11,19 @@ from .services.auth_service import AuthService
 from .services.user_service import UserService
 
 # Controllers
-from .controllers.auth_controllers import AuthController
+from .controllers.auth_controller import AuthController
 
 # Schemas
 from .schemas.user_schemas import (
     UserBase, UserCreate, UserLogin, UserResponse,
     PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
     ChangePasswordRequest, ChangePasswordResponse,
-    EmailVerificationRequest, EmailVerificationResponse
+    # EmailVerificationRequest, EmailVerificationResponse
 )
 from .schemas.user_profile import UserProfileUpdate, UserProfileResponse
 
 # Routes
-from .routes.auth_routers import router as auth_router
+from .routes.auth_router import router as auth_router
 
 __all__ = [
     "User", "UserProfile", "VerificationToken",
@@ -37,7 +37,7 @@ __all__ = [
     "UserProfileUpdate", "UserProfileResponse",
     "PasswordResetRequest", "PasswordResetConfirm", "PasswordResetResponse",
     "ChangePasswordRequest", "ChangePasswordResponse",
-    "EmailVerificationRequest", "EmailVerificationResponse",
+    # "EmailVerificationRequest", "EmailVerificationResponse",
 
     "auth_router"
 ]
