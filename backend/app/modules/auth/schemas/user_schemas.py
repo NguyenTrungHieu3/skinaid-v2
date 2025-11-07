@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy import UUID
 import uuid
 from datetime import datetime
@@ -34,6 +34,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     avatar_url: Optional[str] = None
+    roles: List[str] = Field(default_factory=list, description="List of role names assigned to user")
 
     class Config:
         from_attributes = True

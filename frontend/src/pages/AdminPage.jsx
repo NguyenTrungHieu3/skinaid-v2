@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { LuUsers, LuDatabase, LuFileText, LuShield, LuLayoutGrid } from 'react-icons/lu';
+import { LuUsers, LuFileText, LuShield, LuLayoutGrid } from 'react-icons/lu';
 import AdminDashboard from '../components/Admin/AdminDashboard';
 import UserManagement from '../components/Admin/UserManagement';
-import DatasetManagement from '../components/Admin/DatasetManagement';
 import FirstAidManagement from '../components/Admin/FirstAidManagement';
 import AdminLogs from '../components/Admin/AdminLogs';
 import Sidebar from '../components/Admin/Sidebar';
@@ -13,7 +12,6 @@ import '../assets/styles/admin/TopBar.scss';
 import '../assets/styles/admin/SharedComponents.scss';
 import '../assets/styles/admin/AdminDashboard.scss';
 import '../assets/styles/admin/UserManagement.scss';
-import '../assets/styles/admin/DatasetManagement.scss';
 import '../assets/styles/admin/FirstAidManagement.scss';
 import '../assets/styles/admin/AdminLogs.scss';
 import '../assets/styles/admin/AdminPage.scss'
@@ -28,7 +26,6 @@ export default function AdminPage() {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LuLayoutGrid },
     { id: 'users', label: 'User Management', icon: LuUsers },
-    { id: 'dataset', label: 'Dataset Management', icon: LuDatabase },
     { id: 'firstaid', label: 'First Aid Guidance', icon: LuFileText },
     { id: 'logs', label: 'Admin Logs', icon: LuShield },
   ];
@@ -39,8 +36,6 @@ export default function AdminPage() {
         return <AdminDashboard />;
       case 'users':
         return <UserManagement />;
-      case 'dataset':
-        return <DatasetManagement />;
       case 'firstaid':
         return <FirstAidManagement />;
       case 'logs':

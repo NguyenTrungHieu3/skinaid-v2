@@ -239,3 +239,184 @@ class FirstAidController:
                 error_code="FIRSTAID_VALIDATION_ERROR",
                 error_details={"error": str(e)}
             )
+
+    async def create_first_aid_guide(
+        self,
+        guide_data: Dict[str, Any],
+        current_user_id: uuid.UUID
+    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
+        """Tạo hướng dẫn sơ cứu mới."""
+        try:
+            # Check if guide already exists
+            existing = await self.first_aid_service.get_first_aid_guide(
+                guide_data["wound_type"],
+                guide_data["severity"],
+                guide_data.get("sub_type")
+            )
+            
+            if existing:
+                sub_type_info = f" với sub_type '{guide_data.get('sub_type')}'" if guide_data.get("sub_type") else ""
+                return ErrorResponse(
+                    message=f"Hướng dẫn cho {guide_data['wound_type']}/{guide_data['severity']}{sub_type_info} đã tồn tại",
+                    error_code="FIRSTAID_ALREADY_EXISTS",
+                    error_details={"existing_guide_id": existing.get("firstaidguide_id")}
+                )
+
+            # Create new guide
+            guide = await self.first_aid_service.create_first_aid_guide(
+                guide_data,
+                created_by=current_user_id
+            )
+
+            guide_response = self._create_guide_response(
+                guide,
+                guide_data["wound_type"],
+                guide_data["severity"]
+            )
+
+            return SuccessResponse(
+                message="Tạo hướng dẫn sơ cứu thành công",
+                data=guide_response
+            )
+
+        except ValueError as ve:
+            logger.error(f"Validation error creating guide: {ve}")
+            return ErrorResponse(
+                message="Dữ liệu không hợp lệ",
+                error_code="FIRSTAID_VALIDATION_ERROR",
+                error_details={"error": str(ve)}
+            )
+        except Exception as e:
+            logger.error(f"Failed to create first aid guide: {e}")
+            return ErrorResponse(
+                message="Không thể tạo hướng dẫn sơ cứu",
+                error_code="FIRSTAID_CREATE_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def update_first_aid_guide(
+        self,
+        guide_id: uuid.UUID,
+        update_data: Dict[str, Any]
+    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
+        """Cập nhật hướng dẫn sơ cứu."""
+        try:
+            # Check if guide exists
+            existing = await self.first_aid_service.get_guide_by_id(guide_id)
+            if not existing:
+                return ErrorResponse(
+                    message=f"Không tìm thấy hướng dẫn với ID {guide_id}",
+                    error_code="FIRSTAID_NOT_FOUND",
+                    error_details={"guide_id": str(guide_id)}
+                )
+
+            # Update guide
+            updated_guide = await self.first_aid_service.update_first_aid_guide(
+                guide_id,
+                update_data
+            )
+
+            if not updated_guide:
+                return ErrorResponse(
+                    message="Không thể cập nhật hướng dẫn",
+                    error_code="FIRSTAID_UPDATE_FAILED"
+                )
+
+            guide_response = self._create_guide_response(
+                updated_guide,
+                updated_guide["wound_type"],
+                updated_guide["severity"]
+            )
+
+            return SuccessResponse(
+                message="Cập nhật hướng dẫn sơ cứu thành công",
+                data=guide_response
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to update first aid guide: {e}")
+            return ErrorResponse(
+                message="Không thể cập nhật hướng dẫn sơ cứu",
+                error_code="FIRSTAID_UPDATE_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def delete_first_aid_guide(
+        self,
+        guide_id: uuid.UUID,
+        hard_delete: bool = False
+    ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
+        """Xóa hướng dẫn sơ cứu."""
+        try:
+            # Check if guide exists
+            existing = await self.first_aid_service.get_guide_by_id(guide_id)
+            if not existing:
+                return ErrorResponse(
+                    message=f"Không tìm thấy hướng dẫn với ID {guide_id}",
+                    error_code="FIRSTAID_NOT_FOUND",
+                    error_details={"guide_id": str(guide_id)}
+                )
+
+            # Delete guide
+            success = await self.first_aid_service.delete_first_aid_guide(
+                guide_id,
+                hard_delete=hard_delete
+            )
+
+            if not success:
+                return ErrorResponse(
+                    message="Không thể xóa hướng dẫn",
+                    error_code="FIRSTAID_DELETE_FAILED"
+                )
+
+            delete_type = "vĩnh viễn" if hard_delete else "tạm thời"
+            return SuccessResponse(
+                message=f"Xóa hướng dẫn sơ cứu {delete_type} thành công",
+                data={
+                    "guide_id": str(guide_id),
+                    "deleted_at": str(uuid.uuid4()),
+                    "delete_type": "hard" if hard_delete else "soft"
+                }
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to delete first aid guide: {e}")
+            return ErrorResponse(
+                message="Không thể xóa hướng dẫn sơ cứu",
+                error_code="FIRSTAID_DELETE_ERROR",
+                error_details={"error": str(e)}
+            )
+
+    async def get_guide_by_id(
+        self,
+        guide_id: uuid.UUID
+    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
+        """Lấy hướng dẫn sơ cứu theo ID."""
+        try:
+            guide = await self.first_aid_service.get_guide_by_id(guide_id)
+            
+            if not guide:
+                return ErrorResponse(
+                    message=f"Không tìm thấy hướng dẫn với ID {guide_id}",
+                    error_code="FIRSTAID_NOT_FOUND",
+                    error_details={"guide_id": str(guide_id)}
+                )
+
+            guide_response = self._create_guide_response(
+                guide,
+                guide["wound_type"],
+                guide["severity"]
+            )
+
+            return SuccessResponse(
+                message="Lấy hướng dẫn sơ cứu thành công",
+                data=guide_response
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get guide by ID: {e}")
+            return ErrorResponse(
+                message="Không thể lấy hướng dẫn sơ cứu",
+                error_code="FIRSTAID_GET_ERROR",
+                error_details={"error": str(e)}
+            )

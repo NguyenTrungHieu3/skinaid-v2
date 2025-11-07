@@ -36,7 +36,7 @@ class UserService:
                     p.updated_at as profile_updated_at
                 FROM users u
                 LEFT JOIN user_profiles p ON u.user_id = p.user_id
-                WHERE u.user_id = :user_id
+                WHERE u.user_id = :user_id AND u.is_deleted = false
             """)
 
             result = await self.db.execute(sql, {"user_id": user_id})
@@ -53,6 +53,7 @@ class UserService:
                 "display_name": row["display_name"],
                 "is_active": row["is_active"],
                 "is_verified": row["is_verified"],
+                "is_deleted": row["is_deleted"],
                 "created_at": row["created_at"],
                 "updated_at": row["updated_at"]
             }
@@ -85,7 +86,7 @@ class UserService:
         """
         try:
             sql = text("""
-                SELECT * FROM users WHERE email = :email
+                SELECT * FROM users WHERE email = :email AND is_deleted = false
             """)
 
             result = await self.db.execute(sql, {"email": email})
@@ -116,8 +117,8 @@ class UserService:
             user_id = uuid.uuid4()
 
             sql = text("""
-                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
-                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :created_at, :updated_at)
+                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, is_deleted, created_at, updated_at)
+                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :is_deleted, :created_at, :updated_at)
                 RETURNING *
             """)
 
@@ -128,6 +129,7 @@ class UserService:
                 "display_name": display_name or email.split('@')[0],
                 "is_active": is_active,
                 "is_verified": is_verified,
+                "is_deleted": False,
                 "created_at": current_time,
                 "updated_at": current_time
             }
@@ -176,7 +178,7 @@ class UserService:
             sql = text(f"""
                 UPDATE users
                 SET {', '.join(update_fields)}
-                WHERE user_id = :user_id
+                WHERE user_id = :user_id AND is_deleted = false
                 RETURNING *
             """)
 
@@ -202,7 +204,7 @@ class UserService:
             sql = text("""
                 UPDATE users
                 SET hashed_password = :hashed_password, updated_at = :updated_at
-                WHERE user_id = :user_id
+                WHERE user_id = :user_id AND is_deleted = false
             """)
 
             result = await self.db.execute(sql, {
@@ -230,7 +232,7 @@ class UserService:
         Lấy danh sách users theo trạng thái
         """
         try:
-            where_conditions = []
+            where_conditions = ["is_deleted = false"]
             params = {"limit": limit, "offset": offset}
 
             if is_active is not None:
@@ -266,8 +268,8 @@ class UserService:
         try:
             sql = text("""
                 UPDATE users
-                SET is_active = false, updated_at = :updated_at
-                WHERE user_id = :user_id AND is_active = true
+                SET is_active = false, is_deleted = true, updated_at = :updated_at
+                WHERE user_id = :user_id AND is_active = true AND is_deleted = false
             """)
 
             result = await self.db.execute(sql, {
@@ -288,17 +290,17 @@ class UserService:
         Lấy thống kê tổng quan về users
         """
         try:
-            total_sql = text("SELECT COUNT(*) as total FROM users")
+            total_sql = text("SELECT COUNT(*) as total FROM users WHERE is_deleted = false")
             total_result = await self.db.execute(total_sql)
             total_row = total_result.mappings().first()
             total_users = total_row["total"] if total_row else 0
 
-            active_sql = text("SELECT COUNT(*) as active FROM users WHERE is_active = true")
+            active_sql = text("SELECT COUNT(*) as active FROM users WHERE is_active = true AND is_deleted = false")
             active_result = await self.db.execute(active_sql)
             active_row = active_result.mappings().first()
             active_users = active_row["active"] if active_row else 0
 
-            verified_sql = text("SELECT COUNT(*) as verified FROM users WHERE is_verified = true")
+            verified_sql = text("SELECT COUNT(*) as verified FROM users WHERE is_verified = true AND is_deleted = false")
             verified_result = await self.db.execute(verified_sql)
             verified_row = verified_result.mappings().first()
             verified_users = verified_row["verified"] if verified_row else 0

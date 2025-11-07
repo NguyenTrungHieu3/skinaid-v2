@@ -5,3 +5,9 @@ html {
   height: 100%;
   font-family: "Poppins", sans-serif;
 }
+
+// Import admin styles
+@import './assets/styles/admin/SharedComponents.scss';
+@import './assets/styles/admin/UserManagement.scss';
+@import './assets/styles/admin/FirstAidManagement.scss';
+@import './assets/styles/admin/AdminLogs.scss';

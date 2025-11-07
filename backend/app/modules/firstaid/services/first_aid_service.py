@@ -287,3 +287,217 @@ class FirstAidService:
             "issues": issues,
             "completeness_score": max(0, 100 - len(issues) * 20)
         }
+
+    async def create_first_aid_guide(
+        self,
+        guide_data: Dict[str, Any],
+        created_by: Optional[uuid.UUID] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Tạo hướng dẫn sơ cứu mới."""
+        try:
+            # Convert lists to JSONB format
+            steps_jsonb = {"items": guide_data.get("steps", [])}
+            warnings_jsonb = {"items": guide_data.get("warnings", [])} if guide_data.get("warnings") else None
+            dos_jsonb = {"items": guide_data.get("dos", [])} if guide_data.get("dos") else None
+            donts_jsonb = {"items": guide_data.get("donts", [])} if guide_data.get("donts") else None
+            supplies_jsonb = {"items": guide_data.get("supplies_needed", [])} if guide_data.get("supplies_needed") else None
+
+            guide = FirstAidGuide.create_guide(
+                wound_type=guide_data["wound_type"],
+                severity=guide_data["severity"],
+                title=guide_data["title"],
+                description=guide_data.get("description"),
+                sub_type=guide_data.get("sub_type"),
+                steps=steps_jsonb,
+                warnings=warnings_jsonb,
+                dos=dos_jsonb,
+                donts=donts_jsonb,
+                supplies_needed=supplies_jsonb,
+                estimated_healing_time=guide_data.get("estimated_healing_time"),
+                created_by=str(created_by) if created_by else None
+            )
+
+            self.db.add(guide)
+            await self.db.commit()
+            await self.db.refresh(guide)
+
+            logger.info(f"Created first aid guide: {guide.firstaidguide_id}")
+            
+            # Convert to dict for response
+            return self._model_to_dict(guide)
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Failed to create first aid guide: {e}", exc_info=True)
+            raise
+
+    async def update_first_aid_guide(
+        self,
+        guide_id: uuid.UUID,
+        update_data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Cập nhật hướng dẫn sơ cứu."""
+        try:
+            # Find existing guide
+            sql = text("""
+                SELECT * FROM firstaid_guides
+                WHERE firstaidguide_id = :guide_id
+            """)
+            
+            result = await self.db.execute(sql, {"guide_id": guide_id})
+            existing_guide = result.mappings().first()
+            
+            if not existing_guide:
+                logger.warning(f"Guide not found: {guide_id}")
+                return None
+
+            # Prepare update fields
+            update_fields = []
+            params = {"guide_id": guide_id}
+            
+            if "title" in update_data:
+                update_fields.append("title = :title")
+                params["title"] = update_data["title"]
+            
+            if "description" in update_data:
+                update_fields.append("description = :description")
+                params["description"] = update_data["description"]
+            
+            if "steps" in update_data:
+                update_fields.append("steps = :steps")
+                params["steps"] = {"items": update_data["steps"]}
+            
+            if "warnings" in update_data:
+                update_fields.append("warnings = :warnings")
+                params["warnings"] = {"items": update_data["warnings"]} if update_data["warnings"] else None
+            
+            if "dos" in update_data:
+                update_fields.append("dos = :dos")
+                params["dos"] = {"items": update_data["dos"]} if update_data["dos"] else None
+            
+            if "donts" in update_data:
+                update_fields.append("donts = :donts")
+                params["donts"] = {"items": update_data["donts"]} if update_data["donts"] else None
+            
+            if "supplies_needed" in update_data:
+                update_fields.append("supplies_needed = :supplies_needed")
+                params["supplies_needed"] = {"items": update_data["supplies_needed"]} if update_data["supplies_needed"] else None
+            
+            if "estimated_healing_time" in update_data:
+                update_fields.append("estimated_healing_time = :estimated_healing_time")
+                params["estimated_healing_time"] = update_data["estimated_healing_time"]
+            
+            if "is_active" in update_data:
+                update_fields.append("is_active = :is_active")
+                params["is_active"] = update_data["is_active"]
+            
+            if not update_fields:
+                logger.warning("No fields to update")
+                return dict(existing_guide)
+            
+            # Add updated_at
+            update_fields.append("updated_at = CURRENT_TIMESTAMP")
+            update_fields.append("version = version + 1")
+            
+            # Execute update
+            update_sql = text(f"""
+                UPDATE firstaid_guides
+                SET {", ".join(update_fields)}
+                WHERE firstaidguide_id = :guide_id
+                RETURNING *
+            """)
+            
+            result = await self.db.execute(update_sql, params)
+            updated_guide = result.mappings().first()
+            await self.db.commit()
+            
+            logger.info(f"Updated first aid guide: {guide_id}")
+            return self._format_guide_response(dict(updated_guide))
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Failed to update first aid guide: {e}", exc_info=True)
+            raise
+
+    async def delete_first_aid_guide(
+        self,
+        guide_id: uuid.UUID,
+        hard_delete: bool = False
+    ) -> bool:
+        """Xóa hướng dẫn sơ cứu (soft delete hoặc hard delete)."""
+        try:
+            if hard_delete:
+                # Hard delete - xóa vĩnh viễn
+                sql = text("""
+                    DELETE FROM firstaid_guides
+                    WHERE firstaidguide_id = :guide_id
+                    RETURNING firstaidguide_id
+                """)
+            else:
+                # Soft delete - chỉ set is_active = false
+                sql = text("""
+                    UPDATE firstaid_guides
+                    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                    WHERE firstaidguide_id = :guide_id
+                    RETURNING firstaidguide_id
+                """)
+            
+            result = await self.db.execute(sql, {"guide_id": guide_id})
+            deleted = result.mappings().first()
+            
+            if not deleted:
+                logger.warning(f"Guide not found for deletion: {guide_id}")
+                return False
+            
+            await self.db.commit()
+            
+            delete_type = "hard" if hard_delete else "soft"
+            logger.info(f"{delete_type} deleted first aid guide: {guide_id}")
+            return True
+
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Failed to delete first aid guide: {e}", exc_info=True)
+            raise
+
+    async def get_guide_by_id(self, guide_id: uuid.UUID) -> Optional[Dict[str, Any]]:
+        """Lấy hướng dẫn sơ cứu theo ID."""
+        try:
+            sql = text("""
+                SELECT * FROM firstaid_guides
+                WHERE firstaidguide_id = :guide_id
+            """)
+            
+            result = await self.db.execute(sql, {"guide_id": guide_id})
+            guide = result.mappings().first()
+            
+            if not guide:
+                return None
+            
+            return self._format_guide_response(dict(guide))
+
+        except Exception as e:
+            logger.error(f"Failed to get guide by ID: {e}")
+            return None
+
+    def _model_to_dict(self, guide: FirstAidGuide) -> Dict[str, Any]:
+        """Convert SQLModel to dict."""
+        return {
+            "firstaidguide_id": str(guide.firstaidguide_id),
+            "wound_type": guide.wound_type,
+            "severity": guide.severity,
+            "sub_type": guide.sub_type,
+            "title": guide.title,
+            "description": guide.description,
+            "steps": FirstAidGuide.extract_list(guide.steps),
+            "warnings": FirstAidGuide.extract_list(guide.warnings),
+            "dos": FirstAidGuide.extract_list(guide.dos),
+            "donts": FirstAidGuide.extract_list(guide.donts),
+            "supplies_needed": FirstAidGuide.extract_list(guide.supplies_needed),
+            "estimated_healing_time": guide.estimated_healing_time,
+            "is_active": guide.is_active,
+            "version": guide.version,
+            "created_by": str(guide.created_by) if guide.created_by else None,
+            "created_at": guide.created_at,
+            "updated_at": guide.updated_at
+        }

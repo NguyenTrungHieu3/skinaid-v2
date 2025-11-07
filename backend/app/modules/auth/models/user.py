@@ -18,6 +18,7 @@ class User(SQLModel, table=True):
     display_name: Optional[str] = None
     is_active: bool = Field(default=True)
     is_verified: bool = Field(default=False)
+    is_deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 

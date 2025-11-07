@@ -5,6 +5,8 @@ from app.modules.upload.routes.upload_routers import router as upload_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.firstaid.routes.first_aid_router import router as first_aid_router
 from app.modules.guest.routes.guest_router import router as guest_router
+from app.modules.admin.routes.admin_router import router as admin_router
+from app.modules.admin.routes.user_management_router import router as user_management_router
 
 router = APIRouter()
 
@@ -14,3 +16,5 @@ router.include_router(upload_router, tags=["Upload Logs"])
 router.include_router(ai_router, tags=["AI Processing"])
 router.include_router(first_aid_router, tags=["First Aid Knowledge"])
 router.include_router(guest_router, tags=["Guest Management"])
+router.include_router(admin_router, tags=["Admin Dashboard"])
+router.include_router(user_management_router, tags=["Admin - User Management"])

@@ -112,6 +112,9 @@ class AuthController:
             access_token = jwt_handler.create_access_token(subject=str(user.user_id))
             refresh_token = jwt_handler.create_refresh_token(subject=str(user.user_id))
 
+            # Get user roles
+            roles = [user_role.role.role_name for user_role in user.user_roles if not user_role.is_expired]
+
             user_response = UserResponse(
                 user_id=user.user_id,
                 email=user.email,
@@ -122,7 +125,8 @@ class AuthController:
                 updated_at=user.updated_at,
                 full_name=user.profile.full_name if user.profile else None,
                 phone=user.profile.phone if user.profile else None,
-                avatar_url=user.profile.avatar_url if user.profile else None
+                avatar_url=user.profile.avatar_url if user.profile else None,
+                roles=roles
             )
 
             token_response = TokenResponse(

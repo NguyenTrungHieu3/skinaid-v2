@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models.user import User
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.models.user_profile import UserProfile
+from app.modules.auth.models.user_roles import UserRole
+from app.modules.auth.models.roles import Role
 from sqlalchemy import UUID
 import uuid
 import asyncio
@@ -51,7 +53,8 @@ class AuthService:
                 raise AppBaseException(message=f"Invalid email format: {email_error}", error_code=USER_INVALID_DATA)
 
             sql = text("""
-                SELECT * FROM users WHERE email = :email
+                SELECT * FROM users
+                WHERE email = :email AND is_deleted = false
             """)
 
             result = await self.db.execute(sql, {"email": email})
@@ -70,7 +73,7 @@ class AuthService:
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> Optional[User]:
         """
-        Lấy thông tin người dùng theo ID kèm hồ sơ sử dụng truy vấn SQL tối ưu.
+        Lấy thông tin người dùng theo ID kèm hồ sơ và roles sử dụng truy vấn SQL tối ưu.
         """
         try:
             sql = text("""
@@ -86,7 +89,7 @@ class AuthService:
                     p.updated_at as profile_updated_at
                 FROM users u
                 LEFT JOIN user_profiles p ON u.user_id = p.user_id
-                WHERE u.user_id = :user_id
+                WHERE u.user_id = :user_id AND u.is_deleted = false
             """)
 
             result = await self.db.execute(sql, {"user_id": user_id})
@@ -103,6 +106,7 @@ class AuthService:
                 "display_name": row["display_name"],
                 "is_active": row["is_active"],
                 "is_verified": row["is_verified"],
+                "is_deleted": row["is_deleted"],
                 "created_at": row["created_at"],
                 "updated_at": row["updated_at"]
             }
@@ -121,6 +125,50 @@ class AuthService:
                     "updated_at": row["profile_updated_at"]
                 }
                 user.profile = UserProfile.model_validate(profile_data)
+
+            # Load user roles
+            roles_sql = text("""
+                SELECT
+                    ur.user_id,
+                    ur.role_id,
+                    ur.assigned_by,
+                    ur.assigned_at,
+                    ur.expires_at,
+                    r.role_id as role_role_id,
+                    r.role_name,
+                    r.description,
+                    r.is_active,
+                    r.created_at as role_created_at,
+                    r.updated_at as role_updated_at
+                FROM user_roles ur
+                INNER JOIN roles r ON ur.role_id = r.role_id
+                WHERE ur.user_id = :user_id AND r.is_active = true
+            """)
+            
+            roles_result = await self.db.execute(roles_sql, {"user_id": user_id})
+            roles_rows = roles_result.mappings().all()
+            
+            user_roles = []
+            for role_row in roles_rows:
+                role = Role(
+                    role_id=role_row["role_role_id"],
+                    role_name=role_row["role_name"],
+                    description=role_row["description"],
+                    is_active=role_row["is_active"],
+                    created_at=role_row["role_created_at"],
+                    updated_at=role_row["role_updated_at"]
+                )
+                user_role = UserRole(
+                    user_id=role_row["user_id"],
+                    role_id=role_row["role_id"],
+                    assigned_by=role_row["assigned_by"],
+                    assigned_at=role_row["assigned_at"],
+                    expires_at=role_row["expires_at"]
+                )
+                user_role.role = role
+                user_roles.append(user_role)
+            
+            user.user_roles = user_roles
 
             return user
             
@@ -152,8 +200,8 @@ class AuthService:
 
             # Insert user
             await self.db.execute(text("""
-                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at)
-                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :created_at, :updated_at)
+                INSERT INTO users (user_id, email, hashed_password, display_name, is_active, is_verified, is_deleted, created_at, updated_at)
+                VALUES (:user_id, :email, :hashed_password, :display_name, :is_active, :is_verified, :is_deleted, :created_at, :updated_at)
             """), {
                 "user_id": user_id,
                 "email": user_data.email,
@@ -161,6 +209,7 @@ class AuthService:
                 "display_name": user_data.email.split('@')[0],
                 "is_active": True,
                 "is_verified": False,
+                "is_deleted": False,
                 "created_at": current_time,
                 "updated_at": current_time
             })
@@ -213,7 +262,7 @@ class AuthService:
 
             # Get created user
             user_result = await self.db.execute(text("""
-                SELECT user_id, email, hashed_password, display_name, is_active, is_verified, created_at, updated_at
+                SELECT user_id, email, hashed_password, display_name, is_active, is_verified, is_deleted, created_at, updated_at
                 FROM users WHERE user_id = :user_id
             """), {"user_id": user_id})
             user_mapping = user_result.mappings().first()
@@ -333,7 +382,7 @@ class AuthService:
             logger.info(f"Updating user verification status for {email}...")
             update_user_sql = text("""
                 UPDATE users
-                SET is_verified = true, updated_at = :updated_at
+                SET is_verified = true, is_active = true, updated_at = :updated_at
                 WHERE email = :email
             """)
 

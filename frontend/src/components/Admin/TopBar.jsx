@@ -1,5 +1,5 @@
 import React from 'react';
-import { LuBell, LuSearch, LuUser } from 'react-icons/lu';
+import { LuSearch, LuUser } from 'react-icons/lu';
 
 export default function TopBar() {
   return (
@@ -14,11 +14,6 @@ export default function TopBar() {
         </div>
 
         <div className="admin-topbar-actions">
-          <button className="admin-notification-btn">
-            <LuBell />
-            <span className="notification-badge">3</span>
-          </button>
-
           <div className="admin-user-info">
             <div className="admin-user-text">
               <p>Dr. Sarah Chen</p>

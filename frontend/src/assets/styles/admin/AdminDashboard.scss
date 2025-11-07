@@ -1,5 +1,3 @@
-// Dashboard Page Specific Styles
-// Card Styles
 .admin-dashboard {
   // Header
   .admin-page-header {
@@ -10,16 +8,47 @@
 
     .admin-page-title {
       h1 {
-        font-size: 24px;
-        font-weight: 500;
-        color: #0f172a;
-        margin: 0 0 8px 0;
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: #64748b;
+        margin: 0 0 0.5rem 0;
       }
       
       p {
-        color: #475569;
+        font-size: 0.875rem;
+        color: #94a3b8;
         margin: 0;
-        font-size: 15px;
+      }
+    }
+
+    .admin-btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      background: linear-gradient(to right, #1E9378, #17805f);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px 0 rgba(30, 147, 120, 0.3);
+
+      &:hover:not(:disabled) {
+        background: linear-gradient(to right, #17805f, #126d4f);
+        box-shadow: 0 4px 8px -1px rgba(30, 147, 120, 0.4);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
   }
@@ -148,11 +177,11 @@
           }
           
           &.change-cyan {
-            color: #06b6d4;
+            color: #1E9378;
           }
           
           &.change-blue {
-            color: #3b82f6;
+            color: #1E9378;
           }
           
           &.change-purple {

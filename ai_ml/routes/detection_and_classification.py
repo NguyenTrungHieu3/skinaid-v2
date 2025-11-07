@@ -64,6 +64,18 @@ async def analyze_wound(
         detections = []
         primary_wound = results_raw[0].get("class_name", "wound") if results_raw else "none"
         
+        # Check if primary wound is "normal skin"
+        processing_time = time.time() - start_time
+        if primary_wound.lower() == "normal skin":
+            return CombinedResponse(
+                success=True,
+                ai_model_version=settings.AI_MODEL_VERSION,
+                total_detections=0,
+                processing_time_ms=int(processing_time * 1000),
+                primary_wound_type="normal skin",
+                detections=None
+            )
+        
         for det in results_raw:
             try:
                 severity_label = det.get("severity", "") # burn_moderate
@@ -87,7 +99,6 @@ async def analyze_wound(
                 # Skip invalid detection
                 continue
 
-        processing_time = time.time() - start_time
         response = CombinedResponse(
             success=True,
             ai_model_version=settings.AI_MODEL_VERSION,
