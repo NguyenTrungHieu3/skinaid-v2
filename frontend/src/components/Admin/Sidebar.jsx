@@ -1,6 +1,6 @@
 import React from 'react';
 import Logo from '../../assets/images/logo.png'
-import "../../assets/styles/admin/Sidebar.scss"
+import "../../assets/styles/admin/Sidebar.css"
 
 export default function Sidebar({ menuItems, currentPage, onPageChange }) {
   return (

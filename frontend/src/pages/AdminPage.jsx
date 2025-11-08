@@ -6,15 +6,15 @@ import FirstAidManagement from '../components/Admin/FirstAidManagement';
 import AdminLogs from '../components/Admin/AdminLogs';
 import Sidebar from '../components/Admin/Sidebar';
 import TopBar from '../components/Admin/TopBar';
-import '../assets/styles/admin/AdminLayout.scss';
-import '../assets/styles/admin/Sidebar.scss';
-import '../assets/styles/admin/TopBar.scss';
-import '../assets/styles/admin/SharedComponents.scss';
-import '../assets/styles/admin/AdminDashboard.scss';
-import '../assets/styles/admin/UserManagement.scss';
-import '../assets/styles/admin/FirstAidManagement.scss';
-import '../assets/styles/admin/AdminLogs.scss';
-import '../assets/styles/admin/AdminPage.scss'
+import '../assets/styles/admin/AdminLayout.css';
+import '../assets/styles/admin/Sidebar.css';
+import '../assets/styles/admin/TopBar.css';
+import '../assets/styles/admin/SharedComponents.css';
+import '../assets/styles/admin/AdminDashboard.css';
+import '../assets/styles/admin/UserManagement.css';
+import '../assets/styles/admin/FirstAidManagement.css';
+import '../assets/styles/admin/AdminLogs.css';
+import '../assets/styles/admin/AdminPage.css'
 
 /**
  * AdminPage - Main entry point for Admin Dashboard

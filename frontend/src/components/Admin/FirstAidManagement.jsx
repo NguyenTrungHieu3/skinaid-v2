@@ -7,11 +7,17 @@ import {
   updateFirstAidGuide,
   deleteFirstAidGuide
 } from '../../services/FirstAidService';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function FirstAidManagement() {
+  const toast = useToast();
   const [guides, setGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Loading states for async operations
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeletingGuide, setIsDeletingGuide] = useState(null); // Store guide ID being deleted
   
   // Filters
   const [woundTypes, setWoundTypes] = useState([]);
@@ -44,6 +50,37 @@ export default function FirstAidManagement() {
     supplies_needed: [''],
     estimated_healing_time: ''
   });
+
+  // Form validation errors
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Validate form fields
+  const validateGuideForm = () => {
+    const errors = {};
+
+    // Title validation
+    if (!formData.title || !formData.title.trim()) {
+      errors.title = 'Title is required';
+    } else if (formData.title.trim().length < 5) {
+      errors.title = 'Title must be at least 5 characters long';
+    } else if (formData.title.trim().length > 200) {
+      errors.title = 'Title must not exceed 200 characters';
+    }
+
+    // Steps validation
+    const validSteps = formData.steps.filter(s => s && s.trim());
+    if (validSteps.length === 0) {
+      errors.steps = 'At least one instruction step is required';
+    }
+
+    // Description length validation (optional)
+    if (formData.description && formData.description.length > 1000) {
+      errors.description = 'Description must not exceed 1000 characters';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Fetch wound types
   const fetchWoundTypes = async () => {
@@ -169,6 +206,7 @@ export default function FirstAidManagement() {
       supplies_needed: [''],
       estimated_healing_time: ''
     });
+    setValidationErrors({});
   };
 
   // Handle form input change
@@ -214,28 +252,21 @@ export default function FirstAidManagement() {
   // Handle add guide
   const handleAddGuide = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent double submission
+    
+    // Validate form first
+    if (!validateGuideForm()) {
+      toast.error('Please fix validation errors');
+      return;
+    }
+    
     try {
+      setIsSubmitting(true);
       // Filter out empty strings from arrays
   const cleanedSteps = formData.steps.filter(s => s && s.trim());
       const cleanedDos = formData.dos.filter(s => s && s.trim());
       const cleanedDonts = formData.donts.filter(s => s && s.trim());
       const cleanedSupplies = formData.supplies_needed.filter(s => s && s.trim());
-
-      // Validate required fields
-      if (!formData.title || !formData.title.trim()) {
-        alert('Please provide a title for the guidance');
-        return;
-      }
-
-      if (formData.title.trim().length < 5) {
-        alert('Title must be at least 5 characters long');
-        return;
-      }
-
-      if (cleanedSteps.length === 0) {
-        alert('Please provide at least one step in the instructions');
-        return;
-      }
 
       // Build cleaned data object
       const cleanedData = {
@@ -278,13 +309,13 @@ export default function FirstAidManagement() {
         resetForm();
         fetchGuides();
         fetchStatistics();
-        alert('First aid guide created successfully!');
+        toast.success('First aid guide created successfully!');
       } else {
         // Handle error response from server
         const errorMsg = response.message || response.error || 'Failed to create guide';
         const errorDetails = response.error_details ? 
           '\n\nDetails: ' + JSON.stringify(response.error_details, null, 2) : '';
-        alert(errorMsg + errorDetails);
+        toast.error(errorMsg + errorDetails);
       }
     } catch (err) {
       console.error('Error creating guide:', err);
@@ -307,14 +338,19 @@ export default function FirstAidManagement() {
         errorMessage = err.message;
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Handle edit guide
   const handleEditGuide = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; // Prevent double submission
+    
     try {
+      setIsSubmitting(true);
       // Filter out empty strings from arrays
       const cleanedData = {
         title: formData.title,
@@ -336,11 +372,13 @@ export default function FirstAidManagement() {
         setShowEditModal(false);
         resetForm();
         fetchGuides();
-        alert('First aid guide updated successfully!');
+        toast.success('First aid guide updated successfully!');
       }
     } catch (err) {
       console.error('Error updating guide:', err);
-      alert(err.response?.data?.error || 'Failed to update guide');
+      toast.error(err.response?.data?.error || 'Failed to update guide');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -350,16 +388,21 @@ export default function FirstAidManagement() {
       return;
     }
 
+    if (isDeletingGuide) return; // Prevent multiple deletes
+    
     try {
+      setIsDeletingGuide(guideId);
       const response = await deleteFirstAidGuide(guideId, false); // Soft delete
       if (response.success) {
         fetchGuides();
         fetchStatistics();
-        alert('First aid guide deleted successfully!');
+        toast.success('First aid guide deleted successfully!');
       }
     } catch (err) {
       console.error('Error deleting guide:', err);
-      alert(err.response?.data?.error || 'Failed to delete guide');
+      toast.error(err.response?.data?.error || 'Failed to delete guide');
+    } finally {
+      setIsDeletingGuide(null);
     }
   };
 
@@ -576,11 +619,16 @@ export default function FirstAidManagement() {
                       className="btn-delete"
                       onClick={() => handleDeleteGuide(guide.firstaidguide_id, guide.title)}
                       title="Delete"
+                      disabled={isDeletingGuide === guide.firstaidguide_id}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
+                      {isDeletingGuide === guide.firstaidguide_id ? (
+                        <span>Deleting...</span>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -791,10 +839,19 @@ export default function FirstAidManagement() {
                     id="title"
                     name="title"
                     value={formData.title}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      if (validationErrors.title) {
+                        setValidationErrors({...validationErrors, title: ''});
+                      }
+                    }}
                     required
                     placeholder="e.g., First Aid for Minor Burns"
+                    className={validationErrors.title ? 'error' : ''}
                   />
+                  {validationErrors.title && (
+                    <span className="error-message">{validationErrors.title}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -803,14 +860,26 @@ export default function FirstAidManagement() {
                     id="description"
                     name="description"
                     value={formData.description}
-                    onChange={handleInputChange}
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      if (validationErrors.description) {
+                        setValidationErrors({...validationErrors, description: ''});
+                      }
+                    }}
                     rows="3"
                     placeholder="Brief description of the condition"
+                    className={validationErrors.description ? 'error' : ''}
                   />
+                  {validationErrors.description && (
+                    <span className="error-message">{validationErrors.description}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
                   <label>Steps * (at least 1)</label>
+                  {validationErrors.steps && (
+                    <span className="error-message">{validationErrors.steps}</span>
+                  )}
                   {formData.steps.map((step, index) => (
                     <div key={index} className="array-input-row">
                       <span className="array-index">{index + 1}</span>
@@ -931,10 +1000,19 @@ export default function FirstAidManagement() {
               </div>
 
               <div className="modal-actions">
-                <button type="submit" className="btn-primary">
-                  Create Guidance
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Guidance'}
                 </button>
-                <button type="button" className="btn-secondary" onClick={() => setShowAddModal(false)}>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowAddModal(false)}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </button>
               </div>
@@ -1103,10 +1181,19 @@ export default function FirstAidManagement() {
               </div>
 
               <div className="modal-actions">
-                <button type="submit" className="btn-primary">
-                  Save Changes
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowEditModal(false)}
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </button>
               </div>

@@ -7,11 +7,15 @@ import SignupPage from "./pages/SignupPage";
 import UploadImgPage from "./pages/UploadImgPage";
 import VerifyForm from "./components/Verify/VerifyForm";
 import AdminPage from "./pages/AdminPage";
+import { ToastProvider } from "./contexts/ToastContext";
+import ToastContainer from "./components/shared/ToastContainer";
 
 function App() {
   return (
-    <Router>
-      <div className="App">
+    <ToastProvider>
+      <Router>
+        <div className="App">
+          <ToastContainer />
         {/* Navbar đơn giản */}
         {/* <nav className="navbar">
           <h2 className="logo">SkinAid</h2>
@@ -33,6 +37,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    </ToastProvider>
   );
 }
 

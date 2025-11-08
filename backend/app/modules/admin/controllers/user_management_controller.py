@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import Optional
 from fastapi import HTTPException, status
+import logging
 
 from app.modules.admin.services.user_management_service import UserManagementService
 from app.modules.admin.schemas.user_management_schemas import (
@@ -12,7 +13,9 @@ from app.modules.admin.schemas.user_management_schemas import (
     UserDetailResponse,
     UserStatsResponse
 )
-from app.shared.schemas.response import SuccessResponse, ErrorResponse
+from app.shared.schemas.response import SuccessResponse
+
+logger = logging.getLogger(__name__)
 
 
 class UserManagementController:
@@ -51,9 +54,10 @@ class UserManagementController:
                 data=response_data
             )
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to retrieve users",
-                error=str(e)
+            logger.error(f"Failed to retrieve users: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve users: {str(e)}"
             )
     
     async def get_user_detail(self, user_id: str) -> SuccessResponse[UserDetailResponse]:
@@ -62,6 +66,13 @@ class UserManagementController:
         """
         try:
             user_uuid = UUID(user_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        
+        try:
             user_detail = await self.service.get_user_detail(user_uuid)
             
             if not user_detail:
@@ -76,17 +87,13 @@ class UserManagementController:
                 message="User detail retrieved successfully",
                 data=response_data
             )
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid user ID format"
-            )
         except HTTPException:
             raise
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to retrieve user detail",
-                error=str(e)
+            logger.error(f"Failed to retrieve user detail: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve user detail: {str(e)}"
             )
     
     async def create_user(
@@ -111,9 +118,10 @@ class UserManagementController:
                 detail=str(e)
             )
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to create user",
-                error=str(e)
+            logger.error(f"Failed to create user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create user: {str(e)}"
             )
     
     async def update_user(
@@ -126,6 +134,13 @@ class UserManagementController:
         """
         try:
             user_uuid = UUID(user_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        
+        try:
             user_detail = await self.service.update_user(user_uuid, user_data)
             
             if not user_detail:
@@ -148,9 +163,10 @@ class UserManagementController:
         except HTTPException:
             raise
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to update user",
-                error=str(e)
+            logger.error(f"Failed to update user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update user: {str(e)}"
             )
     
     async def delete_user(self, user_id: str) -> SuccessResponse:
@@ -159,6 +175,13 @@ class UserManagementController:
         """
         try:
             user_uuid = UUID(user_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        
+        try:
             success = await self.service.delete_user(user_uuid)
             
             if not success:
@@ -171,17 +194,13 @@ class UserManagementController:
                 message="User deleted successfully",
                 data={"user_id": user_id}
             )
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid user ID format"
-            )
         except HTTPException:
             raise
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to delete user",
-                error=str(e)
+            logger.error(f"Failed to delete user: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete user: {str(e)}"
             )
     
     async def update_user_status(
@@ -194,6 +213,13 @@ class UserManagementController:
         """
         try:
             user_uuid = UUID(user_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        
+        try:
             user_detail = await self.service.update_user_status(
                 user_uuid,
                 status_data.is_active
@@ -213,17 +239,13 @@ class UserManagementController:
                 message=f"User {status_text} successfully",
                 data=response_data
             )
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid user ID format"
-            )
         except HTTPException:
             raise
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to update user status",
-                error=str(e)
+            logger.error(f"Failed to update user status: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update user status: {str(e)}"
             )
     
     async def get_user_stats(self) -> SuccessResponse[UserStatsResponse]:
@@ -238,9 +260,10 @@ class UserManagementController:
                 data=stats
             )
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to retrieve user statistics",
-                error=str(e)
+            logger.error(f"Failed to retrieve user statistics: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve user statistics: {str(e)}"
             )
     
     async def resend_verification_email(self, user_id: str) -> SuccessResponse:
@@ -249,6 +272,13 @@ class UserManagementController:
         """
         try:
             user_uuid = UUID(user_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid user ID format"
+            )
+        
+        try:
             success = await self.service.resend_verification_email(user_uuid)
             
             if not success:
@@ -261,15 +291,11 @@ class UserManagementController:
                 message="Verification email sent successfully",
                 data={"user_id": user_id}
             )
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid user ID format"
-            )
         except HTTPException:
             raise
         except Exception as e:
-            return ErrorResponse(
-                message="Failed to resend verification email",
-                error=str(e)
+            logger.error(f"Failed to resend verification email: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to resend verification email: {str(e)}"
             )

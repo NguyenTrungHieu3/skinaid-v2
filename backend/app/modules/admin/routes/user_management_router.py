@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, Union
+from typing import Optional
 
-from app.shared.schemas.response import SuccessResponse, ErrorResponse
+from app.shared.schemas.response import SuccessResponse
 from app.modules.admin.controllers.user_management_controller import UserManagementController
 from app.modules.admin.schemas.user_management_schemas import (
     CreateUserRequest,
@@ -25,7 +25,7 @@ async def get_user_controller(db: AsyncSession = Depends(get_db)) -> UserManagem
 
 @router.get(
     "",
-    response_model=Union[SuccessResponse[UserListResponse], ErrorResponse],
+    response_model=SuccessResponse[UserListResponse],
     summary="Get Users List",
     description="Get paginated list of users with optional filters"
 )
@@ -59,7 +59,7 @@ async def get_users(
 
 @router.get(
     "/stats",
-    response_model=Union[SuccessResponse[UserStatsResponse], ErrorResponse],
+    response_model=SuccessResponse[UserStatsResponse],
     summary="Get User Statistics",
     description="Get overall user statistics"
 )
@@ -81,7 +81,7 @@ async def get_user_stats(
 
 @router.get(
     "/{user_id}",
-    response_model=Union[SuccessResponse[UserDetailResponse], ErrorResponse],
+    response_model=SuccessResponse[UserDetailResponse],
     summary="Get User Detail",
     description="Get detailed information about a specific user"
 )
@@ -100,7 +100,7 @@ async def get_user_detail(
 
 @router.post(
     "",
-    response_model=Union[SuccessResponse[UserDetailResponse], ErrorResponse],
+    response_model=SuccessResponse[UserDetailResponse],
     summary="Create New User",
     description="Create a new user account",
     status_code=201
@@ -126,7 +126,7 @@ async def create_user(
 
 @router.put(
     "/{user_id}",
-    response_model=Union[SuccessResponse[UserDetailResponse], ErrorResponse],
+    response_model=SuccessResponse[UserDetailResponse],
     summary="Update User",
     description="Update user information"
 )
@@ -150,7 +150,7 @@ async def update_user(
 
 @router.patch(
     "/{user_id}/status",
-    response_model=Union[SuccessResponse[UserDetailResponse], ErrorResponse],
+    response_model=SuccessResponse[UserDetailResponse],
     summary="Update User Status",
     description="Update user active/inactive status"
 )
@@ -172,7 +172,7 @@ async def update_user_status(
 
 @router.delete(
     "/{user_id}",
-    response_model=Union[SuccessResponse, ErrorResponse],
+    response_model=SuccessResponse,
     summary="Delete User",
     description="Delete a user account (soft delete)"
 )
@@ -193,7 +193,7 @@ async def delete_user(
 
 @router.post(
     "/{user_id}/resend-verification",
-    response_model=Union[SuccessResponse, ErrorResponse],
+    response_model=SuccessResponse,
     summary="Resend Verification Email",
     description="Resend verification email to unverified user"
 )

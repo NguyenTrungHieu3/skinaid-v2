@@ -28,6 +28,10 @@ export default function AdminLogs() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const logsPerPage = 10;
 
   // Fetch system logs
   useEffect(() => {
@@ -70,6 +74,60 @@ export default function AdminLogs() {
     
     return matchesSearch && matchesType && matchesSeverity;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+  const indexOfLastLog = currentPage * logsPerPage;
+  const indexOfFirstLog = indexOfLastLog - logsPerPage;
+  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter, severityFilter]);
+
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top of logs table
+    document.querySelector('.logs-table-card')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Generate page numbers array
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        pageNumbers.push(1);
+        pageNumbers.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pageNumbers.push(i);
+        }
+        pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
 
   // Get badge color based on log type
   const getLogTypeBadge = (type) => {
@@ -165,7 +223,10 @@ export default function AdminLogs() {
         {/* Logs Table */}
         <div className="admin-card logs-table-card">
           <div className="card-header">
-            <h3>Recent Activities ({filteredLogs.length})</h3>
+            <h3>Recent Activities ({filteredLogs.length} total)</h3>
+            <span className="page-info">
+              Showing {indexOfFirstLog + 1}-{Math.min(indexOfLastLog, filteredLogs.length)} of {filteredLogs.length}
+            </span>
           </div>
           <div className="card-content">
             {loading ? (
@@ -202,7 +263,7 @@ export default function AdminLogs() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredLogs.map((log, index) => (
+                    {currentLogs.map((log, index) => (
                       <tr key={index}>
                         <td className="log-time">{log.time}</td>
                         <td>
@@ -223,6 +284,43 @@ export default function AdminLogs() {
               </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {!loading && !error && filteredLogs.length > logsPerPage && (
+            <div className="pagination">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="pagination-btn"
+              >
+                Previous
+              </button>
+
+              <div className="pagination-numbers">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+                  ) : (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                    >
+                      {page}
+                    </button>
+                  )
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="pagination-btn"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

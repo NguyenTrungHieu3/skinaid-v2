@@ -4,6 +4,7 @@ from sqlmodel import col
 from typing import Optional, List, Tuple
 from uuid import UUID
 import uuid
+import logging
 
 from app.modules.auth.models.user import User
 from app.modules.auth.models.user_roles import UserRole
@@ -17,6 +18,8 @@ from app.modules.admin.schemas.user_management_schemas import (
     PaginationInfo,
     UserStatsResponse
 )
+
+logger = logging.getLogger(__name__)
 
 
 class UserManagementService:
@@ -155,38 +158,86 @@ class UserManagementService:
         return user_detail
     
     async def create_user(self, user_data: CreateUserRequest) -> UserDetailInfo:
+        """
+        Create a new user with proper transaction handling
+        
+        Args:
+            user_data: User creation data
+        
+        Returns:
+            UserDetailInfo of the created user
+            
+        Raises:
+            ValueError: If email already exists or role not found or other validation errors
+        """
         # Check if email already exists
         existing_user = await self._get_user_by_email(user_data.email)
         if existing_user:
             raise ValueError("Email already registered")
         
-        # Hash password
-        hashed_password = hash_password(user_data.password)
+        # Validate display name
+        if not user_data.display_name or len(user_data.display_name.strip()) < 2:
+            raise ValueError("Display name must be at least 2 characters")
         
-        # Create user
-        new_user = User(
-            user_id=uuid.uuid4(),
-            email=user_data.email,
-            display_name=user_data.display_name,
-            hashed_password=hashed_password,
-            is_active=False,
-            is_verified=False
-        )
+        if len(user_data.display_name) > 100:
+            raise ValueError("Display name must not exceed 100 characters")
         
-        self.db.add(new_user)
-        await self.db.flush()
+        # Validate password
+        if len(user_data.password) < 6:
+            raise ValueError("Password must be at least 6 characters")
         
-        # Assign role
-        await self._assign_role_to_user(new_user.user_id, user_data.role)
-
-        # Trigger verification process
-        await self._send_verification_email(new_user)
-        
-        await self.db.commit()
-        await self.db.refresh(new_user)
-        
-        # Return user detail
-        return await self.get_user_detail(new_user.user_id)
+        try:
+            # Hash password
+            hashed_password = hash_password(user_data.password)
+            
+            # Create user
+            new_user = User(
+                user_id=uuid.uuid4(),
+                email=user_data.email,
+                display_name=user_data.display_name.strip(),
+                hashed_password=hashed_password,
+                is_active=True,  # Admin-created users are active by default
+                is_verified=True  # Admin-created users are verified by default
+            )
+            
+            self.db.add(new_user)
+            await self.db.flush()  # Flush to get user_id for role assignment
+            
+            # Assign role (this may raise ValueError if role not found)
+            await self._assign_role_to_user(new_user.user_id, user_data.role)
+            
+            # Commit the transaction (user + role assignment)
+            await self.db.commit()
+            await self.db.refresh(new_user)
+            
+            logger.info(f"User created successfully: {new_user.email} (ID: {new_user.user_id})")
+            
+            # Send verification email AFTER commit (non-critical operation)
+            # If email fails, user is still created successfully
+            try:
+                await self._send_verification_email(new_user)
+                logger.info(f"Verification email sent to {new_user.email}")
+            except Exception as email_error:
+                logger.warning(f"Failed to send verification email to {new_user.email}: {email_error}")
+                # Don't raise - email failure should not fail user creation
+            
+            # Return user detail
+            user_detail = await self.get_user_detail(new_user.user_id)
+            if not user_detail:
+                logger.error(f"Failed to retrieve created user detail: {new_user.user_id}")
+                raise ValueError("User created but failed to retrieve details")
+            
+            return user_detail
+            
+        except ValueError:
+            # Re-raise validation errors
+            await self.db.rollback()
+            raise
+        except Exception as e:
+            # Rollback on any error to prevent partial data
+            await self.db.rollback()
+            logger.error(f"Failed to create user {user_data.email}: {e}")
+            raise ValueError(f"Failed to create user: {str(e)}")
     
     async def update_user(
         self,
@@ -194,7 +245,7 @@ class UserManagementService:
         user_data: UpdateUserRequest
     ) -> Optional[UserDetailInfo]:
         """
-        Update user information
+        Update user information with proper transaction handling
         
         Args:
             user_id: User UUID
@@ -202,6 +253,9 @@ class UserManagementService:
         
         Returns:
             Updated user detail or None if not found
+            
+        Raises:
+            ValueError: If validation fails or email already in use
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
         result = await self.db.execute(query)
@@ -210,35 +264,55 @@ class UserManagementService:
         if not user:
             return None
         
-        # Update fields
-        if user_data.display_name is not None:
-            user.display_name = user_data.display_name
-        
-        if user_data.email is not None:
-            # Check if new email is already taken by another user
-            existing = await self._get_user_by_email(user_data.email)
-            if existing and existing.user_id != user_id:
-                raise ValueError("Email already in use")
-            user.email = user_data.email
-        
-        if user_data.is_active is not None:
-            user.is_active = user_data.is_active
-        
-        # Update role if specified
-        if user_data.role is not None:
-            # Remove existing roles
-            await self._remove_all_user_roles(user_id)
-            # Assign new role
-            await self._assign_role_to_user(user_id, user_data.role)
-        
-        await self.db.commit()
-        await self.db.refresh(user)
-        
-        return await self.get_user_detail(user_id)
+        try:
+            # Validate display_name if provided
+            if user_data.display_name is not None:
+                if len(user_data.display_name.strip()) < 2:
+                    raise ValueError("Display name must be at least 2 characters")
+                if len(user_data.display_name) > 100:
+                    raise ValueError("Display name must not exceed 100 characters")
+                user.display_name = user_data.display_name.strip()
+            
+            # Validate and update email if provided
+            if user_data.email is not None:
+                # Check if new email is already taken by another user
+                existing = await self._get_user_by_email(user_data.email)
+                if existing and existing.user_id != user_id:
+                    raise ValueError("Email already in use")
+                user.email = user_data.email
+            
+            # Update active status if provided
+            if user_data.is_active is not None:
+                user.is_active = user_data.is_active
+            
+            # Update role if specified
+            if user_data.role is not None:
+                # Remove existing roles
+                await self._remove_all_user_roles(user_id)
+                # Assign new role (may raise ValueError if role not found)
+                await self._assign_role_to_user(user_id, user_data.role)
+            
+            # Commit all changes
+            await self.db.commit()
+            await self.db.refresh(user)
+            
+            logger.info(f"User updated successfully: {user.email} (ID: {user_id})")
+            
+            return await self.get_user_detail(user_id)
+            
+        except ValueError:
+            # Re-raise validation errors after rollback
+            await self.db.rollback()
+            raise
+        except Exception as e:
+            # Rollback on any error
+            await self.db.rollback()
+            logger.error(f"Failed to update user {user_id}: {e}")
+            raise ValueError(f"Failed to update user: {str(e)}")
     
     async def delete_user(self, user_id: UUID) -> bool:
         """
-        Delete a user (soft delete by setting is_active = False)
+        Delete a user (soft delete by setting is_deleted = True)
         
         Args:
             user_id: User UUID
@@ -253,18 +327,26 @@ class UserManagementService:
         if not user:
             return False
         
-        # Soft delete
-        from datetime import datetime, timezone
-        user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-        user.is_active = False
-        user.is_deleted = True
-        await self.db.commit()
-        
-        return True
+        try:
+            # Soft delete
+            from datetime import datetime, timezone
+            user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            user.is_active = False
+            user.is_deleted = True
+            
+            await self.db.commit()
+            
+            logger.info(f"User soft deleted: {user.email} (ID: {user_id})")
+            return True
+            
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Failed to delete user {user_id}: {e}")
+            raise ValueError(f"Failed to delete user: {str(e)}")
     
     async def update_user_status(self, user_id: UUID, is_active: bool) -> Optional[UserDetailInfo]:
         """
-        Update user active status
+        Update user active status with transaction handling
         
         Args:
             user_id: User UUID
@@ -280,11 +362,20 @@ class UserManagementService:
         if not user:
             return None
         
-        user.is_active = is_active
-        await self.db.commit()
-        await self.db.refresh(user)
-        
-        return await self.get_user_detail(user_id)
+        try:
+            user.is_active = is_active
+            await self.db.commit()
+            await self.db.refresh(user)
+            
+            status_text = "activated" if is_active else "deactivated"
+            logger.info(f"User {status_text}: {user.email} (ID: {user_id})")
+            
+            return await self.get_user_detail(user_id)
+            
+        except Exception as e:
+            await self.db.rollback()
+            logger.error(f"Failed to update user status {user_id}: {e}")
+            raise ValueError(f"Failed to update user status: {str(e)}")
     
     async def get_user_stats(self) -> UserStatsResponse:
         """
@@ -439,7 +530,7 @@ class UserManagementService:
     
     async def resend_verification_email(self, user_id: UUID) -> bool:
         """
-        Resend verification email to unverified user
+        Resend verification email to unverified user with transaction handling
         
         Args:
             user_id: User UUID
@@ -457,12 +548,11 @@ class UserManagementService:
         
         # Check if already verified
         if user.is_verified:
+            logger.info(f"User {user.email} is already verified")
             return False
         
         # Import email service (same pattern as auth_service)
         import os
-        import logging
-        logger = logging.getLogger(__name__)
         
         use_mock_email = os.getenv("TESTING") == "true" or os.getenv("USE_MOCK_EMAIL") == "true"
         if use_mock_email:
@@ -472,41 +562,49 @@ class UserManagementService:
             from app.utils.email_service import email_service
             logger.info("Using REAL email service for verification resend")
         
-        # Generate new verification token
-        verification_token = email_service.generate_verification_token()
-        
-        # Delete old verification tokens for this user (use email column)
-        delete_old_tokens = text("""
-            DELETE FROM verification_tokens 
-            WHERE email = :email AND token_type = 'email_verification'
-        """)
-        await self.db.execute(delete_old_tokens, {"email": user.email})
-
-        # Insert new token matching verification_tokens schema
-        from datetime import datetime, timedelta, timezone
-        current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-        insert_token = text("""
-            INSERT INTO verification_tokens (token_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
-            VALUES (:token_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
-        """)
-        await self.db.execute(insert_token, {
-            "token_id": str(uuid.uuid4()),
-            "email": user.email,
-            "token": verification_token,
-            "token_type": "email_verification",
-            "expires_at": current_time + timedelta(hours=24),
-            "is_used": False,
-            "created_at": current_time,
-            "updated_at": current_time
-        })
-        
-        await self.db.commit()
-        
-        # Send verification email
         try:
-            await email_service.send_verification_email_async(user.email, verification_token)
-            logger.info(f"Verification email resent to {user.email}")
-            return True
+            # Generate new verification token
+            verification_token = email_service.generate_verification_token()
+            
+            # Delete old verification tokens for this user (use email column)
+            delete_old_tokens = text("""
+                DELETE FROM verification_tokens 
+                WHERE email = :email AND token_type = 'email_verification'
+            """)
+            await self.db.execute(delete_old_tokens, {"email": user.email})
+
+            # Insert new token matching verification_tokens schema
+            from datetime import datetime, timedelta, timezone
+            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+            insert_token = text("""
+                INSERT INTO verification_tokens (token_id, email, token, token_type, expires_at, is_used, created_at, updated_at)
+                VALUES (:token_id, :email, :token, :token_type, :expires_at, :is_used, :created_at, :updated_at)
+            """)
+            await self.db.execute(insert_token, {
+                "token_id": str(uuid.uuid4()),
+                "email": user.email,
+                "token": verification_token,
+                "token_type": "email_verification",
+                "expires_at": current_time + timedelta(hours=24),
+                "is_used": False,
+                "created_at": current_time,
+                "updated_at": current_time
+            })
+            
+            # Commit token changes
+            await self.db.commit()
+            
+            # Send verification email (after commit, non-critical)
+            try:
+                await email_service.send_verification_email_async(user.email, verification_token)
+                logger.info(f"Verification email resent to {user.email}")
+                return True
+            except Exception as email_error:
+                logger.error(f"Failed to send verification email to {user.email}: {str(email_error)}")
+                # Token is created but email failed - still return False
+                return False
+                
         except Exception as e:
-            logger.error(f"Failed to send verification email to {user.email}: {str(e)}")
+            await self.db.rollback()
+            logger.error(f"Failed to create verification token for {user.email}: {str(e)}")
             return False

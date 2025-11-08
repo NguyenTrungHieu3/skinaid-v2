@@ -57,13 +57,31 @@ class StatisticsService:
             total_users = total_result.scalar() or 0
 
             # New users this month (users created in last 30 days)
-            last_month = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
-            new_users_query = text("SELECT COUNT(*) as total FROM users WHERE created_at >= :last_month AND is_active = true")
-            new_users_result = await self.db.execute(new_users_query, {"last_month": last_month})
+            last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
+            new_users_query = text("SELECT COUNT(*) as total FROM users WHERE created_at >= :last_30_days AND is_active = true")
+            new_users_result = await self.db.execute(new_users_query, {"last_30_days": last_30_days})
             new_users_this_month = new_users_result.scalar() or 0
 
-            # Calculate growth rate (new users vs total users percentage)
-            growth_rate = (new_users_this_month / total_users * 100) if total_users > 0 else 0
+            # Users from previous 30 days (for growth calculation)
+            prev_30_days_start = last_30_days - timedelta(days=30)
+            prev_users_query = text("""
+                SELECT COUNT(*) as total 
+                FROM users 
+                WHERE created_at >= :prev_start 
+                AND created_at < :last_30_days 
+                AND is_active = true
+            """)
+            prev_result = await self.db.execute(prev_users_query, {
+                "prev_start": prev_30_days_start,
+                "last_30_days": last_30_days
+            })
+            prev_new_users = prev_result.scalar() or 0
+
+            # Calculate growth rate: ((current - previous) / previous) * 100
+            if prev_new_users > 0:
+                growth_rate = ((new_users_this_month - prev_new_users) / prev_new_users) * 100
+            else:
+                growth_rate = 100.0 if new_users_this_month > 0 else 0.0
 
             return {
                 "total_users": total_users,
@@ -96,13 +114,31 @@ class StatisticsService:
             analyzed_result = await self.db.execute(analyzed_query)
             analyzed_images = analyzed_result.scalar() or 0
 
-            # Calculate growth rate (uploads in last 30 days vs total)
-            last_month = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
-            new_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs WHERE created_at >= :last_month")
-            new_uploads_result = await self.db.execute(new_uploads_query, {"last_month": last_month})
+            # Uploads in last 30 days
+            last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
+            new_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs WHERE created_at >= :last_30_days")
+            new_uploads_result = await self.db.execute(new_uploads_query, {"last_30_days": last_30_days})
             new_uploads_last_month = new_uploads_result.scalar() or 0
 
-            image_growth_rate = (new_uploads_last_month / total_images * 100) if total_images > 0 else 0
+            # Uploads from previous 30 days (for growth calculation)
+            prev_30_days_start = last_30_days - timedelta(days=30)
+            prev_uploads_query = text("""
+                SELECT COUNT(*) as total 
+                FROM upload_logs 
+                WHERE created_at >= :prev_start 
+                AND created_at < :last_30_days
+            """)
+            prev_result = await self.db.execute(prev_uploads_query, {
+                "prev_start": prev_30_days_start,
+                "last_30_days": last_30_days
+            })
+            prev_uploads = prev_result.scalar() or 0
+
+            # Calculate growth rate: ((current - previous) / previous) * 100
+            if prev_uploads > 0:
+                image_growth_rate = ((new_uploads_last_month - prev_uploads) / prev_uploads) * 100
+            else:
+                image_growth_rate = 100.0 if new_uploads_last_month > 0 else 0.0
 
             return {
                 "total_images": total_images,
@@ -202,21 +238,42 @@ class StatisticsService:
             total_sessions = guest_sessions + auth_sessions
 
             # Calculate average session duration from guest_sessions
-            avg_duration_query = text("""
-                SELECT AVG(EXTRACT(EPOCH FROM (last_activity_at - created_at))) as avg_seconds
-                FROM guest_sessions
-                WHERE last_activity_at > created_at
-            """)
-            duration_result = await self.db.execute(avg_duration_query)
-            avg_duration = duration_result.scalar() or 512
+            # Only calculate if there are actual guest sessions
+            avg_duration = 0
+            if guest_sessions > 0:
+                avg_duration_query = text("""
+                    SELECT AVG(EXTRACT(EPOCH FROM (last_activity_at - created_at))) as avg_seconds
+                    FROM guest_sessions
+                    WHERE last_activity_at > created_at
+                """)
+                duration_result = await self.db.execute(avg_duration_query)
+                avg_duration = duration_result.scalar() or 0
 
-            # Calculate growth rate (sessions in last 7 days vs total)
-            last_week = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
-            new_sessions_query = text("SELECT COUNT(*) as total FROM guest_sessions WHERE created_at >= :last_week")
-            new_sessions_result = await self.db.execute(new_sessions_query, {"last_week": last_week})
+            # Guest sessions in last 7 days
+            last_7_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+            new_sessions_query = text("SELECT COUNT(*) as total FROM guest_sessions WHERE created_at >= :last_7_days")
+            new_sessions_result = await self.db.execute(new_sessions_query, {"last_7_days": last_7_days})
             new_sessions_last_week = new_sessions_result.scalar() or 0
 
-            session_growth_rate = (new_sessions_last_week / total_sessions * 100) if total_sessions > 0 else 0
+            # Guest sessions from previous 7 days (for growth calculation)
+            prev_7_days_start = last_7_days - timedelta(days=7)
+            prev_sessions_query = text("""
+                SELECT COUNT(*) as total 
+                FROM guest_sessions 
+                WHERE created_at >= :prev_start 
+                AND created_at < :last_7_days
+            """)
+            prev_result = await self.db.execute(prev_sessions_query, {
+                "prev_start": prev_7_days_start,
+                "last_7_days": last_7_days
+            })
+            prev_sessions = prev_result.scalar() or 0
+
+            # Calculate growth rate: ((current - previous) / previous) * 100
+            if prev_sessions > 0:
+                session_growth_rate = ((new_sessions_last_week - prev_sessions) / prev_sessions) * 100
+            else:
+                session_growth_rate = 100.0 if new_sessions_last_week > 0 else 0.0
 
             return {
                 "total_sessions": total_sessions,
@@ -228,7 +285,7 @@ class StatisticsService:
             logger.error(f"Failed to get session statistics: {e}")
             return {
                 "total_sessions": 0,
-                "avg_session_duration_seconds": 512,
+                "avg_session_duration_seconds": 0,
                 "session_growth_rate": 0.0
             }
 
@@ -496,7 +553,7 @@ class StatisticsService:
             "active_users_growth": 0.0,
             "online_now": 0,
             "total_sessions": 0,
-            "avg_session_duration_seconds": 512,
+            "avg_session_duration_seconds": 0,
             "session_growth_rate": 0.0
         }
 

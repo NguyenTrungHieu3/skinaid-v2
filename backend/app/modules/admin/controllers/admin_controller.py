@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union, Dict, Any
+from typing import Dict, Any
 import logging
+from fastapi import HTTPException, status
 
-from app.shared.schemas.response import SuccessResponse, ErrorResponse
+from app.shared.schemas.response import SuccessResponse
 from app.modules.admin.services.statistics_service import StatisticsService
 from app.modules.admin.schemas.admin_schemas import (
     DashboardOverviewResponse,
@@ -22,7 +23,7 @@ class AdminController:
         self.db = db
         self.stats_service = StatisticsService(db)
 
-    async def get_dashboard_overview(self) -> Union[SuccessResponse[DashboardOverviewResponse], ErrorResponse]:
+    async def get_dashboard_overview(self) -> SuccessResponse[DashboardOverviewResponse]:
         """
         Get dashboard overview statistics
         Returns data for all 4 main cards
@@ -41,13 +42,12 @@ class AdminController:
 
         except Exception as e:
             logger.error(f"[ADMIN] Failed to get dashboard overview: {e}")
-            return ErrorResponse(
-                message="Failed to retrieve dashboard overview",
-                error_code="DASHBOARD_OVERVIEW_ERROR",
-                error_details={"error": str(e)}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve dashboard overview: {str(e)}"
             )
 
-    async def get_wound_type_distribution(self) -> Union[SuccessResponse[WoundTypeDistributionResponse], ErrorResponse]:
+    async def get_wound_type_distribution(self) -> SuccessResponse[WoundTypeDistributionResponse]:
         """
         Get wound type distribution for pie chart
         """
@@ -65,13 +65,12 @@ class AdminController:
 
         except Exception as e:
             logger.error(f"[ADMIN] Failed to get wound type distribution: {e}")
-            return ErrorResponse(
-                message="Failed to retrieve wound type distribution",
-                error_code="WOUND_DISTRIBUTION_ERROR",
-                error_details={"error": str(e)}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve wound type distribution: {str(e)}"
             )
 
-    async def get_weekly_activity(self) -> Union[SuccessResponse[WeeklyActivityResponse], ErrorResponse]:
+    async def get_weekly_activity(self) -> SuccessResponse[WeeklyActivityResponse]:
         """
         Get weekly activity statistics for bar chart
         """
@@ -89,13 +88,12 @@ class AdminController:
 
         except Exception as e:
             logger.error(f"[ADMIN] Failed to get weekly activity: {e}")
-            return ErrorResponse(
-                message="Failed to retrieve weekly activity",
-                error_code="WEEKLY_ACTIVITY_ERROR",
-                error_details={"error": str(e)}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve weekly activity: {str(e)}"
             )
 
-    async def get_severity_stats(self) -> Union[SuccessResponse[SeverityStatsResponse], ErrorResponse]:
+    async def get_severity_stats(self) -> SuccessResponse[SeverityStatsResponse]:
         """
         Get severity level statistics for bar chart
         """
@@ -113,13 +111,12 @@ class AdminController:
 
         except Exception as e:
             logger.error(f"[ADMIN] Failed to get severity stats: {e}")
-            return ErrorResponse(
-                message="Failed to retrieve severity statistics",
-                error_code="SEVERITY_STATS_ERROR",
-                error_details={"error": str(e)}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve severity statistics: {str(e)}"
             )
 
-    async def get_system_logs(self, limit: int = 10) -> Union[SuccessResponse[SystemLogsResponse], ErrorResponse]:
+    async def get_system_logs(self, limit: int = 10) -> SuccessResponse[SystemLogsResponse]:
         """
         Get recent system logs and alerts
         """
@@ -137,8 +134,7 @@ class AdminController:
 
         except Exception as e:
             logger.error(f"[ADMIN] Failed to get system logs: {e}")
-            return ErrorResponse(
-                message="Failed to retrieve system logs",
-                error_code="SYSTEM_LOGS_ERROR",
-                error_details={"error": str(e)}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to retrieve system logs: {str(e)}"
             )

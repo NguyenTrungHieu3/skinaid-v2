@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union
 
-from app.shared.schemas.response import SuccessResponse, ErrorResponse
+from app.shared.schemas.response import SuccessResponse
 from app.modules.admin.controllers.admin_controller import AdminController
 from app.modules.admin.schemas.admin_schemas import (
     DashboardOverviewResponse,
@@ -25,7 +24,7 @@ async def get_admin_controller(db: AsyncSession = Depends(get_db)) -> AdminContr
 
 @router.get(
     "/dashboard/overview",
-    response_model=Union[SuccessResponse[DashboardOverviewResponse], ErrorResponse],
+    response_model=SuccessResponse[DashboardOverviewResponse],
     summary="Get Dashboard Overview",
     description="Get overview statistics for admin dashboard (4 main cards)"
 )
@@ -47,7 +46,7 @@ async def get_dashboard_overview(
 
 @router.get(
     "/wound-types/distribution",
-    response_model=Union[SuccessResponse[WoundTypeDistributionResponse], ErrorResponse],
+    response_model=SuccessResponse[WoundTypeDistributionResponse],
     summary="Get Wound Type Distribution",
     description="Get distribution of wound types for pie chart visualization"
 )
@@ -68,7 +67,7 @@ async def get_wound_type_distribution(
 
 @router.get(
     "/activity/weekly",
-    response_model=Union[SuccessResponse[WeeklyActivityResponse], ErrorResponse],
+    response_model=SuccessResponse[WeeklyActivityResponse],
     summary="Get Weekly Activity",
     description="Get weekly activity statistics for bar chart (last 7 days)"
 )
@@ -89,7 +88,7 @@ async def get_weekly_activity(
 
 @router.get(
     "/severity/stats",
-    response_model=Union[SuccessResponse[SeverityStatsResponse], ErrorResponse],
+    response_model=SuccessResponse[SeverityStatsResponse],
     summary="Get Severity Level Statistics",
     description="Get distribution of wound severity levels (Mild, Moderate, Severe)"
 )
@@ -111,7 +110,7 @@ async def get_severity_stats(
 
 @router.get(
     "/logs/recent",
-    response_model=Union[SuccessResponse[SystemLogsResponse], ErrorResponse],
+    response_model=SuccessResponse[SystemLogsResponse],
     summary="Get Recent System Logs",
     description="Get recent system logs and alerts for monitoring"
 )
