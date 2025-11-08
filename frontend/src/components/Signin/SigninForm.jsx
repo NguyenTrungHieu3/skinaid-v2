@@ -80,7 +80,12 @@ function SigninForm({ switchForm }) {
       if (data.refreshToken)
         localStorage.setItem("refreshToken", data.refreshToken);
 
-      navigate("/"); // chuyển hướng sau khi đăng nhập thành công
+      // Check if user has admin role and redirect accordingly
+      if (data.user && data.user.roles && data.user.roles.includes("admin")) {
+        navigate("/admin"); // Redirect admin users to admin dashboard
+      } else {
+        navigate("/"); // Redirect regular users to homepage
+      }
     } catch (err) {
       console.error("Backend error:", err);
 

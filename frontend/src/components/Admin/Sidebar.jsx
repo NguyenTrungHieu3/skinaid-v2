@@ -1,17 +1,15 @@
 import React from 'react';
-import { LuActivity } from 'react-icons/lu';
-import "../../assets/styles/admin/Sidebar.scss"
+import Logo from '../../assets/images/logo.png'
+import "../../assets/styles/admin/Sidebar.css"
 
 export default function Sidebar({ menuItems, currentPage, onPageChange }) {
   return (
     <div className="admin-sidebar">
       <div className="admin-sidebar-header">
         <div className="admin-sidebar-brand">
-          <div className="admin-sidebar-icon">
-            <LuActivity />
-          </div>
+          <img className='logo_skinaid' src={Logo} alt="" />
           <div className="admin-sidebar-brand-text">
-            <h1>SkinAid</h1>
+            <h1>Skin<span>Aid</span></h1>
             <p>Admin Portal</p>
           </div>
         </div>

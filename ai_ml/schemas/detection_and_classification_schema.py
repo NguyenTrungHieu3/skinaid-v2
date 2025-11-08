@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class WoundDetectionAndClassification(BaseModel):
     wound_type: str
@@ -13,4 +13,4 @@ class CombinedResponse(BaseModel):
     total_detections: int
     processing_time_ms: int 
     primary_wound_type: str
-    detections: List[WoundDetectionAndClassification]
+    detections: Optional[List[WoundDetectionAndClassification]] = None

@@ -10,11 +10,15 @@ import AdminPage from "./pages/AdminPage";
 import AnalysisResultsPage from "./pages/AnalysisResultsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
+import { ToastProvider } from "./contexts/ToastContext";
+import ToastContainer from "./components/shared/ToastContainer";
 
 function App() {
   return (
-    <Router>
-      <div className="App">
+    <ToastProvider>
+      <Router>
+        <div className="App">
+          <ToastContainer />
         {/* Navbar đơn giản */}
         {/* <nav className="navbar">
           <h2 className="logo">SkinAid</h2>
@@ -38,6 +42,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+    </ToastProvider>
   );
 }
 

@@ -15,6 +15,7 @@ class SuccessResponse(BaseModel, Generic[T]):
 class ErrorResponse(BaseModel):
     success: bool = Field(default=False, description="Luôn là False cho lỗi")
     message: str = Field(..., description="Thông báo lỗi")
+    error: Optional[str] = Field(None, description="Thông tin lỗi chi tiết dễ đọc")
     error_code: Optional[str] = Field(None, description="Mã lỗi để gỡ lỗi")
     error_details: Optional[Dict[str, Any]] = Field(None, description="Chi tiết lỗi bổ sung")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

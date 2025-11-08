@@ -50,11 +50,18 @@ const SigninService = {
 
       const accessToken = response.data.data.access_token;
       const refreshToken = response.data.data.refresh_token;
+      const user = response.data.data.user; // Get user data including roles
 
+      // Save tokens and user data
       localStorage.setItem("token", accessToken);
       if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+      if (user) localStorage.setItem("user", JSON.stringify(user));
 
-      return { token: accessToken, refreshToken };
+      return { 
+        token: accessToken, 
+        refreshToken,
+        user // Return user data including roles
+      };
     } catch (error) {
       // Lấy message từ BE nếu có
       if (error.response && error.response.data) {
@@ -71,3 +78,4 @@ const SigninService = {
 };
 
 export default SigninService;
+

@@ -330,6 +330,7 @@ async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
         SELECT * FROM users
         WHERE user_id = CAST(:user_id AS UUID)
         AND is_active = true
+        AND is_deleted = false
     """)
     
     result = await db.execute(query, {"user_id": user_id})
