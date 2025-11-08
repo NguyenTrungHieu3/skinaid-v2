@@ -146,9 +146,23 @@ async def logout_user(
     return await controller.logout_user(token)
 
 @router.post(
+    "/logout-all-devices",
+    response_model=Union[SuccessResponse[dict], ErrorResponse],
+    summary="Đăng xuất khỏi tất cả thiết bị",
+)
+async def logout_all_devices(
+    current_user: User = Depends(get_current_active_user),
+    controller: AuthController = Depends(get_auth_controller),
+):
+    """
+    Đăng xuất khỏi TẤT CẢ thiết bị.
+    """
+    return await controller.logout_all_devices(current_user)
+
+@router.post(
     "/change-password", 
     response_model= Union[SuccessResponse[ChangePasswordResponse], ErrorResponse],
-    summary="Thay đổi mật khẩu (khi đã đăng nhập)"
+    summary="Thay đổi mật khẩu (auto logout all devices)"
 )
 async def change_password(
     password_data: ChangePasswordRequest,

@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
 from datetime import datetime, timezone
 import logging
+import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.auth.schemas.user_schemas import (
@@ -17,21 +18,30 @@ from app.modules.auth.schemas.user_schemas import (
 from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.services.auth_service import AuthService
 from app.utils.exceptions.base_exceptions import AppBaseException
-from app.core.Security.jwt import JWTHandler, blacklist_token
+from app.core.Security.jwt import jwt_handler  
+from app.core.tasks.cleanup_tokens import get_user_token_version, revoke_all_user_tokens as cleanup_revoke_all
+from app.api.v1.deps import revoke_token, extract_token, decode_and_verify_token
 from app.modules.auth.models.user import User
 from fastapi import HTTPException, status
+from app.core.tasks.token_family_service import (
+    create_token_family,
+    check_token_family_revoked,
+    revoke_token_family,
+    revoke_entire_chain
+)
 
 # Import constants
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
 
 logger = logging.getLogger(__name__)
-jwt_handler = JWTHandler()
+
 
 
 class AuthController:
 
     def __init__(self, db: AsyncSession) -> None:
+        self.db = db
         self.auth_service: AuthService = AuthService(db)
     
     async def register_user(
@@ -110,7 +120,7 @@ class AuthController:
         self,
         credentials: UserLogin
     ) -> Union[SuccessResponse[TokenResponse], ErrorResponse]:
-        """Login user and return tokens."""
+        """Login user and return tokens with family ."""
         try:
             logger.info(f"[LOGIN] Attempting login for username: {credentials.user_name}")
             
@@ -119,8 +129,25 @@ class AuthController:
                 credentials.password
             )
 
-            access_token = jwt_handler.create_access_token(subject=str(user.user_id))
-            refresh_token = jwt_handler.create_refresh_token(subject=str(user.user_id))
+            # Get user's token_version
+            token_version = await self.auth_service.get_user_token_version(user.user_id)
+            if token_version is None:
+                token_version = 0
+
+            # Create token pair
+            tokens = jwt_handler.create_token_pair(
+                subject=str(user.user_id), 
+                token_version= token_version
+            )
+
+            # Create token family record
+            await create_token_family(
+                db= self.db, 
+                user_id=str(user.user_id), 
+                refresh_jti= tokens["refresh_jti"],
+                access_jti=tokens["access_jti"],
+                refresh_exp=tokens["refresh_exp"]
+            )
 
             user_response = UserResponse(
                 user_id=user.user_id,
@@ -137,8 +164,8 @@ class AuthController:
             )
 
             token_response = TokenResponse(
-                access_token=access_token,
-                refresh_token=refresh_token,
+                access_token=tokens["access_token"],
+                refresh_token=tokens["refresh_token"],
                 user=user_response
             )
 
@@ -272,14 +299,27 @@ class AuthController:
         self,
         refresh_request
     ) -> Union[SuccessResponse[TokenResponse], ErrorResponse]:
-        """Refresh access token using refresh token."""
+        """
+        Refresh access token with rotation and reuse detection
+        
+        Flow:
+        1. Verify refresh token
+        2. Check if family is revoked (reuse detection)
+        3. Revoke old refresh token
+        4. Create new token pair
+        5. Create new family (with parent link)
+        """
         try:
             logger.info("[REFRESH_TOKEN] Refreshing token")
             
-            payload = jwt_handler.verify_token(refresh_request.refresh_token)
+            # 1.Decode refresh token 
+            payload = jwt_handler.decode_token(refresh_request.refresh_token, verify_exp=True)
             user_id = payload.get("sub")
             token_type = payload.get("type")
+            token_version = payload.get("ver", 0)
+            old_refresh_jti = payload.get("jti")
 
+            # 2. Verify token type 
             if token_type != "refresh":
                 logger.warning("[REFRESH_TOKEN] Invalid token type")
                 return ErrorResponse(
@@ -288,15 +328,53 @@ class AuthController:
                     status_code=status.HTTP_401_UNAUTHORIZED
                 )
 
-            if not user_id:
-                logger.warning("[REFRESH_TOKEN] Invalid token - no user_id")
+            if not user_id or not old_refresh_jti:
+                logger.warning("[REFRESH_TOKEN] Invalid token - missing claims")
                 return ErrorResponse(
                     message=Message.AUTH_INVALID_TOKEN_MSG,
                     error_code=ErrorCode.INVALID_TOKEN,
                     status_code=status.HTTP_401_UNAUTHORIZED
                 )
+            
+            # 3. Check if family is revoked 
+            is_revoked = await check_token_family_revoked(self.db, old_refresh_jti)
+            if is_revoked: 
+                logger.error(
+                    f"[REFRESH_TOKEN] 🚨 REUSE DETECTED for user {user_id}, "
+                    f"jti: {old_refresh_jti}. Revoking entire chain!"
+                )
 
-            # Get user information
+                # Revoke entire token chain
+                await revoke_entire_chain(self.db, old_refresh_jti)
+                return ErrorResponse(
+                    message="Token reuse detected. All tokens have been revoked for security.",
+                    error_code=ErrorCode.INVALID_TOKEN,
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            
+
+            # 4. check token version 
+            current_version = await self.auth_service.get_user_token_version(uuid.UUID(user_id))
+            if current_version is None: 
+                return ErrorResponse(
+                message=Message.AUTH_USER_NOT_FOUND_MSG,
+                error_code=ErrorCode.USER_NOT_FOUND,
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+            if token_version < current_version: 
+                logger.warning(f"[REFRESH_TOKEN] Old token version: {token_version} < {current_version}")
+                return ErrorResponse(
+                    message="Token has been revoked. Please login again.",
+                    error_code=ErrorCode.INVALID_TOKEN,
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+
+            # 5. Revoke old refresh token family
+            await revoke_token_family(self.db, old_refresh_jti)
+
+            # 6.Get user information
             user = await self.auth_service.get_user_by_id(user_id)
             if not user:
                 logger.warning(f"[REFRESH_TOKEN] User not found: {user_id}")
@@ -306,9 +384,22 @@ class AuthController:
                     status_code=status.HTTP_401_UNAUTHORIZED
                 )
 
-            # Create new tokens
-            new_access_token = jwt_handler.create_access_token(subject=str(user_id))
-            new_refresh_token = jwt_handler.create_refresh_token(subject=str(user_id))
+            # 7. Create new token pair
+            new_tokens = jwt_handler.create_token_pair(
+                subject=user_id, 
+                token_version= current_version
+            )
+
+            # 8. Create new token family 
+            await create_token_family(
+                db= self.db,
+                user_id= user_id, 
+                refresh_jti=new_tokens["refresh_jti"],
+                access_jti=new_tokens["access_jti"],
+                refresh_exp=new_tokens["refresh_exp"],
+                parent_jti=old_refresh_jti
+
+            )
 
             user_response = UserResponse(
                 user_id=user.user_id,
@@ -325,8 +416,8 @@ class AuthController:
             )
 
             token_response = TokenResponse(
-                access_token=new_access_token,
-                refresh_token=new_refresh_token,
+                access_token=new_tokens["access_token"],
+                refresh_token=new_tokens["refresh_token"],
                 user=user_response
             )
 
@@ -349,35 +440,94 @@ class AuthController:
             )
 
     async def logout_user(self, token: str) -> SuccessResponse[dict]:
-        """Logout user and revoke token."""
+        """
+        Logout user and revoke token family
+        """
         try:
             logger.info("[LOGOUT] Processing logout")
             
-            payload = jwt_handler.verify_token(token)
+            # Decode token to get JTI
+            payload = jwt_handler.decode_token(token, verify_exp=False)
             jti = payload.get("jti")
             
-            if jti:
-                blacklist_token(jti)
-                logger.info("[LOGOUT] Token revoked successfully")
-                
+            if not jti:
+                logger.warning("[LOGOUT] Token missing JTI")
                 return SuccessResponse(
                     message=Message.USER_LOGOUT_SUCCESS_MSG,
                     data={
                         "logout_time": datetime.now(timezone.utc).isoformat(),
-                        "message": Message.TOKEN_REVOKED_MSG
+                        "message": Message.SESSION_TERMINATED_MSG
                     }
                 )
-                
-        except Exception as e:
-            logger.warning(f"[LOGOUT] Token verification failed, but continuing logout: {e}")
             
-        return SuccessResponse(
-            message=Message.USER_LOGOUT_SUCCESS_MSG,
-            data={
-                "logout_time": datetime.now(timezone.utc).isoformat(),
-                "message": Message.SESSION_TERMINATED_MSG
-            }
-        )
+            # Revoke entire token family (both access + refresh)
+            revoked_count = await revoke_token_family(self.db, jti)
+            
+            logger.info(f"[LOGOUT] Revoked {revoked_count} tokens in family")
+            
+            return SuccessResponse(
+                message=Message.USER_LOGOUT_SUCCESS_MSG,
+                data={
+                    "logout_time": datetime.now(timezone.utc).isoformat(),
+                    "message": f"Logged out successfully. {revoked_count} token(s) revoked.",
+                    "tokens_revoked": revoked_count
+                }
+            )
+            
+        except Exception as e:
+            logger.warning(f"[LOGOUT] Error during logout: {e}")
+            
+            return SuccessResponse(
+                message=Message.USER_LOGOUT_SUCCESS_MSG,
+                data={
+                    "logout_time": datetime.now(timezone.utc).isoformat(),
+                    "message": Message.SESSION_TERMINATED_MSG
+                }
+            )
+
+    async def logout_all_devices(
+        self,
+        current_user: User
+    ) -> Union[SuccessResponse[dict], ErrorResponse]:
+        """
+        Logout user from all devices by incrementing token_version
+        Use cases:
+        - User clicks "Logout everywhere"
+        - Password changed
+        - Security breach detected
+        """
+        try:
+            logger.info(f"[LOGOUT_ALL] User: {current_user.user_id}")
+
+            # Increment token_version
+            result = await self.auth_service.revoke_all_user_tokens(current_user.user_id)
+            
+            if not result["success"]:
+                return ErrorResponse(
+                    message=result["message"],
+                    error_code=ErrorCode.USER_NOT_FOUND,
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+            
+            logger.info(f"[LOGOUT_ALL] Success: {current_user.user_id}")
+            
+            return SuccessResponse(
+                message="Logged out from all devices successfully",
+                data={
+                    "user_id": str(current_user.user_id),
+                    "old_version": result["old_version"],
+                    "new_version": result["new_version"],
+                    "message": "All tokens have been revoked. Please login again."
+                }
+            )
+            
+        except Exception as e:
+            logger.error(f"[LOGOUT_ALL] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.INTERNAL_ERROR_MSG,
+                error_code=ErrorCode.INTERNAL_ERROR,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     async def health_check(self) -> SuccessResponse[dict]:
         """Health check for auth service."""
@@ -397,13 +547,13 @@ class AuthController:
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
         )
-    
+
     async def change_password(
         self,
         current_user: User,
         password_data: ChangePasswordRequest
     ) -> Union[SuccessResponse[ChangePasswordResponse], ErrorResponse]:
-        """Change password for authenticated user."""
+        """Change password and auto logout from all devices"""
         try:
             logger.info(f"[CHANGE_PASSWORD] User: {current_user.user_id}")
             
@@ -414,11 +564,17 @@ class AuthController:
             )
 
             if success:
-                logger.info(f"[CHANGE_PASSWORD] Success: {current_user.user_id}")
+                revoke_result = await self.auth_service.revoke_all_user_tokens(current_user.user_id)
+
+                logger.info(
+                    f"[CHANGE_PASSWORD] Success + All tokens revoked: {current_user.user_id}, "
+                    f"version {revoke_result['old_version']} → {revoke_result['new_version']}"
+                )
+
                 return SuccessResponse(
-                    message=Message.PASSWORD_CHANGE_SUCCESS_MSG,
+                    message="Password changed successfully. All devices have been logged out.",
                     data=ChangePasswordResponse(
-                        message=Message.PASSWORD_CHANGED_MSG,
+                        message="Password changed. Please login again on all devices.",
                         success=True
                     )
                 )

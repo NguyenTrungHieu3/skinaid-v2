@@ -16,6 +16,7 @@ class User(SQLModel, table=True):
     user_name: str = Field(unique=True, index=True, nullable= True)
     email: str = Field(unique=True, index=True)
     hashed_password: str
+    token_version: int = Field(default=0, nullable=False)
     is_active: bool = Field(default=True)
     is_verified: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

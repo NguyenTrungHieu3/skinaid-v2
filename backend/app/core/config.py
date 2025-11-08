@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     AI_MAX_RETRIES: int = 1
     AI_API_KEY: str = ""
 
+    CORS_ORIGINS: list = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    
+    APP_DESCRIPTION: str = "SkinAid API - Wound Analysis & First Aid Assistant"
+    DOCS_URL: str = "/docs"
+    REDOC_URL: str = "/redoc"
+
     BASE_URL: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(

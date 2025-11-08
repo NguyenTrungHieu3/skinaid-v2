@@ -20,7 +20,7 @@ def validate_password_strength(password: str) -> Optional[str]:
         "password", "123456", "qwerty", "admin"
     ]
     if password.lower() in [p.lower() for p in common_passwords]:
-        return "Password is too common, please choose a sronger password"
+        return "Password is too common, please choose a stronger password"
     
     return None
     

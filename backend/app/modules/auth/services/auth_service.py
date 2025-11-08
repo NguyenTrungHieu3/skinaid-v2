@@ -464,6 +464,70 @@ class AuthService:
                 error_code="PASSWORD_CHANGE_ERROR"
             )
 
+    async def get_user_token_version(self, user_id: uuid.UUID) -> Optional[int]:
+        """Lấy token version hiện tại của user"""
+        try:
+            sql = text("""
+                SELECT token_version 
+                FROM users 
+                WHERE user_id = :user_id
+            """)
+            
+            result = await self.db.execute(sql, {"user_id": user_id})
+            row = result.first()
+            
+            return row[0] if row else None
+            
+        except Exception as e:
+            logger.error(f"Error getting token version for user {user_id}: {str(e)}")
+            raise
+
+    async def revoke_all_user_tokens(self, user_id: uuid.UUID) -> dict:
+        """Revoke tất cả tokens của user bằng cách increment token_version"""
+        try:
+            sql = text("""
+                UPDATE users
+                SET token_version = token_version + 1,
+                    updated_at = :updated_at
+                WHERE user_id = :user_id
+                RETURNING token_version - 1 as old_version, token_version as new_version
+            """)
+            
+            result = await self.db.execute(sql, {
+                "user_id": user_id,
+                "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
+            })
+            row = result.first()
+            await self.db.commit()
+            
+            if not row:
+                logger.warning(f"User {user_id} not found for token revocation")
+                return {
+                    "success": False,
+                    "user_id": str(user_id),
+                    "message": "User not found"
+                }
+            
+            old_version = row[0]
+            new_version = row[1]
+            
+            logger.info(f"Revoked all tokens for user {user_id}: v{old_version} -> v{new_version}")
+            
+            return {
+                "success": True,
+                "user_id": str(user_id),
+                "old_version": old_version,
+                "new_version": new_version,
+                "message": "All tokens revoked. User must login again."
+            }
+            
+        except Exception as e:
+            logger.error(f"Error revoking all tokens for user {user_id}: {str(e)}")
+            raise AppBaseException(
+                message="Failed to revoke tokens",
+                error_code="TOKEN_REVOKE_ERROR"
+            )
+
 # =========== Email Verification Endpoints =============
     # async def resend_verification_email(self, email: str) -> bool:
     #     """Gửi lại email xác thực cho người dùng."""
