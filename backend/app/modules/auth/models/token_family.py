@@ -23,10 +23,10 @@ class TokenFamily(SQLModel, table=True):
     parent_jti: Optional[str] = Field(default=None, index=True) # Tạo ra chuỗi refresh token 
 
     # Status
-    is_revoke: bool = Field(default=False, index=True)
+    is_revoked: bool = Field(default=False, index=True)
 
     # Timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.nop(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     expires_at: datetime = Field(nullable=False)
 
     class Config: 

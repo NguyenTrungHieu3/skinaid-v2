@@ -165,6 +165,15 @@ class AuthController:
                 refresh_exp=tokens["refresh_exp"],
             )
 
+            # Get user roles
+            user_roles = []
+            if hasattr(user, "user_roles") and user.user_roles:
+                user_roles = [
+                    user_role.role.role_name
+                    for user_role in user.user_roles
+                    if hasattr(user_role, "role") and user_role.role
+                ]
+
             user_response = UserResponse(
                 user_id=user.user_id,
                 user_name=user.user_name,
@@ -182,6 +191,7 @@ class AuthController:
                 avatar_url=user.profile.avatar_url
                 if getattr(user, "profile", None)
                 else None,
+                roles=user_roles,
             )
 
             token_response = TokenResponse(

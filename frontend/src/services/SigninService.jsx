@@ -34,10 +34,10 @@ import axios from "axios";
 const API_URL = "http://127.0.0.1:8000/api/v1";
 
 const SigninService = {
-  login: async (email, password) => {
+  login: async (username, password) => {
     try {
       const response = await axios.post(`${API_URL}/auth/signin`, {
-        email,
+        user_name: username,
         password,
       });
 

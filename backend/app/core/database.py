@@ -81,6 +81,7 @@ async def init_db():
     from app.modules.auth.models.role_permissions import RolePermission
     from app.modules.auth.models.roles import Role
     from app.modules.auth.models.token_blacklist import TokenBlacklist
+    from app.modules.auth.models.token_family import TokenFamily
     from app.modules.auth.models.user_roles import UserRole
     from app.modules.ai.models.wound_analysis import WoundAnalysis
     from app.modules.ai.models.wound_detection import WoundDetection

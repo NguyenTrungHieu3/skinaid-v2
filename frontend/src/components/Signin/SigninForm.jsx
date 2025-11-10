@@ -4,22 +4,24 @@ import SigninService from "../../services/SigninService";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
 function SigninForm({ switchForm }) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [emailError, setEmailError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
 
-  // Validate Email
-  const validateEmail = (value) => {
-    if (!value || !value.trim()) return "Email is required";
-    if (value.length > 254) return "Email is too long (maximum 254 characters)";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(value)) return "Invalid email format";
+  // Validate Username
+  const validateUsername = (value) => {
+    if (!value || !value.trim()) return "Username is required";
+    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length > 50) return "Username is too long (maximum 50 characters)";
+    // Username can contain letters, numbers, underscores, and hyphens
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(value)) return "Username can only contain letters, numbers, underscores, and hyphens";
     return "";
   };
 
@@ -64,16 +66,16 @@ function SigninForm({ switchForm }) {
     setErrorMessage("");
 
     // FE Validation trước khi gọi BE
-    const emailErr = validateEmail(email);
+    const usernameErr = validateUsername(username);
     const passwordErrs = validatePassword(password);
 
-    setEmailError(emailErr);
+    setUsernameError(usernameErr);
     handlePasswordValidation(password);
 
-    if (emailErr || passwordErrs.length > 0) return;
+    if (usernameErr || passwordErrs.length > 0) return;
 
     try {
-      const data = await SigninService.login(email, password);
+      const data = await SigninService.login(username, password);
 
       // Lưu token
       localStorage.setItem("token", data.token);
@@ -102,22 +104,22 @@ function SigninForm({ switchForm }) {
     <form className="signin-box" onSubmit={handleSubmit} noValidate>
       <h2>Sign in</h2>
 
-      {/* Email */}
+      {/* Username */}
       <div className="input-group">
         <i className="fa-solid fa-user icon"></i>
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
+          type="text"
+          placeholder="Username"
+          value={username}
           onChange={(e) => {
-            setEmail(e.target.value);
-            if (validateEmail(e.target.value) === "") setEmailError("");
+            setUsername(e.target.value);
+            if (validateUsername(e.target.value) === "") setUsernameError("");
           }}
-          onBlur={() => setEmailError(validateEmail(email))}
+          onBlur={() => setUsernameError(validateUsername(username))}
           required
         />
       </div>
-      {emailError && <p className="error-signin-message">{emailError}</p>}
+      {usernameError && <p className="error-signin-message">{usernameError}</p>}
 
       {/* Password */}
       <div className="input-group">

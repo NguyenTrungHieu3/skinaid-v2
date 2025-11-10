@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, and_, text, delete
+from sqlalchemy.orm import selectinload
 from sqlmodel import col
 from typing import Optional, List, Tuple
 from uuid import UUID
@@ -7,6 +8,7 @@ import uuid
 import logging
 
 from app.modules.auth.models.user import User
+from app.modules.auth.models.user_profile import UserProfile
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.roles import Role
 from app.core.Security.password import hash_password
@@ -56,7 +58,7 @@ class UserManagementService:
             query = query.where(
                 or_(
                     User.email.ilike(search_pattern),
-                    User.display_name.ilike(search_pattern)
+                    User.user_name.ilike(search_pattern)
                 )
             )
         
@@ -84,6 +86,9 @@ class UserManagementService:
         # Apply pagination and ordering
         query = query.offset(offset).limit(limit).order_by(User.created_at.desc())
         
+        # Load user profiles eagerly
+        query = query.options(selectinload(User.profile))
+        
         # Execute query
         result = await self.db.execute(query)
         users = result.scalars().all()
@@ -97,10 +102,17 @@ class UserManagementService:
             # Get upload count
             upload_count = await self._get_user_upload_count(user.user_id)
             
+            # Get display_name from profile if available, else use user_name
+            display_name = None
+            if hasattr(user, 'profile') and user.profile:
+                display_name = user.profile.full_name
+            if not display_name:
+                display_name = user.user_name
+            
             user_info = UserBasicInfo(
                 user_id=user.user_id,
                 email=user.email,
-                display_name=user.display_name,
+                display_name=display_name,
                 is_active=user.is_active,
                 is_verified=user.is_verified,
                 created_at=user.created_at,
@@ -130,6 +142,7 @@ class UserManagementService:
             UserDetailInfo or None if not found
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
+        query = query.options(selectinload(User.profile))
         result = await self.db.execute(query)
         user = result.scalar_one_or_none()
         
@@ -142,10 +155,17 @@ class UserManagementService:
         # Get upload count
         upload_count = await self._get_user_upload_count(user.user_id)
         
+        # Get display_name from profile if available, else use user_name
+        display_name = None
+        if hasattr(user, 'profile') and user.profile:
+            display_name = user.profile.full_name
+        if not display_name:
+            display_name = user.user_name
+        
         user_detail = UserDetailInfo(
             user_id=user.user_id,
             email=user.email,
-            display_name=user.display_name,
+            display_name=display_name,
             is_active=user.is_active,
             is_verified=user.is_verified,
             created_at=user.created_at,
@@ -186,27 +206,43 @@ class UserManagementService:
         if len(user_data.password) < 6:
             raise ValueError("Password must be at least 6 characters")
         
+        # Generate username from email (before @)
+        user_name = user_data.email.split('@')[0]
+        # Check if username exists, if so append random suffix
+        existing_username = await self._get_user_by_username(user_name)
+        if existing_username:
+            user_name = f"{user_name}_{uuid.uuid4().hex[:6]}"
+        
         try:
             # Hash password
             hashed_password = hash_password(user_data.password)
             
             # Create user
+            new_user_id = uuid.uuid4()
             new_user = User(
-                user_id=uuid.uuid4(),
+                user_id=new_user_id,
+                user_name=user_name,
                 email=user_data.email,
-                display_name=user_data.display_name.strip(),
                 hashed_password=hashed_password,
                 is_active=True,  # Admin-created users are active by default
                 is_verified=True  # Admin-created users are verified by default
             )
             
             self.db.add(new_user)
-            await self.db.flush()  # Flush to get user_id for role assignment
+            await self.db.flush()  # Flush to get user_id for profile and role assignment
+            
+            # Create user profile with display_name
+            new_profile = UserProfile(
+                user_id=new_user_id,
+                full_name=user_data.display_name.strip()
+            )
+            self.db.add(new_profile)
+            await self.db.flush()
             
             # Assign role (this may raise ValueError if role not found)
             await self._assign_role_to_user(new_user.user_id, user_data.role)
             
-            # Commit the transaction (user + role assignment)
+            # Commit the transaction (user + profile + role assignment)
             await self.db.commit()
             await self.db.refresh(new_user)
             
@@ -258,6 +294,7 @@ class UserManagementService:
             ValueError: If validation fails or email already in use
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
+        query = query.options(selectinload(User.profile))
         result = await self.db.execute(query)
         user = result.scalar_one_or_none()
         
@@ -265,13 +302,23 @@ class UserManagementService:
             return None
         
         try:
-            # Validate display_name if provided
+            # Validate and update display_name (full_name in profile) if provided
             if user_data.display_name is not None:
                 if len(user_data.display_name.strip()) < 2:
                     raise ValueError("Display name must be at least 2 characters")
                 if len(user_data.display_name) > 100:
                     raise ValueError("Display name must not exceed 100 characters")
-                user.display_name = user_data.display_name.strip()
+                
+                # Update or create profile
+                if hasattr(user, 'profile') and user.profile:
+                    user.profile.full_name = user_data.display_name.strip()
+                else:
+                    # Create profile if doesn't exist
+                    new_profile = UserProfile(
+                        user_id=user_id,
+                        full_name=user_data.display_name.strip()
+                    )
+                    self.db.add(new_profile)
             
             # Validate and update email if provided
             if user_data.email is not None:
@@ -451,6 +498,12 @@ class UserManagementService:
     async def _get_user_by_email(self, email: str) -> Optional[User]:
         """Get user by email"""
         query = select(User).where(User.email == email)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+    
+    async def _get_user_by_username(self, user_name: str) -> Optional[User]:
+        """Get user by username"""
+        query = select(User).where(User.user_name == user_name)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
