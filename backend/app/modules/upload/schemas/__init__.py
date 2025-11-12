@@ -4,8 +4,18 @@ from .validation import (
     UploadValidationResponse
 )
 
+from .upload_schemas import(
+    UploadParams,
+    UploadResponse, 
+    ValidationResult
+)
+
 __all__ = [
     "ValidationErrorDetail",
     "UploadValidationCreate",
-    "UploadValidationResponse"
+    "UploadValidationResponse", 
+
+    'UploadParams',
+    'ValidationResult',
+    'UploadResponse',
 ]

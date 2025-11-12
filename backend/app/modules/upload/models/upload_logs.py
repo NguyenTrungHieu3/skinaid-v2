@@ -34,7 +34,7 @@ class UploadLog(SQLModel, table=True):
 
     @property
     def status_display(self) -> str:
-        """Get upload status in Vietnamese."""
+        """Lấy trạng thái upload hiển thị dưới dạng tiếng Việt thân thiện."""
         status_map = {
             "pending": "Đang chờ",
             "success": "Thành công",
@@ -44,22 +44,22 @@ class UploadLog(SQLModel, table=True):
 
     @property
     def is_successful(self) -> bool:
-        """Check if upload was successful."""
+        """Kiểm tra upload có thành công hay không."""
         return self.upload_status.lower() == "success"
 
     @property
     def has_error(self) -> bool:
-        """Check if upload has error."""
+        """Kiểm tra upload có lỗi hay không (bao gồm trạng thái failed hoặc có thông điệp lỗi)."""
         return self.upload_status.lower() == "failed" or self.error_message is not None
 
     @property
     def has_validation_errors(self) -> bool:
-        """Check if there are validation errors."""
+        """Kiểm tra xem có tồn tại lỗi xác thực nào hay không."""
         return self.validation_errors is not None and len(self.validation_errors) > 0
 
     @property
     def file_size_mb(self) -> float:
-        """Get file size in MB."""
+        """Lấy kích thước tệp theo đơn vị MB (hỗ trợ hiển thị)."""
         return self.file_size / (1024 * 1024)
 
     @classmethod
@@ -76,7 +76,7 @@ class UploadLog(SQLModel, table=True):
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None
     ) -> "UploadLog":
-        """Create a new upload log record."""
+        """Tạo một bản ghi log upload mới với đầy đủ thông tin liên quan."""
         return cls(
             user_id=user_id,
             analysis_id=analysis_id,
@@ -91,22 +91,22 @@ class UploadLog(SQLModel, table=True):
         )
 
     def mark_success(self) -> None:
-        """Mark upload as successful."""
+        """Đánh dấu upload là thành công."""
         self.upload_status = "success"
 
     def mark_failed(self, error_message: str, validation_errors: Optional[Dict[str, Any]] = None) -> None:
-        """Mark upload as failed with error details."""
+        """Đánh dấu upload thất bại và lưu chi tiết lỗi/xác thực (nếu có)."""
         self.upload_status = "failed"
         self.error_message = error_message
         if validation_errors:
             self.validation_errors = validation_errors
 
     def update_analysis_id(self, analysis_id: uuid.UUID) -> None:
-        """Update the analysis_id when analysis is completed."""
+        """Cập nhật analysis_id sau khi quá trình phân tích hoàn tất."""
         self.analysis_id = analysis_id
 
     def to_response_dict(self) -> dict:
-        """Convert log to response dictionary."""
+        """Chuyển đổi log upload sang dict phục vụ phản hồi API hoặc hiển thị."""
         return {
             "upload_log_id": self.upload_log_id,
             "user_id": self.user_id,
