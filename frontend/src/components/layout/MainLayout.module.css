@@ -1,19 +1,13 @@
-/* File: src/components/layout/MainLayout.module.css (FILE MỚI) */
+/* File: src/components/layout/MainLayout.module.css */
 
 .layoutWrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* 1. Wrapper chiếm 100% màn hình */
-  overflow: hidden; /* Ngăn chính wrapper này cuộn */
+  min-height: 100vh; /* Đổi từ height sang min-height để cho phép mở rộng */
+  /* Bỏ overflow: hidden để cho phép scroll */
 }
 
 .mainContent {
-  flex-grow: 1; /* 2. <main> chiếm hết không gian còn lại (sau khi trừ Header) */
-
-  /* 3. Rất quan trọng:
-       Tạo chiều cao cố định cho <main> 
-       và ngăn nó tự cuộn 
-    */
-  overflow: hidden;
-  min-height: 0;
+  flex-grow: 1; /* <main> chiếm hết không gian còn lại */
+  /* Bỏ overflow: hidden và min-height: 0 để cho phép cuộn tự nhiên */
 }

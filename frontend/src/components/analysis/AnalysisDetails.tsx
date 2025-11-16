@@ -49,7 +49,7 @@ const AnalysisDetails = ({
           style={{ transform: `rotate(${gaugeRotation}deg)` }}
         ></div>
         <div className={styles.gaugeCover}>
-          <strong>{likelihood}%</strong>
+          <strong>{Math.round(likelihood)}%</strong>
         </div>
       </div>
 

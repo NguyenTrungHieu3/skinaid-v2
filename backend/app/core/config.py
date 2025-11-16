@@ -22,8 +22,8 @@ class Settings(BaseSettings):
 
     UPLOAD_MAX_FILE_SIZE: int = 5 * 1024 * 1024
     UPLOAD_ALLOWED_FORMATS: str = ".jpg,.jpeg,.png"
-    UPLOAD_MIN_WIDTH: int = 224
-    UPLOAD_MIN_HEIGHT: int = 224
+    UPLOAD_MIN_WIDTH: int = 100
+    UPLOAD_MIN_HEIGHT: int = 100
     UPLOAD_DIR: str = "uploads"
 
     AI_SERVICE_URL: str = "http://localhost:8001"
