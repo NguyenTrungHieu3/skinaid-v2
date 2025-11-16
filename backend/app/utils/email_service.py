@@ -49,7 +49,7 @@ class EmailService:
                     <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản SkinAid của bạn.</p>
                     
                     <div style="text-align: center; margin: 30px 0;">
-                        <a href="http://localhost:3000/reset-password?token={encoded_token}&email={encoded_email}"
+                        <a href="http://localhost:5173/reset-password?token={encoded_token}&email={encoded_email}"
                            style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
                             Đặt lại mật khẩu
                         </a>
@@ -57,7 +57,7 @@ class EmailService:
 
                     <p>Hoặc copy và paste link sau vào trình duyệt:</p>
                     <p style="word-break: break-all; background-color: #eee; padding: 10px; border-radius: 5px;">
-                        http://localhost:3000/reset-password?token={encoded_token}&email={encoded_email}
+                        http://localhost:5173/reset-password?token={encoded_token}&email={encoded_email}
                     </p>
                     
                     <p><strong>Lưu ý:</strong> Link đặt lại mật khẩu này sẽ hết hạn sau 1 giờ.</p>
@@ -80,7 +80,7 @@ class EmailService:
         Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản SkinAid của bạn.
 
         Vui lòng truy cập link sau để đặt lại mật khẩu:
-        http://localhost:3000/reset-password?token={encoded_token}&email={encoded_email}
+        http://localhost:5173/reset-password?token={encoded_token}&email={encoded_email}
 
         Lưu ý: Link đặt lại mật khẩu này sẽ hết hạn sau 1 giờ.
 

@@ -1,0 +1,335 @@
+/* src/components/layout/Header.module.css */
+
+/* --- CÁC BIẾN VÀ STYLES CHUNG --- */
+:root {
+  --primary-color: #009688;
+  --primary-color-dark: #00796b;
+}
+
+/* --- DESKTOP FIRST STYLES (MẶC ĐỊNH) --- */
+.header {
+  display: flex;
+  align-items: center; /* Căn giữa các item theo chiều dọc */
+  padding: 0.5rem 2rem;
+  height: 60px;
+  border-bottom: 1px solid #eee;
+  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  /* (Xóa margin-right) */
+}
+.logo img {
+  height: 35px;
+}
+.logoAid {
+  color: var(--primary-color);
+}
+
+/* Mặc định, ẩn nút hamburger */
+.hamburgerButton {
+  display: none;
+}
+
+/* --- (LOGIC MỚI CHO DESKTOP) --- */
+
+/* 1. Xóa container 'navContainer' không cần thiết trên desktop */
+.navContainer {
+  /* Chúng ta sẽ dùng .menuContent trực tiếp */
+  flex-grow: 1; /* Cho phép co giãn */
+}
+
+/* 2. Sửa .menuContent */
+.menuContent {
+  display: flex;
+  flex-direction: row; /* Xếp ngang */
+  align-items: center; /* Căn giữa */
+  width: 100%;
+  align-items: baseline;
+}
+
+/* 3. Sửa .nav */
+.nav {
+  display: flex;
+  flex-direction: row; /* Xếp ngang */
+  gap: 2rem;
+  margin-left: 2.5rem; /* Khoảng cách từ logo đến nav */
+}
+
+/* 4. Sửa .authButtons (Đây là mấu chốt) */
+.authButtons {
+  display: flex;
+  flex-direction: row; /* Xếp ngang */
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto; /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
+  border: none;
+  padding: 0;
+}
+
+/* Mặc định, không có overlay */
+.overlay {
+  display: none;
+}
+
+/* --- STYLES CHUNG (Dùng cho cả 2 màn hình) --- */
+/* (Phần này giữ nguyên, không cần sửa) */
+
+.nav a {
+  text-decoration: none;
+  color: #555;
+  font-weight: 600;
+  padding-bottom: 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+.nav a:hover,
+.nav a.active {
+  color: var(--primary-color);
+}
+
+/* Xóa hoặc thay thế class .welcome cũ */
+.welcomeLink {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  text-decoration: none; /* <-- Thêm: Xóa gạch chân */
+  transition: color 0.2s; /* <-- Thêm: Hiệu ứng hover */
+  /* THÊM 4 DÒNG NÀY ĐỂ GIỚI HẠN VÀ THÊM DẤU "..." */
+  display: block; /* Cần thiết để max-width hoạt động */
+  max-width: 150px; /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcomeLink:hover {
+  color: var(--primary-color); /* <-- Thêm: Đổi màu khi di chuột */
+}
+.authBtn {
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.authBtn:hover {
+  background-color: #f0f9f8;
+}
+.signUp {
+  background-color: var(--primary-color);
+  color: #fff;
+}
+.signUp:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.languageSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem; /* Tạo khoảng cách với các nút khác */
+}
+
+.flagButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5; /* Mặc định làm mờ cờ không được chọn */
+  transition: opacity 0.2s ease-in-out;
+  padding: 0;
+  display: flex; /* Giúp căn chỉnh cờ tốt hơn */
+}
+
+.flagButton:hover {
+  opacity: 1;
+}
+
+.flagButton svg {
+  width: 24px !important; /* Ghi đè kích thước cờ */
+  height: auto !important;
+  border-radius: 3px; /* Bo góc cờ một chút */
+}
+
+.activeFlag {
+  opacity: 1; /* Cờ được chọn sẽ rõ nét */
+}
+
+.divider {
+  color: var(--color-gray-light, #ccc); /* Màu của dấu gạch đứng */
+  font-size: 1rem;
+}
+
+.navContainer {
+  flex-grow: 1;
+}
+
+/* SỬA CLASS NÀY */
+.menuContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* Căn giữa theo chiều dọc */
+  width: 100%;
+  /* XÓA: align-items: baseline; */
+  justify-content: space-between; /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
+}
+
+.nav {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-left: 2.5rem;
+}
+
+/* THÊM CLASS MỚI NÀY */
+.rightWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Khoảng cách giữa cờ và nút auth */
+}
+
+/* SỬA CLASS NÀY */
+.authButtons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 0; /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
+  border: none;
+  padding: 0;
+}
+
+/* --- MOBILE STYLES (MEDIA QUERY) --- */
+/* (Toàn bộ phần @media của bạn giữ nguyên, không cần sửa) */
+@media (max-width: 899px) {
+  .header {
+    justify-content: center;
+    padding: 0.75rem 1rem;
+  }
+
+  .hamburgerButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #555;
+    cursor: pointer;
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+  }
+
+  /* (Quan trọng) Reset lại các style desktop bên trong mobile */
+  .navContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    z-index: 1000;
+    transition: visibility 0.3s ease;
+    margin-left: 0; /* Reset margin-left */
+  }
+
+  .overlay {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .menuContent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #fff;
+    padding: 5rem 1.5rem 2rem;
+    flex-direction: column;
+    /* gap: 2rem; */
+    align-items: flex-start;
+    justify-content: flex-start;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .mobileMenuOpen {
+    visibility: visible;
+  }
+  .mobileMenuOpen .overlay {
+    opacity: 1;
+  }
+  .mobileMenuOpen .menuContent {
+    transform: translateX(0);
+  }
+
+  .nav {
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-left: 0; /* Reset margin-left */
+    width: 100%; /* Đảm bảo nav links chiếm đủ rộng */
+    order: 1; /* 1. Nav links (nằm trên) */
+  }
+
+  /* SỬA CLASS NÀY */
+  .rightWrapper {
+    /* Cho wrapper xếp dọc trên mobile */
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch; /* Dãn các nút auth ra */
+    gap: 1.5rem;
+    order: 2; /* 2. Khối Auth + Cờ (nằm dưới) */
+    margin-top: auto; /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+  }
+
+  /* SỬA CLASS NÀY */
+  .languageSwitcher {
+    order: 2; /* Cờ nằm dưới nút auth */
+    justify-content: center; /* Căn giữa cờ */
+    padding: 0; /* Xóa padding ngang */
+  }
+
+  .authButtons {
+    flex-direction: column;
+    gap: 1rem;
+    /* border-top: 1px solid #eee;
+    padding-top: 1.5rem; */
+    align-items: stretch;
+    margin-left: 0; /* Reset margin-left */
+    order: 1;
+  }
+
+  .nav a {
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    border-bottom: none;
+  }
+  .nav a.active {
+    background-color: #f0f9f8;
+    border-radius: 6px;
+  }
+}

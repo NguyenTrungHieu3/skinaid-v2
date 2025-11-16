@@ -1,0 +1,238 @@
+/* --- 1. Container chính (Grid 2 cột) --- */
+.timelineContainer {
+  height: 100%;
+  display: grid;
+  /* CHỈ CÒN 2 CỘT: Cột 1 (Tháng), Cột 2 (Nội dung) */
+  grid-template-columns: 1fr 2fr; /* Tỷ lệ 1:2, bạn có thể đổi 1fr 3fr, v.v. */
+  grid-template-rows: 1fr;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  gap: 0 30px; /* Vẫn giữ gap */
+}
+
+/* --- 2. Cột 1: Nhãn Tháng (Bên trái) --- */
+.monthLabelContainer {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.monthLabel {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00897b;
+}
+
+/* --- 3. Cột 2: Danh sách Card (Bên phải) --- */
+/* (Class .timelineLine cũ đã bị xóa) */
+
+.eventList {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  height: 100%;
+}
+
+.eventList::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0; /* Kéo dài 100% chiều cao của cột */
+  left: 22px; /* Đặt line ở 22px */
+  width: 4px;
+  background-color: #00897b;
+  z-index: 0;
+}
+
+/* --- 4. Wrappers (Fade và Scroll) --- */
+.fadeWrapper {
+  height: 100%;
+  position: relative;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 10%,
+    black 90%,
+    transparent 100%
+  );
+}
+
+.scrollWrapper {
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  /* overflow-x: visible; <-- KHÔNG CẦN NỮA */
+  padding: 20px 0;
+
+  /* RẤT QUAN TRỌNG: Tạo không gian cho Line và Dot mới */
+  position: relative;
+  padding-left: 42px; /* Chừa 42px bên trái cho line và dot */
+  scrollbar-width: none; /* Cho Firefox */
+  -ms-overflow-style: none; /* Cho Internet Explorer và Edge cũ */
+}
+
+/* TẠO ĐƯỜNG KẺ GIẢ (LINE) MỚI */
+.scrollWrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Đặt đường line ở vị trí 22px bên trong vùng cuộn */
+  left: 22px;
+  width: 4px;
+  background-color: #00897b;
+  z-index: 0;
+}
+
+.scrollWrapper::-webkit-scrollbar {
+  /* Sửa 'width: 6px;' thành 'display: none;' */
+  display: none; /* Cho Chrome, Safari, và Edge mới */
+}
+
+/* Tùy chỉnh thanh cuộn (cho đẹp) */
+/* Đổi target từ .eventList sang .scrollWrapper */
+/* .scrollWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollWrapper::-webkit-scrollbar-thumb {
+  background-color: #00897b;
+  border-radius: 3px;
+}
+.scrollWrapper::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+} */
+
+/* --- 5. Từng Item (Chấm tròn + Card) --- */
+.timelineItem {
+  position: relative;
+  margin-bottom: 20px; /* Giảm khoảng cách giữa các card */
+}
+
+.timelineDot {
+  position: absolute;
+
+  /* THAY ĐỔI LỚN: 
+       Chấm tròn giờ nằm ở 'left: 0' 
+       (tức là ở 42px của .scrollWrapper) 
+    */
+  left: -28px;
+
+  /* Căn chấm tròn vào giữa đường line (left: 22px) */
+  /* (22px - 10px (nửa dot)) = 12px */
+  transform: translateY(-50%);
+  top: 50%;
+
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border: 4px solid #00897b;
+  border-radius: 50%;
+  z-index: 2; /* Phải cao hơn z-index: 0 của line */
+}
+
+/* --- 6. Thẻ Card (Nội dung) --- */
+.timelineCard {
+  /* Thêm z-index để card nằm trên line (nếu cần) */
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  border: 2px solid #f0f0f0;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  width: 350px;
+}
+
+/* Khi Item được chọn (active) */
+.activeItem .timelineCard {
+  /* Viền xanh đậm khi active, như trong hình */
+  border: 2px solid #00897b;
+  box-shadow: 0 4px 12px rgba(0, 137, 123, 0.15);
+}
+
+/* --- 7. Layout thẻ mới (thay cho cardImage) --- */
+.cardWoundLabel {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0; /* Ngăn co lại */
+}
+
+/* Màu cho các hộp "Wound" */
+.woundLabel1 {
+  background-color: #e0f2f1; /* Teal light */
+  color: #00796b;
+}
+.woundLabel2 {
+  background-color: #fff8e1; /* Yellow light */
+  color: #f57f17;
+}
+.woundLabel3 {
+  background-color: #e8f5e9; /* Green light */
+  color: #388e3c;
+}
+
+/* Cột thông tin */
+.cardInfo {
+  flex-grow: 1; /* Đẩy cột "View" ra xa */
+}
+
+.cardTimestamp {
+  font-size: 0.8rem; /* 12px */
+  color: #777;
+  margin: 0 0 4px 0;
+}
+.cardImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+
+  /* Đây là key: "cover" sẽ lấp đầy khung 60x60 mà không làm méo ảnh */
+  object-fit: cover;
+
+  flex-shrink: 0; /* Ngăn co lại */
+  background-color: #f0f0f0; /* Màu nền mờ */
+  border: 1px solid #eee;
+}
+.cardTitle {
+  font-size: 1.1rem; /* 18px */
+  font-weight: 600;
+  color: #222;
+  margin: 0;
+}
+
+/* Cột "View" */
+.cardAction a {
+  font-size: 0.9rem; /* 14px */
+  font-weight: 600;
+  color: #333; /* Màu xanh dương như trong hình */
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.cardAction a:hover {
+  color: #00796b;
+}

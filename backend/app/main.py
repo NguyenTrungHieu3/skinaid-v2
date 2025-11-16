@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.events import lifespan
 from app.core.cors import setup_cors
+from starlette.middleware.cors import CORSMiddleware
 
 # Routers
 from app.api.v1.api import router as api_v1_router

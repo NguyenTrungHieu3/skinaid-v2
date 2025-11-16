@@ -1,0 +1,643 @@
+/* src/pages/HomePage.module.css */
+.homePage {
+  width: 100%;
+
+  /* 1. Đặt chiều cao bằng đúng không gian còn lại (100% trừ đi 60px của Header) */
+  height: calc(100vh - 60px);
+
+  /* 2. Cho phép container này cuộn */
+  overflow-y: scroll;
+
+  /* 3. Bật "bắt dính" theo chiều dọc (y) */
+  scroll-snap-type: y mandatory;
+
+  /* 4. Thêm hiệu ứng cuộn "mượt" (tùy chọn) */
+  scroll-behavior: smooth;
+}
+
+/* Tiện ích chung */
+.btnPrimary {
+  background-color: #009688;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+
+  /* --- THÊM 3 DÒNG NÀY --- */
+  display: inline-flex; /* Biến nút thành flex container */
+  align-items: center; /* Căn icon và chữ theo chiều dọc */
+  gap: 0.5rem;
+}
+.btnPrimary:hover {
+  background-color: #00796b;
+}
+
+.btnSecondary {
+  background-color: #fff;
+  color: #009688;
+  border: 1px solid #009688;
+  padding: 0.8rem 1.5rem;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s;
+
+  /* --- THÊM 3 DÒNG NÀY --- */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btnSecondary:hover {
+  background-color: #f0f9f8;
+}
+
+.imgPlaceholder {
+  /* Dùng tạm khi chưa có ảnh */
+  /* background-color: #eee; */
+  border-radius: 8px;
+  height: 250px;
+  /* display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaa; */
+}
+
+/* 1. Hero Section */
+.hero {
+  background: linear-gradient(180deg, #d1eae5 0%, #ffffff 100%);
+
+  /* --- THÊM 2 DÒNG SAU --- */
+  min-height: calc(100vh - 60px); /* Đặt chiều cao bằng container cha */
+  scroll-snap-align: start; /* Bắt dính vào lề trên */
+
+  padding: 1rem 0;
+  display: flex;
+  align-items: center;
+}
+
+/* 2. THÊM CLASS .heroContainer MỚI */
+.heroContainer {
+  /* DI CHUYỂN TỪ .hero SANG: */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  max-width: 1200px;
+
+  /* THAY THẾ CHO CÁC THUỘC TÍNH CŨ: */
+  width: 100%; /* Đảm bảo nó chiếm đủ không gian */
+  margin: auto; /*Căn giữa theo chiều ngang*/
+  padding: 0rem 2rem; /* Giữ padding 2 bên cho màn hình nhỏ */
+}
+
+.heroContent {
+  flex: 1;
+  margin-right: 2rem;
+}
+
+/* 1. THÊM CLASS MỚI CHO H1 */
+.heroTitle {
+  display: flex; /* Xếp logo và chữ nằm ngang */
+  align-items: end; /* Căn giữa chúng theo chiều dọc */
+  gap: 0.5rem; /* Khoảng cách giữa logo và chữ (khoảng 12px) */
+
+  /* (Di chuyển các style cũ của h1 vào đây) */
+  font-size: 4.5rem;
+  margin-bottom: 1rem;
+}
+
+.heroTitle span {
+  background: linear-gradient(
+    90deg,
+    black 0%,
+    black 45%,
+    /* giữ đen tới gần hết "Skin" */ #1e9378 67%,
+    /* chuyển qua xanh ngay từ chữ "A" */ #1e9378 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 2. THÊM CLASS MỚI CHO LOGO */
+.heroLogo {
+  width: 230px; /* Chỉnh kích thước logo tùy ý */
+  height: 280px; /* Chỉnh kích thước logo tùy ý */
+  object-fit: contain; /*Đảm bảo logo không bị méo*/
+}
+/* .heroContent h1 {
+  font-size: 3rem;
+  color: #009688;
+  margin-bottom: 1rem;
+} */
+.heroContent p {
+  font-size: 1rem;
+  font-style: italic;
+  color: #555;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-bottom: 2rem;
+}
+.heroButtons {
+  display: flex;
+  gap: 1rem;
+}
+.heroImage {
+  flex: 1;
+}
+
+.heroImage .imgPlaceholder {
+  height: 600px;
+  /* THÊM 2 DÒNG NÀY ĐỂ ẢNH ĐẸP HƠN: */
+  width: 100%; /* Giúp ảnh co giãn theo cột */
+  object-fit: contain; /* Giúp ảnh không bị méo */
+  transform: rotate(3deg);
+  transition: transform 0.6s ease;
+}
+
+.imgPlaceholder:hover {
+  transform: rotate(0);
+}
+
+/* 2. Features Section */
+.features {
+  background-color: #fff; /* Đổi sang nền trắng */
+  padding: 2rem 2rem;
+  text-align: center;
+  min-height: calc(100vh - 60px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.features h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem; /* Giảm margin */
+  color: #333;
+}
+
+/* THÊM MỚI: Tiêu đề phụ */
+.featuresSubtitle {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  background-color: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 12px; /* Bo góc nhiều hơn */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07); /* Shadow đẹp hơn */
+  text-align: center; /* Căn giữa nội dung */
+  border: 2px solid #009688; /* Viền xanh mặc định */
+  transition: all 0.3s ease;
+}
+.featureCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* THÊM MỚI: Class viền màu cam */
+.cardOrange {
+  border-color: #f39c12; /* Màu cam */
+}
+
+/* THÊM MỚI: Vỏ bọc icon */
+.featureIconWrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 1.5rem auto; /* Tự động căn giữa */
+}
+.iconGreen {
+  background-color: #e0f2f1; /* Nền xanh nhạt */
+  color: #009688;
+}
+.iconOrange {
+  background-color: #fff8e1; /* Nền cam nhạt */
+  color: #f39c12;
+}
+
+.featureCard h4 {
+  font-size: 1.2rem;
+  color: #333; /* Đổi sang màu đen/xám đậm */
+  margin-bottom: 0.5rem;
+
+  /* --- THÊM 4 DÒNG SAU --- */
+  /* 1. Đặt chiều cao tối thiểu (3em ~ 2 dòng chữ) */
+  min-height: 3em;
+  /* 2. Dùng flex để căn giữa nội dung bên trong */
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 3. Căn giữa tiêu đề (cho các thẻ 1 dòng) */
+}
+.featureCard p {
+  color: #555;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* THÊM MỚI: Style cho danh sách (list) */
+.featureList {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.5rem;
+  text-align: left; /* Căn trái nội dung list */
+  font-size: 0.9rem;
+  color: #555;
+}
+.featureList li {
+  display: flex;
+  align-items: center; /* Căn icon và chữ */
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.checkIcon {
+  color: #009688; /* Màu xanh của dấu check */
+  font-size: 0.8rem;
+  flex-shrink: 0; /* Đảm bảo icon không bị co lại */
+}
+
+/* 3. Stats Section */
+.stats {
+  /* 2. Đặt ảnh nền và lớp phủ */
+  background-image: 
+    /* Lớp 1: Lớp phủ đen mờ (0.5 = 50% mờ) */ linear-gradient(
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.5)
+    ),
+    /* Lớp 2: Ảnh của bạn (hãy thay đổi URL này) */
+      url("../assets/images/home-page/anh-stats.png");
+
+  /* 3. Cài đặt cho ảnh nền */
+  background-size: cover; /* Đảm bảo ảnh lấp đầy section */
+  background-position: center; /* Căn ảnh vào giữa */
+  color: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 3rem 2rem;
+  text-align: center;
+
+  /* --- THÊM 2 DÒNG SAU --- */
+  min-height: calc(100vh - 60px);
+  scroll-snap-align: start;
+  align-items: center; /* (Thêm) Căn giữa nội dung stats cho đẹp */
+}
+.stats h3 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+.stats p {
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+/* 4. How It Works (ĐÃ SỬA LỖI VÀ ÉP GỌN) */
+.howItWorks {
+  /* Giảm padding để tiết kiệm không gian */
+  padding: 1rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  min-height: calc(100vh - 60px); /* Giữ nguyên 1 khung hình */
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #fff;
+  box-sizing: border-box; /* Giữ padding bên trong */
+}
+
+.howItWorks h2 {
+  font-size: 1.8rem; /* Giảm size */
+  margin-bottom: 0.5rem; /* Giảm lề */
+  color: #333;
+}
+
+.howSubtitle {
+  font-size: 1rem; /* Giảm size */
+  color: #555;
+  margin-bottom: 1.5rem; /* Giảm lề */
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5; /* Giảm line height */
+}
+
+/* CẬP NHẬT: Grid (thêm timeline) */
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem; /* Giảm gap */
+  text-align: left;
+  position: relative;
+  padding: 0 1rem;
+}
+
+/* THÊM: Đường timeline */
+.stepsGrid::before {
+  content: "";
+  position: absolute;
+  /* Căn giữa với vòng tròn (50px / 2 = 25px) */
+  top: 25px;
+  left: 16.67%;
+  width: 66.67%;
+  height: 4px;
+  background-color: #009688; /* Màu xanh nhạt */
+  z-index: 1;
+}
+
+/* CẬP NHẬT: .step (thêm chấm tròn) */
+.step {
+  position: relative;
+  /* z-index: 2;
+  background-color: #fff; */
+  display: flex;
+  flex-direction: column;
+  /* (Grid tự động stretch các .step cao bằng nhau) */
+}
+
+/* THÊM: Các chấm tròn trên timeline */
+.step::after {
+  content: "";
+  position: absolute;
+  top: 23px; /* Căn giữa */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #3b82f6; /* Màu xanh dương */
+  border: 2px solid #fff;
+  z-index: 3;
+}
+
+/* CẬP NHẬT: Vòng tròn số (nhỏ lại) */
+.stepNumber {
+  width: 50px; /* Giảm từ 70px */
+  height: 50px; /* Giảm từ 70px */
+  /* line-height: 50px; Giảm từ 70px */
+  text-align: center;
+  background-color: #009688;
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1.5rem; /* Giảm từ 2rem */
+  margin: 0 auto 1rem auto; /* Giảm lề */
+  position: relative;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px #009688;
+  z-index: 4;
+
+  display: flex;
+  align-items: center; /* Căn giữa dọc */
+  justify-content: center; /* Căn giữa ngang */
+}
+
+/* CẬP NHẬT: Icon badge (nhỏ lại) */
+.stepBadge {
+  position: absolute;
+  top: -8px; /* Điều chỉnh */
+  right: -8px; /* Điều chỉnh */
+  width: 24px; /* Giảm size */
+  height: 24px; /* Giảm size */
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem; /* Giảm size */
+  border: 2px solid #fff;
+  z-index: 5;
+}
+.badgeCamera {
+  background-color: #3b82f6;
+}
+.badgeChart {
+  background-color: #a855f7;
+}
+.badgeList {
+  background-color: #ef4444;
+}
+
+/* CẬP NHẬT: h4 và p */
+.step h4 {
+  font-size: 1.1rem; /* Giảm size */
+  margin-bottom: 0.5rem; /* Giảm lề */
+  text-align: center;
+}
+.step p {
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.9rem; /* Giảm size */
+
+  /* THÊM DÒNG NÀY: */
+  /* (0.9rem * 1.5 * 3 dòng = 4.05rem) */
+  min-height: 4.1rem;
+}
+
+/* CẬP NHẬT: Thẻ chứa nội dung */
+.imageContent {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  /* background-color: #f9f9f9; */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  /* --- THÊM DÒNG NÀY --- */
+  /* Đây là mấu chốt để 3 box thẳng hàng.
+     Nó đẩy box này xuống đáy của .step container */
+  margin-top: auto;
+  flex-grow: 1;
+
+  display: flex;
+  flex-direction: column;
+}
+/* Sửa lại CSS cho ảnh bên trong thẻ */
+.imageContent img {
+  width: 100%; /* Ép ảnh luôn rộng bằng 100% box cha */
+  height: 250px; /* Chiều cao tự động để ảnh không bị méo */
+  object-fit: cover;
+  /* Thêm dòng này để đảm bảo không có khoảng trống thừa */
+  display: block;
+  border-radius: 0;
+}
+/* (Các style .imageCaption, .aiResultTable... giữ nguyên) */
+.imageCaption {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #777;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+.uploadStatus {
+  color: #009688;
+  font-weight: 600;
+}
+.aiResultTable {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  background-color: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+.aiResultTable div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.1rem 0;
+}
+.aiResultTable span:first-child {
+  color: #555;
+}
+.aiResultTable span:last-child {
+  font-weight: 600;
+}
+.accuracy {
+  color: #009688;
+}
+.firstAidList {
+  background-color: #fff;
+  flex-grow: 1;
+}
+.listHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #f0f9f8;
+  color: #00796b;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #e0f2f1;
+}
+
+.listHeader .listHeaderIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.listHeaderText strong {
+  display: block;
+}
+.listHeader span {
+  font-size: 0.8rem;
+  color: #555;
+}
+.firstAidList ul {
+  padding: 0.75rem 2rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #333;
+  list-style: decimal;
+}
+.firstAidList li {
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero {
+    flex-direction: column;
+  }
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+  .stats {
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .stepsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .stepsGrid::before {
+    display: none;
+  }
+
+  /* 1. Tắt "bắt dính" (snap) trên container cha */
+  .homePage {
+    height: auto; /* Chiều cao tự động theo nội dung */
+    overflow-y: visible; /* Dùng thanh cuộn bình thường của trang */
+    scroll-snap-type: none; /* Tắt "bắt dính" */
+  }
+
+  /* 2. Reset lại tất cả các section con */
+  .hero,
+  .features,
+  .stats,
+  .howItWorks {
+    height: auto; /* Để chiều cao tự động */
+    scroll-snap-align: none; /* Tắt "bắt dính" */
+    padding: 3rem 1.5rem; /* Thêm khoảng cách cho thoáng */
+  }
+
+  /* 3. Reset lại căn giữa (nếu có) để nội dung về đầu */
+  .features,
+  .howItWorks {
+    justify-content: flex-start;
+  }
+}
+
+/* === BẮT ĐẦU PHẦN RESPONSIVE === */
+@media (max-width: 768px) {
+  /* 1. Ẩn cột hình ảnh bên phải */
+  .heroImage {
+    display: none;
+  }
+
+  /* 2. Chuyển container chính sang layout cột */
+  .heroContainer {
+    flex-direction: column;
+    padding: 2rem 1.5rem; /* Điều chỉnh lại padding cho mobile */
+    text-align: center; /* Căn giữa toàn bộ nội dung text */
+  }
+
+  /* 3. Chỉnh lại nội dung bên trái (giờ là toàn màn hình) */
+  .heroContent {
+    margin-right: 0; /* Xóa margin cũ */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Căn giữa các mục */
+  }
+
+  /* 4. Sửa lại tiêu đề (quan trọng nhất) */
+  .heroTitle {
+    /* Đổi sang layout cột VÀ đảo ngược (để logo lên trên) */
+    flex-direction: column-reverse;
+    align-items: center; /* Căn giữa logo và chữ */
+    font-size: 3.5rem; /* Giảm size chữ một chút */
+    gap: 1rem; /* Tăng khoảng cách khi xếp dọc */
+  }
+
+  /* 5. Thu nhỏ logo lại cho hợp lý */
+  .heroLogo {
+    width: 180px;
+    height: auto; /* Chiều cao tự động */
+  }
+
+  /* 6. Căn giữa các nút bấm */
+  .heroButtons {
+    justify-content: center;
+  }
+}

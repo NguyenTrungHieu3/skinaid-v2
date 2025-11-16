@@ -1,0 +1,448 @@
+/* Sidebar container chính */
+.sidebar {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 1rem;
+  border-right: 1px solid #eee;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* 1. Logo */
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #eee;
+  padding: 0 0.5rem 1rem 0.5rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.logo {
+  height: 35px;
+}
+.logoText {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.scrollableContent {
+  flex-grow: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc transparent;
+}
+
+.scrollableContent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollableContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollableContent::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
+}
+
+/* 2. Analysis Complete */
+.completeHeader {
+  background-color: #009688;
+  border-radius: 0;
+  padding: 1rem;
+  text-align: center;
+  color: #fff;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  flex-shrink: 0;
+}
+.completeHeader svg {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+.completeHeader h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.completeHeader p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* 3. Summary */
+.summaryCard {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 1.25rem 1.25rem 1.75rem; /* Tăng padding-bottom */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.summaryCardHeader {
+  width: 100%;
+  text-align: left;
+}
+.summaryCardHeader h5 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.summaryCardHeader p {
+  margin: 0 0 1rem 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.totalWound {
+  border: 2px solid #009688;
+  border-radius: 8px 8px 0 0;
+  text-align: center;
+  width: 110px; /* Sửa lại width */
+  box-sizing: border-box;
+  position: relative;
+  z-index: 3; /* Nằm trên */
+  background-color: #fff;
+  padding: 0;
+  /* overflow: hidden; */
+  flex-shrink: 0;
+
+  /* Sửa: Giảm margin-bottom */
+  margin-bottom: 25px;
+}
+
+/* THÊM MỚI: Đường kẻ dọc đi xuống từ Total Wound */
+.totalWound::after {
+  content: "";
+  position: absolute;
+  bottom: -28px; /* Kéo dài xuống 25px */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 27px;
+  background-color: #009688;
+  z-index: 1; /* Nằm dưới */
+}
+
+.totalWound strong {
+  font-size: 2rem;
+  color: #009688;
+  line-height: 1.2;
+  display: block;
+  padding: 0.65rem 0.9rem;
+}
+
+.totalWound span {
+  font-size: 0.75rem;
+  color: #333;
+  display: block;
+  background-color: #f9f9f9;
+  padding: 0.45rem;
+  border-top: 2px solid #009688;
+  font-weight: 600;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Breakdown Container */
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  text-align: center;
+  width: 100%;
+  position: relative;
+  z-index: 1; /* Nằm dưới .totalWound */
+
+  /* Sửa: Căn lề trên để tạo không gian cho đường kẻ */
+  margin-top: 0;
+  padding-top: 25px; /* Tạo không gian 25px cho đường kẻ ngang */
+}
+
+/* THÊM MỚI: Đường kẻ ngang */
+.breakdown::before {
+  content: "";
+  position: absolute;
+  top: 0; /* Nằm ở trên cùng của .breakdown (trong padding-top) */
+  left: calc((100% - 1.5rem) / 6); /* (100% - (2 * gap)) / 6 */
+  right: calc((100% - 1.5rem) / 6);
+  height: 2px;
+  background-color: #009688;
+  z-index: 1; /* Nằm dưới các item, trên breakdown */
+}
+
+/* SỬA LẠI: Bỏ đường kẻ này (đã gộp vào .totalWound::after) */
+.breakdown::after {
+  display: none;
+}
+
+/* Breakdown Items */
+.breakdownItem {
+  border: 2px solid #009688;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  background-color: #fff;
+  z-index: 2; /* Nằm trên đường kẻ ngang */
+  text-align: center;
+  padding: 0;
+  /* overflow: hidden; */
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* THÊM MỚI: Đường kẻ dọc + Mũi tên */
+.breakdownItem::before {
+  content: "";
+  position: absolute;
+  bottom: 100%; /* Bắt đầu từ đỉnh box */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 27px; /* Nối lên đường kẻ ngang */
+  background-color: #009688;
+  z-index: 1;
+}
+
+/* THÊM MỚI: Mũi tên (dùng border) */
+.breakdownItem::after {
+  content: "";
+  position: absolute;
+  top: -6px; /* Nằm ngay trên đỉnh box */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #009688; /* Đây là hình tam giác */
+}
+
+.breakdownItem strong {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: #009688;
+  display: block;
+  padding: 0.4rem 0.4rem 0.2rem;
+}
+
+.breakdownItem span {
+  font-size: 0.75rem;
+  display: block;
+  background-color: #f9f9f9;
+  padding: 0.35rem 0.4rem;
+  border-top: 2px solid #009688;
+  font-weight: 600;
+  border-radius: 0 0 6px 6px;
+}
+
+/* 4. Details (Tabs) */
+.detailsTabs {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  /* Bỏ padding để tab-nav vừa khít */
+  padding: 0;
+  flex-grow: 1;
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Quan trọng để bo góc */
+}
+
+.detailsHeader {
+  /* Thêm padding lại cho header */
+  padding: 1.25rem 1.25rem 0 1.25rem;
+}
+
+.detailsHeader h5 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem; /* Cho chữ to hơn */
+  font-weight: 700;
+  color: #000;
+}
+.detailsHeader p {
+  margin: 0 0 1rem 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* THÊM MỚI: Thanh Nav cho các nút tab */
+.tabNav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 cột bằng nhau */
+  border-bottom: 1px solid #ddd;
+  background-color: #f9f9f9; /* Nền xám nhạt */
+}
+.tabNavBtn {
+  background-color: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tabNavBtn:hover {
+  background-color: #f0f0f0;
+}
+/* Style cho tab đang active */
+.activeNavBtn {
+  color: #009688;
+  border-bottom-color: #009688;
+  background-color: #fff; /* Nền trắng */
+}
+
+/* CẬP NHẬT: Container cho list bên dưới */
+/* .tabListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  min-width: 0;
+  padding: 1rem 0.5rem;
+} */
+
+.tabListContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* Bỏ overflow-y: auto; (đã giải thích ở lượt trước) */
+  min-width: 0;
+  padding: 1rem 1.25rem;
+}
+
+/* --- THÊM CLASS MỚI NÀY --- */
+.noDataMessage {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #777;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* XÓA: tabGroup và tabGroupBtn (không dùng nữa) */
+.tabGroup {
+  display: none; /* (Hoặc xóa hẳn) */
+}
+.tabGroupBtn {
+  display: none; /* (Hoặc xóa hẳn) */
+}
+
+/* CẬP NHẬT: Style cho các item trong tab */
+.tabItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  /* Viền cam/xanh mặc định */
+  border: 2px solid #ddd;
+  background-color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 0;
+  box-sizing: border-box;
+}
+/* Style cho Abrasion 2 (viền xanh) */
+/* .tabItem:nth-child(2) {
+  border-color: #009688;
+} */
+
+.tabItem:hover {
+  background-color: #f9f9f9;
+}
+
+.borderMild {
+  border-color: #009688; /* Xanh lá */
+}
+.borderModerate {
+  border-color: #f39c12; /* Cam */
+}
+.borderSevere {
+  border-color: #c0392b; /* Đỏ */
+}
+
+/* CẬP NHẬT: Active tab (chỉ là hiệu ứng nhỏ) */
+.activeTab {
+  /* (Bạn có thể bỏ .activeTab hoặc thêm hiệu ứng viền đậm hơn) */
+  border-width: 3px;
+}
+
+.tabItem span {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 80px;
+}
+
+/* Style cho severity tags (Giữ nguyên) */
+.moderate {
+  background-color: #fff8e1;
+  color: #f39c12;
+}
+.mild {
+  background-color: #e0f2f1;
+  color: #009688;
+}
+.severe {
+  background-color: #fde8e8;
+  color: #c0392b;
+}
+
+/* 5. Upload Button */
+.uploadButton {
+  background-color: #fff;
+  color: #333;
+  border: 2px solid #ddd;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: auto;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.uploadButton:hover {
+  background-color: #f9f9f9;
+  border-color: #ccc;
+}

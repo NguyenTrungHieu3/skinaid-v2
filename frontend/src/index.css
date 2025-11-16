@@ -1,0 +1,22 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Tắt con mắt xem mật khẩu mặc định của Edge/IE */
+input[type="password"]::-ms-reveal {
+  display: none;
+}
+
+.main-content {
+  flex-grow: 1; /* Cho phép co giãn để lấp đầy không gian */
+  width: 100%;
+}
+
+body,
+#root {
+  min-height: 100vh; /* Cao ít nhất bằng chiều cao màn hình */
+  display: flex;
+  flex-direction: column; /* Xếp các phần tử (Header, Main, Footer) theo chiều dọc */
+}

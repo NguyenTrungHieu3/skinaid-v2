@@ -1,0 +1,95 @@
+/* src/components/layout/Footer.module.css */
+.footer {
+  background-color: #333;
+  color: #ccc;
+  padding-top: 3rem;
+
+  /* --- THÊM DÒNG NÀY --- */
+  scroll-snap-align: start; /* Báo cho container .homePage biết đây là 1 điểm snap */
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.column {
+  flex: 1;
+  min-width: 150px;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+  margin-bottom: 1rem;
+
+  /* SỬA LẠI: (Đổi từ 'block' sang 'flex') */
+  display: flex;
+  align-items: center; /* Căn giữa logo và chữ */
+  gap: 0.5rem; /* Khoảng cách giữa logo và chữ */
+}
+
+.footerLogoImg {
+  width: 25px; /* Chỉnh kích thước logo tùy ý */
+  height: 25px;
+  margin-right: 0.5rem;
+}
+
+.column p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 250px;
+}
+
+.column h4 {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 1.2rem;
+}
+
+.column a {
+  display: block;
+  color: #ccc;
+  text-decoration: none;
+  margin-bottom: 0.8rem;
+  transition: color 0.2s;
+}
+
+.column a:hover {
+  color: #009688;
+}
+
+.bottomBar {
+  border-top: 1px solid #444;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+
+/* Thêm vào cuối file Footer.module.css */
+
+@media (max-width: 900px) {
+  .footer {
+    scroll-snap-align: none; /* Tắt "bắt dính" */
+  }
+}
+
+@media (max-width: 768px) {
+  /* ... (các quy tắc responsive cũ của bạn) ... */
+
+  /* THÊM KHỐI NÀY ĐỂ SỬA FOOTER */
+  .container {
+    padding-left: 1rem; /* Giảm padding ngang từ 2rem xuống 1rem */
+    padding-right: 1rem;
+    gap: 1.5rem; /* Giảm khoảng cách giữa các cột từ 2rem xuống 1.5rem */
+  }
+}

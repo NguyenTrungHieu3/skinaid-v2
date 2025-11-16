@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
 from pydantic import BaseModel
@@ -24,6 +26,14 @@ from app.core.Security.jwt import JWTHandler
 
 jwt_handler = JWTHandler()
 
+def handle_controller_response(result):
+    if isinstance(result, ErrorResponse):
+        return JSONResponse(
+            status_code=result.status_code,
+            content=jsonable_encoder(result)
+        )
+    return jsonable_encoder(result)
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
@@ -42,8 +52,7 @@ async def register_user(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Đăng ký tài khoản mới. Sau khi đăng ký sẽ gửi email xác thực."""
-    return await controller.register_user(user_data)
-
+    return handle_controller_response(await controller.register_user(user_data))
 
 @router.post(
     "/signin",
@@ -55,7 +64,7 @@ async def login_user(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Đăng nhập hệ thống và trả về token xác thực."""
-    return await controller.login_user(credentials)
+    return handle_controller_response(await controller.login_user(credentials))
 
 @router.get(
     "/me",
@@ -70,6 +79,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         email=current_user.email,
         is_active=current_user.is_active,
         is_verified=current_user.is_verified,
+        is_deleted=current_user.is_deleted,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
         full_name=current_user.profile.full_name if current_user.profile else None,
@@ -94,7 +104,7 @@ async def request_password_reset(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Gửi yêu cầu đặt lại mật khẩu qua email."""
-    return await controller.request_password_reset(reset_request)
+    return handle_controller_response(await controller.request_password_reset(reset_request))
 
 
 @router.post(
@@ -107,7 +117,7 @@ async def confirm_password_reset(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Xác nhận đặt lại mật khẩu với token từ email."""
-    return await controller.reset_password(reset_data)
+    return handle_controller_response(await controller.reset_password(reset_data))
 
 
 @router.get(
@@ -117,7 +127,7 @@ async def confirm_password_reset(
 )
 async def health_check(controller: AuthController = Depends(get_auth_controller)):
     """Kiểm tra trạng thái hoạt động của service."""
-    return await controller.health_check()
+    return handle_controller_response(await controller.health_check())
 
 
 @router.post(
@@ -130,7 +140,7 @@ async def refresh_token(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Làm mới access token bằng refresh token."""
-    return await controller.refresh_token(refresh_request)
+    return handle_controller_response(await controller.refresh_token(refresh_request))
 
 
 @router.post(
@@ -143,7 +153,7 @@ async def logout_user(
     controller: AuthController = Depends(get_auth_controller),
 ):
     """Đăng xuất khỏi hệ thống và vô hiệu hóa token."""
-    return await controller.logout_user(token)
+    return handle_controller_response(await controller.logout_user(token))
 
 @router.post(
     "/logout-all-devices",
@@ -157,7 +167,7 @@ async def logout_all_devices(
     """
     Đăng xuất khỏi TẤT CẢ thiết bị.
     """
-    return await controller.logout_all_devices(current_user)
+    return handle_controller_response(await controller.logout_all_devices(current_user))
 
 @router.post(
     "/change-password", 
@@ -170,7 +180,7 @@ async def change_password(
     current_user: User = Depends(get_current_active_user)
 ):
     """Thay đổi mật khẩu tài khoản (đã đăng nhập)."""
-    return await controller.change_password(current_user, password_data)
+    return handle_controller_response(await controller.change_password(current_user, password_data))
 
 # ============= Email Verification Endpoints =============
 # @router.post(

@@ -1,0 +1,271 @@
+/* src/pages/UploadPage.module.css */
+.uploadPage {
+  width: 100%;
+  min-height: calc(100vh - 60px);
+  background-color: #f0f9f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem;
+  box-sizing: border-box;
+}
+
+.uploadForm {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 5rem;
+}
+
+/* 1. Style cho Banner lỗi (Mới) */
+.errorBanner {
+  width: 100%;
+  padding: 1rem;
+  background-color: #fbebee;
+  color: #c0392b;
+  border: 1px solid #c0392b;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+.errorBanner button {
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* 2. Hộp Upload chính */
+.uploadBox {
+  width: 100%;
+  background-color: #fff;
+  border: 2px dashed #009688;
+  border-radius: 16px;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+/* 3. Style khi kéo thả */
+.uploadBox.dragging {
+  border-color: #00796b;
+  background-color: #f0f9f8;
+  transform: scale(1.02);
+}
+
+.uploadDropzone {
+  cursor: pointer;
+}
+
+.uploadIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #009688;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin: 0 auto 1.5rem auto;
+  position: relative; /* Thêm để định vị subIcon */
+}
+
+/* 4. Icon ảnh nhỏ (Mới) */
+.subIcon {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  background-color: #fff;
+  color: #009688;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.uploadBox h3 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.uploadBox p {
+  font-size: 1rem;
+  color: #777;
+  margin-bottom: 1.5rem;
+}
+
+.fileTypes {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.fileTypes span {
+  background-color: #f0f0f0;
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+}
+
+.fileNote {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+/* Thêm các class này vào cuối file UploadPage.module.css */
+
+/* 1. Container cho ảnh xem trước */
+.previewContainer {
+  position: relative;
+  /* width: 100%; */
+  /* height: 100%; */
+  /* Đảm bảo nó vừa vặn bên trong .uploadBox */
+  /* max-height: 400px; Bạn có thể điều chỉnh chiều cao này */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 2. Ảnh xem trước (hơi mờ) */
+.previewImage {
+  /* max-width: 100%;
+  max-height: 100%; */
+  /* 1. Ép ảnh luôn vừa bằng chiều rộng của box */
+  max-width: 100%;
+
+  /* 2. Chiều cao tự động để giữ đúng tỷ lệ */
+  height: auto;
+
+  /* 3. Đặt chiều cao TỐI ĐA (ví dụ: 60% chiều cao màn hình)
+     Để các ảnh quá cao (như ảnh 10100px) không chiếm hết trang */
+  max-height: 60vh;
+  /* object-fit: contain; */
+  /* opacity: 0.5; <-- Làm mờ ảnh */
+  border-radius: 8px; /* Bo góc nếu muốn */
+  border: 3px solid #009688;
+}
+
+/* 3. Lớp phủ loading (nằm đè lên ảnh) */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* Nền đen mờ */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  color: #00796b;
+  font-weight: 600;
+  font-size: 1.1rem;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+/* 3. Thêm thanh scanner (nằm bên dưới spinner) */
+.loadingOverlay::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px; /* Độ dày của thanh scanner */
+  border-radius: 8px;
+  /* Màu của thanh scanner (bạn có thể đổi màu #00FFCC) */
+  background: #00ffcc;
+  box-shadow: 0 0 10px 2px #00ffcc, 0 0 20px 5px rgba(0, 255, 204, 0.5);
+
+  /* Đặt lớp z-index (nằm dưới spinner và text) */
+  z-index: 1;
+
+  /* Gắn animation (chạy 2 giây, lặp vô hạn, đi lên và đi xuống) */
+  animation: scan 2s ease-in-out infinite alternate;
+}
+
+/* 4. Thêm @keyframes cho animation "scan" */
+@keyframes scan {
+  from {
+    /* Bắt đầu từ mép trên */
+    top: 0%;
+  }
+  to {
+    /* Di chuyển xuống mép dưới */
+    top: 100%;
+  }
+}
+
+.loadingOverlay p {
+  /* THÊM DÒNG NÀY: */
+  color: white;
+  z-index: 2; /* Nổi lên trên thanh scanner */
+}
+
+/* 4. Vòng xoay loading */
+.loader {
+  border: 5px solid #f3f3f3; /* Màu xám nhạt */
+  border-top: 5px solid #009688; /* Màu xanh lá chủ đạo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  z-index: 2;
+}
+
+/* 5. Animation cho vòng xoay */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Thêm vào cuối file UploadPage.module.css */
+
+.pageDragOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 150, 136, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2.5rem;
+  text-align: center;
+  z-index: 9999;
+
+  /* THÊM DÒNG NÀY: */
+  /* Làm cho lớp phủ "vô hình" với chuột, 
+       ngăn chặn lỗi nhấp nháy */
+  pointer-events: none;
+}
+
+.pageDragOverlay h3 {
+  font-size: 1.5rem;
+  margin-top: 1rem;
+}

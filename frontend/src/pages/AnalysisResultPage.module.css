@@ -1,0 +1,53 @@
+/* src/pages/AnalysisResultPage.module.css */
+
+.analysisPage {
+  display: grid;
+  /* Sidebar cố định 320px, nội dung chính chiếm phần còn lại */
+  grid-template-columns: 320px 1fr;
+  height: 100vh; /* Cao 100% viewport */
+  overflow: hidden; /* Ngăn cuộn ở cấp độ trang */
+}
+
+/* Nội dung chính (bên phải) */
+.mainContent {
+  padding: 2rem;
+  overflow-y: auto; /* Cho phép CHỈ nội dung chính cuộn */
+  height: 100vh;
+  box-sizing: border-box;
+  background-color: #f4f7f6; /* Nền xám nhạt */
+}
+
+.contentGrid {
+  display: flex; /* XÓA DÒNG NÀY: align-items: flex-start; */
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+.imageColumn {
+  /* SỬA: Giảm chiều rộng cố định (ví dụ 350px) để khung ảnh nhỏ lại */
+  flex: 0 0 350px;
+  min-width: 0;
+}
+.detailsColumn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .analysisPage {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    overflow-y: visible;
+  }
+  .mainContent {
+    height: auto;
+  }
+  .contentGrid {
+    flex-direction: column;
+  }
+  .imageColumn {
+    flex-basis: auto;
+  }
+}

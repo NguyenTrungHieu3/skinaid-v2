@@ -1,0 +1,70 @@
+/* File: src/pages/HistoryPage.module.css (File của component cha) */
+
+.historyPage {
+  /* 1. Đặt chiều cao CỐ ĐỊNH bằng 100% viewport */
+  /* height: calc(100vh - 60px);*/
+  height: 100%;
+
+  /* 2. Đẩy nội dung xuống 60px để né header cố định (header phải có position: fixed) */
+  /* padding-top: 60px; */
+  box-sizing: border-box;
+  background: #f9fafb;
+
+  /* 3. Dùng flex-column để .historyContent có thể co giãn */
+  display: flex;
+  flex-direction: column;
+}
+
+.historyContent {
+  /* 4. Chiếm 100% không gian CÒN LẠI */
+  flex-grow: 1;
+
+  /* 5. RẤT QUAN TRỌNG: Buộc .historyContent có chiều cao cố định */
+  min-height: 0;
+  overflow: hidden; /* Ngăn chính nó cuộn */
+
+  /* Các cài đặt layout của bạn */
+  display: flex;
+  /* justify-content: center; */
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1500px;
+  /* margin: 0 auto; */
+  padding: 0 0.5rem;
+  gap: 2rem;
+  box-sizing: border-box;
+}
+
+/* Cột Timeline */
+.timelineSection {
+  /* 7. Chiếm 100% chiều cao của cha (.historyContent) */
+  height: 100%;
+
+  flex: 1 1 auto;
+  max-width: 800px;
+  min-width: 0;
+  /* overflow-y: auto; */
+
+  /* 8. Cần thiết để component Timeline bên trong nhận 100% */
+  display: flex;
+  flex-direction: column;
+}
+
+/* CỘT 2: KHỐI TRỐNG (MỚI) */
+.asideSection {
+  /* flex: 0 1 400px;
+    - flex-grow: 0 (KHÔNG lớn lên)
+    - flex-shrink: 1 (Cho phép co lại)
+    - flex-basis: 400px (Kích thước cơ sở)
+  */
+  flex: 0 1 1000px;
+  height: 100%;
+
+  /* (CSS tạm thời để bạn thấy khối trống) */
+  /* background-color: #ffffff; */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  margin: 0.5rem 0;
+}

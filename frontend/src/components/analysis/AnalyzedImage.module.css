@@ -1,0 +1,52 @@
+/* ... (CSS cho .imageCard, .panelTitle giữ nguyên) ... */
+.imageCard {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eee;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.panelTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #333;
+  flex-shrink: 0;
+} /* SỬA LẠI KHỐI NÀY */
+.imageWrapper {
+  width: 100%;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden; /* Giữ nguyên: Cần để cắt ảnh */
+  background-color: #f0f0f0;
+  aspect-ratio: 1 / 1;
+  flex-grow: 1;
+  min-height: 0;
+}
+.imageWrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Giữ 'cover' để ảnh lấp đầy */
+  display: block;
+} /* --- Style cho Bounding Box --- */
+.boundingBox {
+  position: absolute;
+  border: 2px solid #007bff;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+} /* --- SỬA LẠI KHỐI NÀY --- */
+.boundingBoxLabel {
+  position: absolute; /* XÓA: bottom, margin-bottom, left, border-radius */ /* (React sẽ tự thêm các thuộc tính này qua 'style={labelStyle}') */ /* Giữ lại các style cơ bản: */
+  background-color: #007bff;
+  color: #fff;
+  padding: 2px 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap; /* Ngăn xuống dòng */
+}

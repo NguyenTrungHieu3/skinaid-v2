@@ -207,6 +207,7 @@ class AIController:
 
             return SuccessResponse(
                 message=Message.HISTORY_SUCCESS_MSG,
+                
                 data=response_data
             )
 

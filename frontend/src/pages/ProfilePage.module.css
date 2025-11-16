@@ -1,0 +1,739 @@
+/* src/pages/ProfilePage.module.css */
+
+/* 1. Layout chính */
+.profileContainer {
+  background-color: #f4f7f6;
+  min-height: calc(100vh - 60px); /* 60px là chiều cao Header */
+  padding-bottom: 1px;
+}
+
+.profileMainWrapper {
+  /* Lấy các thuộc tính layout quan trọng từ .profileContent cũ */
+  margin: 1rem auto; /* Kéo lên, đè lên Banner VÀ căn giữa */
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+}
+
+.profileContent {
+  background-color: #f4f7f6;
+  /* Bỏ: margin, position, z-index, max-width (đã chuyển lên wrapper) */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  /* THÊM: Tạo khoảng cách với TabBar (giờ đã ở bên trên) */
+  margin-top: 1.5rem;
+}
+
+/* 2. Banner Header */
+.profileBanner {
+  background: linear-gradient(135deg, #00796b 0%, #00968752 100%);
+  /* background-color: #f0fdf4; */
+  /* display: flex;
+  gap: 2rem; */
+  padding: 1rem 0rem 1rem 0rem;
+  color: #fff;
+}
+
+.bannerContentWrapper {
+  /* Các thuộc tính layout được chuyển từ .profileBanner sang đây */
+  display: flex;
+  gap: 2rem;
+
+  /* Các thuộc tính căn giữa giống hệt .profileContent */
+  max-width: 1200px;
+  margin: 0 auto;
+
+  /* Thêm padding ngang để đảm bảo nội dung không dính sát viền
+     khi màn hình nhỏ hơn 1200px */
+  padding-left: 2rem;
+  padding-right: 2rem;
+  align-items: center;
+}
+
+.profileLeft {
+  flex-shrink: 0;
+}
+.avatarWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #e0f2f1;
+  color: #00796b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  border: 4px solid #fff;
+}
+.cameraIcon {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: #fff;
+  color: #009688;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+.profileRight {
+  flex-grow: 1;
+  display: flex; /* <-- Thêm */
+  align-items: center; /* <-- Thêm */
+  justify-content: space-between; /* <-- Thêm */
+  gap: 2rem; /* <-- Thêm (tùy chỉnh khoảng cách) */
+}
+.profileInfo h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+}
+.profileInfo p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* THÊM CSS MỚI CHO PROFILE BADGES */
+.profileBadges {
+  display: flex;
+  gap: 1.5rem; /* Khoảng cách giữa 2 badge */
+  flex-shrink: 0; /* Không cho badge co lại */
+}
+
+.badgeCard {
+  background-color: #fff; /* Nền trắng */
+  color: #333; /* Chữ đen */
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 250px; /* Độ rộng tối thiểu */
+  border-left: 5px solid transparent; /* Viền màu bên trái */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07); /* Đổ bóng nhẹ */
+}
+
+.badgeContent span {
+  display: block;
+  font-size: 0.9rem;
+  color: #666; /* Màu chữ xám */
+  font-weight: 500;
+}
+.badgeContent strong {
+  display: block;
+  font-size: 1.75rem; /* Tăng kích cỡ số */
+  font-weight: 600;
+  color: #222;
+  margin-top: 0.25rem;
+}
+
+.badgeIcon {
+  font-size: 1.5rem; /* Kích cỡ icon */
+  padding: 0.8rem; /* Kích cỡ vòng tròn nền */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+}
+
+/* Màu cho Badge Green (Total Scans) */
+.badgeGreen {
+  border-left-color: #28a745; /* Màu viền xanh lá */
+}
+.iconBgGreen {
+  background-color: #eaf7ec; /* Nền icon xanh lá nhạt */
+  color: #28a745; /* Màu icon xanh lá */
+}
+
+/* Màu cho Badge Blue (Last Analysis) */
+.badgeBlue {
+  border-left-color: #007bff; /* Màu viền xanh dương */
+}
+.iconBgBlue {
+  background-color: #e6f2ff; /* Nền icon xanh dương nhạt */
+  color: #007bff; /* Màu icon xanh dương */
+}
+
+@media (max-width: 992px) {
+  /* Khối bên phải (Info + Badges) sẽ tự xếp chồng */
+  .profileRight {
+    flex-direction: column;
+    align-items: flex-start; /* Căn lề trái cho khối info và badges */
+    gap: 1.5rem; /* Khoảng cách giữa info và badges */
+  }
+
+  /* Trên tablet, 2 badge vẫn có thể nằm ngang */
+  .profileBadges {
+    width: 100%;
+  }
+}
+
+/* Mobile: < 768px */
+@media (max-width: 768px) {
+  /* Toàn bộ banner xếp chồng */
+  .bannerContentWrapper {
+    flex-direction: column;
+    align-items: center; /* Căn giữa avatar */
+  }
+
+  /* Căn giữa cho khối info và badges */
+  .profileRight {
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Căn giữa text trong info */
+  .profileInfo {
+    text-align: center;
+  }
+
+  .profileInfo p {
+    justify-content: center; /* Căn giữa "Member since..." */
+  }
+
+  /* 2 badge xếp chồng lên nhau */
+  .profileBadges {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Mỗi badge chiếm 100% chiều rộng */
+  .badgeCard {
+    width: 100%;
+    min-width: 0; /* Ghi đè min-width cũ */
+  }
+}
+
+/* 3. Tabs */
+.tabsWrapper {
+  display: flex;
+  background-color: #dfe2e1; /* Màu nền xám nhạt cho cả thanh */
+  border-radius: 999px; /* Bo tròn để tạo hình con nhộng */
+  padding: 0.3rem; /* Khoảng đệm nhỏ bên trong */
+  /* margin-bottom: 1.5rem; */
+  border: 1px solid #eee; /* Thêm viền nhẹ */
+}
+
+.tabButton {
+  flex: 1; /* Cả 3 nút chia đều không gian */
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555; /* Màu chữ khi không active */
+  cursor: pointer;
+  border-radius: 999px; /* Bo tròn cho từng nút */
+  /* Hiệu ứng chuyển động mượt */
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tabButton.active {
+  background-color: #fff; /* Nền trắng cho tab active */
+  color: #009688; /* Màu chữ primary (từ code cũ) */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+}
+
+/* NÚT MŨI TÊN (CSS MỚI) */
+.tabArrow {
+  display: none; /* Mặc định ẨN trên desktop */
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0 0.75rem;
+}
+.tabArrow:hover {
+  color: #000;
+}
+
+@media (max-width: 768px) {
+  .tabsWrapper {
+    position: relative;
+    /* Đảm bảo wrapper là flex để 'flex: 1' ở con hoạt động */
+    display: flex;
+    width: 100%;
+  }
+
+  /* 1. Ẩn tất cả các tab */
+  .tabButton {
+    display: none;
+  }
+
+  /* 2. Hiện LẠI DUY NHẤT tab .active */
+  .tabButton.active {
+    display: block; /* Hiển thị nút */
+
+    /* THAY ĐỔI QUAN TRỌNG:
+      Bỏ 'width: 100%' và 'flex: 0'.
+      Dùng 'flex: 1' để nó tự động lấp đầy
+      không gian còn lại trong flex container (là 100% vì 2 mũi tên 
+      đã 'position: absolute')
+    */
+    flex: 1;
+
+    text-align: center; /* Căn giữa chữ */
+  }
+
+  /* 3. Hiện các nút mũi tên (Giữ nguyên) */
+  .tabArrow {
+    display: block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: #777;
+  }
+
+  .tabArrowPrev {
+    left: 0.8rem;
+  }
+
+  .tabArrowNext {
+    right: 0.8rem;
+  }
+}
+
+/* 4. Overview Tab */
+.overviewWrapper {
+  display: flex;
+  gap: 1.5rem;
+}
+.recentAnalyses {
+  flex: 3;
+}
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sectionHeader .sectionHeaderIcon {
+  color: #009688;
+}
+
+.sectionHeader a {
+  text-decoration: none;
+  color: #009688;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.analysesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.analysisItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+.itemInfo {
+  flex-grow: 1;
+}
+.itemInfo h4 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+}
+.itemInfo p {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+.itemStatus {
+  text-align: right;
+}
+.statusTag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+/* .healing {
+  background-color: #e0f2f1;
+  color: #00796b;
+}
+.healed {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+.improving {
+  background-color: #fff8e1;
+  color: #f57f17;
+} */
+
+/* "Nhẹ" - Màu xanh lá */
+.mild {
+  background-color: #e8f5e9; /* Nền xanh nhạt */
+  color: #388e3c; /* Chữ xanh đậm */
+}
+
+/* "Trung bình" - Màu vàng/cam */
+.medium {
+  background-color: #fff8e1; /* Nền vàng nhạt */
+  color: #f57f17; /* Chữ vàng đậm */
+}
+
+/* "Nặng" - Màu đỏ */
+.severe {
+  background-color: #ffebee; /* Nền đỏ nhạt */
+  color: #d32f2f; /* Chữ đỏ đậm */
+}
+
+.time {
+  font-size: 0.8rem;
+  color: #777;
+  display: block;
+}
+.viewLink {
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.quickActions {
+  flex: 1;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+.quickActions h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+.actionBtn {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.actionBtn.primary {
+  background-color: #009688;
+  color: #fff;
+  border-color: #009688;
+}
+.nextCheckup {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+.nextCheckup p {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0.25rem 0;
+}
+.nextCheckup span {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+@media (max-width: 768px) {
+  .overviewWrapper {
+    /* Đổi từ xếp ngang (row) sang xếp chồng (column) */
+    flex-direction: column;
+  }
+  .recentAnalyses {
+    /* Reset lại thuộc tính flex để nó hoạt động tốt trong chế độ column và không chiếm 75% chiều cao */
+    flex: 1;
+  }
+  .quickActions {
+    flex: 1;
+  }
+}
+
+/* 5. Personal Info Tab */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.infoCard {
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.editBtn {
+  background: none;
+  border: none;
+  color: #009688;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.cardBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.infoField {
+  display: flex;
+  flex-direction: column;
+}
+.infoField label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.infoIcon {
+  color: #009688;
+}
+.infoValue {
+  font-size: 1rem;
+  color: #333;
+}
+.inlineInput {
+  font-size: 1rem;
+  padding: 0.5rem 0;
+  border: none;
+  border-bottom: 2px solid #009688;
+  outline: none;
+}
+.action {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+.btnCancel {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btnSave {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: #009688;
+  color: #fff;
+  border: 1px solid #009688;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .infoGrid {
+    /* Trên di động, chuyển từ 2 cột sang 1 cột */
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 6. Settings Tab */
+/* .settingsWrapper {
+  max-width: 800px;
+} */
+.settingsCard {
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+.settingItem:last-child {
+  border-bottom: none;
+}
+.settingInfo h4 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+}
+.settingInfo p {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.1rem; /* THÊM 3 DÒNG NÀY */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Tạo khoảng cách nhỏ giữa icon và chữ */
+}
+
+.cardHeader .cardHeaderIcon {
+  color: #00796b;
+}
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+.switch input:checked + .slider {
+  background-color: #009688;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.languageSelect {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+  /* Thêm dòng này để nó trông giống input */
+  outline-color: #009688;
+}
+
+/* src/components/auth/Form.module.css */
+
+.apiErrorMessage {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #d32f2f;
+  background-color: #ffebee;
+  color: #d32f2f;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  box-sizing: border-box;
+
+  /* --- THÊM DÒNG NÀY --- */
+  animation: fadeInAndOut 0.5s ease-out;
+  /* Giữ lại style của 100% (opacity: 0) khi animation kết thúc */
+  animation-fill-mode: forwards;
+}
+
+.apiSuccessMessage {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #1e8e3e;
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  box-sizing: border-box;
+
+  /* --- THÊM DÒNG NÀY --- */
+  animation: fadeInAndOut 0.5s ease-out;
+  animation-fill-mode: forwards;
+}
+
+/* Thêm vào cuối file Form.module.css */
+
+@keyframes fadeInAndOut {
+  /* (0s -> 0.3s) Fade In */
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* (0.3s -> 1.2s) Stay */
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* (1.2s -> 1.5s) Fade Out */
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

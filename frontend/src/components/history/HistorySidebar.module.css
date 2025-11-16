@@ -1,0 +1,232 @@
+/* --- Container chính của Sidebar (Flex DỌC) --- */
+.sidebarContainer {
+  display: flex;
+  flex-direction: column; /* Xếp các khối con theo chiều DỌC */
+  height: 100%; /* Chiếm đủ chiều cao của .asideSection */
+  padding: 0.5rem;
+  gap: 1.5rem; /* Khoảng cách giữa topControlsWrapper và logoWrapper */
+}
+
+/* --- KHỐI MỚI: Wrapper cho 3 thanh NGANG --- */
+.topControlsWrapper {
+  display: flex;
+  flex-direction: row; /* Xếp các khối con theo chiều NGANG */
+  gap: 1.5rem; /* Khoảng cách giữa Search, Filter, Accuracy */
+  align-items: flex-start; /* Căn trên cùng */
+
+  /* Đảm bảo wrapper này không bị co lại khi logo lớn */
+  flex-shrink: 0;
+  flex-wrap: wrap; /* Cho phép xuống dòng nếu màn hình quá nhỏ */
+}
+
+/* --- 1. Search Bar --- */
+.searchBar {
+  position: relative;
+  flex: 3; /* Cột 1 (lớn nhất) */
+  min-width: 150px; /* Ngăn nó quá nhỏ */
+}
+
+.searchBar input {
+  width: 100%;
+  padding: 11px 15px;
+  padding-right: 40px;
+  font-size: 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* --- 2. Filter Section --- */
+.filterSection {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  /* overflow: hidden; */
+  flex: 1; /* Cột 2 (nhỏ) */
+  min-width: 150px; /* Ngăn nó quá nhỏ */
+
+  /* THAY ĐỔI Ở ĐÂY */
+  position: relative; /* 1. Thêm 'position: relative' làm mỏ neo */
+  overflow: visible; /* 2. Đổi 'hidden' thành 'visible' */
+  z-index: 5; /* 3. Thêm z-index cơ sở */
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #d1d5db;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: default; /* Không click cả header nữa */
+  border-radius: 8px;
+
+  position: relative; /* 1. Thêm 'position: relative' */
+  z-index: 11; /* 2. Đặt z-index cao hơn nội dung dropdown */
+}
+
+/* Icons trong header (Filter, SlidersHorizontal) */
+.filterIcon,
+.accuracyIcon {
+  cursor: pointer; /* CHỈ icon mới click được */
+  transition: opacity 0.2s ease;
+}
+.filterIcon:hover,
+.accuracyIcon:hover {
+  opacity: 0.7; /* Hiệu ứng hover cho icon */
+}
+
+.filterOptions {
+  /* THAY ĐỔI LỚN Ở ĐÂY - Biến thành dropdown */
+  position: absolute; /* 1. Nhấc ra khỏi luồng */
+  z-index: 10; /* 2. Nổi lên trên logo */
+  top: 100%; /* 3. Đặt ngay dưới .filterSection (cha) */
+  left: -1px; /* 4. Căn chỉnh với border của cha */
+  right: -1px; /* 5. Căn chỉnh với border của cha */
+
+  /* 6. Thêm style cho dropdown */
+  border: 1px solid #d1d5db;
+  border-top: none; /* Vì header đã có border-bottom */
+  border-radius: 0 0 8px 8px; /* Bo góc dưới */
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.05); /* Thêm bóng đổ */
+
+  /* (Giữ nguyên các thuộc tính khác) */
+  display: flex;
+  flex-direction: column;
+}
+
+.filterButton {
+  padding: 10px 15px;
+  text-align: left;
+  border: none;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #374151;
+  transition: background-color 0.2s ease;
+}
+.filterButton:last-child {
+  border-bottom: none;
+}
+
+.filterButton:hover {
+  background-color: #f9fafb;
+}
+
+.activeFilter {
+  background-color: #e0f2f1;
+  color: #00796b;
+  font-weight: 600;
+}
+
+/* --- 3. Thanh trượt độ chính xác --- */
+.accuracySection {
+  /* LẶP LẠI THAY ĐỔI TƯƠNG TỰ .filterSection */
+  position: relative;
+  overflow: visible;
+  z-index: 5;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.accuracyHeader {
+  /* LẶP LẠI THAY ĐỔI TƯƠNG TỰ .filterHeader */
+  position: relative;
+  z-index: 11;
+  background-color: #f9fafb;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #d1d5db;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.accuracyBody {
+  /* LẶP LẠI THAY ĐỔI TƯƠNG TỰ .filterOptions */
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: -1px;
+  right: -1px;
+
+  border: 1px solid #d1d5db;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.05);
+
+  padding: 15px;
+  background-color: #ffffff;
+}
+
+.accuracySlider {
+  width: 100%;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  outline: none;
+}
+
+.accuracySlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #00897b;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.accuracySlider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #00897b;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.accuracyValue {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* --- KHỐI CSS MỚI: Logo Wrapper --- */
+.logoWrapper {
+  flex-grow: 1; /* Logo sẽ chiếm hết không gian còn lại */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2rem; /* Khoảng cách từ các thanh điều khiển */
+  min-height: 150px; /* Đảm bảo logo luôn có không gian */
+}
+
+/* --- THÊM CLASS MỚI CHO ẢNH THẬT --- */
+.realLogo {
+  max-width: 180px; /* Giới hạn chiều rộng của logo (bạn có thể điều chỉnh) */
+  height: auto; /* Giữ đúng tỷ lệ */
+  opacity: 0.7; /* Làm mờ đi một chút (tùy chọn) */
+}

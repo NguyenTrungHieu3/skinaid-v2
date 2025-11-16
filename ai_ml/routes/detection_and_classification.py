@@ -47,6 +47,12 @@ async def analyze_wound(
 
         # Analyze image
         results_raw = analyzer.analyze(img)
+
+        # --- SỬA LỖI TẠI ĐÂY ---
+        # 1. Xử lý rõ ràng trường hợp 'None' (Lỗi 'NoneType' object is not iterable)
+        if results_raw is None:
+            # Nếu AI trả về None, coi nó như danh sách rỗng
+            results_raw = []
         
         if not results_raw:
             # No detections found
@@ -57,7 +63,7 @@ async def analyze_wound(
                 total_detections=0,
                 processing_time_ms=int(processing_time * 1000),
                 primary_wound_type="none",
-                detections=[]
+                detections=[] # <-- Luôn trả về danh sách rỗng
             )
 
         # Process detections
@@ -73,9 +79,11 @@ async def analyze_wound(
                 total_detections=0,
                 processing_time_ms=int(processing_time * 1000),
                 primary_wound_type="normal skin",
-                detections=None
+                # detections=None
+                detections=[] # Sửa: Luôn trả về danh sách rỗng thay vì None
             )
         
+        # (Đoạn code này giờ đã an toàn vì results_raw không thể là None)
         for det in results_raw:
             try:
                 severity_label = det.get("severity", "") # burn_moderate

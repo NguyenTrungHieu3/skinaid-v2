@@ -164,6 +164,7 @@ class ResponseMapper:
 
         return {
             "analyses": analyses_data,
+            "events": analyses,
             "statistics": {
                 "total_analyses": total,
                 "successful_analyses": successful,
