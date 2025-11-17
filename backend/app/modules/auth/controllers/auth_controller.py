@@ -21,7 +21,7 @@ from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.services.auth_service import AuthService
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.core.Security.jwt import jwt_handler
-from app.core.tasks.token_family_service import (
+from app.modules.auth.services.token_family_service import (
     create_token_family,
     check_token_family_revoked,
     revoke_token_family,
@@ -52,7 +52,7 @@ class AuthController:
     ) -> Union[SuccessResponse[UserResponse], ErrorResponse]:
         """Đăng ký user mới."""
         try:
-            logger.info("[REGISTER] Starting registration for email: %s", user_data.email)
+            logger.info("[REGISTER] Bắt đầu đăng ký cho email: %s", user_data.email)
 
             user: User = await self.auth_service.create_user(user_data)
 
@@ -75,7 +75,7 @@ class AuthController:
                 else None,
             )
 
-            logger.info("[REGISTER] Success: %s", user.user_id)
+            logger.info("[REGISTER] Thành công: %s", user.user_id)
 
             return SuccessResponse(
                 message=Message.USER_REGISTER_SUCCESS_MSG,
@@ -115,7 +115,7 @@ class AuthController:
             )
 
         except Exception as e:  # noqa: F841
-            logger.error("[REGISTER] Unexpected error", exc_info=True)
+            logger.error("[REGISTER] Lỗi không mong muốn", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -134,7 +134,7 @@ class AuthController:
         """Đăng nhập và trả về access/refresh token kèm token_family."""
         try:
             logger.info(
-                "[LOGIN] Attempting login for username: %s",
+                "[LOGIN] Đang thử đăng nhập cho username: %s",
                 credentials.user_name,
             )
 
@@ -200,7 +200,7 @@ class AuthController:
                 user=user_response,
             )
 
-            logger.info("[LOGIN] Success: %s", user.user_id)
+            logger.info("[LOGIN] Thành công: %s", user.user_id)
 
             return SuccessResponse(
                 message=Message.USER_LOGIN_SUCCESS_MSG,
@@ -242,7 +242,7 @@ class AuthController:
             )
 
         except Exception as e:  # noqa: F841
-            logger.error("[LOGIN] Unexpected error", exc_info=True)
+            logger.error("[LOGIN] Lỗi không mong muốn", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -268,7 +268,7 @@ class AuthController:
             await self.auth_service.initiate_password_reset(reset_request.email)
 
             logger.info(
-                "[PASSWORD_RESET_REQUEST] Request processed for: %s",
+                "[PASSWORD_RESET_REQUEST] Yêu cầu đã được xử lý cho: %s",
                 reset_request.email,
             )
 
@@ -282,7 +282,7 @@ class AuthController:
 
         except Exception as e:  
             logger.error(
-                "[PASSWORD_RESET_REQUEST] Unexpected error",
+                "[PASSWORD_RESET_REQUEST] Lỗi không mong muốn",
                 exc_info=True,
             )
             return ErrorResponse(
@@ -299,7 +299,7 @@ class AuthController:
         """Đặt lại mật khẩu bằng token reset."""
         try:
             logger.info(
-                "[RESET_PASSWORD] Resetting password for: %s",
+                "[RESET_PASSWORD] Đặt lại mật khẩu cho: %s",
                 reset_data.email,
             )
 
@@ -311,7 +311,7 @@ class AuthController:
 
             if success:
                 logger.info(
-                    "[RESET_PASSWORD] Success for: %s",
+                    "[RESET_PASSWORD] Thành công cho: %s",
                     reset_data.email,
                 )
                 return SuccessResponse(
@@ -323,7 +323,7 @@ class AuthController:
                 )
 
             logger.warning(
-                "[RESET_PASSWORD] Failed for: %s",
+                "[RESET_PASSWORD] Thất bại cho: %s",
                 reset_data.email,
             )
             return ErrorResponse(
@@ -342,7 +342,7 @@ class AuthController:
 
         except Exception as e:  # noqa: F841
             logger.error(
-                "[RESET_PASSWORD] Unexpected error",
+                "[RESET_PASSWORD] Lỗi không mong muốn",
                 exc_info=True,
             )
             return ErrorResponse(
@@ -371,7 +371,7 @@ class AuthController:
         5. Revoke family cũ, tạo token_pair + family mới.
         """
         try:
-            logger.info("[REFRESH_TOKEN] Refreshing token")
+            logger.info("[REFRESH_TOKEN] Làm mới token")
 
             # 1. Decode refresh token
             payload = jwt_handler.decode_token(
@@ -385,7 +385,7 @@ class AuthController:
 
             # 2. Validate type + claims
             if token_type != "refresh":
-                logger.warning("[REFRESH_TOKEN] Invalid token type")
+                logger.warning("[REFRESH_TOKEN] Loại token không hợp lệ")
                 return ErrorResponse(
                     message=Message.AUTH_INVALID_TOKEN_TYPE_MSG,
                     error_code=ErrorCode.AUTH_INVALID_TOKEN_TYPE,
@@ -394,7 +394,7 @@ class AuthController:
 
             if not user_id or not old_refresh_jti:
                 logger.warning(
-                    "[REFRESH_TOKEN] Invalid token - missing claims",
+                    "[REFRESH_TOKEN] Token không hợp lệ - thiếu claims",
                 )
                 return ErrorResponse(
                     message=Message.AUTH_INVALID_TOKEN_MSG,
@@ -406,7 +406,7 @@ class AuthController:
             is_revoked = await check_token_family_revoked(self.db, old_refresh_jti)
             if is_revoked:
                 logger.error(
-                    "[REFRESH_TOKEN] REUSE DETECTED for user %s, jti: %s. Revoking entire chain.",
+                    "[REFRESH_TOKEN] PHÁT HIỆN TÁI SỬ DỤNG cho user %s, jti: %s. Thu hồi toàn bộ chuỗi.",
                     user_id,
                     old_refresh_jti,
                 )
@@ -430,7 +430,7 @@ class AuthController:
 
             if token_version < current_version:
                 logger.warning(
-                    "[REFRESH_TOKEN] Old token version: %s < %s",
+                    "[REFRESH_TOKEN] Phiên bản token cũ: %s < %s",
                     token_version,
                     current_version,
                 )
@@ -446,7 +446,7 @@ class AuthController:
             user = await self.auth_service.get_user_by_id(uuid.UUID(user_id))
             if not user:
                 logger.warning(
-                    "[REFRESH_TOKEN] User not found: %s",
+                    "[REFRESH_TOKEN] Không tìm thấy user: %s",
                     user_id,
                 )
                 return ErrorResponse(
@@ -494,7 +494,7 @@ class AuthController:
                 user=user_response,
             )
 
-            logger.info("[REFRESH_TOKEN] Success: %s", user_id)
+            logger.info("[REFRESH_TOKEN] Thành công: %s", user_id)
 
             return SuccessResponse(
                 message=Message.TOKEN_REFRESH_SUCCESS_MSG,
@@ -506,7 +506,7 @@ class AuthController:
 
         except Exception as e:  # noqa: F841
             logger.error(
-                "[REFRESH_TOKEN] Unexpected error",
+                "[REFRESH_TOKEN] Lỗi không mong muốn",
                 exc_info=True,
             )
             return ErrorResponse(
@@ -528,13 +528,13 @@ class AuthController:
         - Idempotent: luôn trả success an toàn.
         """
         try:
-            logger.info("[LOGOUT] Processing logout")
+            logger.info("[LOGOUT] Đang xử lý đăng xuất")
 
             payload = jwt_handler.decode_token(token, verify_exp=False)
             jti = payload.get("jti")
 
             if not jti:
-                logger.warning("[LOGOUT] Token missing JTI")
+                logger.warning("[LOGOUT] Token thiếu JTI")
                 return SuccessResponse(
                     message=Message.USER_LOGOUT_SUCCESS_MSG,
                     data={
@@ -546,7 +546,7 @@ class AuthController:
             revoked_count = await revoke_token_family(self.db, jti)
 
             logger.info(
-                "[LOGOUT] Revoked %s tokens in family",
+                "[LOGOUT] Đã thu hồi %s tokens trong family",
                 revoked_count,
             )
 
@@ -554,16 +554,14 @@ class AuthController:
                 message=Message.USER_LOGOUT_SUCCESS_MSG,
                 data={
                     "logout_time": datetime.now(timezone.utc).isoformat(),
-                    "message": (
-                        f"Logged out successfully. {revoked_count} token(s) revoked."
-                    ),
+                    "message": Message.LOGOUT_SUCCESS_TOKENS_REVOKED_MSG.format(revoked_count=revoked_count),
                     "tokens_revoked": revoked_count,
                 },
             )
 
         except Exception as e:  # noqa: Fашь
             logger.warning(
-                "[LOGOUT] Error during logout, returning generic success",
+                "[LOGOUT] Lỗi trong quá trình đăng xuất, trả về thành công chung",
                 exc_info=True,
             )
             return SuccessResponse(
@@ -604,24 +602,22 @@ class AuthController:
                 )
 
             logger.info(
-                "[LOGOUT_ALL] Success: %s",
+                "[LOGOUT_ALL] Thành công: %s",
                 current_user.user_id,
             )
 
             return SuccessResponse(
-                message="Logged out from all devices successfully",
+                message=Message.LOGOUT_ALL_DEVICES_SUCCESS_MSG,
                 data={
                     "user_id": str(current_user.user_id),
                     "old_version": result["old_version"],
                     "new_version": result["new_version"],
-                    "message": (
-                        "All tokens have been revoked. Please login again."
-                    ),
+                    "message": Message.ALL_TOKENS_REVOKED_MSG,
                 },
             )
 
         except Exception as e:  # noqa: F841
-            logger.error("[LOGOUT_ALL] Error", exc_info=True)
+            logger.error("[LOGOUT_ALL] Lỗi", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -634,7 +630,7 @@ class AuthController:
 
     async def health_check(self) -> SuccessResponse[dict]:
         """Health check cho auth service."""
-        logger.debug("[HEALTH] Checking auth service...")
+        logger.debug("[HEALTH] Đang kiểm tra dịch vụ auth...")
         return SuccessResponse(
             message=Message.AUTH_HEALTH_CHECK_MSG,
             data={
@@ -674,7 +670,7 @@ class AuthController:
 
             if not success:
                 logger.warning(
-                    "[CHANGE_PASSWORD] Failed: %s",
+                    "[CHANGE_PASSWORD] Thất bại: %s",
                     current_user.user_id,
                 )
                 return ErrorResponse(
@@ -688,16 +684,16 @@ class AuthController:
             )
 
             logger.info(
-                "[CHANGE_PASSWORD] Success + All tokens revoked: %s, %s -> %s",
+                "[CHANGE_PASSWORD] Thành công + Tất cả tokens đã bị thu hồi: %s, %s -> %s",
                 current_user.user_id,
                 revoke_result.get("old_version"),
                 revoke_result.get("new_version"),
             )
 
             return SuccessResponse(
-                message="Password changed successfully. All devices have been logged out.",
+                message=Message.PASSWORD_CHANGED_ALL_DEVICES_LOGOUT_MSG,
                 data=ChangePasswordResponse(
-                    message="Password changed. Please login again on all devices.",
+                    message=Message.PASSWORD_CHANGED_LOGIN_AGAIN_MSG,
                     success=True,
                 ),
             )
@@ -728,7 +724,7 @@ class AuthController:
 
         except Exception as e:  
             logger.error(
-                "[CHANGE_PASSWORD] Unexpected error",
+                "[CHANGE_PASSWORD] Lỗi không mong muốn",
                 exc_info=True,
             )
             return ErrorResponse(

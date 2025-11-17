@@ -5,8 +5,6 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from app.modules.guest.models.guest_session import GuestSession
-from app.modules.guest.models.guest_upload import GuestUpload
-from app.modules.guest.models.guest_analysis import GuestAnalysis
 
 class GuestService:
     def __init__(self, db: AsyncSession):

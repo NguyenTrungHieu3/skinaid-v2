@@ -41,7 +41,7 @@ class ProfileService:
             return UserProfile.model_validate(dict(row))
 
         except Exception as e:
-            logger.error(f"Error getting profile by user_id {user_id}: {str(e)}")
+            logger.error(f"Lỗi khi lấy profile theo user_id {user_id}: {str(e)}")
             return None
     
     async def update_profile(self, user_id: uuid.UUID, profile_data: UserProfileUpdate) -> UserProfile:
@@ -79,7 +79,7 @@ class ProfileService:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise AppBaseException(message="Profile not found", error_code=USER_NOT_FOUND)
+                    raise AppBaseException(message="Không tìm thấy profile", error_code=USER_NOT_FOUND)
 
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -121,15 +121,15 @@ class ProfileService:
 
             row = result.mappings().first()
             if row is None:
-                raise AppBaseException(message="Failed to update profile", error_code=USER_INVALID_DATA)
+                raise AppBaseException(message="Không thể cập nhật profile", error_code=USER_INVALID_DATA)
 
             return UserProfile.model_validate(dict(row))
 
         except AppBaseException:
             raise
         except Exception as e:
-            logger.error(f"Error updating profile for user {user_id}: {str(e)}")
-            raise AppBaseException(message="Failed to update profile due to internal error", error_code=USER_INVALID_DATA)
+            logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
+            raise AppBaseException(message="Không thể cập nhật profile do lỗi nội bộ", error_code=USER_INVALID_DATA)
     
     async def create_profile_response(self, profile) -> UserProfileResponse:
         """
@@ -209,7 +209,7 @@ class ProfileService:
             )
 
         except Exception as e:
-            logger.error(f"Failed to get profile statistics: {e}")
+            logger.error(f"Không thể lấy thống kê profile: {e}")
             return ProfileStatisticsResponse(
                 total_users=0,
                 users_with_profile=0,
@@ -279,7 +279,7 @@ class ProfileService:
             return profiles
 
         except Exception as e:
-            logger.error(f"Failed to search profiles: {e}")
+            logger.error(f"Không thể tìm kiếm profiles: {e}")
             return []
 
     async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -324,5 +324,5 @@ class ProfileService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get completion suggestions for {user_id}: {e}")
+            logger.error(f"Không thể lấy gợi ý hoàn thiện cho {user_id}: {e}")
             return {"suggestions": [], "missing_fields": []}

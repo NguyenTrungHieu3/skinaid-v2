@@ -33,14 +33,14 @@ class GuestController:
     ) -> Union[SuccessResponse[GuestSessionResponse], ErrorResponse]:
         """Create a new guest session."""
         try:
-            logger.info(f"[CREATE_SESSION] Creating guest session - IP: {ip_address}")
+            logger.info(f"[TẠO_SESSION] Đang tạo session khách - IP: {ip_address}")
             
             session = await self.guest_service.create_guest_session(
                 ip_address, user_agent
             )
 
             if not session:
-                logger.error(f"[CREATE_SESSION] Failed to create session - IP: {ip_address}")
+                logger.error(f"[TẠO_SESSION] Không thể tạo session - IP: {ip_address}")
                 return ErrorResponse(
                     message=Message.GUEST_SESSION_CREATE_ERROR_MSG,
                     error_code=ErrorCode.GUEST_SESSION_CREATE_ERROR,
@@ -51,7 +51,7 @@ class GuestController:
             session_response = self._create_session_response(session)
             
             logger.info(
-                f"[CREATE_SESSION] Success: {session_response.session_id}"
+                f"[TẠO_SESSION] Thành công: {session_response.session_id}"
             )
             
             return SuccessResponse(
@@ -61,7 +61,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[CREATE_SESSION] Error: {e}", exc_info=True)
+            logger.error(f"[TẠO_SESSION] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_SESSION_ERROR_MSG,
                 error_code=ErrorCode.GUEST_SESSION_ERROR,
@@ -75,12 +75,12 @@ class GuestController:
     ) -> Union[SuccessResponse[GuestSessionResponse], ErrorResponse]:
         """Get guest session by ID."""
         try:
-            logger.info(f"[GET_SESSION] Getting session: {session_id}")
+            logger.info(f"[LẤY_SESSION] Đang lấy session: {session_id}")
             
             session = await self.guest_service.get_guest_session(session_id)
 
             if not session:
-                logger.warning(f"[GET_SESSION] Session not found: {session_id}")
+                logger.warning(f"[LẤY_SESSION] Không tìm thấy session: {session_id}")
                 return ErrorResponse(
                     message=Message.GUEST_SESSION_NOT_EXISTS_MSG,
                     error_code=ErrorCode.GUEST_SESSION_NOT_FOUND,
@@ -91,8 +91,8 @@ class GuestController:
             session_response = self._create_session_response(session)
             
             logger.info(
-                f"[GET_SESSION] Success: {session_id} - "
-                f"Active: {session_response.is_active}, "
+                f"[LẤY_SESSION] Thành công: {session_id} - "
+                f"Hoạt động: {session_response.is_active}, "
                 f"Uploads: {session_response.upload_count}"
             )
             
@@ -102,7 +102,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[GET_SESSION] Error: {e}", exc_info=True)
+            logger.error(f"[LẤY_SESSION] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_SESSION_GET_ERROR_MSG,
                 error_code=ErrorCode.GUEST_SESSION_GET_ERROR,
@@ -121,7 +121,7 @@ class GuestController:
         """Create a guest upload record."""
         try:
             logger.info(
-                f"[CREATE_UPLOAD] Session: {session_id}, "
+                f"[TẠO_UPLOAD] Session: {session_id}, "
                 f"File: {file_name}, Size: {file_size}"
             )
             
@@ -131,7 +131,7 @@ class GuestController:
 
             if not upload:
                 logger.error(
-                    f"[CREATE_UPLOAD] Failed - Session: {session_id}"
+                    f"[TẠO_UPLOAD] Thất bại - Session: {session_id}"
                 )
                 return ErrorResponse(
                     message=Message.GUEST_UPLOAD_CREATE_ERROR_MSG,
@@ -143,7 +143,7 @@ class GuestController:
             upload_response = self._create_upload_response(upload)
             
             logger.info(
-                f"[CREATE_UPLOAD] Success: {upload_response.upload_id}"
+                f"[TẠO_UPLOAD] Thành công: {upload_response.upload_id}"
             )
             
             return SuccessResponse(
@@ -153,7 +153,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[CREATE_UPLOAD] Error: {e}", exc_info=True)
+            logger.error(f"[TẠO_UPLOAD] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_UPLOAD_ERROR_MSG,
                 error_code=ErrorCode.GUEST_UPLOAD_ERROR,
@@ -173,9 +173,9 @@ class GuestController:
         """Create a guest analysis record."""
         try:
             logger.info(
-                f"[CREATE_ANALYSIS] Session: {session_id}, "
-                f"Upload: {upload_id}, Type: {wound_type}, "
-                f"Severity: {severity}, Confidence: {confidence}"
+                f"[TẠO_PHÂN_TÍCH] Session: {session_id}, "
+                f"Upload: {upload_id}, Loại: {wound_type}, "
+                f"Mức độ: {severity}, Độ tin cậy: {confidence}"
             )
             
             analysis = await self.guest_service.create_guest_analysis(
@@ -184,7 +184,7 @@ class GuestController:
 
             if not analysis:
                 logger.error(
-                    f"[CREATE_ANALYSIS] Failed - Session: {session_id}"
+                    f"[TẠO_PHÂN_TÍCH] Thất bại - Session: {session_id}"
                 )
                 return ErrorResponse(
                     message=Message.GUEST_ANALYSIS_CREATE_ERROR_MSG,
@@ -196,7 +196,7 @@ class GuestController:
             analysis_response = self._create_analysis_response(analysis)
             
             logger.info(
-                f"[CREATE_ANALYSIS] Success: {analysis_response.analysis_id}"
+                f"[TẠO_PHÂN_TÍCH] Thành công: {analysis_response.analysis_id}"
             )
             
             return SuccessResponse(
@@ -206,7 +206,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[CREATE_ANALYSIS] Error: {e}", exc_info=True)
+            logger.error(f"[TẠO_PHÂN_TÍCH] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_ANALYSIS_ERROR_MSG,
                 error_code=ErrorCode.GUEST_ANALYSIS_ERROR,
@@ -223,8 +223,8 @@ class GuestController:
         """Get all uploads for a guest session."""
         try:
             logger.info(
-                f"[GET_UPLOADS] Session: {session_id}, "
-                f"Limit: {limit}, Offset: {offset}"
+                f"[LẤY_UPLOADS] Session: {session_id}, "
+                f"Giới hạn: {limit}, Offset: {offset}"
             )
             
             uploads = await self.guest_service.get_guest_uploads(
@@ -236,7 +236,7 @@ class GuestController:
             ]
 
             logger.info(
-                f"[GET_UPLOADS] Success: {len(upload_responses)} uploads found"
+                f"[LẤY_UPLOADS] Thành công: tìm thấy {len(upload_responses)} uploads"
             )
             
             return SuccessResponse(
@@ -247,7 +247,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[GET_UPLOADS] Error: {e}", exc_info=True)
+            logger.error(f"[LẤY_UPLOADS] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_UPLOADS_ERROR_MSG,
                 error_code=ErrorCode.GUEST_UPLOADS_ERROR,
@@ -264,8 +264,8 @@ class GuestController:
         """Get all analyses for a guest session."""
         try:
             logger.info(
-                f"[GET_ANALYSES] Session: {session_id}, "
-                f"Limit: {limit}, Offset: {offset}"
+                f"[LẤY_PHÂN_TÍCH] Session: {session_id}, "
+                f"Giới hạn: {limit}, Offset: {offset}"
             )
             
             analyses = await self.guest_service.get_guest_analyses(
@@ -277,7 +277,7 @@ class GuestController:
             ]
 
             logger.info(
-                f"[GET_ANALYSES] Success: {len(analysis_responses)} analyses found"
+                f"[LẤY_PHÂN_TÍCH] Thành công: tìm thấy {len(analysis_responses)} phân tích"
             )
             
             return SuccessResponse(
@@ -288,7 +288,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[GET_ANALYSES] Error: {e}", exc_info=True)
+            logger.error(f"[LẤY_PHÂN_TÍCH] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_ANALYSES_ERROR_MSG,
                 error_code=ErrorCode.GUEST_ANALYSES_ERROR,
@@ -301,14 +301,14 @@ class GuestController:
     ) -> Union[SuccessResponse[GuestStatisticsResponse], ErrorResponse]:
         """Get overall guest statistics."""
         try:
-            logger.info("[STATISTICS] Getting guest statistics")
+            logger.info("[THỐNG_KÊ] Đang lấy thống kê khách")
             
             stats = await self.guest_service.get_guest_statistics()
 
             logger.info(
-                f"[STATISTICS] Success - "
-                f"Total sessions: {stats.get('total_sessions', 0)}, "
-                f"Active sessions: {stats.get('active_sessions', 0)}"
+                f"[THỐNG_KÊ] Thành công - "
+                f"Tổng sessions: {stats.get('total_sessions', 0)}, "
+                f"Sessions hoạt động: {stats.get('active_sessions', 0)}"
             )
             
             return SuccessResponse(
@@ -317,7 +317,7 @@ class GuestController:
             )
 
         except Exception as e:
-            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            logger.error(f"[THỐNG_KÊ] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.GUEST_STATISTICS_ERROR_MSG,
                 error_code=ErrorCode.GUEST_STATISTICS_ERROR,

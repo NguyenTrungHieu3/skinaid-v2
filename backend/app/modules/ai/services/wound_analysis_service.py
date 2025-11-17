@@ -7,86 +7,111 @@ import uuid
 
 from app.modules.ai.models.wound_analysis import WoundAnalysis
 from app.modules.ai.models.wound_detection import WoundDetection
-from app.modules.ai.services.detection_processor import DetectionProcessor
 from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 logger = logging.getLogger(__name__)
 
 
-class WoundAnalysisService:
+from app.modules.ai.constants import WoundConstants
+from app.modules.ai.utils.wound_parser import WoundParser
 
+class WoundAnalysisService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.first_aid_service = FirstAidService(db)
+    @classmethod
+    def map_wound_type_for_database(cls, ai_wound_type: str) -> str:
+        """Map wound type từ AI sang database format"""
+        if ai_wound_type.lower().startswith("burn"):
+            return "burn"
+        
+        normalized = ai_wound_type.lower().strip()
+        
+        if normalized not in WoundConstants.WOUND_TYPES:
+            logger.warning(
+                f"Loại vết thương '{normalized}' không được hỗ trợ, "
+                f"sử dụng 'abrasion' làm dự phòng"
+            )
+            return "abrasion"
+        
+        return normalized
+    
+    async def create_analysis(
+        self,
+        user_id: Optional[uuid.UUID],
+        image_url: str,
+        file_name: str,
+        file_size: int,
+        ai_model_version: str,
+        total_detections: int,
+        processing_time_ms: int
+    ) -> WoundAnalysis:
+        """Tạo wound analysis record (cho cả có/không vết thương)"""
+        analysis = WoundAnalysis.create_analysis(
+            user_id=user_id,
+            image_url=image_url,
+            file_name=file_name,
+            file_size=file_size,
+            ai_model_version=ai_model_version,
+            total_detections=total_detections,
+            processing_time_ms=processing_time_ms
+        )
+
+        self.db.add(analysis)
+        await self.db.commit()
+        await self.db.refresh(analysis)
+
+        status = "không vết thương" if total_detections == 0 else f"{total_detections} vết thương"
+        logger.info(
+            f"Đã tạo phân tích ({status}): {analysis.analysis_id} "
+            f"(user: {user_id or 'guest'})"
+        )
+
+        return analysis
 
     async def get_first_aid_guide_for_detection(
         self,
         detection: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
+        """Lấy first aid guide phù hợp cho detection"""
         original_wound_type = detection.get("wound_type", "unknown")
-        detection_severity = detection.get("severity", "mild")
+        original_severity = detection.get("severity", "mild")
 
-        mapped_wound_type = DetectionProcessor.map_wound_type_for_database(
-            original_wound_type
+        wound_info = WoundParser.parse_from_separate_fields(
+            original_wound_type, 
+            original_severity
         )
-
-        if original_wound_type.lower() == "burn":
-            return await self._get_burn_guide(original_wound_type, detection_severity)
-
-        # For non-burn, use base severity to match firstaid_guides
-        base_severity = DetectionProcessor.extract_base_severity(detection_severity)
+        
+        mapped_wound_type = self.map_wound_type_for_database(wound_info["wound_type"])
 
         logger.info(
-            f"Getting guide for {original_wound_type}/{detection_severity} "
-            f"(mapped: {mapped_wound_type}, base_severity: {base_severity})"
-        )
-
-        return await self.first_aid_service.get_first_aid_guide(
-            wound_type=mapped_wound_type,
-            severity=base_severity
-        )
-
-    async def _get_burn_guide(
-        self,
-        wound_type: str,
-        severity: str
-    ) -> Optional[Dict[str, Any]]:
-        base_type, parsed_severity, sub_type = DetectionProcessor.parse_burn_classification(
-            wound_type,
-            severity
-        )
-
-        logger.info(
-            f"Burn guide search: {wound_type}/{severity} "
-            f"-> {base_type}/{parsed_severity}"
-            f"{f'/{sub_type}' if sub_type else ''}"
+            f"Đang lấy hướng dẫn cho {original_wound_type}/{original_severity} "
+            f"(đã ánh xạ: {mapped_wound_type}, "
+            f"severity: {wound_info['severity']}, "
+            f"sub_type: {wound_info['sub_type']})"
         )
 
         guide = await self.first_aid_service.get_first_aid_guide(
-            wound_type=base_type,
-            severity=parsed_severity,
-            sub_type=sub_type if sub_type else None
+            wound_type=mapped_wound_type,
+            severity=wound_info["severity"],
+            sub_type=wound_info["sub_type"]
         )
 
         if guide:
             sub_info = f" (sub_type: {guide.get('sub_type')})" if guide.get('sub_type') else ""
-            logger.info(f"Found: {guide.get('title')}{sub_info}")
+            logger.info(f"Đã tìm thấy: {guide.get('title')}{sub_info}")
         else:
-            logger.warning(f"No guide found for {base_type}/{parsed_severity}")
+            logger.warning(
+                f"Không tìm thấy hướng dẫn cho {mapped_wound_type}/"
+                f"{wound_info['severity']}"
+                f"{f'/{wound_info['sub_type']}' if wound_info['sub_type'] else ''}"
+            )
 
         return guide
 
     @staticmethod
-    def extract_guide_id(guide: Optional[Dict[str, Any]]) -> Optional[uuid.UUID]:
-        if not guide:
-            return None
-        guide_id_str = guide.get("firstaidguide_id")
-        if guide_id_str:
-            return uuid.UUID(guide_id_str)
-        return None
-
-    @staticmethod
     def extract_snapshot(guide: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Tạo snapshot của first aid guide"""
         if not guide:
             return {
                 "title": "Không có hướng dẫn sơ cứu",
@@ -108,118 +133,63 @@ class WoundAnalysisService:
             "estimated_healing_time": guide.get("estimated_healing_time"),
         }
 
-    async def create_no_wound_analysis(
-        self,
-        user_id: Optional[uuid.UUID],
-        image_url: str,
-        file_name: str,
-        file_size: int,
-        ai_model_version: str,
-        processing_time_ms: int,
-        total_detections: int = 0
-    ) -> WoundAnalysis:
-        analysis = WoundAnalysis.create_analysis(
-            user_id=user_id,
-            image_url=image_url,
-            file_name=file_name,
-            file_size=file_size,
-            ai_model_version=ai_model_version,
-            total_detections=total_detections,
-            processing_time_ms=processing_time_ms
-        )
-
-        self.db.add(analysis)
-        await self.db.commit()
-        await self.db.refresh(analysis)
-
-        logger.info(
-            f"Created no-wound analysis: {analysis.analysis_id} "
-            f"(user: {user_id or 'guest'})"
-        )
-
-        return analysis
-
-    async def create_wound_analysis(
-        self,
-        user_id: Optional[uuid.UUID],
-        image_url: str,
-        file_name: str,
-        file_size: int,
-        ai_model_version: str,
-        total_detections: int,
-        processing_time_ms: int
-    ) -> WoundAnalysis:
-        analysis = WoundAnalysis.create_analysis(
-            user_id=user_id,
-            image_url=image_url,
-            file_name=file_name,
-            file_size=file_size,
-            ai_model_version=ai_model_version,
-            total_detections=total_detections,
-            processing_time_ms=processing_time_ms
-        )
-
-        self.db.add(analysis)
-        await self.db.commit()
-        await self.db.refresh(analysis)
-
-        logger.info(
-            f"Created wound analysis: {analysis.analysis_id} "
-            f"(user: {user_id or 'guest'})"
-        )
-
-        return analysis
-
     async def save_detections(
         self,
         analysis_id: uuid.UUID,
         detections: List[Dict[str, Any]]
     ) -> None:
+        """Lưu danh sách wound detections vào database"""
         for detection in detections:
             original_wound_type = detection.get("wound_type", "unknown")
-            mapped_wound_type = DetectionProcessor.map_wound_type_for_database(
-                original_wound_type
+            original_severity = detection.get("severity", "mild")
+            
+            wound_info = WoundParser.parse_from_separate_fields(
+                original_wound_type,
+                original_severity
             )
+            mapped_wound_type = self.map_wound_type_for_database(wound_info["wound_type"])
 
-            # Get guide for each detection
+            # Lấy first aid guide
             guide = await self.get_first_aid_guide_for_detection(detection)
             guide_id = self.extract_guide_id(guide)
             snapshot = self.extract_snapshot(guide)
 
-            parsed_severity, sub_type = DetectionProcessor.get_parsed_severity_for_storage(
-                original_wound_type,
-                detection.get("severity", "mild")
-            )
-
-            wound_detection = WoundDetection.create_detection(
+            # Tạo detection record
+            from datetime import datetime, timezone
+            wound_detection = WoundDetection(
                 analysis_id=analysis_id,
                 wound_type=mapped_wound_type,
-                severity=parsed_severity,
-                sub_type=sub_type,
+                severity=wound_info["severity"],
+                sub_type=wound_info["sub_type"],
                 confidence_score=detection.get("confidence", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
                 detection_index=detection.get("detection_index", 0),
                 firstaidguide_id=guide_id,
-                firstaid_snapshot=snapshot
+                firstaid_snapshot=snapshot,
+                created_at=datetime.now(timezone.utc).replace(tzinfo=None)
             )
             self.db.add(wound_detection)
 
         await self.db.commit()
-        logger.info(f"Saved {len(detections)} detections for analysis {analysis_id}")
+        logger.info(f"Đã lưu {len(detections)} detections cho phân tích {analysis_id}")
 
-    async def get_user_analysis_history(
+    async def get_history(
         self,
-        user_id: uuid.UUID,
+        user_id: Optional[uuid.UUID] = None,
+        session_id: Optional[uuid.UUID] = None,
         limit: int = 20,
         offset: int = 0
     ) -> List[WoundAnalysis]:
+        """Lấy lịch sử phân tích cho user hoặc guest session"""
+        query = select(WoundAnalysis).options(selectinload(WoundAnalysis.wound_detections))
+        
+        if user_id:
+            query = query.where(WoundAnalysis.user_id == user_id)
+        elif session_id:
+            query = query.where(WoundAnalysis.session_id == session_id)
+        
         query = (
-            select(WoundAnalysis)
-            .options(selectinload(WoundAnalysis.wound_detections))
-            .where(
-                WoundAnalysis.user_id == user_id,
-                WoundAnalysis.is_deleted == False
-            )
+            query.where(WoundAnalysis.is_deleted == False)
             .order_by(desc(WoundAnalysis.created_at))
             .limit(limit)
             .offset(offset)
@@ -228,8 +198,9 @@ class WoundAnalysisService:
         result = await self.db.execute(query)
         analyses = result.scalars().all()
 
+        identifier = f"user {user_id}" if user_id else f"session {session_id}"
         logger.info(
-            f"Retrieved {len(analyses)} analyses for user {user_id} "
+            f"Đã lấy {len(analyses)} phân tích cho {identifier} "
             f"(limit: {limit}, offset: {offset})"
         )
 
@@ -239,6 +210,7 @@ class WoundAnalysisService:
         self,
         analysis_id: uuid.UUID
     ) -> Optional[WoundAnalysis]:
+        """Lấy wound analysis theo ID"""
         query = (
             select(WoundAnalysis)
             .options(selectinload(WoundAnalysis.wound_detections))
@@ -250,11 +222,15 @@ class WoundAnalysisService:
 
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
+    
+    async def get_by_id(self, analysis_id: uuid.UUID) -> Optional[WoundAnalysis]:
+        return await self.get_analysis_by_id(analysis_id)
 
     async def get_detections_for_analysis(
         self,
         analysis_id: uuid.UUID
     ) -> List[Dict[str, Any]]:
+        """Lấy danh sách detections cho một analysis"""
         from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 
         query = (
@@ -269,16 +245,20 @@ class WoundAnalysisService:
 
         detections = []
         for detection, guide in rows:
-            snapshot = self.extract_snapshot({
-                "title": guide.title if guide else "Không có hướng dẫn",
-                "description": guide.description if guide else "",
-                "steps": guide.steps if guide else [],
-                "warnings": guide.warnings if guide else [],
-                "dos": guide.dos if guide else [],
-                "donts": guide.donts if guide else [],
-                "supplies_needed": guide.supplies_needed if guide else [],
-                "estimated_healing_time": guide.estimated_healing_time if guide else ""
-            })
+            guide_dict = None
+            if guide:
+                guide_dict = {
+                    "title": guide.title,
+                    "description": guide.description,
+                    "steps": guide.steps,
+                    "warnings": guide.warnings,
+                    "dos": guide.dos,
+                    "donts": guide.donts,
+                    "supplies_needed": guide.supplies_needed,
+                    "estimated_healing_time": guide.estimated_healing_time
+                }
+            
+            snapshot = self.extract_snapshot(guide_dict)
 
             detections.append({
                 "detection_id": str(detection.detection_id),
@@ -294,11 +274,12 @@ class WoundAnalysisService:
         return detections
 
     async def soft_delete_analysis(self, analysis_id: uuid.UUID) -> None:
+        """Soft delete một wound analysis"""
         analysis = await self.get_analysis_by_id(analysis_id)
 
         if analysis:
             analysis.mark_as_deleted()
             await self.db.commit()
-            logger.info(f"Soft deleted analysis: {analysis_id}")
+            logger.info(f"Đã xóa mềm phân tích: {analysis_id}")
         else:
-            logger.warning(f"Analysis not found for deletion: {analysis_id}")
+            logger.warning(f"Không tìm thấy phân tích để xóa: {analysis_id}")

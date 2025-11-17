@@ -20,7 +20,7 @@ def str_to_uuid(uuid_str: str) -> uuid.UUID:
     try:
         return uuid.UUID(uuid_str)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid UUID format")
+        raise HTTPException(status_code=400, detail="Định dạng UUID không hợp lệ")
 
 @router.post("/session", response_model=SuccessResponse[GuestSessionResponse])
 async def create_guest_session(

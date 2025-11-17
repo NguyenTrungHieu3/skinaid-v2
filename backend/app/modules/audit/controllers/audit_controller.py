@@ -31,8 +31,8 @@ class AuditController:
             offset = (filters.page - 1) * filters.limit
 
             logger.info(
-                f"[GET_AUDIT_LOGS] Retrieving logs: "
-                f"page={filters.page}, limit={filters.limit}"
+                f"[GET_AUDIT_LOGS] Đang lấy logs: "
+                f"trang={filters.page}, giới hạn={filters.limit}"
             )
 
             # Lấy logs và tổng số từ service
@@ -48,7 +48,7 @@ class AuditController:
                 offset=offset
             )
 
-            # Convert sang AuditLogResponse (dùng to_dict())
+            # Chuyển đổi sang AuditLogResponse (dùng to_dict())
             audit_logs = [
                 AuditLogResponse(**log.to_dict())
                 for log in logs
@@ -69,8 +69,8 @@ class AuditController:
             )
 
             logger.info(
-                f"[GET_AUDIT_LOGS] Success: "
-                f"returned {len(audit_logs)}/{total_count} logs"
+                f"[GET_AUDIT_LOGS] Thành công: "
+                f"trả về {len(audit_logs)}/{total_count} logs"
             )
 
             return SuccessResponse(
@@ -80,7 +80,7 @@ class AuditController:
 
         except Exception as e:
             logger.error(
-                f"[GET_AUDIT_LOGS] Error: {str(e)}",
+                f"[GET_AUDIT_LOGS] Lỗi: {str(e)}",
                 exc_info=True
             )
             return ErrorResponse(
@@ -94,7 +94,7 @@ class AuditController:
         self
     ) -> Union[SuccessResponse[AuditStatsResponse], ErrorResponse]:
         try:
-            logger.info("[GET_AUDIT_STATS] Retrieving statistics")
+            logger.info("[GET_AUDIT_STATS] Đang lấy thống kê")
 
             # Lấy thống kê từ service
             stats_data = await self.audit_service.get_audit_stats()
@@ -108,9 +108,9 @@ class AuditController:
             )
 
             logger.info(
-                f"[GET_AUDIT_STATS] Success: "
-                f"{stats_data['total_logs']} total logs, "
-                f"{stats_data['success_rate']}% success rate"
+                f"[GET_AUDIT_STATS] Thành công: "
+                f"{stats_data['total_logs']} tổng logs, "
+                f"{stats_data['success_rate']}% tỷ lệ thành công"
             )
 
             return SuccessResponse(
@@ -120,7 +120,7 @@ class AuditController:
 
         except Exception as e:
             logger.error(
-                f"[GET_AUDIT_STATS] Error: {str(e)}",
+                f"[GET_AUDIT_STATS] Lỗi: {str(e)}",
                 exc_info=True
             )
             return ErrorResponse(
@@ -131,7 +131,7 @@ class AuditController:
             )
 
     async def health_check(self) -> SuccessResponse[dict]:
-        logger.debug("[HEALTH] Checking audit service")
+        logger.debug("[HEALTH] Đang kiểm tra audit service")
         
         return SuccessResponse(
             message="Audit service đang hoạt động tốt",

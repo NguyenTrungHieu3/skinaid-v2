@@ -34,6 +34,11 @@ TOKEN_REVOKED_MSG = "Token has been revoked"
 SESSION_TERMINATED_MSG = "Session terminated"
 EMAIL_VERIFICATION_SENT_MSG = "Email xác thực đã được gửi lại thành công"
 VERIFICATION_EMAIL_SENT_MSG = "Verification email sent"
+LOGOUT_ALL_DEVICES_SUCCESS_MSG = "Đăng xuất khỏi tất cả thiết bị thành công"
+ALL_TOKENS_REVOKED_MSG = "Tất cả token đã bị thu hồi. Vui lòng đăng nhập lại."
+PASSWORD_CHANGED_ALL_DEVICES_LOGOUT_MSG = "Mật khẩu đã được thay đổi thành công. Tất cả thiết bị đã được đăng xuất."
+PASSWORD_CHANGED_LOGIN_AGAIN_MSG = "Mật khẩu đã được thay đổi. Vui lòng đăng nhập lại trên tất cả thiết bị."
+LOGOUT_SUCCESS_TOKENS_REVOKED_MSG = "Đăng xuất thành công. {revoked_count} token đã bị thu hồi."
 
 # --- Error Messages ---
 AUTH_INVALID_CREDENTIALS_MSG = "Thông tin đăng nhập không hợp lệ"
@@ -60,6 +65,8 @@ AUTH_USER_NOT_FOUND_MSG = "Không tìm thấy người dùng"
 AUTH_INVALID_REFRESH_TOKEN_MSG = "Refresh token không hợp lệ"
 AUTH_RESET_PASSWORD_FAILED_MSG = "Không thể đặt lại mật khẩu"
 AUTH_CHANGE_PASSWORD_FAILED_MSG = "Không thể thay đổi mật khẩu"
+AUTH_TOKEN_REUSE_DETECTED_MSG = "Phát hiện việc tái sử dụng token"
+AUTH_TOKEN_REVOKED_MSG = "Token đã bị thu hồi"
 AUTH_EMAIL_SEND_FAILED_MSG = "Không thể gửi email xác thực"
 AUTH_VERIFICATION_FAILED_MSG = "Xác thực email thất bại"
 AUTH_VERIFICATION_SYSTEM_ERROR_MSG = "Xác thực email thất bại do lỗi hệ thống"
@@ -139,6 +146,12 @@ ANALYSIS_ACCESS_DENIED_MSG = "You can only access your own analyses or all if ad
 GUEST_ACCESS_DENIED_MSG = "Guests can only access guest analyses"
 DELETE_ACCESS_DENIED_MSG = "You can only delete your own analyses"
 AI_SERVICE_UNAVAILABLE_MSG = "Dịch vụ AI tạm thời không khả dụng, vui lòng thử lại sau"
+UPLOAD_FAILED_MSG = "Upload thất bại. Vui lòng thử lại."
+FILE_PATH_REQUIRED_MSG = "file_path là bắt buộc"
+FILE_NOT_FOUND_MSG = "File không tồn tại hoặc không hợp lệ"
+AI_SERVICE_RUNNING_MSG = "AI service is running"
+AI_SERVICE_NOT_HEALTHY_MSG = "AI service is not healthy"
+HEALTH_CHECK_FAILED_MSG = "Health check failed"
 
 # ============================================
 # RATE LIMITING (RATE)
