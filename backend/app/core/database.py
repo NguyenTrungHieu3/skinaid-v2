@@ -73,7 +73,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     from app.modules.auth.models.user import User
-    from app.modules.auth.models.user_profile import UserProfile
+    from app.modules.profile.models.user_profile import UserProfile
     from app.modules.auth.models.verification_token import VerificationToken
     from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
     from app.modules.auth.models.permissions import Permission

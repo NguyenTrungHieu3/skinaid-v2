@@ -44,93 +44,131 @@ class ProfileService:
             logger.error(f"Lỗi khi lấy profile theo user_id {user_id}: {str(e)}")
             return None
     
-    async def update_profile(self, user_id: uuid.UUID, profile_data: UserProfileUpdate) -> UserProfile:
+    async def update_profile(
+        self, 
+        user_id: uuid.UUID, 
+        profile_data: UserProfileUpdate
+    ) -> UserProfile:
         """
-        Cập nhật thông tin profile của user
-
+        Cập nhật thông tin profile của user (SQL injection safe).
+        
         Args:
             user_id: ID của user
             profile_data: Dữ liệu profile cần cập nhật
-
+            
         Returns:
             UserProfile object đã được cập nhật
-
+            
         Raises:
             AppBaseException: Nếu user không tồn tại hoặc dữ liệu không hợp lệ
         """
         try:
             existing_profile = await self.get_profile_by_user_id(user_id)
-
-            update_data = {}
+            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+            # Build update data
+            update_fields = {}
             if profile_data.full_name is not None:
-                update_data["full_name"] = profile_data.full_name
+                update_fields["full_name"] = profile_data.full_name
             if profile_data.phone is not None:
-                update_data["phone"] = profile_data.phone
+                update_fields["phone"] = profile_data.phone
             if profile_data.date_of_birth is not None:
-                update_data["date_of_birth"] = profile_data.date_of_birth
+                update_fields["date_of_birth"] = profile_data.date_of_birth
             if profile_data.gender is not None:
-                update_data["gender"] = profile_data.gender
+                update_fields["gender"] = profile_data.gender
             if profile_data.address is not None:
-                update_data["address"] = profile_data.address
+                update_fields["address"] = profile_data.address
             if profile_data.avatar_url is not None:
-                update_data["avatar_url"] = profile_data.avatar_url
-
-            if not update_data:
+                update_fields["avatar_url"] = profile_data.avatar_url
+            if not update_fields:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise AppBaseException(message="Không tìm thấy profile", error_code=USER_NOT_FOUND)
-
-            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-
+                    raise AppBaseException(
+                        message="Không tìm thấy profile",
+                        error_code=USER_NOT_FOUND
+                    )
             if existing_profile:
-                update_parts = [f"{key} = :{key}" for key in update_data.keys()]
-                update_data["user_id"] = user_id
-
+                set_clauses = []
+                params = {"user_id": user_id, "updated_at": current_time}
+                
+                # Map each field explicitly
+                if "full_name" in update_fields:
+                    set_clauses.append("full_name = :full_name")
+                    params["full_name"] = update_fields["full_name"]
+                if "phone" in update_fields:
+                    set_clauses.append("phone = :phone")
+                    params["phone"] = update_fields["phone"]
+                if "date_of_birth" in update_fields:
+                    set_clauses.append("date_of_birth = :date_of_birth")
+                    params["date_of_birth"] = update_fields["date_of_birth"]
+                if "gender" in update_fields:
+                    set_clauses.append("gender = :gender")
+                    params["gender"] = update_fields["gender"]
+                if "address" in update_fields:
+                    set_clauses.append("address = :address")
+                    params["address"] = update_fields["address"]
+                if "avatar_url" in update_fields:
+                    set_clauses.append("avatar_url = :avatar_url")
+                    params["avatar_url"] = update_fields["avatar_url"]
+                
+                set_clauses.append("updated_at = :updated_at")
+                
                 sql = text(f"""
                     UPDATE user_profiles
-                    SET {', '.join(update_parts)}
+                    SET {', '.join(set_clauses)}
                     WHERE user_id = :user_id
                     RETURNING *
                 """)
-
-                result = await self.db.execute(sql, update_data)
+                result = await self.db.execute(sql, params)
                 await self.db.commit()
-
             else:
-                current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-
+                # Create new profile
                 insert_data = {
                     "user_id": user_id,
                     "created_at": current_time,
                     "updated_at": current_time,
-                    **update_data
+                    **update_fields
                 }
-
-                columns = list(insert_data.keys())
-                placeholders = [f":{col}" for col in columns]
-
-                sql = text(f"""
-                    INSERT INTO user_profiles ({', '.join(columns)})
-                    VALUES ({', '.join(placeholders)})
+                sql = text("""
+                    INSERT INTO user_profiles (
+                        user_id, full_name, phone, date_of_birth,
+                        gender, address, avatar_url, created_at, updated_at
+                    )
+                    VALUES (
+                        :user_id, :full_name, :phone, :date_of_birth,
+                        :gender, :address, :avatar_url, :created_at, :updated_at
+                    )
                     RETURNING *
                 """)
-
-                result = await self.db.execute(sql, insert_data)
+                params = {
+                    "user_id": insert_data.get("user_id"),
+                    "full_name": insert_data.get("full_name"),
+                    "phone": insert_data.get("phone"),
+                    "date_of_birth": insert_data.get("date_of_birth"),
+                    "gender": insert_data.get("gender"),
+                    "address": insert_data.get("address"),
+                    "avatar_url": insert_data.get("avatar_url"),
+                    "created_at": insert_data.get("created_at"),
+                    "updated_at": insert_data.get("updated_at"),
+                }
+                result = await self.db.execute(sql, params)
                 await self.db.commit()
-
             row = result.mappings().first()
             if row is None:
-                raise AppBaseException(message="Không thể cập nhật profile", error_code=USER_INVALID_DATA)
-
+                raise AppBaseException(
+                    message="Không thể cập nhật profile",
+                    error_code=USER_INVALID_DATA
+                )
             return UserProfile.model_validate(dict(row))
-
         except AppBaseException:
             raise
         except Exception as e:
             logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
-            raise AppBaseException(message="Không thể cập nhật profile do lỗi nội bộ", error_code=USER_INVALID_DATA)
-    
+            raise AppBaseException(
+                message="Không thể cập nhật profile do lỗi nội bộ",
+                error_code=USER_INVALID_DATA
+            )
+        
     async def create_profile_response(self, profile) -> UserProfileResponse:
         """
         Tạo UserProfileResponse từ UserProfile model

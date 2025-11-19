@@ -11,7 +11,6 @@ from app.modules.firstaid.schemas.first_aid_schemas import (
 )
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
-# Import constants
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
 

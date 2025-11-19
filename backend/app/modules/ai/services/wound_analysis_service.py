@@ -132,6 +132,23 @@ class WoundAnalysisService:
             "supplies_needed": guide.get("supplies_needed", []),
             "estimated_healing_time": guide.get("estimated_healing_time"),
         }
+    
+    @staticmethod
+    def extract_guide_id(guide: Optional[Dict[str, Any]]) -> Optional[uuid.UUID]:
+        """Trích xuất guide ID từ guide dictionary"""
+        if not guide:
+            return None
+        
+        guide_id = guide.get("firstaidguide_id")
+        if not guide_id:
+            return None
+        
+        try:
+            return uuid.UUID(str(guide_id)) if not isinstance(guide_id, uuid.UUID) else guide_id
+        except (ValueError, AttributeError):
+            logger.warning(f"Invalid guide_id format: {guide_id}")
+            return None
+
 
     async def save_detections(
         self,

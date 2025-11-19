@@ -13,13 +13,13 @@ async def get_session_id(
     x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
 ) -> Optional[UUID]:
     session_str = session_id or x_session_id
-    
+
     if session_str:
         try:
             return UUID(session_str)
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid session_id format")
-    
+
     return None
 
 @router.post("/analyze")
@@ -30,21 +30,20 @@ async def analyze_wound_image(
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
-    
-    # Convert user_id from string to UUID if present
+
     user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
     if not user_id and not session_id:
         raise HTTPException(
             status_code=401,
             detail="Authentication required or session_id must be provided"
         )
-    
+
     result = await controller.analyze_image(
         file=file,
         user_id=user_id,
         session_id=session_id
     )
-    
+
     return {
         "success": True,
         "data": result
@@ -59,23 +58,22 @@ async def get_analysis_history(
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
-    
-    # Convert user_id from string to UUID if present
+
     user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
-    
+
     if not user_id and not session_id:
         raise HTTPException(
             status_code=401,
             detail="Authentication required or session_id must be provided"
         )
-    
+
     result = await controller.get_analysis_history(
         user_id=user_id,
         session_id=session_id,
         limit=limit,
         offset=offset
     )
-    
+
     return {
         "success": True,
         "data": result
@@ -89,16 +87,37 @@ async def get_analysis_detail(
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
-    
-    # Convert user_id from string to UUID if present
+
     user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
-    
+
     result = await controller.get_analysis_detail(
         analysis_id=analysis_id,
         user_id=user_id,
         session_id=session_id
     )
-    
+
+    return {
+        "success": True,
+        "data": result
+    }
+
+@router.delete("/analysis/{analysis_id}")
+async def delete_analysis(
+    analysis_id: UUID,
+    current_user: Optional[dict] = Depends(get_current_verified_user),
+    session_id: Optional[UUID] = Depends(get_session_id),
+    db: AsyncSession = Depends(get_db)
+):
+    controller = AIController(db)
+
+    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+
+    result = await controller.delete_analysis(
+        analysis_id=analysis_id,
+        user_id=user_id,
+        session_id=session_id
+    )
+
     return {
         "success": True,
         "data": result

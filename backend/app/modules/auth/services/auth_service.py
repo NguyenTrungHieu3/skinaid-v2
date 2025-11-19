@@ -11,7 +11,7 @@ from sqlmodel import text
 from app.core.Security.password import hash_password, verify_password
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.user import User
-from app.modules.auth.models.user_profile import UserProfile
+from app.modules.profile.models.user_profile import UserProfile
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.schemas.user_schemas import UserCreate
@@ -28,6 +28,7 @@ from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.validators.auth_validators import (
     validate_password_strength,
     validate_email,
+    validate_username,
 )
 
 logger = logging.getLogger(__name__)
@@ -259,6 +260,14 @@ class AuthService:
                     error_code=AUTH_EMAIL_EXISTS,
                 )
 
+            # Validate username
+            username_error = validate_username(user_data.user_name, user_data.email)
+            if username_error:
+                raise AppBaseException(
+                    message=username_error,
+                    error_code=USER_INVALID_DATA,
+                )
+
             # Check duplicate username
             existing_user_username = await self.get_user_by_username(
                 user_data.user_name
@@ -270,7 +279,11 @@ class AuthService:
                 )
 
             # Validate password
-            password_errors = validate_password_strength(user_data.password)
+            password_errors = validate_password_strength(
+                user_data.password, 
+                username=user_data.user_name, 
+                email=user_data.email
+            )
             if password_errors:
                 raise AppBaseException(
                     message=password_errors,
@@ -482,17 +495,19 @@ class AuthService:
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
 
-            # Cập nhật updated_at
+            # Cập nhật updated_at và last_login_at
             await self.db.execute(
                 text(
                     """
                     UPDATE users
-                    SET updated_at = :updated_at
+                    SET updated_at = :updated_at,
+                        last_login_at = :last_login_at
                     WHERE user_id = :user_id
                 """
                 ),
                 {
                     "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
+                    "last_login_at": datetime.now(timezone.utc).replace(tzinfo=None),
                     "user_id": user.user_id,
                 },
             )
@@ -615,7 +630,7 @@ class AuthService:
         new_password: str,
     ) -> bool:
         try:
-            password_errors = validate_password_strength(new_password)
+            password_errors = validate_password_strength(new_password, email=email)
             if password_errors:
                 raise AppBaseException(
                     message=password_errors,
@@ -713,24 +728,22 @@ class AuthService:
         new_password: str,
     ) -> bool:
         try:
-            password_errors = validate_password_strength(new_password)
-            if password_errors:
-                raise AppBaseException(
-                    message=password_errors,
-                    error_code=AUTH_PASSWORD_WEAK,
-                )
-
-            if old_password == new_password:
-                raise AppBaseException(
-                    message="Mật khẩu mới phải khác mật khẩu cũ",
-                    error_code=AUTH_PASSWORD_WEAK,
-                )
-
             user = await self.get_user_by_id(user_id=user_id)
             if not user:
                 raise AppBaseException(
                     message="Không tìm thấy người dùng",
                     error_code=USER_NOT_FOUND,
+                )
+
+            password_errors = validate_password_strength(
+                new_password, 
+                username=user.user_name, 
+                email=user.email
+            )
+            if password_errors:
+                raise AppBaseException(
+                    message=password_errors,
+                    error_code=AUTH_PASSWORD_WEAK,
                 )
 
             if not verify_password(old_password, user.hashed_password):

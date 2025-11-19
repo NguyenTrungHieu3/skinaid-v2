@@ -29,7 +29,6 @@ from app.modules.auth.services.token_family_service import (
 )
 from app.modules.auth.models.user import User
 
-# Import constants
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
 
@@ -41,10 +40,6 @@ class AuthController:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
         self.auth_service: AuthService = AuthService(db)
-
-    # =====================================================================
-    # REGISTER
-    # =====================================================================
 
     async def register_user(
         self,
@@ -122,10 +117,6 @@ class AuthController:
                 error_details={"error": str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-    # =====================================================================
-    # LOGIN (TOKEN FAMILY + VERSION)
-    # =====================================================================
 
     async def login_user(
         self,
@@ -241,7 +232,7 @@ class AuthController:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        except Exception as e:  # noqa: F841
+        except Exception as e:  
             logger.error("[LOGIN] Lỗi không mong muốn", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
@@ -249,10 +240,6 @@ class AuthController:
                 error_details={"error": str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-    # =====================================================================
-    # PASSWORD RESET
-    # =====================================================================
 
     async def request_password_reset(
         self,
@@ -340,7 +327,7 @@ class AuthController:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        except Exception as e:  # noqa: F841
+        except Exception as e: 
             logger.error(
                 "[RESET_PASSWORD] Lỗi không mong muốn",
                 exc_info=True,
@@ -351,10 +338,6 @@ class AuthController:
                 error_details={"error": str(e)},
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-    # =====================================================================
-    # REFRESH TOKEN (ROTATION + REUSE DETECTION)
-    # =====================================================================
 
     async def refresh_token(
         self,
@@ -516,10 +499,6 @@ class AuthController:
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
 
-    # =====================================================================
-    # LOGOUT (REVOKE TOKEN FAMILY)
-    # =====================================================================
-
     async def logout_user(self, token: str) -> SuccessResponse[dict]:
         """
         Đăng xuất 1 phiên:
@@ -559,7 +538,7 @@ class AuthController:
                 },
             )
 
-        except Exception as e:  # noqa: Fашь
+        except Exception as e: 
             logger.warning(
                 "[LOGOUT] Lỗi trong quá trình đăng xuất, trả về thành công chung",
                 exc_info=True,
@@ -571,10 +550,6 @@ class AuthController:
                     "message": Message.SESSION_TERMINATED_MSG,
                 },
             )
-
-    # =====================================================================
-    # LOGOUT ALL DEVICES (TOKEN VERSION++)
-    # =====================================================================
 
     async def logout_all_devices(
         self,
@@ -624,10 +599,6 @@ class AuthController:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    # =====================================================================
-    # HEALTH CHECK
-    # =====================================================================
-
     async def health_check(self) -> SuccessResponse[dict]:
         """Health check cho auth service."""
         logger.debug("[HEALTH] Đang kiểm tra dịch vụ auth...")
@@ -645,10 +616,6 @@ class AuthController:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
-
-    # =====================================================================
-    # CHANGE PASSWORD (AUTO LOGOUT ALL DEVICES)
-    # =====================================================================
 
     async def change_password(
         self,

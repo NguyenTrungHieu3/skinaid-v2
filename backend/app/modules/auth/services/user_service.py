@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.modules.auth.models.user import User
-from app.modules.auth.models.user_profile import UserProfile
+from app.modules.profile.models.user_profile import UserProfile
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_NOT_FOUND, USER_INVALID_DATA
 
