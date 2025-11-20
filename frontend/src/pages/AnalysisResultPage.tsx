@@ -358,7 +358,7 @@ const AnalysisResultPage = () => {
           {/* 1. Cột ảnh (nhỏ hơn) */}
           <div className={styles.imageColumn}>
             <AnalyzedImage
-              imageSrc={analysisData.image_url}
+              imageSrc={`http://localhost:8000${analysisData.image_url}`}
               boundingBox={currentWoundData.bounding_box}
               label={`${currentWoundData.wound_type} ${currentWoundData.confidence_score}`}
             />

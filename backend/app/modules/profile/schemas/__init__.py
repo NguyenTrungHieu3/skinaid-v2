@@ -1,5 +1,13 @@
-from app.modules.auth.schemas.user_profile import(
-    UserProfileBase, UserProfileResponse, UserProfileUpdate
+from app.modules.profile.schemas.user_profile_schemas import (
+    UserProfileBase,
+    UserProfileUpdate,
+    UserProfileResponse,
+    ProfileStatisticsResponse
 )
 
-__all__ = ["UserProfileBase", "UserProfileResponse", "UserProfileUpdate"]
+__all__ = [
+    "UserProfileBase", 
+    "UserProfileUpdate", 
+    "UserProfileResponse",
+    "ProfileStatisticsResponse"
+]

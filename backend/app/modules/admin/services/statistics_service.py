@@ -7,34 +7,33 @@ import logging
 from app.modules.auth.models.user import User
 from app.modules.ai.models.wound_analysis import WoundAnalysis
 from app.modules.ai.models.wound_detection import WoundDetection
-from app.modules.upload.models.upload_logs import UploadLog
 from app.modules.guest.models.guest_session import GuestSession
 
 logger = logging.getLogger(__name__)
 
 
 class StatisticsService:
-    """Service for gathering dashboard statistics"""
+    """Service thu thập thống kê dashboard"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_dashboard_overview(self) -> Dict[str, Any]:
         """
-        Get overview statistics for admin dashboard
-        Returns data for all 4 main cards
+        Lấy thống kê tổng quan cho admin dashboard
+        Trả về dữ liệu cho tất cả 4 thẻ chính
         """
         try:
-            # Get user statistics
+            # Lấy thống kê người dùng
             user_stats = await self._get_user_statistics()
             
-            # Get image/upload statistics
+            # Lấy thống kê hình ảnh/upload
             image_stats = await self._get_image_statistics()
             
-            # Get active users statistics
+            # Lấy thống kê người dùng hoạt động
             active_users_stats = await self._get_active_users_statistics()
             
-            # Get session statistics
+            # Lấy thống kê phiên
             session_stats = await self._get_session_statistics()
 
             return {
@@ -45,30 +44,30 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get dashboard overview: {e}")
+            logger.error(f"Không thể lấy thống kê dashboard: {e}")
             return self._get_default_overview()
 
     async def _get_user_statistics(self) -> Dict[str, Any]:
-        """Get user-related statistics"""
+        """Lấy thống kê liên quan đến người dùng"""
         try:
-            # Total users
+            # Tổng số người dùng
             total_users_query = text("SELECT COUNT(*) as total FROM users WHERE is_active = true")
             total_result = await self.db.execute(total_users_query)
             total_users = total_result.scalar() or 0
 
-            # New users this month (users created in last 30 days)
+            # Người dùng mới trong tháng này (users được tạo trong 30 ngày qua)
             last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
             new_users_query = text("SELECT COUNT(*) as total FROM users WHERE created_at >= :last_30_days AND is_active = true")
             new_users_result = await self.db.execute(new_users_query, {"last_30_days": last_30_days})
             new_users_this_month = new_users_result.scalar() or 0
 
-            # Users from previous 30 days (for growth calculation)
+            # Người dùng từ 30 ngày trước (để tính tăng trưởng)
             prev_30_days_start = last_30_days - timedelta(days=30)
             prev_users_query = text("""
-                SELECT COUNT(*) as total 
-                FROM users 
-                WHERE created_at >= :prev_start 
-                AND created_at < :last_30_days 
+                SELECT COUNT(*) as total
+                FROM users
+                WHERE created_at >= :prev_start
+                AND created_at < :last_30_days
                 AND is_active = true
             """)
             prev_result = await self.db.execute(prev_users_query, {
@@ -77,7 +76,7 @@ class StatisticsService:
             })
             prev_new_users = prev_result.scalar() or 0
 
-            # Calculate growth rate: ((current - previous) / previous) * 100
+            # Tính tốc độ tăng trưởng: ((hiện tại - trước đó) / trước đó) * 100
             if prev_new_users > 0:
                 growth_rate = ((new_users_this_month - prev_new_users) / prev_new_users) * 100
             else:
@@ -90,7 +89,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get user statistics: {e}")
+            logger.error(f"Không thể lấy thống kê người dùng: {e}")
             return {
                 "total_users": 0,
                 "new_users_this_month": 0,
@@ -98,34 +97,34 @@ class StatisticsService:
             }
 
     async def _get_image_statistics(self) -> Dict[str, Any]:
-        """Get image/upload statistics"""
+        """Lấy thống kê hình ảnh/upload"""
         try:
-            # Total uploads
+            # Tổng số uploads
             total_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs")
             total_result = await self.db.execute(total_uploads_query)
             total_images = total_result.scalar() or 0
 
-            # Analyzed images (successful analyses)
+            # Hình ảnh đã phân tích (phân tích thành công)
             analyzed_query = text("""
-                SELECT COUNT(*) as total 
-                FROM wound_analyses 
+                SELECT COUNT(*) as total
+                FROM wound_analyses
                 WHERE is_deleted = false
             """)
             analyzed_result = await self.db.execute(analyzed_query)
             analyzed_images = analyzed_result.scalar() or 0
 
-            # Uploads in last 30 days
+            # Uploads trong 30 ngày qua
             last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
             new_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs WHERE created_at >= :last_30_days")
             new_uploads_result = await self.db.execute(new_uploads_query, {"last_30_days": last_30_days})
             new_uploads_last_month = new_uploads_result.scalar() or 0
 
-            # Uploads from previous 30 days (for growth calculation)
+            # Uploads từ 30 ngày trước (để tính tăng trưởng)
             prev_30_days_start = last_30_days - timedelta(days=30)
             prev_uploads_query = text("""
-                SELECT COUNT(*) as total 
-                FROM upload_logs 
-                WHERE created_at >= :prev_start 
+                SELECT COUNT(*) as total
+                FROM upload_logs
+                WHERE created_at >= :prev_start
                 AND created_at < :last_30_days
             """)
             prev_result = await self.db.execute(prev_uploads_query, {
@@ -134,7 +133,7 @@ class StatisticsService:
             })
             prev_uploads = prev_result.scalar() or 0
 
-            # Calculate growth rate: ((current - previous) / previous) * 100
+            # Tính tốc độ tăng trưởng: ((hiện tại - trước đó) / trước đó) * 100
             if prev_uploads > 0:
                 image_growth_rate = ((new_uploads_last_month - prev_uploads) / prev_uploads) * 100
             else:
@@ -147,7 +146,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get image statistics: {e}")
+            logger.error(f"Không thể lấy thống kê hình ảnh: {e}")
             return {
                 "total_images": 0,
                 "analyzed_images": 0,

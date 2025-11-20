@@ -72,24 +72,24 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close() 
 
 async def init_db():
+    
     from app.modules.auth.models.user import User
-    from app.modules.auth.models.user_profile import UserProfile
-    from app.modules.auth.models.roles import Role
-    from app.modules.auth.models.permissions import Permission
-    from app.modules.auth.models.user_roles import UserRole
-    from app.modules.auth.models.role_permissions import RolePermission
     from app.modules.auth.models.verification_token import VerificationToken
+    from app.modules.auth.models.permissions import Permission
+    from app.modules.auth.models.role_permissions import RolePermission
+    from app.modules.auth.models.roles import Role
+    from app.modules.auth.models.user_roles import UserRole
     from app.modules.auth.models.token_blacklist import TokenBlacklist
     from app.modules.auth.models.token_family import TokenFamily
     
+    from app.modules.profile.models.user_profile import UserProfile
+    
     from app.modules.guest.models.guest_session import GuestSession
-    from app.modules.guest.models.guest_upload import GuestUpload
-    from app.modules.guest.models.guest_analysis import GuestAnalysis
     
     from app.modules.audit.models.audit_log import AuditLog
     
-    from app.modules.upload.models.upload_logs import UploadLog
     from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
+    
     from app.modules.ai.models.wound_analysis import WoundAnalysis
     from app.modules.ai.models.wound_detection import WoundDetection
     

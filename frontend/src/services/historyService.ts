@@ -79,7 +79,7 @@ export function transformApiHistoryToTimeline(
     )}`,
     date: event.created_at,
     status: `${event.total_detections} detection(s)`,
-    imageUrl: event.image_url,
+    imageUrl: `http://localhost:8000${event.image_url}`,
   }));
 }
 
@@ -96,7 +96,7 @@ export function transformApiDetailToCombinedEvent(
       const snapshot = wound.firstaid_snapshot || {};
 
       // Tách chuỗi firstAid (nếu có)
-      const firstAidString = (snapshot.first_aid_steps || [])
+      const firstAidString = (snapshot.steps || [])
         .map((step: string, index: number) => `${index + 1}. ${step}`)
         .join(" ");
 
@@ -105,7 +105,7 @@ export function transformApiDetailToCombinedEvent(
         accuracy: wound.confidence_score * 100, // Chuyển 0.95 -> 95
         severity: wound.severity, // Lấy trực tiếp từ 'significant_wounds'
         description: snapshot.description || "Không có mô tả.",
-        healingTime: snapshot.healing_time || "Chưa có dữ liệu",
+        healingTime: snapshot.estimated_healing_time || "Chưa có dữ liệu",
         firstAid: firstAidString || "Không có gợi ý sơ cứu.",
       };
     }
@@ -118,7 +118,7 @@ export function transformApiDetailToCombinedEvent(
     )}`,
     date: apiEvent.created_at,
     status: `${apiEvent.total_detections} detection(s)`,
-    imageUrl: apiEvent.image_url,
+    imageUrl: `http://localhost:8000${apiEvent.image_url}`,
     detail: details,
   };
 }
