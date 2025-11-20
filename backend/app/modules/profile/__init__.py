@@ -1,4 +1,4 @@
-# Profile Module - User Profile Management
+# Profile Module - Quản lý hồ sơ người dùng
 
 from .models.user_profile import UserProfile
 from .services.profile_service import ProfileService

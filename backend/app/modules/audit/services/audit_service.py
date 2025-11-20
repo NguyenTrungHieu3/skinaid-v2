@@ -336,7 +336,7 @@ class AuditService:
         if file_path:
             upload_details["file_path"] = file_path
         
-        # Merge with additional details if provided
+        # Gộp với chi tiết bổ sung nếu được cung cấp
         if details:
             upload_details.update(details)
 

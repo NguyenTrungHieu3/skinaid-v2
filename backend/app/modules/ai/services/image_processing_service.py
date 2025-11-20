@@ -22,7 +22,7 @@ from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
-from app.utils.exceptions.base_exceptions import AppBaseException
+from app.modules.audit.services.audit_service import AuditService
 
 import logging
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ class ImageProcessingService:
             db: AsyncSession để thao tác với database
         """
         self.db = db
+        self.audit_service = AuditService(db)
         self.validator = FileValidator()
         self.file_service = FileService()
         self.ai_service = WoundAIService()
@@ -68,7 +69,7 @@ class ImageProcessingService:
                     status_code=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Tạo subfolder theo user_id hoặc session_id để organize files
+            # Tạo subfolder theo user_id hoặc session_id để sắp xếp files
             subfolder = f"user/{user_id}" if user_id else f"guest/{session_id}"
             
             save_result = await self.file_service.save_file(
@@ -112,14 +113,14 @@ class ImageProcessingService:
             await self.db.flush() 
             
             for idx, detection in enumerate(ai_result.get('detections', [])):
-                # Lấy first aid guide cho detection này
+                # Lấy hướng dẫn sơ cứu cho detection này
                 guide = await self.first_aid_service.get_first_aid_guide(
                     wound_type=detection['wound_type'],
                     severity=detection['severity'],
                     sub_type=detection.get('sub_type')
                 )
                 
-                # Extract guide ID và snapshot để lưu vào detection
+                # Trích xuất guide ID và snapshot để lưu vào detection
                 guide_id = guide.get('firstaidguide_id') if guide else None
                 snapshot = self.analysis_service.extract_snapshot(guide)
                 
@@ -140,6 +141,21 @@ class ImageProcessingService:
             await self.db.commit()
             await self.db.refresh(analysis, ['wound_detections'])
             
+            await self.audit_service.log_event(
+                action="wound_analysis_completed",
+                user_id=user_id,
+                resource_type="wound_analysis",
+                resource_id=str(analysis.analysis_id),
+                is_guest=(session_id is not None),
+                guest_session_id=session_id,
+                success=True,
+                details={
+                    "total_detections": analysis.total_detections,
+                    "processing_time_ms": analysis.processing_time_ms,
+                    "file_name": file.filename
+                }
+            )
+            
             response_data = self.response_mapper.map_wound_analysis_basic(analysis)
             
             logger.debug(
@@ -153,16 +169,18 @@ class ImageProcessingService:
                 status_code=status.HTTP_201_CREATED
             )
             
-        except AppBaseException as e:
-            logger.error(
-                f"[PROCESS_SINGLE] AppBaseException for '{file.filename}': {e.message}"
-            )
-            return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.AI_ANALYSIS_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST
-            )
         except Exception as e:
+            await self.audit_service.log_event(
+                action="wound_analysis_failed",
+                user_id=user_id,
+                resource_type="wound_analysis",
+                is_guest=(session_id is not None),
+                guest_session_id=session_id,
+                success=False,
+                error_message=str(e),
+                details={"file_name": file.filename}
+            )
+            
             logger.error(
                 f"[PROCESS_SINGLE] Unexpected error for '{file.filename}'",
                 exc_info=True

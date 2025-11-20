@@ -19,7 +19,6 @@ from app.modules.auth.schemas.user_schemas import (
 )
 from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.services.auth_service import AuthService
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.core.Security.jwt import jwt_handler
 from app.modules.auth.services.token_family_service import (
     create_token_family,
@@ -31,7 +30,7 @@ from app.modules.auth.models.user import User
 
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
-
+from app.modules.audit.services.audit_service import AuditService
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +38,7 @@ class AuthController:
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+        self.audit_service = AuditService(db)
         self.auth_service: AuthService = AuthService(db)
 
     async def register_user(
@@ -70,6 +70,14 @@ class AuthController:
                 else None,
             )
 
+            await self.audit_service.log_event(
+                action="user_register", 
+                user_id=user.user_id,
+                resource_type="user", 
+                resource_id=str(user.user_id), 
+                success=True
+            )
+
             logger.info("[REGISTER] Thành công: %s", user.user_id)
 
             return SuccessResponse(
@@ -78,39 +86,16 @@ class AuthController:
                 status_code=status.HTTP_201_CREATED,
             )
 
-        except AppBaseException as e:
-            logger.error("[REGISTER] AppBaseException: %s", e.message)
-
-            if e.error_code == ErrorCode.AUTH_EMAIL_EXISTS:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"email": user_data.email},
-                    status_code=status.HTTP_409_CONFLICT,
-                )
-            if e.error_code == ErrorCode.AUTH_PASSWORD_WEAK:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"requirements": Message.PASSWORD_REQUIREMENTS},
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-            if e.error_code == ErrorCode.USER_INVALID_DATA:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"validation_error": str(e)},
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-
-            return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST,
+        except Exception as e:
+            await self.audit_service.log_event(
+                action="user_register",
+                success=False,
+                error_message=str(e),
+                details={"email": user_data.email}
             )
 
-        except Exception as e:  
-            logger.error("[REGISTER] Lỗi không mong muốn", exc_info=True)
+            logger.error("[REGISTER] Lỗi: %s", str(e), exc_info=True)
+
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -134,20 +119,20 @@ class AuthController:
                 credentials.password,
             )
 
-            # Lấy token_version hiện tại
+            # Lấy phiên bản token hiện tại
             token_version = await self.auth_service.get_user_token_version(
                 user.user_id,
             )
             if token_version is None:
                 token_version = 0
 
-            # Tạo token pair
+            # Tạo cặp token
             tokens = jwt_handler.create_token_pair(
                 subject=str(user.user_id),
                 token_version=token_version,
             )
 
-            # Lưu token family
+            # Lưu họ token
             await create_token_family(
                 db=self.db,
                 user_id=str(user.user_id),
@@ -156,7 +141,7 @@ class AuthController:
                 refresh_exp=tokens["refresh_exp"],
             )
 
-            # Get user roles
+            # Lấy vai trò người dùng
             user_roles = []
             if hasattr(user, "user_roles") and user.user_roles:
                 user_roles = [
@@ -192,48 +177,31 @@ class AuthController:
             )
 
             logger.info("[LOGIN] Thành công: %s", user.user_id)
+            
+            await self.audit_service.log_event(
+                action="login",
+                user_id=user.user_id,
+                resource_type="user",
+                resource_id=str(user.user_id),
+                success=True
+            )
 
             return SuccessResponse(
                 message=Message.USER_LOGIN_SUCCESS_MSG,
                 data=token_response,
             )
 
-        except AppBaseException as e:
-            logger.error("[LOGIN] AppBaseException: %s", e.message)
+        except Exception as e:
 
-            if e.error_code == ErrorCode.AUTH_INVALID_CREDENTIALS:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"attempted_username": credentials.user_name},
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                )
-            if e.error_code == ErrorCode.AUTH_ACCOUNT_INACTIVE:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"username": credentials.user_name},
-                    status_code=status.HTTP_403_FORBIDDEN,
-                )
-            if e.error_code == ErrorCode.AUTH_VERIFICATION_REQUIRED:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={
-                        "username": credentials.user_name,
-                        "verification_required": True,
-                    },
-                    status_code=status.HTTP_403_FORBIDDEN,
-                )
-
-            return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST,
+            await self.audit_service.log_event(
+                action="login",
+                success=False,
+                error_message=str(e),
+                details={"user_name": credentials.user_name}
             )
 
-        except Exception as e:  
-            logger.error("[LOGIN] Lỗi không mong muốn", exc_info=True)
+            logger.error("[LOGIN] Lỗi: %s", str(e), exc_info=True)
+
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -319,14 +287,6 @@ class AuthController:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        except AppBaseException as e:
-            logger.error("[RESET_PASSWORD] AppBaseException: %s", e.message)
-            return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.PASSWORD_RESET_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
         except Exception as e: 
             logger.error(
                 "[RESET_PASSWORD] Lỗi không mong muốn",
@@ -356,7 +316,7 @@ class AuthController:
         try:
             logger.info("[REFRESH_TOKEN] Làm mới token")
 
-            # 1. Decode refresh token
+            # 1. Giải mã refresh token
             payload = jwt_handler.decode_token(
                 refresh_request.refresh_token,
                 verify_exp=True,
@@ -366,7 +326,7 @@ class AuthController:
             token_version = payload.get("ver", 0)
             old_refresh_jti = payload.get("jti")
 
-            # 2. Validate type + claims
+            # 2. Kiểm tra loại và claims
             if token_type != "refresh":
                 logger.warning("[REFRESH_TOKEN] Loại token không hợp lệ")
                 return ErrorResponse(
@@ -385,7 +345,7 @@ class AuthController:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # 3. Reuse detection
+            # 3. Phát hiện tái sử dụng
             is_revoked = await check_token_family_revoked(self.db, old_refresh_jti)
             if is_revoked:
                 logger.error(
@@ -400,7 +360,7 @@ class AuthController:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # 4. Check token_version vs DB
+            # 4. Kiểm tra phiên bản token với DB
             current_version = await self.auth_service.get_user_token_version(
                 uuid.UUID(user_id),
             )
@@ -423,7 +383,7 @@ class AuthController:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # 5. Revoke old family + tạo mới
+            # 5. Thu hồi họ cũ và tạo mới
             await revoke_token_family(self.db, old_refresh_jti)
 
             user = await self.auth_service.get_user_by_id(uuid.UUID(user_id))
@@ -511,6 +471,7 @@ class AuthController:
 
             payload = jwt_handler.decode_token(token, verify_exp=False)
             jti = payload.get("jti")
+            user_id_str = payload.get("sub")
 
             if not jti:
                 logger.warning("[LOGOUT] Token thiếu JTI")
@@ -523,6 +484,15 @@ class AuthController:
                 )
 
             revoked_count = await revoke_token_family(self.db, jti)
+
+            if user_id_str: 
+                await self.audit_service.log_event(
+                    action="logout", 
+                    user_id=uuid.UUID(user_id_str), 
+                    resource_type="user", 
+                    resource_id=user_id_str,
+                    success=True
+                )
 
             logger.info(
                 "[LOGOUT] Đã thu hồi %s tokens trong family",
@@ -581,6 +551,14 @@ class AuthController:
                 current_user.user_id,
             )
 
+            await self.audit_service.log_event(
+                action="logout_all_devices", 
+                user_id=current_user.user_id, 
+                resource_type="user", 
+                resource_id=str(current_user.user_id), 
+                success=True
+            )
+
             return SuccessResponse(
                 message=Message.LOGOUT_ALL_DEVICES_SUCCESS_MSG,
                 data={
@@ -591,7 +569,7 @@ class AuthController:
                 },
             )
 
-        except Exception as e:  # noqa: F841
+        except Exception as e:  
             logger.error("[LOGOUT_ALL] Lỗi", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
@@ -636,6 +614,16 @@ class AuthController:
             )
 
             if not success:
+                
+                await self.audit_service.log_event(
+                    action="password_change", 
+                    user_id=current_user.user_id, 
+                    resource_type="user",
+                    resource_id=str(current_user.user_id),
+                    success=False, 
+                    error_message="thay đổi password thất bại"
+                )
+
                 logger.warning(
                     "[CHANGE_PASSWORD] Thất bại: %s",
                     current_user.user_id,
@@ -648,6 +636,14 @@ class AuthController:
 
             revoke_result = await self.auth_service.revoke_all_user_tokens(
                 current_user.user_id,
+            )
+
+            await self.audit_service.log_event(
+                action="password_change",
+                user_id=current_user.user_id,
+                resource_type="user",
+                resource_id=str(current_user.user_id),
+                success=True
             )
 
             logger.info(
@@ -663,30 +659,6 @@ class AuthController:
                     message=Message.PASSWORD_CHANGED_LOGIN_AGAIN_MSG,
                     success=True,
                 ),
-            )
-
-        except AppBaseException as e:
-            logger.error("[CHANGE_PASSWORD] AppBaseException: %s", e.message)
-
-            if e.error_code == ErrorCode.AUTH_PASSWORD_WEAK:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"requirements": Message.PASSWORD_REQUIREMENTS},
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-            if e.error_code == ErrorCode.AUTH_INVALID_CREDENTIALS:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"field": "old_password"},
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                )
-
-            return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.PASSWORD_CHANGE_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         except Exception as e:  

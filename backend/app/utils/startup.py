@@ -10,14 +10,14 @@ def run_startup_checks():
 def check_email_config():
     """Check email service configuration"""
     try:
-        # Check if using mock email
+        # Kiểm tra nếu đang sử dụng email giả
         use_mock = os.getenv("TESTING") == "true" or os.getenv("USE_MOCK_EMAIL") == "true"
         
         if use_mock:
             print(" Using MOCK email service (testing mode)")
             return
         
-        # Check real email service
+        # Kiểm tra dịch vụ email thật
         from app.utils.email_service import email_service
         
         print(f"   SMTP Server: {email_service.smtp_server}")
@@ -25,7 +25,7 @@ def check_email_config():
         print(f"   Sender: {email_service.sender_email}")
         print(f"   Password: {'Configured' if email_service.sender_password else 'Not configured'}")
         
-        # Optional: Test SMTP connection
+        # Tùy chọn: Kiểm tra kết nối SMTP
         test_smtp_connection(email_service)
             
     except ImportError:

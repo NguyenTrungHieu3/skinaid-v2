@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 from app.modules.auth.models.user import User
 from app.modules.profile.models.user_profile import UserProfile
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_NOT_FOUND, USER_INVALID_DATA
 
 logger = logging.getLogger(__name__)
@@ -203,7 +202,7 @@ class UserService:
             row = result.mappings().first()
 
             if not row:
-                raise AppBaseException(
+                raise Exception(
                     message="Không thể tạo user (không có hàng trả về)",
                     error_code=USER_INVALID_DATA,
                 )
@@ -211,13 +210,13 @@ class UserService:
             await self.db.commit()
             return User.model_validate(dict(row))
 
-        except AppBaseException:
+        except Exception:
             await self.db.rollback()
             raise
         except Exception as e:
             logger.error(f"Không thể tạo user: {e}", exc_info=True)
             await self.db.rollback()
-            raise AppBaseException(
+            raise Exception(
                 message="Không thể tạo user",
                 error_code=USER_INVALID_DATA,
             )

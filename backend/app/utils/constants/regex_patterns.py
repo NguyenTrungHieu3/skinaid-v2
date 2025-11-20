@@ -1,4 +1,4 @@
-# Regex patterns for validation
+# Các mẫu Regex để xác thực
 
 EMAIL_PATTERN = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 

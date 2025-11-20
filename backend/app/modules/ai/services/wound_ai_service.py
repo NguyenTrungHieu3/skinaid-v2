@@ -133,12 +133,12 @@ class WoundAIService:
             
             logger.info(f"[AI] Calling: {endpoint}")
 
-            # Prepare headers with API key if available
+            # Chuẩn bị headers với API key nếu có
             headers = {}
             if self.ai_api_key:
                 headers["X-API-Key"] = self.ai_api_key
 
-            # Use shared HTTP client for the request
+            # Sử dụng HTTP client chung cho request
             response = await HTTPClient.post_with_retry(
                 url=endpoint,
                 files={"file": ("image.jpg", image_data, "image/jpeg")},
@@ -159,7 +159,7 @@ class WoundAIService:
                     severity = det.get('severity', 'unknown')
                     confidence = det.get('confidence_score', 0)
                     
-                    # Validate class
+                    # Xác thực lớp
                     is_valid = self.validate_ai_class(wound_type, severity)
                     validation_status = "VALID" if is_valid else "⚠️ INVALID"
                     
@@ -375,12 +375,12 @@ class WoundAIService:
     async def check_model_health(self) -> Dict[str, Any]:
         """Simple health check for AI service."""
         try:
-            # Prepare headers with API key if available
+            # Chuẩn bị headers với API key nếu có
             headers = {}
             if self.ai_api_key:
                 headers["X-API-Key"] = self.ai_api_key
             
-            # Use shared HTTP client for health check
+            # Sử dụng HTTP client chung cho kiểm tra sức khỏe
             response = await HTTPClient.get_with_retry(
                 f"{self.ai_service_url}/health",
                 headers=headers,

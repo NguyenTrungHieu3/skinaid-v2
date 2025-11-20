@@ -14,6 +14,7 @@ from app.modules.admin.schemas.user_management_schemas import (
     UserStatsResponse
 )
 from app.shared.schemas.response import SuccessResponse
+from app.modules.audit.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,8 @@ class UserManagementController:
     """Controller cho các thao tác quản lý user"""
     
     def __init__(self, db: AsyncSession):
+        self.db = db
+        self.audit_service = AuditService(db)
         self.service = UserManagementService(db)
     
     async def get_users(
@@ -106,6 +109,17 @@ class UserManagementController:
         try:
             user_detail = await self.service.create_user(user_data)
             
+            await self.audit_service.log_event(
+                action="admin_user_create",
+                resource_type="user",
+                resource_id=str(user_detail["user_id"]),
+                success=True,
+                details={
+                    "email": user_data.email,
+                    "user_name": user_data.user_name
+                }
+            )
+            
             response_data = UserDetailResponse(user=user_detail)
             
             return SuccessResponse(
@@ -149,6 +163,13 @@ class UserManagementController:
                     detail=f"Không tìm thấy user với ID {user_id}"
                 )
             
+            await self.audit_service.log_event(
+                action="admin_user_update",
+                resource_type="user",
+                resource_id=user_id,
+                success=True
+            )
+            
             response_data = UserDetailResponse(user=user_detail)
             
             return SuccessResponse(
@@ -189,6 +210,13 @@ class UserManagementController:
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Không tìm thấy user với ID {user_id}"
                 )
+            
+            await self.audit_service.log_event(
+                action="admin_user_delete",
+                resource_type="user",
+                resource_id=user_id,
+                success=True
+            )
             
             return SuccessResponse(
                 message="Đã xóa thành công user",

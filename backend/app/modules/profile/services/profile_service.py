@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 
 from app.modules.profile.models.user_profile import UserProfile
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_INVALID_DATA, USER_NOT_FOUND
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class ProfileService:
         try:
             existing_profile = await self.get_profile_by_user_id(user_id)
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
-            # Build update data
+            # Xây dựng dữ liệu cập nhật
             update_fields = {}
             if profile_data.full_name is not None:
                 update_fields["full_name"] = profile_data.full_name
@@ -83,7 +82,7 @@ class ProfileService:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise AppBaseException(
+                    raise Exception(
                         message="Không tìm thấy profile",
                         error_code=USER_NOT_FOUND
                     )
@@ -91,7 +90,7 @@ class ProfileService:
                 set_clauses = []
                 params = {"user_id": user_id, "updated_at": current_time}
                 
-                # Map each field explicitly
+                # Ánh xạ từng trường một cách rõ ràng
                 if "full_name" in update_fields:
                     set_clauses.append("full_name = :full_name")
                     params["full_name"] = update_fields["full_name"]
@@ -122,7 +121,7 @@ class ProfileService:
                 result = await self.db.execute(sql, params)
                 await self.db.commit()
             else:
-                # Create new profile
+                # Tạo profile mới
                 insert_data = {
                     "user_id": user_id,
                     "created_at": current_time,
@@ -155,16 +154,16 @@ class ProfileService:
                 await self.db.commit()
             row = result.mappings().first()
             if row is None:
-                raise AppBaseException(
+                raise Exception(
                     message="Không thể cập nhật profile",
                     error_code=USER_INVALID_DATA
                 )
             return UserProfile.model_validate(dict(row))
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
-            raise AppBaseException(
+            raise Exception(
                 message="Không thể cập nhật profile do lỗi nội bộ",
                 error_code=USER_INVALID_DATA
             )

@@ -3,7 +3,7 @@ class WoundConstants:
     SEVERITIES = ["mild", "moderate"]
     BURN_SUBTYPES = ["blister", "skintear"]
     
-    # Validation
+    # Xác thực
     VALID_AI_CLASSES = [
         "abrasion_mild",
         "abrasion_moderate",

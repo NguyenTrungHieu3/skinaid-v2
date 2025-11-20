@@ -49,10 +49,10 @@ class UserManagementService:
         Returns:
             Tuple of (list of users, pagination info)
         """
-        # Build base query
+        # Xây dựng truy vấn cơ bản
         query = select(User).where(User.is_deleted == False)
         
-        # Apply search filter
+        # Áp dụng bộ lọc tìm kiếm
         if search:
             search_pattern = f"%{search}%"
             query = query.where(
@@ -62,47 +62,47 @@ class UserManagementService:
                 )
             )
         
-        # Apply status filter
+        # Áp dụng bộ lọc trạng thái
         if status:
             is_active = status.lower() == 'active'
             query = query.where(User.is_active == is_active)
         
-        # Apply role filter if specified
+        # Áp dụng bộ lọc vai trò nếu được chỉ định
         if role:
-            # Join with user_roles and roles
+            # Kết nối với user_roles và roles
             query = query.join(UserRole, User.user_id == UserRole.user_id)
             query = query.join(Role, UserRole.role_id == Role.role_id)
             query = query.where(Role.role_name == role.lower())
         
-        # Get total count
+        # Lấy tổng số
         count_query = select(func.count()).select_from(query.subquery())
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
         
-        # Calculate pagination
+        # Tính toán phân trang
         total_pages = (total + limit - 1) // limit if total > 0 else 1
         offset = (page - 1) * limit
         
-        # Apply pagination and ordering
+        # Áp dụng phân trang và sắp xếp
         query = query.offset(offset).limit(limit).order_by(User.created_at.desc())
         
-        # Load user profiles eagerly
+        # Tải profile người dùng sắn
         query = query.options(selectinload(User.profile))
         
-        # Execute query
+        # Thực thi truy vấn
         result = await self.db.execute(query)
         users = result.scalars().all()
         
-        # Build user list with additional info
+        # Xây dựng danh sách người dùng với thông tin bổ sung
         user_list = []
         for user in users:
-            # Get user roles
+            # Lấy vai trò người dùng
             roles = await self._get_user_roles(user.user_id)
             
-            # Get upload count
+            # Lấy số lượng upload
             upload_count = await self._get_user_upload_count(user.user_id)
             
-            # Get display_name from profile if available, else use user_name
+            # Lấy display_name từ profile nếu có, nếu không dùng user_name
             display_name = None
             if hasattr(user, 'profile') and user.profile:
                 display_name = user.profile.full_name
@@ -121,7 +121,7 @@ class UserManagementService:
             )
             user_list.append(user_info)
         
-        # Build pagination info
+        # Xây dựng thông tin phân trang
         pagination = PaginationInfo(
             total=total,
             page=page,
@@ -149,13 +149,13 @@ class UserManagementService:
         if not user:
             return None
         
-        # Get user roles
+        # Lấy vai trò người dùng
         roles = await self._get_user_roles(user.user_id)
         
-        # Get upload count
+        # Lấy số lượng upload
         upload_count = await self._get_user_upload_count(user.user_id)
         
-        # Get display_name from profile if available, else use user_name
+        # Lấy display_name từ profile nếu có, nếu không dùng user_name
         display_name = None
         if hasattr(user, 'profile') and user.profile:
             display_name = user.profile.full_name
@@ -190,34 +190,34 @@ class UserManagementService:
         Raises:
             ValueError: If email already exists or role not found or other validation errors
         """
-        # Check if email already exists
+        # Kiểm tra email đã tồn tại chưa
         existing_user = await self._get_user_by_email(user_data.email)
         if existing_user:
             raise ValueError("Email already registered")
         
-        # Validate display name
+        # Xác thực tên hiển thị
         if not user_data.display_name or len(user_data.display_name.strip()) < 2:
             raise ValueError("Display name must be at least 2 characters")
         
         if len(user_data.display_name) > 100:
             raise ValueError("Display name must not exceed 100 characters")
         
-        # Validate password
+        # Xác thực mật khẩu
         if len(user_data.password) < 6:
             raise ValueError("Password must be at least 6 characters")
         
-        # Generate username from email (before @)
+        # Tạo username từ email (phần trước @)
         user_name = user_data.email.split('@')[0]
-        # Check if username exists, if so append random suffix
+        # Kiểm tra username đã tồn tại, nếu có thì thêm hậu tố ngẫu nhiên
         existing_username = await self._get_user_by_username(user_name)
         if existing_username:
             user_name = f"{user_name}_{uuid.uuid4().hex[:6]}"
         
         try:
-            # Hash password
+            # Mã hóa mật khẩu
             hashed_password = hash_password(user_data.password)
             
-            # Create user
+            # Tạo người dùng
             new_user_id = uuid.uuid4()
             new_user = User(
                 user_id=new_user_id,
@@ -231,7 +231,7 @@ class UserManagementService:
             self.db.add(new_user)
             await self.db.flush()  # Flush to get user_id for profile and role assignment
             
-            # Create user profile with display_name
+            # Tạo profile người dùng với display_name
             new_profile = UserProfile(
                 user_id=new_user_id,
                 full_name=user_data.display_name.strip()
@@ -239,25 +239,25 @@ class UserManagementService:
             self.db.add(new_profile)
             await self.db.flush()
             
-            # Assign role (this may raise ValueError if role not found)
+            # Gán vai trò (có thể gây ra ValueError nếu không tìm thấy vai trò)
             await self._assign_role_to_user(new_user.user_id, user_data.role)
             
-            # Commit the transaction (user + profile + role assignment)
+            # Commit giao dịch (user + profile + gán vai trò)
             await self.db.commit()
             await self.db.refresh(new_user)
             
             logger.info(f"User created successfully: {new_user.email} (ID: {new_user.user_id})")
             
-            # Send verification email AFTER commit (non-critical operation)
-            # If email fails, user is still created successfully
+            # Gửi email xác thực SAU khi commit (hoạt động không quan trọng)
+            # Nếu email thất bại, người dùng vẫn được tạo thành công
             try:
                 await self._send_verification_email(new_user)
                 logger.info(f"Verification email sent to {new_user.email}")
             except Exception as email_error:
                 logger.warning(f"Failed to send verification email to {new_user.email}: {email_error}")
-                # Don't raise - email failure should not fail user creation
+                # Không raise - lỗi email không nên làm thất bại việc tạo người dùng
             
-            # Return user detail
+            # Trả về chi tiết người dùng
             user_detail = await self.get_user_detail(new_user.user_id)
             if not user_detail:
                 logger.error(f"Failed to retrieve created user detail: {new_user.user_id}")
@@ -266,11 +266,11 @@ class UserManagementService:
             return user_detail
             
         except ValueError:
-            # Re-raise validation errors
+            # Raise lại lỗi xác thực
             await self.db.rollback()
             raise
         except Exception as e:
-            # Rollback on any error to prevent partial data
+            # Rollback khi có lỗi để ngăn dữ liệu bị thiếu
             await self.db.rollback()
             logger.error(f"Failed to create user {user_data.email}: {e}")
             raise ValueError(f"Failed to create user: {str(e)}")
@@ -302,44 +302,44 @@ class UserManagementService:
             return None
         
         try:
-            # Validate and update display_name (full_name in profile) if provided
+            # Xác thực và cập nhật display_name (full_name trong profile) nếu được cung cấp
             if user_data.display_name is not None:
                 if len(user_data.display_name.strip()) < 2:
                     raise ValueError("Display name must be at least 2 characters")
                 if len(user_data.display_name) > 100:
                     raise ValueError("Display name must not exceed 100 characters")
                 
-                # Update or create profile
+                # Cập nhật hoặc tạo profile
                 if hasattr(user, 'profile') and user.profile:
                     user.profile.full_name = user_data.display_name.strip()
                 else:
-                    # Create profile if doesn't exist
+                    # Tạo profile nếu chưa tồn tại
                     new_profile = UserProfile(
                         user_id=user_id,
                         full_name=user_data.display_name.strip()
                     )
                     self.db.add(new_profile)
             
-            # Validate and update email if provided
+            # Xác thực và cập nhật email nếu được cung cấp
             if user_data.email is not None:
-                # Check if new email is already taken by another user
+                # Kiểm tra email mới đã được người dùng khác sử dụng chưa
                 existing = await self._get_user_by_email(user_data.email)
                 if existing and existing.user_id != user_id:
                     raise ValueError("Email already in use")
                 user.email = user_data.email
             
-            # Update active status if provided
+            # Cập nhật trạng thái hoạt động nếu được cung cấp
             if user_data.is_active is not None:
                 user.is_active = user_data.is_active
             
-            # Update role if specified
+            # Cập nhật vai trò nếu được chỉ định
             if user_data.role is not None:
-                # Remove existing roles
+                # Xóa các vai trò hiện tại
                 await self._remove_all_user_roles(user_id)
-                # Assign new role (may raise ValueError if role not found)
+                # Gán vai trò mới (có thể gây ra ValueError nếu không tìm thấy vai trò)
                 await self._assign_role_to_user(user_id, user_data.role)
             
-            # Commit all changes
+            # Commit tất cả thay đổi
             await self.db.commit()
             await self.db.refresh(user)
             
@@ -348,11 +348,11 @@ class UserManagementService:
             return await self.get_user_detail(user_id)
             
         except ValueError:
-            # Re-raise validation errors after rollback
+            # Raise lại lỗi xác thực sau khi rollback
             await self.db.rollback()
             raise
         except Exception as e:
-            # Rollback on any error
+            # Rollback khi có lỗi
             await self.db.rollback()
             logger.error(f"Failed to update user {user_id}: {e}")
             raise ValueError(f"Failed to update user: {str(e)}")
@@ -375,7 +375,7 @@ class UserManagementService:
             return False
         
         try:
-            # Soft delete
+            # Xóa mềm
             from datetime import datetime, timezone
             user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             user.is_active = False
@@ -431,12 +431,12 @@ class UserManagementService:
         Returns:
             User statistics
         """
-        # Total users
+        # Tổng số người dùng
         total_query = select(func.count(User.user_id)).where(User.is_deleted == False)
         total_result = await self.db.execute(total_query)
         total_users = total_result.scalar() or 0
         
-        # Active users
+        # Người dùng đang hoạt động
         active_query = select(func.count(User.user_id)).where(User.is_active == True, User.is_deleted == False)
         active_result = await self.db.execute(active_query)
         active_users = active_result.scalar() or 0

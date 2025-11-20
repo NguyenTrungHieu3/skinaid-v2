@@ -295,7 +295,7 @@ class FirstAidService:
     ) -> Optional[Dict[str, Any]]:
         """Tạo hướng dẫn sơ cứu mới."""
         try:
-            # Convert lists to JSONB format
+            # Chuyển đổi danh sách sang định dạng JSONB
             steps_jsonb = {"items": guide_data.get("steps", [])}
             warnings_jsonb = {"items": guide_data.get("warnings", [])} if guide_data.get("warnings") else None
             dos_jsonb = {"items": guide_data.get("dos", [])} if guide_data.get("dos") else None
@@ -323,7 +323,7 @@ class FirstAidService:
 
             logger.info(f"Đã tạo hướng dẫn sơ cứu: {guide.firstaidguide_id}")
             
-            # Convert to dict for response
+            # Chuyển đổi sang dict cho response
             return self._model_to_dict(guide)
 
         except Exception as e:
@@ -338,7 +338,7 @@ class FirstAidService:
     ) -> Optional[Dict[str, Any]]:
         """Cập nhật hướng dẫn sơ cứu."""
         try:
-            # Find existing guide
+            # Tìm hướng dẫn hiện tại
             sql = text("""
                 SELECT * FROM firstaid_guides
                 WHERE firstaidguide_id = :guide_id
@@ -351,7 +351,7 @@ class FirstAidService:
                 logger.warning(f"Không tìm thấy hướng dẫn: {guide_id}")
                 return None
 
-            # Prepare update fields
+            # Chuẩn bị các trường cập nhật
             update_fields = []
             params = {"guide_id": guide_id}
             
@@ -395,11 +395,11 @@ class FirstAidService:
                 logger.warning("Không có trường nào để cập nhật")
                 return dict(existing_guide)
             
-            # Add updated_at
+            # Thêm updated_at
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             update_fields.append("version = version + 1")
             
-            # Execute update
+            # Thực thi cập nhật
             update_sql = text(f"""
                 UPDATE firstaid_guides
                 SET {", ".join(update_fields)}

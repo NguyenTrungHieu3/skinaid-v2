@@ -24,7 +24,6 @@ from app.utils.constants.error_codes import (
     USER_INVALID_DATA,
     USER_NOT_FOUND,
 )
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.validators.auth_validators import (
     validate_password_strength,
     validate_email,
@@ -33,7 +32,7 @@ from app.utils.validators.auth_validators import (
 
 logger = logging.getLogger(__name__)
 
-# Email service (mock/real)
+# Dịch vụ Email (mock/thật)
 use_mock_email = (
     os.getenv("TESTING") == "true" or os.getenv("USE_MOCK_EMAIL") == "true"
 )
@@ -62,7 +61,7 @@ class AuthService:
         try:
             email_error = validate_email(email)
             if email_error:
-                raise AppBaseException(
+                raise Exception(
                     message=f"Định dạng email không hợp lệ: {email_error}",
                     error_code=USER_INVALID_DATA,
                 )
@@ -83,7 +82,7 @@ class AuthService:
                 return None
 
             return User.model_validate(dict(row))
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
@@ -166,7 +165,7 @@ class AuthService:
             }
             user = User.model_validate(user_data)
 
-            # Profile
+            # Hồ sơ
             if row["profile_created_at"] is not None:
                 profile_data = {
                     "user_id": row["user_id"],
@@ -181,7 +180,7 @@ class AuthService:
                 }
                 user.profile = UserProfile.model_validate(profile_data)
 
-            # Roles
+            # Vai trò
             roles_sql = text(
                 """
                 SELECT
@@ -244,48 +243,48 @@ class AuthService:
 
     async def create_user(self, user_data: UserCreate) -> User:
         try:
-            # Validate email
+            # Xác thực email
             email_errors = validate_email(user_data.email)
             if email_errors:
-                raise AppBaseException(
+                raise Exception(
                     message=f"Xác thực email thất bại: {email_errors}",
                     error_code=USER_INVALID_DATA,
                 )
 
-            # Check duplicate email
+            # Kiểm tra email trùng lặp
             existing_user_email = await self.get_user_by_email(user_data.email)
             if existing_user_email:
-                raise AppBaseException(
+                raise Exception(
                     message="Email đã được đăng ký",
                     error_code=AUTH_EMAIL_EXISTS,
                 )
 
-            # Validate username
+            # Xác thực tên người dùng
             username_error = validate_username(user_data.user_name, user_data.email)
             if username_error:
-                raise AppBaseException(
+                raise Exception(
                     message=username_error,
                     error_code=USER_INVALID_DATA,
                 )
 
-            # Check duplicate username
+            # Kiểm tra tên người dùng trùng lặp
             existing_user_username = await self.get_user_by_username(
                 user_data.user_name
             )
             if existing_user_username:
-                raise AppBaseException(
+                raise Exception(
                     message="Tên người dùng đã được sử dụng",
                     error_code=USER_INVALID_DATA,
                 )
 
-            # Validate password
+            # Xác thực mật khẩu
             password_errors = validate_password_strength(
                 user_data.password, 
                 username=user_data.user_name, 
                 email=user_data.email
             )
             if password_errors:
-                raise AppBaseException(
+                raise Exception(
                     message=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
@@ -294,7 +293,7 @@ class AuthService:
             current_time = datetime.now(timezone.utc).replace(tzinfo=None)
             hashed_password = hash_password(user_data.password)
 
-            # Insert user: schema mới với token_version và is_deleted
+            # Thêm người dùng: schema mới với token_version và is_deleted
             await self.db.execute(
                 text(
                     """
@@ -338,7 +337,7 @@ class AuthService:
                 },
             )
 
-            # Insert user_profile
+            # Thêm hồ sơ người dùng
             await self.db.execute(
                 text(
                     """
@@ -428,7 +427,7 @@ class AuthService:
             user_mapping = user_result.mappings().first()
             if not user_mapping:
                 logger.error("Không tìm thấy user sau khi tạo: %s", user_id)
-                raise AppBaseException(
+                raise Exception(
                     message="Không thể lấy lại user đã tạo",
                     error_code=USER_INVALID_DATA,
                 )
@@ -440,7 +439,7 @@ class AuthService:
             )
             return user
 
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
@@ -458,7 +457,7 @@ class AuthService:
                     str(rollback_error),
                 )
 
-            raise AppBaseException(
+            raise Exception(
                 message="Không thể tạo user do lỗi nội bộ",
                 error_code=USER_INVALID_DATA,
             )
@@ -471,26 +470,26 @@ class AuthService:
         try:
             user = await self.get_user_by_username(user_name)
             if not user:
-                raise AppBaseException(
+                raise Exception(
                     message="Tên người dùng hoặc mật khẩu không hợp lệ",
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
 
             if not user.is_active:
-                raise AppBaseException(
+                raise Exception(
                     message="Tài khoản đã bị vô hiệu hóa",
                     error_code=AUTH_ACCOUNT_INACTIVE,
                 )
 
             # Nếu hệ thống vẫn muốn đảm bảo account verified:
             if not user.is_verified:
-                raise AppBaseException(
+                raise Exception(
                     message="Yêu cầu xác minh tài khoản",
                     error_code=AUTH_VERIFICATION_REQUIRED,
                 )
 
             if not verify_password(password, user.hashed_password):
-                raise AppBaseException(
+                raise Exception(
                     message="Tên người dùng hoặc mật khẩu không hợp lệ",
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
@@ -514,7 +513,7 @@ class AuthService:
             # Lấy lại user đầy đủ (có profile, roles)
             updated_user = await self.get_user_by_id(user.user_id)
             if updated_user is None:
-                raise AppBaseException(
+                raise Exception(
                     message="Không tìm thấy user sau khi xác thực",
                     error_code=USER_NOT_FOUND,
                 )
@@ -522,14 +521,14 @@ class AuthService:
             logger.info("User đã xác thực thành công: %s", user_name)
             return updated_user
 
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình xác thực: %s",
                 str(e),
             )
-            raise AppBaseException(
+            raise Exception(
                 message="Xác thực thất bại do lỗi nội bộ",
                 error_code=AUTH_INVALID_CREDENTIALS,
             )
@@ -549,7 +548,39 @@ class AuthService:
                 return True
 
             reset_token = email_service.generate_verification_token()
+            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
+            # Vô hiệu hóa tất cả token reset password cũ của email này
+            invalidate_old_tokens_sql = text(
+                """
+                UPDATE verification_tokens
+                SET is_used = true,
+                    updated_at = :updated_at
+                WHERE email = :email
+                  AND token_type = 'password_reset'
+                  AND is_used = false
+                  AND expires_at > :current_time
+                """
+            )
+
+            invalidate_result = await self.db.execute(
+                invalidate_old_tokens_sql,
+                {
+                    "email": email,
+                    "updated_at": current_time,
+                    "current_time": current_time,
+                },
+            )
+            
+            invalidated_count = invalidate_result.rowcount
+            if invalidated_count > 0:
+                logger.info(
+                    "Đã vô hiệu hóa %d token reset password cũ cho email: %s",
+                    invalidated_count,
+                    email,
+                )
+
+            # Tạo token mới
             token_sql = text(
                 """
                 INSERT INTO verification_tokens (
@@ -574,8 +605,6 @@ class AuthService:
                 )
             """
             )
-
-            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
             token_params = {
                 "token_id": str(uuid.uuid4()),
@@ -609,14 +638,14 @@ class AuthService:
 
             return True
 
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình khởi tạo đặt lại mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
+            raise Exception(
                 message="Khởi tạo đặt lại mật khẩu thất bại do lỗi nội bộ",
                 error_code=AUTH_INVALID_CREDENTIALS,
             )
@@ -630,7 +659,7 @@ class AuthService:
         try:
             password_errors = validate_password_strength(new_password, email=email)
             if password_errors:
-                raise AppBaseException(
+                raise Exception(
                     message=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
@@ -653,7 +682,7 @@ class AuthService:
             token_row = result.mappings().first()
 
             if not token_row:
-                raise AppBaseException(
+                raise Exception(
                     message="Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
@@ -661,7 +690,7 @@ class AuthService:
             verification_token = VerificationToken.model_validate(dict(token_row))
 
             if verification_token.is_expired:
-                raise AppBaseException(
+                raise Exception(
                     message="Token đặt lại mật khẩu đã hết hạn",
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
@@ -703,14 +732,14 @@ class AuthService:
             logger.info("Đặt lại mật khẩu thành công cho user: %s", email)
             return True
 
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình đặt lại mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
+            raise Exception(
                 message="Đặt lại mật khẩu thất bại do lỗi nội bộ",
                 error_code=AUTH_INVALID_CREDENTIALS,
             )
@@ -728,7 +757,7 @@ class AuthService:
         try:
             user = await self.get_user_by_id(user_id=user_id)
             if not user:
-                raise AppBaseException(
+                raise Exception(
                     message="Không tìm thấy người dùng",
                     error_code=USER_NOT_FOUND,
                 )
@@ -739,13 +768,13 @@ class AuthService:
                 email=user.email
             )
             if password_errors:
-                raise AppBaseException(
+                raise Exception(
                     message=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
 
             if not verify_password(old_password, user.hashed_password):
-                raise AppBaseException(
+                raise Exception(
                     message="Mật khẩu hiện tại không đúng",
                     error_code=AUTH_INVALID_CREDENTIALS,
                 )
@@ -795,14 +824,14 @@ class AuthService:
             )
             return True
 
-        except AppBaseException:
+        except Exception:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình thay đổi mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
+            raise Exception(
                 message="Thay đổi mật khẩu thất bại do lỗi nội bộ",
                 error_code="PASSWORD_CHANGE_ERROR",
             )
@@ -893,7 +922,7 @@ class AuthService:
                 user_id,
                 str(e),
             )
-            raise AppBaseException(
+            raise Exception(
                 message="Không thể thu hồi tokens",
                 error_code="TOKEN_REVOKE_ERROR",
             )

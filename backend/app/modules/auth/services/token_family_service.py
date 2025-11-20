@@ -83,7 +83,7 @@ class TokenFamilyService:
             )
         """)
         
-        # Normalize timezone
+        # Chuẩn hóa múi giờ
         if refresh_exp.tzinfo is not None:
             refresh_exp = refresh_exp.astimezone(timezone.utc).replace(tzinfo=None)
         
@@ -142,7 +142,7 @@ class TokenFamilyService:
         access_jti = row["access_token_jti"]
         expires_at = row["expires_at"]
         
-        # Revoke tokens
+        # Thu hồi các token
         jtis_to_revoke = [refresh_jti]
         if access_jti:
             jtis_to_revoke.append(access_jti)
@@ -176,7 +176,7 @@ class TokenFamilyService:
                 "token_type": token_type
             })
         
-        # Update family
+        # Cập nhật họ token
         update_query = text("""
             UPDATE token_families
             SET is_revoked = true

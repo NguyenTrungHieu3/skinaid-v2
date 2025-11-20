@@ -24,7 +24,7 @@ class EmailService:
     def generate_verification_token(self) -> str:
         return secrets.token_urlsafe(32)
     
-    # Removed verification email content creation as email verification is no longer required
+    # Đã xóa nội dung tạo email xác thực vì không còn yêu cầu xác thực email
     
     def create_password_reset_email_content(self, email: str, token: str) -> tuple[str, str, str]:
         encoded_token = quote(token)
@@ -91,9 +91,9 @@ class EmailService:
         
         return subject, html_body, text_body
     
-    # Removed verification email methods as email verification is no longer required
+    # Đã xóa các phương thức email xác thực vì không còn yêu cầu xác thực email
 
-    # Removed async verification email method as email verification is no longer required
+    # Đã xóa phương thức email xác thực async vì không còn yêu cầu xác thực email
 
     def _send_email_sync(self, email: str, token: str, email_type: str):
         """Synchronous email sending executed in thread pool"""
@@ -125,9 +125,9 @@ class EmailService:
             logger.error(f"Failed to send {email_type} email to {email}: {str(e)}")
             raise
     
-    # Removed welcome email method as email verification is no longer required
+    # Đã xóa phương thức email chào mừng vì không còn yêu cầu xác thực email
 
-    # Removed welcome email methods as email verification is no longer required
+    # Đã xóa các phương thức email chào mừng vì không còn yêu cầu xác thực email
     
     async def send_password_reset_email(self, email: str, token: str) -> bool:
         """Send password reset email synchronously (legacy method)"""

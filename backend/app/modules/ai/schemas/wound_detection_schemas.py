@@ -15,8 +15,6 @@ class WoundDetectionBase(BaseModel):
     firstaidguide_id: Optional[uuid.UUID] = None
     firstaid_snapshot: Optional[Dict[str, Any]] = None
 
-
-# Loại bỏ WoundDetectionCreate vì chỉ là wrapper rỗng
 class WoundDetectionResponse(WoundDetectionBase):
     detection_id: uuid.UUID
     created_at: datetime
@@ -57,6 +55,3 @@ class WoundDetectionResponse(WoundDetectionBase):
 
     class Config:
         from_attributes = True
-
-# WoundDetectionSummary is defined in wound_analysis_schemas.py
-# to avoid duplication

@@ -43,7 +43,7 @@ class FirstAidController:
                     f"[FIRSTAID_GUIDE] Không tìm thấy: {wound_type}/{severity}, sub_type: {sub_type}"
                 )
 
-                # Format error message based on sub_type presence
+                # Định dạng thông báo lỗi dựa trên sự hiện diện của sub_type
                 if sub_type:
                     error_message = (
                         Message.FIRSTAID_GUIDE_NOT_FOUND_WITH_SUBTYPE_MSG.format(
@@ -76,7 +76,7 @@ class FirstAidController:
                 guide, wound_type, severity
             )
 
-            # Format success message based on sub_type presence
+            # Định dạng thông báo thành công dựa trên sự hiện diện của sub_type
             if sub_type:
                 success_message = (
                     f"{Message.FIRSTAID_GUIDE_FOUND_FOR_MSG.format(wound_type=wound_type, severity=severity)} với sub_type '{sub_type}'"
@@ -226,7 +226,7 @@ class FirstAidController:
             )
 
             if guide:
-                # Format success message based on sub_type presence
+                # Định dạng thông báo thành công dựa trên sự hiện diện của sub_type
                 if sub_type:
                     success_message = (
                         Message.FIRSTAID_GUIDE_AVAILABLE_WITH_SUBTYPE_MSG.format(
@@ -258,7 +258,7 @@ class FirstAidController:
                     },
                 )
             else:
-                # Get alternatives
+                # Lấy các lựa chọn thay thế
                 available_types = (
                     await self.first_aid_service.get_available_wound_types()
                 )
@@ -271,7 +271,7 @@ class FirstAidController:
                         ):
                             alternatives.append(f"{wt['wound_type']}/{sev}")
 
-                # Format message based on sub_type presence
+                # Định dạng thông báo dựa trên sự hiện diện của sub_type
                 if sub_type:
                     message = (
                         Message.FIRSTAID_GUIDE_NOT_AVAILABLE_WITH_SUBTYPE_MSG.format(
@@ -312,7 +312,7 @@ class FirstAidController:
             )
 
     # ============================================
-    # Private Helper Methods
+    # Phương thức trợ giúp riêng tư
     # ============================================
 
     def _get_severity_display(self, severity: str) -> str:

@@ -111,7 +111,7 @@ async def decode_and_verify_token(
             )
         
         current_version = row[0]
-        # Token version cũ hơn current version → đã bị revoke all
+        # Phiên bản token cũ hơn current version → đã bị thu hồi tất cả
         if token_version < current_version: 
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -151,7 +151,7 @@ async def revoke_token(
     Raises:
         HTTPException: Nếu token invalid hoặc đã bị revoke
     """
-    # Decode token (không verify exp vì có thể token đã hết hạn)
+    # Giải mã token (không xác thực exp vì có thể token đã hết hạn)
     payload = jwt_handler.decode_token(token, verify_exp=False)
     
     jti = payload.get("jti")
@@ -508,7 +508,7 @@ async def get_current_user(
     Raises:
         HTTPException: Nếu token invalid/revoked hoặc user không tồn tại
     """
-    # Decode và verify token
+    # Giải mã và xác thực token
     payload = await decode_and_verify_token(token, db, token_type="access")
     
     user_id = payload.get("sub")
@@ -579,16 +579,16 @@ def allow_access(
         Dependency function trả về User object hoặc None
         
     Examples:
-        # Public route, optional auth
+        # Route công khai, xác thực tùy chọn
         @app.get("/posts", dependencies=[Depends(allow_access())])
         
-        # Require login
+        # Yêu cầu đăng nhập
         @app.get("/profile", dependencies=[Depends(allow_access(require_auth=True))])
         
-        # Require login + verified email
+        # Yêu cầu đăng nhập + email đã xác thực
         @app.post("/upload", dependencies=[Depends(allow_access(require_auth=True, require_verified=True))])
         
-        # Guest only (register, login)
+        # Chỉ khách (register, login)
         @app.post("/register", dependencies=[Depends(allow_access(allow_guest_only=True))])
     """
     async def dependency(
@@ -598,14 +598,14 @@ def allow_access(
 
         token = await extract_token(authorization)
 
-        # Guest-only routes (register, login, etc.)
+        # Các route chỉ dành cho khách (register, login, etc.)
         if allow_guest_only and token:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Authenticated users cannot access this route",
             )
 
-        # No token provided
+        # Không có token được cung cấp
         if not token:
             if require_auth:
                 raise HTTPException(
@@ -615,7 +615,7 @@ def allow_access(
                 )
             return None
 
-        # Verify token (with blacklist check)
+        # Xác thực token (với kiểm tra blacklist)
         try:
             payload = await decode_and_verify_token(token, db, token_type="access")
         except HTTPException:
@@ -633,7 +633,7 @@ def allow_access(
                 )
             return None
 
-        # Get user
+        # Lấy người dùng
         user = await get_user_by_id(db, user_id)
         if not user:
             if require_auth:
@@ -644,7 +644,7 @@ def allow_access(
                 )
             return None
 
-        # Check email verification
+        # Kiểm tra xác thực email
         if require_verified:
             await check_email_verified(user, required=True)
 
@@ -783,18 +783,18 @@ def require_all_permissions(required_permissions: List[str], require_verified: b
 
 # ==================== COMMON SHORTCUTS ====================
 
-# Access level shortcuts
+# Phím tắt mức độ truy cập
 allow_guest = allow_access(require_auth=False, require_verified=False)
 require_auth = allow_access(require_auth=True, require_verified=False)
 require_verified = allow_access(require_auth=True, require_verified=True)
 guest_only = allow_access(allow_guest_only=True)
 
-# Role shortcuts
+# Phím tắt vai trò
 require_admin = require_role(["admin"])
 require_user = require_role(["user"])
 require_admin_or_moderator = require_role(["admin", "moderator"])
 
-# Permission shortcuts
+# Phím tắt quyền
 require_upload = require_permission("upload_image")
 require_ai_analyze = require_permission("ai_analyze")
 require_manage_users = require_permission("manage_users")

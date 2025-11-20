@@ -11,11 +11,12 @@ from app.modules.profile.schemas.user_profile_schemas import (
     ProfileStatisticsResponse
 )
 from app.modules.profile.services.profile_service import ProfileService
-from app.utils.exceptions.base_exceptions import AppBaseException
+from app.utils.constants import error_codes as ErrorCode
 
-# Import constants
+# Import các hằng số
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
+from app.modules.audit.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 class ProfileController:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.audit_service = AuditService(db)
         self.profile_service = ProfileService(db)
 
     async def update_profile(
@@ -51,36 +53,20 @@ class ProfileController:
                 updated_profile
             )
 
+            await self.audit_service.log_event(
+                action="profile_updated",
+                user_id=user_id,
+                resource_type="user_profile",
+                resource_id=str(user_id),
+                success=True
+            )
+
             logger.info(f"[CẬP_NHẬT_HỒ_SƠ] Thành công: {user_id}")
             
             return SuccessResponse(
                 message=Message.PROFILE_UPDATE_SUCCESS_MSG,
                 data=profile_response
             )
-
-        except AppBaseException as e:
-            logger.error(f"[CẬP_NHẬT_HỒ_SƠ] AppBaseException: {e.message}")
-            
-            if e.error_code == ErrorCode.USER_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            elif e.error_code == ErrorCode.USER_INVALID_DATA:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"validation_error": str(e)},
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
-            else:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
 
         except Exception as e:
             logger.error(f"[CẬP_NHẬT_HỒ_SƠ] Lỗi không mong muốn: {e}", exc_info=True)
@@ -138,7 +124,7 @@ class ProfileController:
         try:
             logger.info(f"[LẤY_HỒ_SƠ_STR] Đang lấy hồ sơ cho người dùng: {user_id}")
             
-            # Convert string to UUID
+            # Chuyển đổi chuỗi sang UUID
             try:
                 uuid_user_id = uuid.UUID(user_id)
             except ValueError:
@@ -182,7 +168,7 @@ class ProfileController:
             )
 
     async def get_profile_statistics(
-        self
+        self,
     ) -> Union[SuccessResponse[ProfileStatisticsResponse], ErrorResponse]:
         """Lấy thống kê về hồ sơ người dùng."""
         try:
@@ -284,32 +270,6 @@ class ProfileController:
                 message=Message.PROFILE_COMPLETION_SUGGESTIONS_SUCCESS_MSG,
                 data=suggestions
             )
-
-        except AppBaseException as e:
-            logger.error(
-                f"[GỢI_Ý_HOÀN_THIỆN] AppBaseException: {e.message}"
-            )
-            
-            if e.error_code == ErrorCode.USER_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            elif e.error_code == ErrorCode.PROFILE_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            else:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
 
         except Exception as e:
             logger.error(

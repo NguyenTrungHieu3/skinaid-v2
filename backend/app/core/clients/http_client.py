@@ -64,7 +64,7 @@ class HTTPClient:
         try:
             logger.info(f"[HTTP] POST {url}")
             
-            # Custom timeout if provided
+            # Thời gian chờ tùy chỉnh nếu được cung cấp
             request_timeout = timeout if timeout is not None else 30.0
             
             response = await client.post(

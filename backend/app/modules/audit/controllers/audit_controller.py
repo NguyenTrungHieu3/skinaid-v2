@@ -24,7 +24,7 @@ class AuditController:
         filters: AuditLogFilterParams
     ) -> Union[SuccessResponse[AuditLogListResponse], ErrorResponse]:
         """
-        Get audit logs with filters and pagination
+        Lấy danh sách nhật ký kiểm toán với bộ lọc và phân trang
         """
         try:
             offset = (filters.page - 1) * filters.limit
@@ -87,7 +87,7 @@ class AuditController:
         self
     ) -> Union[SuccessResponse[AuditStatsResponse], ErrorResponse]:
         """
-        Get audit statistics
+        Lấy thống kê kiểm toán
         """
         try:
             logger.info("[GET_AUDIT_STATS] Fetching statistics")
@@ -125,7 +125,7 @@ class AuditController:
             )
     async def health_check(self) -> SuccessResponse[dict]:
         """
-        Health check for audit service
+        Kiểm tra sức khỏe của dịch vụ kiểm toán
         """
         logger.debug("[HEALTH] Checking audit service")
         

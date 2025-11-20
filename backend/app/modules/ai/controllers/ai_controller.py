@@ -17,6 +17,7 @@ from app.modules.ai.schemas.wound_analysis_schemas import (
 from app.shared.mappers.response_mapper import ResponseMapper
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
+from app.modules.audit.services.audit_service import AuditService
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class AIController:
     
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+        self.audit_service = AuditService(db)
         self.image_processor = ImageProcessingService(db)
         self.analysis_service = WoundAnalysisService(db)
         self.response_mapper = ResponseMapper()
@@ -39,7 +41,7 @@ class AIController:
         """
         logger.info(f"[ANALYZE_IMAGE] Starting analysis - user: {user_id}, session: {session_id}")
         
-        # Validate identifiers
+        # Xác thực danh tính
         if user_id is None and session_id is None:
             logger.warning("[ANALYZE_IMAGE] Missing identifier")
             return ErrorResponse(
@@ -130,7 +132,7 @@ class AIController:
                     error_details={"analysis_id": str(analysis_id)},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            # Authorization check
+            # Kiểm tra quyền truy cập
             if user_id is not None:
                 request_user_id = UUID(user_id) if isinstance(user_id, str) else user_id
                 if analysis.user_id and analysis.user_id != request_user_id:
@@ -190,7 +192,7 @@ class AIController:
                     error_details={"analysis_id": str(analysis_id)},
                     status_code=status.HTTP_404_NOT_FOUND
                 )
-            # Authorization check
+            # Kiểm tra quyền truy cập
             if user_id is not None:
                 request_user_id = UUID(user_id) if isinstance(user_id, str) else user_id
                 if analysis.user_id and analysis.user_id != request_user_id:
@@ -211,8 +213,19 @@ class AIController:
                         error_details={"analysis_id": str(analysis_id)},
                         status_code=status.HTTP_403_FORBIDDEN
                     )
-            # Soft delete
+            # Xóa mềm
             await self.analysis_service.soft_delete_analysis(analysis_id)
+            
+            await self.audit_service.log_event(
+                action="wound_analysis_deleted",
+                user_id=user_id or analysis.user_id,
+                resource_type="wound_analysis",
+                resource_id=str(analysis_id),
+                is_guest=(session_id is not None),
+                guest_session_id=session_id,
+                success=True
+            )
+            
             logger.info(f"[DELETE_ANALYSIS] Success: {analysis_id}")
             
             return SuccessResponse(

@@ -11,6 +11,8 @@ import { FaCamera, FaFirstAid, FaHistory, FaCheck } from "react-icons/fa";
 import { FaChartLine, FaListAlt, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { enableSmoothScrollSnap } from "../utils/scrollEffects";
+import NearbyMap from "../components/Map/NearbyMap";
+
 
 const HomePage = () => {
   // Chúng ta có thể dùng useAuth để thay đổi nút "Start Analysis"
@@ -254,6 +256,15 @@ const HomePage = () => {
       </section>
 
       {/* 5. How It Works Section */}
+      {/* 5. Map Section */}
+      <section className={styles.mapSection}>
+        <h2>{t("home_page.map_title")}</h2>
+        <p className={styles.mapSubtitle}>{t("home_page.map_desc")}</p>
+        <div className={styles.mapContainer}>
+          <NearbyMap />
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

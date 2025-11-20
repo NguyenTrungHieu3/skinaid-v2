@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     AI_MAX_RETRIES: int = 1
     AI_API_KEY: str = ""
 
+    GEOAPIFY_API_KEY: str = ""
+
     CORS_ORIGINS: list = [
         "http://localhost:5173",
         "http://localhost:3000",
