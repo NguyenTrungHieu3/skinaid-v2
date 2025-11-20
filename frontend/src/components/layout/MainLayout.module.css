@@ -5,6 +5,7 @@
   flex-direction: column;
   min-height: 100vh; /* Đổi từ height sang min-height để cho phép mở rộng */
   /* Bỏ overflow: hidden để cho phép scroll */
+  padding-top: 60px; /* Account for fixed header */
 }
 
 .mainContent {

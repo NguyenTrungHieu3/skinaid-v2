@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "./MainHeader.module.css";
 import { FaSave, FaDownload, FaHeart } from "react-icons/fa";
 
@@ -8,6 +7,9 @@ type Severity = "Mild" | "Moderate" | "Severe" | string;
 interface MainHeaderProps {
   title: string;
   severity?: Severity; // <-- 2. Thêm prop 'severity'
+  // Optional: supply data to be exported by the ExportGuide modal
+  exportData?: any;
+  exportImageUrl?: string;
 }
 
 // 3. Hàm helper để lấy class màu dựa trên severity
@@ -25,7 +27,8 @@ const getSeverityClass = (severity: Severity = "") => {
   }
 };
 
-const MainHeader = ({ title, severity }: MainHeaderProps) => {
+const MainHeader = ({ title, severity}: MainHeaderProps) => {
+
   return (
     <div className={styles.mainHeader}>
       <h1 className={`${styles.pageTitle} ${getSeverityClass(severity)}`}>
@@ -35,9 +38,12 @@ const MainHeader = ({ title, severity }: MainHeaderProps) => {
         <button className={styles.actionBtn}>
           <FaSave /> Save
         </button>
-        <button className={styles.actionBtn}>
+        <button 
+          className={styles.actionBtn}
+        >
           <FaDownload /> Download Report
         </button>
+        
         <button className={`${styles.actionBtn} ${styles.btnIcon}`}>
           <FaHeart />
         </button>
