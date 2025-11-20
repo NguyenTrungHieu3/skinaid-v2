@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh; /* 1. Wrapper chiếm 100% màn hình */
-  overflow: hidden; /* Ngăn chính wrapper này cuộn */
+  /* overflow: hidden; Ngăn chính wrapper này cuộn */
 }
 
 .mainContent {
@@ -14,6 +14,6 @@
        Tạo chiều cao cố định cho <main> 
        và ngăn nó tự cuộn 
     */
-  overflow: hidden;
+  /* overflow: hidden; */
   min-height: 0;
 }
