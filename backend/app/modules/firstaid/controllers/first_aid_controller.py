@@ -11,7 +11,6 @@ from app.modules.firstaid.schemas.first_aid_schemas import (
 )
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
-# Import constants
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
 
@@ -32,7 +31,7 @@ class FirstAidController:
         """Get first aid guide for specific wound type and severity."""
         try:
             logger.info(
-                f"[FIRSTAID_GUIDE] Getting guide for: {wound_type}/{severity}, sub_type: {sub_type}"
+                f"[FIRSTAID_GUIDE] Đang lấy hướng dẫn cho: {wound_type}/{severity}, sub_type: {sub_type}"
             )
 
             guide = await self.first_aid_service.get_first_aid_guide(
@@ -41,7 +40,7 @@ class FirstAidController:
 
             if not guide:
                 logger.warning(
-                    f"[FIRSTAID_GUIDE] Not found: {wound_type}/{severity}, sub_type: {sub_type}"
+                    f"[FIRSTAID_GUIDE] Không tìm thấy: {wound_type}/{severity}, sub_type: {sub_type}"
                 )
 
                 # Format error message based on sub_type presence
@@ -88,7 +87,7 @@ class FirstAidController:
                     severity=severity,
                 )
 
-            logger.info(f"[FIRSTAID_GUIDE] Success: {guide.get('firstaidguide_id')}")
+            logger.info(f"[FIRSTAID_GUIDE] Thành công: {guide.get('firstaidguide_id')}")
 
             return SuccessResponse(
                 message=success_message,
@@ -96,7 +95,7 @@ class FirstAidController:
             )
 
         except Exception as e:
-            logger.error(f"[FIRSTAID_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[FIRSTAID_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_GUIDE_ERROR_MSG,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -109,7 +108,7 @@ class FirstAidController:
     ) -> Union[SuccessResponse[List[WoundTypeResponse]], ErrorResponse]:
         """Get all available wound types."""
         try:
-            logger.info("[WOUND_TYPES] Getting available wound types")
+            logger.info("[WOUND_TYPES] Đang lấy các loại vết thương có sẵn")
 
             wound_types = await self.first_aid_service.get_available_wound_types()
 
@@ -118,7 +117,7 @@ class FirstAidController:
             ]
 
             logger.info(
-                f"[WOUND_TYPES] Success: {len(wound_type_responses)} types found"
+                f"[WOUND_TYPES] Thành công: {len(wound_type_responses)} loại được tìm thấy"
             )
 
             return SuccessResponse(
@@ -127,7 +126,7 @@ class FirstAidController:
             )
 
         except Exception as e:
-            logger.error(f"[WOUND_TYPES] Error: {e}", exc_info=True)
+            logger.error(f"[WOUND_TYPES] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.WOUND_TYPES_ERROR_MSG,
                 error_code=ErrorCode.WOUND_TYPES_ERROR,
@@ -145,7 +144,7 @@ class FirstAidController:
         """Search first aid guides with optional filters."""
         try:
             logger.info(
-                f"[SEARCH_GUIDES] Searching - wound_type: {wound_type}, "
+                f"[SEARCH_GUIDES] Đang tìm kiếm - wound_type: {wound_type}, "
                 f"severity: {severity}, limit: {limit}, offset: {offset}"
             )
 
@@ -163,7 +162,7 @@ class FirstAidController:
                 guide_responses.append(guide_response)
 
             logger.info(
-                f"[SEARCH_GUIDES] Success: {len(guide_responses)} guides found"
+                f"[SEARCH_GUIDES] Thành công: {len(guide_responses)} hướng dẫn được tìm thấy"
             )
 
             return SuccessResponse(
@@ -174,7 +173,7 @@ class FirstAidController:
             )
 
         except Exception as e:
-            logger.error(f"[SEARCH_GUIDES] Error: {e}", exc_info=True)
+            logger.error(f"[SEARCH_GUIDES] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_SEARCH_ERROR_MSG,
                 error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
@@ -187,12 +186,12 @@ class FirstAidController:
     ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
         """Get statistics about first aid knowledge base."""
         try:
-            logger.info("[STATISTICS] Getting first aid statistics")
+            logger.info("[STATISTICS] Đang lấy thống kê sơ cứu")
 
             stats = await self.first_aid_service.get_guide_statistics()
 
             logger.info(
-                f"[STATISTICS] Success - Total guides: {stats.get('total_guides', 0)}"
+                f"[STATISTICS] Thành công - Tổng số hướng dẫn: {stats.get('total_guides', 0)}"
             )
 
             return SuccessResponse(
@@ -201,7 +200,7 @@ class FirstAidController:
             )
 
         except Exception as e:
-            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            logger.error(f"[STATISTICS] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_STATISTICS_ERROR_MSG,
                 error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
@@ -218,7 +217,7 @@ class FirstAidController:
         """Check availability of first aid guide."""
         try:
             logger.info(
-                f"[VALIDATE] Checking availability: {wound_type}/{severity}, "
+                f"[VALIDATE] Đang kiểm tra tính khả dụng: {wound_type}/{severity}, "
                 f"sub_type: {sub_type}"
             )
 
@@ -245,7 +244,7 @@ class FirstAidController:
                     )
 
                 logger.info(
-                    f"[VALIDATE] Available: {guide.get('firstaidguide_id')}"
+                    f"[VALIDATE] Có sẵn: {guide.get('firstaidguide_id')}"
                 )
 
                 return SuccessResponse(
@@ -290,8 +289,8 @@ class FirstAidController:
                     )
 
                 logger.info(
-                    f"[VALIDATE] Not available: {wound_type}/{severity}, "
-                    f"found {len(alternatives)} alternatives"
+                    f"[VALIDATE] Không có sẵn: {wound_type}/{severity}, "
+                    f"tìm thấy {len(alternatives)} lựa chọn thay thế"
                 )
 
                 return SuccessResponse(
@@ -304,7 +303,7 @@ class FirstAidController:
                 )
 
         except Exception as e:
-            logger.error(f"[VALIDATE] Error: {e}", exc_info=True)
+            logger.error(f"[VALIDATE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_VALIDATION_ERROR_MSG,
                 error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
@@ -400,6 +399,6 @@ class FirstAidController:
             return combinations
         except Exception as e:
             logger.warning(
-                f"[COMBINATIONS] Failed to get combinations: {e}"
+                f"[COMBINATIONS] Không thể lấy các kết hợp: {e}"
             )
             return []

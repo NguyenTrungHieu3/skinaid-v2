@@ -536,6 +536,30 @@ async def get_current_active_user(
     return current_user
 
 
+async def get_current_verified_user(
+    current_user: User = Depends(get_current_user)
+) -> Optional[Dict[str, Any]]:
+    """
+    Dependency: Lấy user hiện tại đã verified dưới dạng dict
+
+    Returns:
+        Dict chứa thông tin user hoặc None nếu chưa verified
+
+    Raises:
+        HTTPException: Nếu user chưa verified
+    """
+    await check_email_verified(current_user, required=True)
+
+    return {
+        "user_id": str(current_user.user_id),
+        "email": current_user.email,
+        "is_verified": current_user.is_verified,
+        "is_active": current_user.is_active,
+        "created_at": current_user.created_at,
+        "updated_at": current_user.updated_at
+    }
+
+
 # ==================== FLEXIBLE ACCESS CONTROL ====================
 
 def allow_access(

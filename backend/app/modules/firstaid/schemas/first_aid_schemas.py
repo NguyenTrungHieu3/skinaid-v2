@@ -22,14 +22,14 @@ class CreateFirstAidGuideRequest(BaseModel):
     def validate_wound_type(cls, v):
         valid_types = ['abrasion', 'bruise', 'burn', 'cut']
         if v.lower() not in valid_types:
-            raise ValueError(f'wound_type must be one of {valid_types}')
+            raise ValueError(f'wound_type phải là một trong {valid_types}')
         return v.lower()
     
     @validator('severity')
     def validate_severity(cls, v):
         valid_severities = ['mild', 'moderate', 'severe']
         if v.lower() not in valid_severities:
-            raise ValueError(f'severity must be one of {valid_severities}')
+            raise ValueError(f'severity phải là một trong {valid_severities}')
         return v.lower()
     
     @validator('sub_type')
@@ -37,10 +37,10 @@ class CreateFirstAidGuideRequest(BaseModel):
         if v:
             wound_type = values.get('wound_type', '').lower()
             if wound_type != 'burn':
-                raise ValueError('sub_type only allowed for burn wounds')
+                raise ValueError('sub_type chỉ được phép cho vết bỏng')
             valid_subtypes = ['blister', 'skintear']
             if v.lower() not in valid_subtypes:
-                raise ValueError(f'sub_type for burn must be one of {valid_subtypes}')
+                raise ValueError(f'sub_type cho burn phải là một trong {valid_subtypes}')
             return v.lower()
         return v
 

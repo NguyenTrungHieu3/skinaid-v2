@@ -89,7 +89,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     )
 
     return SuccessResponse(
-        message="User information retrieved successfully",
+        message="Lấy thông tin người dùng thành công",
         data=user_response
     )
 

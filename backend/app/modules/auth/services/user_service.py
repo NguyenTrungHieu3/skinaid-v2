@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 
 from app.modules.auth.models.user import User
-from app.modules.auth.models.user_profile import UserProfile
+from app.modules.profile.models.user_profile import UserProfile
 from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_NOT_FOUND, USER_INVALID_DATA
 
@@ -83,7 +83,7 @@ class UserService:
             return user
 
         except Exception as e:
-            logger.error(f"Failed to get user by ID {user_id}: {e}", exc_info=True)
+            logger.error(f"Không thể lấy user theo ID {user_id}: {e}", exc_info=True)
             return None
 
     async def get_user_by_email(self, email: str) -> Optional[User]:
@@ -108,7 +108,7 @@ class UserService:
 
             return User.model_validate(dict(row))
         except Exception as e:
-            logger.error(f"Failed to get user by email {email}: {e}", exc_info=True)
+            logger.error(f"Không thể lấy user theo email {email}: {e}", exc_info=True)
             return None
 
     async def get_user_by_username(self, user_name: str) -> Optional[User]:
@@ -134,7 +134,7 @@ class UserService:
             return User.model_validate(dict(row))
         except Exception as e:
             logger.error(
-                f"Failed to get user by username {user_name}: {e}", exc_info=True
+                f"Không thể lấy user theo username {user_name}: {e}", exc_info=True
             )
             return None
 
@@ -204,7 +204,7 @@ class UserService:
 
             if not row:
                 raise AppBaseException(
-                    message="Failed to create user (no returning row)",
+                    message="Không thể tạo user (không có hàng trả về)",
                     error_code=USER_INVALID_DATA,
                 )
 
@@ -215,10 +215,10 @@ class UserService:
             await self.db.rollback()
             raise
         except Exception as e:
-            logger.error(f"Failed to create user: {e}", exc_info=True)
+            logger.error(f"Không thể tạo user: {e}", exc_info=True)
             await self.db.rollback()
             raise AppBaseException(
-                message="Failed to create user",
+                message="Không thể tạo user",
                 error_code=USER_INVALID_DATA,
             )
 
@@ -281,7 +281,7 @@ class UserService:
 
         except Exception as e:
             logger.error(
-                f"Failed to update user status for {user_id}: {e}", exc_info=True
+                f"Không thể cập nhật trạng thái user cho {user_id}: {e}", exc_info=True
             )
             await self.db.rollback()
             return None
@@ -321,7 +321,7 @@ class UserService:
 
         except Exception as e:
             logger.error(
-                f"Failed to update password for user {user_id}: {e}", exc_info=True
+                f"Không thể cập nhật mật khẩu cho user {user_id}: {e}", exc_info=True
             )
             await self.db.rollback()
             return False
@@ -353,7 +353,7 @@ class UserService:
             return result.rowcount > 0
         except Exception as e:
             logger.error(
-                f"Failed to soft delete user {user_id}: {e}", exc_info=True
+                f"Không thể xóa mềm user {user_id}: {e}", exc_info=True
             )
             await self.db.rollback()
             return False

@@ -1,5 +1,4 @@
 from .models.user import User
-from .models.user_profile import UserProfile
 from .models.verification_token import VerificationToken
 from .models.roles import Role
 from .models.permissions import Permission
@@ -20,13 +19,12 @@ from .schemas.user_schemas import (
     ChangePasswordRequest, ChangePasswordResponse,
     # EmailVerificationRequest, EmailVerificationResponse
 )
-from .schemas.user_profile import UserProfileUpdate, UserProfileResponse
 
 # Routes
 from .routes.auth_router import router as auth_router
 
 __all__ = [
-    "User", "UserProfile", "VerificationToken",
+    "User", "VerificationToken",
     "Role", "Permission", "UserRole", "RolePermission",
 
     "AuthService", "UserService",
@@ -34,7 +32,6 @@ __all__ = [
     "AuthController",
 
     "UserBase", "UserCreate", "UserLogin", "UserResponse",
-    "UserProfileUpdate", "UserProfileResponse",
     "PasswordResetRequest", "PasswordResetConfirm", "PasswordResetResponse",
     "ChangePasswordRequest", "ChangePasswordResponse",
     # "EmailVerificationRequest", "EmailVerificationResponse",

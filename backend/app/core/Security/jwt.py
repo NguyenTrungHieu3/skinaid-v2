@@ -14,14 +14,14 @@ class JWTHandler:
         self.refresh_token_expire_days = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
     def create_token_pair(
-        self, 
-        subject: Union[str, int], 
-        token_version: int = 0, 
+        self,
+        subject: Union[str, int],
+        token_version: int = 0,
         additional_claims: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]: 
+    ) -> Dict[str, Any]:
         """
-        Create access + refresh token pair with family tracking
-        Returns:
+        Tạo cặp token access + refresh với theo dõi family
+        Trả về:
             {
                 "access_token": "...",
                 "refresh_token": "...",
@@ -33,50 +33,50 @@ class JWTHandler:
         """
         current_time = datetime.now(timezone.utc)
 
-        #create access token 
+        #tạo access token
         access_exp = current_time + timedelta(minutes=self.access_token_expire_minutes)
         access_jti = hashlib.sha256(
             f"{subject}{current_time}{self.secret_key}access{token_version}".encode()
         ).hexdigest()[:32]
         
         access_payload ={
-            "sub": str(subject), 
-            "exp": access_exp, 
-            "iat": current_time, 
-            "type": "access", 
-            "jti": access_jti, 
+            "sub": str(subject),
+            "exp": access_exp,
+            "iat": current_time,
+            "type": "access",
+            "jti": access_jti,
             "ver": token_version
         }
 
-        if additional_claims: 
+        if additional_claims:
             access_payload.update(additional_claims)
         
         access_token = jwt.encode(access_payload, key=self.secret_key, algorithm=self.algorithm)
 
-        #create refresh token
+        #tạo refresh token
         refresh_exp = current_time + timedelta(days=self.refresh_token_expire_days)
         refresh_jti = hashlib.sha256(
             f"{subject}{current_time}{self.secret_key}refresh{token_version}".encode()
         ).hexdigest()[:32]
 
         refresh_payload = {
-            "sub": str(subject), 
-            "exp": refresh_exp, 
-            "iat": current_time, 
-            "type": "refresh", 
-            "jti": refresh_jti, 
-            "ver": token_version, 
+            "sub": str(subject),
+            "exp": refresh_exp,
+            "iat": current_time,
+            "type": "refresh",
+            "jti": refresh_jti,
+            "ver": token_version,
             "access_jti": access_jti
         }
 
         refresh_token = jwt.encode(refresh_payload, key=self.secret_key, algorithm=self.algorithm)
 
         return {
-            "access_token": access_token, 
-            "refresh_token": refresh_token, 
-            "access_jti": access_jti, 
-            "refresh_jti": refresh_jti, 
-            "access_exp": access_exp, 
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "access_jti": access_jti,
+            "refresh_jti": refresh_jti,
+            "access_exp": access_exp,
             "refresh_exp": refresh_exp
         }
 
@@ -154,7 +154,7 @@ class JWTHandler:
         verify_exp: bool = True
     ) -> Dict[str, Any]:
         """
-        Decode JWT token
+        Giải mã JWT token
         """
         try:
             options = {"verify_exp": verify_exp} if not verify_exp else {}
@@ -171,19 +171,19 @@ class JWTHandler:
         except JWTError as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token is invalid or expired",
+                detail="Token không hợp lệ hoặc đã hết hạn",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
     def verify_token_type(self, payload: Dict[str, Any], expected_type: str) -> None:
         """
-        Verify token type 
+        Xác minh loại token
         """
         actual_type = payload.get("type")
         if actual_type != expected_type:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token type. Expected '{expected_type}', got '{actual_type}'",
+                detail=f"Loại token không hợp lệ. Mong đợi '{expected_type}', nhận được '{actual_type}'",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
