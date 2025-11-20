@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Cookie, Header
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
-from typing import Optional
+from typing import Optional, List
 
 from app.api.v1.deps import get_current_verified_user, get_db
 from app.modules.ai.controllers.ai_controller import AIController
@@ -109,4 +109,36 @@ async def delete_analysis(
         session_id=session_id
     )
 
+    return result
+
+@router.post("/analyze/batch")
+async def analyze_multiple_wound_images(
+    files: List[UploadFile] = File(
+        ...,
+        description="Danh sách ảnh vết thương (JPEG/PNG, mỗi ảnh max 5MB, tối đa 10 ảnh)"
+    ),
+    current_user: Optional[dict] = Depends(get_current_verified_user),
+    session_id: Optional[UUID] = Depends(get_session_id),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Phân tích nhiều ảnh vết thương cùng lúc
+    """
+    controller = AIController(db)
+    
+    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    
+    if not user_id and not session_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required or session_id must be provided"
+        )
+    
+    result = await controller.analyze_multiple_images(
+        files=files,
+        user_id=user_id,
+        session_id=session_id,
+        max_files=5 
+    )
+    
     return result
