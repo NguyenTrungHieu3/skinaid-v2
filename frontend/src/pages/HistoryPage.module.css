@@ -68,3 +68,157 @@
   box-sizing: border-box;
   margin: 0.5rem 0;
 }
+
+/* CẬP NHẬT: .asideSection */
+.asideSection {
+  flex: 0 1 1000px;
+  height: 100%;
+
+  /* Style giao diện cơ bản */
+  background-color: #ffffff;
+  border-radius: 12px; /* Bo tròn mềm mại hơn */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Đổ bóng sâu hơn chút cho đẹp */
+  border: 1px solid #f0f0f0; /* Viền nhẹ */
+
+  /* Layout để chứa nội dung con */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Quan trọng để nội dung con không tràn ra bo góc */
+  position: relative; /* Để loading có thể căn absolute nếu muốn */
+  padding: 0; /* Bỏ padding ở đây, để component con tự lo padding nếu cần full viền */
+}
+
+/* --- CÁC CLASS MỚI CHO LOADING --- */
+
+/* Container bao quanh loading để căn giữa tuyệt đối */
+.loadingContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem; /* Khoảng cách giữa spinner và chữ */
+  color: #6b7280; /* Màu chữ xám nhẹ */
+  background-color: #ffffff;
+}
+
+/* Vòng xoay (Spinner) */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb; /* Màu viền mờ */
+  border-top: 4px solid #1e9378; /* Màu viền chính (Xanh dương - đổi theo brand của bạn) */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Chữ loading */
+.loadingText {
+  font-size: 0.95rem;
+  font-weight: 500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Animation xoay */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation chữ nhấp nháy nhẹ */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* --- TIMELINE SKELETON STYLES --- */
+
+.skeletonWrapper {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+.skeletonItem {
+  display: flex;
+  gap: 1rem;
+  opacity: 0.7;
+}
+
+/* Giả lập cái chấm tròn mốc thời gian */
+.skeletonMarker {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  flex-shrink: 0;
+  margin-top: 6px;
+  position: relative;
+}
+
+/* Giả lập đường kẻ nối (timeline line) */
+.skeletonMarker::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 80px; /* Chiều dài đường nối */
+  background-color: #f3f4f6;
+}
+
+/* Giả lập nội dung thẻ (Card) */
+.skeletonContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* Thanh tiêu đề giả */
+.skeletonTitle {
+  width: 60%;
+  height: 20px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+/* Thanh nội dung giả */
+.skeletonBody {
+  width: 90%;
+  height: 60px;
+  background-color: #e5e7eb;
+  border-radius: 8px;
+}
+
+/* --- HIỆU ỨNG SHIMMER (LẤP LÁNH) --- */
+.skeletonMarker,
+.skeletonTitle,
+.skeletonBody {
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

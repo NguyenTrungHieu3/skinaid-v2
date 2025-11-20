@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
 import styles from "./HistoryPage.module.css";
 import Timeline, { type HistoryEvent } from "../components/history/Timeline";
-import HistorySidebar from "../components/history/HistorySideBar";
+import HistorySidebar from "../components/history/HistorySidebar";
 import HistoryDetail from "../components/history/HistoryDetail";
 
 // Import kiểu frontend
-import {
-  type CombinedEventDetail,
-  type SingleWoundDetail,
-} from "../DUMMY_DATA"; // Hoặc từ src/types/appTypes.ts
+import { type CombinedEventDetail } from "../DUMMY_DATA";
 
 // Import service
 import {
@@ -34,12 +31,11 @@ const HistoryPage = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // EFFECT 1: Tải danh sách Timeline
+  // EFFECT 1: Tải danh sách Timeline (CÓ DELAY 1 GIÂY)
   useEffect(() => {
-    // Chỉ fetch nếu đã đăng nhập
     if (!isAuthenticated) {
       setIsLoadingList(false);
-      setTimelineEvents([]); // Đảm bảo danh sách trống
+      setTimelineEvents([]);
       return;
     }
 
@@ -48,17 +44,14 @@ const HistoryPage = () => {
         setIsLoadingList(true);
         setError(null);
 
-        const apiHistoryData = await getHistory(20, 0);
+        // --- 🔥 CẬP NHẬT: Dùng Promise.all để delay ít nhất 1 giây 🔥 ---
+        const [apiHistoryData] = await Promise.all([
+          getHistory(20, 0), // Gọi API
+          new Promise((resolve) => setTimeout(resolve, 500)), // Delay 1s
+        ]);
 
-        // --- 🔥 ĐÂY LÀ PHẦN SỬA LỖI 🔥 ---
-        // Thêm '|| []' để đảm bảo 'eventsList' luôn là một mảng
-        // ngay cả khi 'apiHistoryData.events' là 'undefined'.
         const eventsList = apiHistoryData.events || [];
-        // --- (Kết thúc sửa lỗi) ---
-
-        const transformedEvents = transformApiHistoryToTimeline(
-          eventsList // Truyền biến 'eventsList' an toàn
-        );
+        const transformedEvents = transformApiHistoryToTimeline(eventsList);
 
         setTimelineEvents(transformedEvents);
       } catch (err: any) {
@@ -69,9 +62,9 @@ const HistoryPage = () => {
     };
 
     fetchHistory();
-  }, [isAuthenticated]); // Thêm 'isAuthenticated' vào dependencies
+  }, [isAuthenticated]);
 
-  // EFFECT 2: Tải chi tiết
+  // EFFECT 2: Tải chi tiết (CÓ DELAY 1 GIÂY)
   useEffect(() => {
     if (!activeEventId || !isAuthenticated) {
       setSelectedEventData(null);
@@ -80,18 +73,22 @@ const HistoryPage = () => {
 
     const fetchDetail = async () => {
       try {
-        setIsLoadingDetail(true);
+        setIsLoadingDetail(true); // Bắt đầu loading
         setError(null);
 
-        const apiDetailData = await getAnalysisDetail(activeEventId);
+        // Sử dụng Promise.all để chạy song song:
+        const [apiDetailData] = await Promise.all([
+          getAnalysisDetail(activeEventId),
+          new Promise((resolve) => setTimeout(resolve, 250)), // Delay giả 1s
+        ]);
+
         const transformedDetail =
           transformApiDetailToCombinedEvent(apiDetailData);
-
         setSelectedEventData(transformedDetail);
       } catch (err: any) {
         setError(err.message || "Không thể tải chi tiết.");
       } finally {
-        setIsLoadingDetail(false);
+        setIsLoadingDetail(false); // Tắt loading sau khi đã đợi đủ 1s và có dữ liệu
       }
     };
 
@@ -102,33 +99,62 @@ const HistoryPage = () => {
     setActiveEventId(null);
   };
 
-  // Hàm render cho cột bên phải (Aside)
+  // Hàm render nội dung bên phải
   const renderSidebarContent = () => {
-    if (activeEventId) {
-      if (isLoadingDetail) {
-        return <p>Đang tải chi tiết...</p>;
-      }
-      if (selectedEventData) {
-        return (
+    // Trường hợp 1: Đang loading chi tiết
+    if (activeEventId && isLoadingDetail) {
+      return (
+        <div className={styles.asideSection}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <span className={styles.loadingText}>Đang tải chi tiết...</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Trường hợp 2: Đã có dữ liệu chi tiết
+    if (activeEventId && selectedEventData) {
+      return (
+        <div className={styles.asideSection}>
           <HistoryDetail
             event={selectedEventData}
             onClose={handleCloseDetail}
           />
-        );
-      }
+        </div>
+      );
     }
-    return <HistorySidebar />;
+
+    // Trường hợp 3: Mặc định (Sidebar lịch sử chung/Thống kê)
+    return (
+      <div className={styles.asideSection}>
+        <HistorySidebar />
+      </div>
+    );
   };
 
   return (
     <div className={styles.historyPage}>
       <main className={styles.historyContent}>
-        {/* CỘT 1: PHẦN TIMELINE (Đã cập nhật) */}
+        {/* CỘT 1: PHẦN TIMELINE */}
         <div className={styles.timelineSection}>
           {isLoadingList ? (
-            <p>Đang tải timeline...</p>
+            // --- Render Skeleton khi đang tải ---
+            <div className={styles.skeletonWrapper}>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className={styles.skeletonItem}>
+                  <div className={styles.skeletonMarker}></div>
+                  <div className={styles.skeletonContent}>
+                    <div className={styles.skeletonTitle}></div>
+                    <div className={styles.skeletonBody}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : error && timelineEvents.length === 0 ? (
-            <p>Lỗi: {error}</p>
+            <p style={{ padding: "20px", color: "red", textAlign: "center" }}>
+              Lỗi: {error}
+            </p>
           ) : (
             <Timeline
               events={timelineEvents}
@@ -138,8 +164,8 @@ const HistoryPage = () => {
           )}
         </div>
 
-        {/* CỘT 2: KHỐI NỘI DUNG (Đã cập nhật) */}
-        <aside className={styles.asideSection}>{renderSidebarContent()}</aside>
+        {/* CỘT 2: KHỐI NỘI DUNG */}
+        {renderSidebarContent()}
       </main>
     </div>
   );
