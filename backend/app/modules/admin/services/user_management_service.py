@@ -8,7 +8,7 @@ import uuid
 import logging
 
 from app.modules.auth.models.user import User
-from app.modules.auth.models.user_profile import UserProfile
+from app.modules.profile.models.user_profile import UserProfile
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.roles import Role
 from app.core.Security.password import hash_password

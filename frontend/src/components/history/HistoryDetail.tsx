@@ -109,7 +109,7 @@ const HistoryDetail = ({ event, onClose }: HistoryDetailProps) => {
                         className={styles.accuracyBar}
                         style={{ width: `${currentWound.accuracy}%` }}
                       >
-                        {currentWound.accuracy}%
+                        {Math.round(currentWound.accuracy)}%
                       </div>
                     </div>
                   </div>

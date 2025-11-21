@@ -18,7 +18,7 @@ class AuditService:
     @staticmethod
     def _map_row_to_audit_log(row) -> AuditLog:
         """
-        Convert database row to AuditLog instance.
+        Chuyển đổi hàng database thành instance AuditLog.
         """
         return AuditLog(
             audit_action_id=row.audit_action_id,
@@ -69,7 +69,7 @@ class AuditService:
                 ) VALUES (
                     :audit_action_id, :user_id, :action, :resource_type, :resource_id,
                     :ip_address, :user_agent, :success, :error_message, :is_guest,
-                    :guest_session_id, :details::jsonb, :timestamp
+                    :guest_session_id, CAST(:details AS jsonb), :timestamp
                 )
                 RETURNING
                     audit_action_id, user_id, action, resource_type, resource_id,
@@ -106,17 +106,17 @@ class AuditService:
                 f"guest:{guest_session_id}" if guest_session_id else "unknown"
             )
             logger.info(
-                f"Audit log created: action={action}, "
-                f"user={user_identifier}, "
-                f"success={success}"
+                f"Đã tạo audit log: hành động={action}, "
+                f"người dùng={user_identifier}, "
+                f"thành công={success}"
             )
 
             return audit_log
 
         except Exception as e:
             logger.error(
-                f"Failed to log audit event: action={action}, "
-                f"user_id={user_id}, error={str(e)}"
+                f"Không thể ghi audit event: hành động={action}, "
+                f"user_id={user_id}, lỗi={str(e)}"
             )
             await self.db.rollback()
             raise
@@ -132,15 +132,15 @@ class AuditService:
         end_date: Optional[datetime] = None,
         limit: int = 50,
         offset: int = 0
-    ) -> Tuple[List[AuditLog], int]: 
+    ) -> Tuple[List[AuditLog], int]:
         """
-        Query audit logs with filtering.
-        
-        Returns:
+        Truy vấn audit logs với bộ lọc.
+
+        Trả về:
             Tuple[List[AuditLog], int]: (logs, total_count)
         """
         try:
-            # Build filters
+            # Xây dựng bộ lọc
             filter_fields = {
                 "user_id": user_id,
                 "action": action,
@@ -171,7 +171,7 @@ class AuditService:
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
 
-            # QUERY 1: Count total matching records
+            # TRUY VẤN 1: Đếm tổng số bản ghi phù hợp
             count_query = text(f"""
                 SELECT COUNT(*)
                 FROM audit_logs
@@ -181,7 +181,7 @@ class AuditService:
             count_result = await self.db.execute(count_query, params)
             total_count = count_result.scalar() or 0
 
-            # QUERY 2: Get paginated logs
+            # TRUY VẤN 2: Lấy logs phân trang
             params["limit"] = limit
             params["offset"] = offset
 
@@ -202,19 +202,19 @@ class AuditService:
             logs = [self._map_row_to_audit_log(row) for row in rows]
 
             logger.info(
-                f"Retrieved {len(logs)}/{total_count} audit logs with filters: "
+                f"Đã lấy {len(logs)}/{total_count} audit logs với bộ lọc: "
                 f"{', '.join(f'{k}={v}' for k, v in filter_fields.items() if v is not None)}"
             )
             return logs, total_count
 
         except Exception as e:
-            logger.error(f"Failed to retrieve audit logs: {str(e)}")
+            logger.error(f"Không thể lấy audit logs: {str(e)}")
             raise
 
     async def get_audit_stats(self) -> Dict[str, Any]:
-        """Get basic audit statistics."""
+        """Lấy thống kê audit cơ bản."""
         try:
-            # Query 1: Total logs and success count
+            # Truy vấn 1: Tổng logs và số lượng thành công
             count_query = text("""
                 SELECT
                     COUNT(*) AS total_logs,
@@ -229,7 +229,7 @@ class AuditService:
             success_count = count_row.success_count or 0
             success_rate = (success_count / total_logs * 100) if total_logs > 0 else 0
 
-            # Query 2: Action distribution
+            # Truy vấn 2: Phân bố hành động
             action_query = text("""
                 SELECT
                     action,
@@ -244,7 +244,7 @@ class AuditService:
 
             action_distribution = {row.action: row.count for row in action_rows}
 
-            # Query 3: Recent activity (last 24h)
+            # Truy vấn 3: Hoạt động gần đây (24h qua)
             now = datetime.now(timezone.utc).replace(tzinfo=None)
             yesterday = now - timedelta(hours=24)
 
@@ -265,14 +265,14 @@ class AuditService:
                 "recent_activity_24h": recent_activity
             }
 
-            logger.info("Retrieved audit statistics")
+            logger.info("Đã lấy thống kê audit")
             return stats
 
         except Exception as e:
-            logger.error(f"Failed to retrieve audit statistics: {str(e)}")
+            logger.error(f"Không thể lấy thống kê audit: {str(e)}")
             raise
 
-    # Convenience methods for common events
+    # Phương thức tiện ích cho các sự kiện phổ biến
 
     async def log_login(
         self,
@@ -282,7 +282,7 @@ class AuditService:
         success: bool = True,
         error_message: Optional[str] = None
     ) -> AuditLog:
-        """Log user login attempt."""
+        """Ghi lại lần thử đăng nhập của người dùng."""
         return await self.log_event(
             action="login",
             user_id=user_id,
@@ -300,7 +300,7 @@ class AuditService:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None
     ) -> AuditLog:
-        """Log user logout."""
+        """Ghi lại việc đăng xuất của người dùng."""
         return await self.log_event(
             action="logout",
             user_id=user_id,
@@ -322,18 +322,23 @@ class AuditService:
         success: bool = True,
         error_message: Optional[str] = None,
         is_guest: bool = False,
-        guest_session_id: Optional[UUID] = None
+        guest_session_id: Optional[UUID] = None,
+        details: Optional[Dict[str, Any]] = None
     ) -> AuditLog:
-        """Log file upload event."""
+        """Ghi lại sự kiện upload file."""
         action = "guest_upload" if is_guest else "user_file_upload"
 
-        details = {}
+        upload_details = {}
         if file_name:
-            details["file_name"] = file_name
+            upload_details["file_name"] = file_name
         if file_size is not None:
-            details["file_size"] = file_size
+            upload_details["file_size"] = file_size
         if file_path:
-            details["file_path"] = file_path
+            upload_details["file_path"] = file_path
+        
+        # Merge with additional details if provided
+        if details:
+            upload_details.update(details)
 
         return await self.log_event(
             action=action,
@@ -346,5 +351,88 @@ class AuditService:
             error_message=error_message,
             is_guest=is_guest,
             guest_session_id=guest_session_id,
-            details=details if details else None
+            details=upload_details if upload_details else None
         )
+    
+
+    async def log_wound_analysis_started(
+        self, 
+        correlation_id: str, 
+        user_id: Optional[UUID] = None, 
+        file_path: Optional[str] = None,
+        source: Optional[str] = None,
+        is_guest: bool = False,
+        guest_session_id: Optional[UUID] = None
+    )-> AuditLog:
+        return await self.log_event(
+            action="wound_analysis_started", 
+            user_id=user_id, 
+            resource_type="wound_analysis", 
+            resource_id=correlation_id, 
+            is_guest=is_guest, 
+            guest_session_id=guest_session_id, 
+            details={
+                "file_path": file_path, 
+                "source": source, 
+                "correlation_id": correlation_id
+            }
+        )
+    
+    async def log_wound_analysis_completed(
+        self, 
+        correlation_id: str, 
+        user_id: Optional[UUID] = None, 
+        analysis_id: Optional[str] = None,
+        file_path: Optional[str] = None,
+        ai_model_version: Optional[str] = None,
+        total_detections: Optional[int] = None,
+        average_confidence: Optional[float] = None,
+        processing_time_ms: Optional[int] = None,
+        is_guest: bool = False,
+        guest_session_id: Optional[UUID] = None
+    )-> AuditLog: 
+        return await self.log_event(
+            action="wound_analysis_completed", 
+            user_id=user_id, 
+            resource_type="wound_analysis",
+            resource_id=analysis_id or correlation_id,
+            is_guest=is_guest,
+            guest_session_id=guest_session_id,
+            details={
+                "file_path": file_path,
+                "ai_model_version": ai_model_version,
+                "total_detections": total_detections,
+                "average_confidence": average_confidence,
+                "processing_time_ms": processing_time_ms,
+                "correlation_id": correlation_id
+            }
+        )
+    
+    async def log_wound_analysis_failed(
+        self,
+        correlation_id: str,
+        user_id: Optional[UUID] = None,
+        file_path: Optional[str] = None,
+        reason: Optional[str] = None,
+        error_code: Optional[str] = None,
+        is_guest: bool = False,
+        guest_session_id: Optional[UUID] = None
+    ) -> AuditLog:
+        return await self.log_event(
+            action="wound_analysis_failed",
+            user_id=user_id,
+            resource_type="wound_analysis",
+            resource_id=correlation_id,
+            success=False,
+            error_message=reason,
+            is_guest=is_guest,
+            guest_session_id=guest_session_id,
+            details={
+                "file_path": file_path,
+                "reason": reason,
+                "error_code": error_code,
+                "correlation_id": correlation_id
+            }
+        )
+    
+    

@@ -16,8 +16,7 @@ class WoundDetectionBase(BaseModel):
     firstaid_snapshot: Optional[Dict[str, Any]] = None
 
 
-class WoundDetectionCreate(WoundDetectionBase):
-    pass
+# Loại bỏ WoundDetectionCreate vì chỉ là wrapper rỗng
 class WoundDetectionResponse(WoundDetectionBase):
     detection_id: uuid.UUID
     created_at: datetime
@@ -59,23 +58,5 @@ class WoundDetectionResponse(WoundDetectionBase):
     class Config:
         from_attributes = True
 
-class WoundDetectionSummary(BaseModel):
-    wound_type: str
-    severity: str
-    sub_type: Optional[str] = None
-    confidence_score: float
-    bounding_box: Dict[str, Any]
-    firstaid_snapshot: Optional[Dict[str, Any]] = None
-
-    class Config:
-        from_attributes = True
-    
-    @computed_field
-    @property
-    def confidence_percentage(self) -> float:
-        return round(self.confidence_score * 100, 2)
-    
-    @computed_field
-    @property
-    def meets_threshold(self) -> bool:
-        return self.confidence_score >= 0.65
+# WoundDetectionSummary is defined in wound_analysis_schemas.py
+# to avoid duplication

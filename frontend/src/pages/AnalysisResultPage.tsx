@@ -181,6 +181,24 @@ const AnalysisResultPage = () => {
     // Chờ 1 chút để React render lại Template với woundsToExport mới
     await new Promise((resolve) => setTimeout(resolve, 100));
 
+    const reportContainer = document.getElementById("skinaid-pdf-wrapper");
+    if (!reportContainer) return;
+
+    const images = Array.from(reportContainer.querySelectorAll("img"));
+
+    // Tạo một Promise để chờ từng ảnh
+    const imagePromises = images.map((img) => {
+      const imageElement = img as HTMLImageElement;
+      if (imageElement.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        imageElement.onload = resolve;
+        imageElement.onerror = resolve; // Vẫn resolve dù lỗi để không treo PDF
+      });
+    });
+
+    // Chờ tất cả ảnh tải xong mới chạy tiếp
+    await Promise.all(imagePromises);
+
     // Tìm các trang (mỗi trang là 1 thẻ div class .pdf-page-to-print)
     const pages = document.querySelectorAll(".pdf-page-to-print");
 
@@ -202,6 +220,7 @@ const AnalysisResultPage = () => {
           scale: 2,
           useCORS: true,
           logging: false,
+          allowTaint: true,
           backgroundColor: "#ffffff",
           windowWidth: pageElement.scrollWidth,
           windowHeight: pageElement.scrollHeight,
@@ -311,7 +330,7 @@ const AnalysisResultPage = () => {
         <div className={styles.contentGrid}>
           <div className={styles.imageColumn}>
             <AnalyzedImage
-              imageSrc={analysisData.image_url}
+              imageSrc={`http://localhost:8000${analysisData.image_url}`}
               boundingBox={currentWoundData.bounding_box}
               label={`${currentWoundData.wound_type} ${currentWoundData.confidence_score}`}
             />
@@ -349,7 +368,7 @@ const AnalysisResultPage = () => {
       {analysisData && (
         <AnalysisReportTemplate
           wounds={woundsToExport} // Chỉ render những vết thương đã chọn
-          imageUrl={analysisData.image_url}
+          imageUrl={`http://localhost:8000${analysisData.image_url}`}
           reportId={analysis_id || "UNK"}
           fileName={analysisData.file_name}
           analyzedAt={analysisData.analyzed_at}

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./AuthTabs.module.css";
+import { useTranslation } from "react-i18next";
 
 interface AuthTabsProps {
   active: "login" | "register";
@@ -7,6 +8,8 @@ interface AuthTabsProps {
 
 const AuthTabs = ({ active }: AuthTabsProps) => {
   const navigate = useNavigate();
+
+  const { t } = useTranslation();
 
   return (
     <div className={styles.tabs}>
@@ -16,7 +19,7 @@ const AuthTabs = ({ active }: AuthTabsProps) => {
         }`}
         onClick={() => navigate("/login")}
       >
-        LOGIN
+        {t("auth_page.login_tab")}
       </button>
 
       <button
@@ -25,7 +28,7 @@ const AuthTabs = ({ active }: AuthTabsProps) => {
         }`}
         onClick={() => navigate("/register")}
       >
-        REGISTER
+        {t("auth_page.register_tab")}
       </button>
     </div>
   );

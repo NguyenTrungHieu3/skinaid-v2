@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { loginUser } from "../../services/authService";
 import { isAxiosError } from "axios";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export type LoginFormData = {
   username: string;
@@ -31,6 +32,8 @@ const validateField = (name: string, value: string): string => {
 };
 
 const LoginForm = () => {
+  const { t } = useTranslation();
+
   // Gộp state của form lại cho dễ quản lí
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
@@ -152,7 +155,7 @@ const LoginForm = () => {
       <div className={styles.formGroup}>
         {/* Hiển thị lỗi API ngay trên dưới form */}
         {apiError && <div className={styles.apiErrorMessage}>{apiError}</div>}
-        <label>Username</label>
+        <label>{t("auth_page.username")}</label>
 
         <div className={styles.inputWrapper}>
           <FaRegUser className={styles.icon} />
@@ -173,7 +176,7 @@ const LoginForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label>Password</label>
+        <label>{t("auth_page.password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
@@ -211,14 +214,14 @@ const LoginForm = () => {
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
-          <label htmlFor="remember">Remember me</label>
+          <label htmlFor="remember">{t("auth_page.remember_me")}</label>
         </div>
         <Link to="/forgot-password" className={styles.forgotLink}>
-          Forgot password?
+          {t("auth_page.forgot_password")}
         </Link>
       </div>
       <button type="submit" className={styles.submitButton}>
-        Login
+        {t("auth_page.login_button")}
       </button>
     </form>
   );

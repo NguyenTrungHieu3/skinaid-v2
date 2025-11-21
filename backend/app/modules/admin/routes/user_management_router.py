@@ -19,34 +19,34 @@ router = APIRouter(prefix="/admin/users", tags=["Admin - User Management"])
 
 
 async def get_user_controller(db: AsyncSession = Depends(get_db)) -> UserManagementController:
-    """Dependency to get user management controller instance"""
+    """Dependency để lấy instance user management controller"""
     return UserManagementController(db)
 
 
 @router.get(
     "",
     response_model=SuccessResponse[UserListResponse],
-    summary="Get Users List",
-    description="Get paginated list of users with optional filters"
+    summary="Lấy Danh sách Users",
+    description="Lấy danh sách users được phân trang với các bộ lọc tùy chọn"
 )
 async def get_users(
-    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
-    limit: int = Query(10, ge=1, le=100, description="Number of users per page"),
-    search: Optional[str] = Query(None, description="Search by email or display name"),
-    role: Optional[str] = Query(None, description="Filter by role (user, moderator, admin)"),
-    status: Optional[str] = Query(None, description="Filter by status (active, inactive)"),
+    page: int = Query(1, ge=1, description="Số trang (bắt đầu từ 1)"),
+    limit: int = Query(10, ge=1, le=100, description="Số users trên mỗi trang"),
+    search: Optional[str] = Query(None, description="Tìm kiếm theo email hoặc tên hiển thị"),
+    role: Optional[str] = Query(None, description="Lọc theo vai trò (user, moderator, admin)"),
+    status: Optional[str] = Query(None, description="Lọc theo trạng thái (active, inactive)"),
     controller: UserManagementController = Depends(get_user_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Get paginated list of users with filters:
-    - **page**: Page number (starts from 1)
-    - **limit**: Records per page (1-100)
-    - **search**: Search in email and display name
-    - **role**: Filter by role (user, moderator, admin)
-    - **status**: Filter by status (active, inactive)
+    Lấy danh sách users được phân trang với bộ lọc:
+    - **page**: Số trang (bắt đầu từ 1)
+    - **limit**: Bản ghi trên mỗi trang (1-100)
+    - **search**: Tìm kiếm trong email và tên hiển thị
+    - **role**: Lọc theo vai trò (user, moderator, admin)
+    - **status**: Lọc theo trạng thái (active, inactive)
     
-    **Requires admin role**
+    **Yêu cầu vai trò admin**
     """
     return await controller.get_users(
         page=page,

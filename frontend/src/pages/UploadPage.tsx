@@ -19,8 +19,8 @@ const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 const MAX_DIMENSION_WIDTH = 4096;
 const MAX_DIMENSION_HEIGHT = 4096;
 
-const MIN_DIMENSION_WIDTH = 256;
-const MIN_DIMENSION_HEIGHT = 256;
+const MIN_DIMENSION_WIDTH = 100;
+const MIN_DIMENSION_HEIGHT = 100;
 
 const UploadPage = () => {
   const [isDragging, setIsDragging] = useState(false);

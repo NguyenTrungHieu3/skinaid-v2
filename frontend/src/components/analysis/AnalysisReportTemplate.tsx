@@ -1,9 +1,24 @@
 // src/components/analysis/AnalysisReportTemplate.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./AnalysisReportTemplate.module.css";
 import { type SignificantWound } from "../../services/aiService";
 import { type UserProfileResponse } from "../../services/profileService";
 import Logo from "../../assets/images/general/logo.png";
+
+// --- 1. THÊM HÀM TIỆN ÍCH CONVERT BASE64 ---
+const toDataURL = (url: string) =>
+  fetch(url)
+    .then((response) => response.blob())
+    .then(
+      (blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+    );
+
 interface AnalysisReportTemplateProps {
   wounds: SignificantWound[]; // <-- SỬA: Nhận vào mảng
   imageUrl: string;
@@ -12,6 +27,7 @@ interface AnalysisReportTemplateProps {
   analyzedAt?: string;
   // --- THÊM PROP NÀY ---
   userProfile: UserProfileResponse | null;
+  onTemplateReady?: () => void;
 }
 
 const AnalysisReportTemplate = ({
@@ -21,15 +37,33 @@ const AnalysisReportTemplate = ({
   fileName,
   analyzedAt,
   userProfile,
+  onTemplateReady,
 }: AnalysisReportTemplateProps) => {
   const [imgDimensions, setImgDimensions] = useState<{
     w: number;
     h: number;
   } | null>(null);
 
+  const [base64Img, setBase64Img] = useState<string | undefined>(undefined);
+
   const reportDate = analyzedAt
     ? new Date(analyzedAt).toLocaleDateString("vi-VN")
     : new Date().toLocaleDateString("vi-VN");
+
+  // --- 3. EFFECT ĐỂ TẢI VÀ CONVERT ẢNH NGAY KHI MOUNT ---
+  useEffect(() => {
+    if (imageUrl) {
+      toDataURL(imageUrl)
+        .then((base64) => {
+          setBase64Img(base64);
+        })
+        .catch((err) => {
+          console.error("Lỗi convert ảnh sang Base64:", err);
+          // Fallback: nếu lỗi thì cứ set URL gốc để thử vận may
+          setBase64Img(imageUrl);
+        });
+    }
+  }, [imageUrl]);
 
   // 2. Hàm xử lý khi ảnh load xong để lấy kích thước
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -39,6 +73,9 @@ const AnalysisReportTemplate = ({
         w: e.currentTarget.naturalWidth,
         h: e.currentTarget.naturalHeight,
       });
+      if (onTemplateReady) {
+        setTimeout(onTemplateReady, 200); // Delay nhẹ để render kịp
+      }
     }
   };
 
@@ -194,7 +231,7 @@ const AnalysisReportTemplate = ({
             <div className={styles.imageColumn}>
               <div className={styles.imageWrapper}>
                 <img
-                  src={imageUrl}
+                  src={base64Img || imageUrl}
                   alt="Analyzed Wound"
                   crossOrigin="anonymous"
                   className={styles.woundImage}

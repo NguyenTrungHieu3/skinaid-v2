@@ -22,7 +22,7 @@ class FirstAidService:
     ) -> Optional[Dict[str, Any]]:
         try:
             logger.info(
-                f"Getting first aid guide: wound_type={wound_type}, "
+                f"Đang lấy hướng dẫn sơ cứu: wound_type={wound_type}, "
                 f"severity={severity}, sub_type={sub_type}"
             )
 
@@ -31,24 +31,24 @@ class FirstAidService:
                     wound_type, severity, sub_type
                 )
                 if specific_guide:
-                    logger.info(f"Found specific guide with sub_type={sub_type}")
+                    logger.info(f"Tìm thấy hướng dẫn cụ thể với sub_type={sub_type}")
                     return self._format_guide_response(specific_guide)
 
                 logger.warning(
-                    f"No guide found with sub_type={sub_type}, trying general guide"
+                    f"Không tìm thấy hướng dẫn với sub_type={sub_type}, thử hướng dẫn chung"
                 )
 
             general_guide = await self._find_guide_general(wound_type, severity)
 
             if general_guide:
-                logger.info("Found general guide")
+                logger.info("Tìm thấy hướng dẫn chung")
                 return self._format_guide_response(general_guide)
 
-            logger.warning(f"No guide found for {wound_type}/{severity}")
+            logger.warning(f"Không tìm thấy hướng dẫn cho {wound_type}/{severity}")
             return None
 
         except Exception as e:
-            logger.error(f"Error getting first aid guide: {e}", exc_info=True)
+            logger.error(f"Lỗi khi lấy hướng dẫn sơ cứu: {e}", exc_info=True)
             return None
 
     async def _find_guide_specific(
@@ -79,7 +79,7 @@ class FirstAidService:
             return dict(row) if row else None
 
         except Exception as e:
-            logger.error(f"Error finding specific guide: {e}")
+            logger.error(f"Lỗi khi tìm hướng dẫn cụ thể: {e}")
             return None
 
     async def _find_guide_general(
@@ -108,7 +108,7 @@ class FirstAidService:
             return dict(row) if row else None
 
         except Exception as e:
-            logger.error(f"Error finding general guide: {e}")
+            logger.error(f"Lỗi khi tìm hướng dẫn chung: {e}")
             return None
 
     def _format_guide_response(self, guide: Dict[str, Any]) -> Dict[str, Any]:
@@ -164,7 +164,7 @@ class FirstAidService:
             return list(wound_types.values())
 
         except Exception as e:
-            logger.error(f"Failed to get available wound types: {e}")
+            logger.error(f"Không thể lấy các loại vết thương có sẵn: {e}")
             return []
 
     async def search_first_aid_guides(
@@ -202,11 +202,11 @@ class FirstAidService:
                 guide = dict(row)
                 guides.append(self._format_guide_response(guide))
 
-            logger.info(f"Found {len(guides)} first aid guides")
+            logger.info(f"Tìm thấy {len(guides)} hướng dẫn sơ cứu")
             return guides
 
         except Exception as e:
-            logger.error(f"Failed to search first aid guides: {e}")
+            logger.error(f"Không thể tìm kiếm hướng dẫn sơ cứu: {e}")
             return []
 
     async def get_guide_statistics(self) -> Dict[str, Any]:
@@ -251,7 +251,7 @@ class FirstAidService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get guide statistics: {e}")
+            logger.error(f"Không thể lấy thống kê hướng dẫn: {e}")
             return {
                 "total_guides": 0,
                 "wound_type_breakdown": {},
@@ -321,14 +321,14 @@ class FirstAidService:
             await self.db.commit()
             await self.db.refresh(guide)
 
-            logger.info(f"Created first aid guide: {guide.firstaidguide_id}")
+            logger.info(f"Đã tạo hướng dẫn sơ cứu: {guide.firstaidguide_id}")
             
             # Convert to dict for response
             return self._model_to_dict(guide)
 
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to create first aid guide: {e}", exc_info=True)
+            logger.error(f"Không thể tạo hướng dẫn sơ cứu: {e}", exc_info=True)
             raise
 
     async def update_first_aid_guide(
@@ -348,7 +348,7 @@ class FirstAidService:
             existing_guide = result.mappings().first()
             
             if not existing_guide:
-                logger.warning(f"Guide not found: {guide_id}")
+                logger.warning(f"Không tìm thấy hướng dẫn: {guide_id}")
                 return None
 
             # Prepare update fields
@@ -392,7 +392,7 @@ class FirstAidService:
                 params["is_active"] = update_data["is_active"]
             
             if not update_fields:
-                logger.warning("No fields to update")
+                logger.warning("Không có trường nào để cập nhật")
                 return dict(existing_guide)
             
             # Add updated_at
@@ -411,12 +411,12 @@ class FirstAidService:
             updated_guide = result.mappings().first()
             await self.db.commit()
             
-            logger.info(f"Updated first aid guide: {guide_id}")
+            logger.info(f"Đã cập nhật hướng dẫn sơ cứu: {guide_id}")
             return self._format_guide_response(dict(updated_guide))
 
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to update first aid guide: {e}", exc_info=True)
+            logger.error(f"Không thể cập nhật hướng dẫn sơ cứu: {e}", exc_info=True)
             raise
 
     async def delete_first_aid_guide(
@@ -446,18 +446,18 @@ class FirstAidService:
             deleted = result.mappings().first()
             
             if not deleted:
-                logger.warning(f"Guide not found for deletion: {guide_id}")
+                logger.warning(f"Không tìm thấy hướng dẫn để xóa: {guide_id}")
                 return False
             
             await self.db.commit()
             
             delete_type = "hard" if hard_delete else "soft"
-            logger.info(f"{delete_type} deleted first aid guide: {guide_id}")
+            logger.info(f"Đã {delete_type} xóa hướng dẫn sơ cứu: {guide_id}")
             return True
 
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to delete first aid guide: {e}", exc_info=True)
+            logger.error(f"Không thể xóa hướng dẫn sơ cứu: {e}", exc_info=True)
             raise
 
     async def get_guide_by_id(self, guide_id: uuid.UUID) -> Optional[Dict[str, Any]]:
@@ -477,7 +477,7 @@ class FirstAidService:
             return self._format_guide_response(dict(guide))
 
         except Exception as e:
-            logger.error(f"Failed to get guide by ID: {e}")
+            logger.error(f"Không thể lấy hướng dẫn theo ID: {e}")
             return None
 
     def _model_to_dict(self, guide: FirstAidGuide) -> Dict[str, Any]:

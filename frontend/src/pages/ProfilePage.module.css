@@ -3,8 +3,9 @@
 /* 1. Layout chính */
 .profileContainer {
   background-color: #f4f7f6;
-  min-height: calc(100vh - 60px); /* 60px là chiều cao Header */
-  padding-bottom: 1px;
+  min-height: 100vh;
+  padding-bottom: 2rem;
+  /* Bỏ overflow-y ở đây vì body đã handle scroll */
 }
 
 .profileMainWrapper {
@@ -492,6 +493,7 @@
 .infoCard {
   border: 1px solid #eee;
   border-radius: 8px;
+  overflow: visible; /* Đảm bảo nội dung không bị cắt */
 }
 .cardHeader {
   display: flex;

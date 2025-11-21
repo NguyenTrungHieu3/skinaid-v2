@@ -31,17 +31,17 @@ class ProfileController:
         profile_data: UserProfileUpdate
     ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
         """
-        Update user profile information.
+        Cập nhật thông tin hồ sơ người dùng.
 
         Args:
-            user_id: User ID
-            profile_data: Profile data to update
+            user_id: ID người dùng
+            profile_data: Dữ liệu hồ sơ cần cập nhật
 
         Returns:
-            SuccessResponse with profile data or ErrorResponse
+            SuccessResponse với dữ liệu hồ sơ hoặc ErrorResponse
         """
         try:
-            logger.info(f"[UPDATE_PROFILE] Updating profile for user: {user_id}")
+            logger.info(f"[CẬP_NHẬT_HỒ_SƠ] Đang cập nhật hồ sơ cho người dùng: {user_id}")
             
             updated_profile = await self.profile_service.update_profile(
                 user_id, profile_data
@@ -51,7 +51,7 @@ class ProfileController:
                 updated_profile
             )
 
-            logger.info(f"[UPDATE_PROFILE] Success: {user_id}")
+            logger.info(f"[CẬP_NHẬT_HỒ_SƠ] Thành công: {user_id}")
             
             return SuccessResponse(
                 message=Message.PROFILE_UPDATE_SUCCESS_MSG,
@@ -59,7 +59,7 @@ class ProfileController:
             )
 
         except AppBaseException as e:
-            logger.error(f"[UPDATE_PROFILE] AppBaseException: {e.message}")
+            logger.error(f"[CẬP_NHẬT_HỒ_SƠ] AppBaseException: {e.message}")
             
             if e.error_code == ErrorCode.USER_NOT_FOUND:
                 return ErrorResponse(
@@ -83,7 +83,7 @@ class ProfileController:
                 )
 
         except Exception as e:
-            logger.error(f"[UPDATE_PROFILE] Unexpected error: {e}", exc_info=True)
+            logger.error(f"[CẬP_NHẬT_HỒ_SƠ] Lỗi không mong muốn: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -95,14 +95,14 @@ class ProfileController:
         self,
         user_id: uuid.UUID
     ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
-        """Get user profile information."""
+        """Lấy thông tin hồ sơ người dùng."""
         try:
-            logger.info(f"[GET_PROFILE] Getting profile for user: {user_id}")
+            logger.info(f"[LẤY_HỒ_SƠ] Đang lấy hồ sơ cho người dùng: {user_id}")
             
             profile = await self.profile_service.get_profile_by_user_id(user_id)
 
             if not profile:
-                logger.warning(f"[GET_PROFILE] Profile not found: {user_id}")
+                logger.warning(f"[LẤY_HỒ_SƠ] Không tìm thấy hồ sơ: {user_id}")
                 return ErrorResponse(
                     message=Message.PROFILE_NOT_FOUND_MSG,
                     error_code=ErrorCode.PROFILE_NOT_FOUND,
@@ -114,7 +114,7 @@ class ProfileController:
                 profile
             )
 
-            logger.info(f"[GET_PROFILE] Success: {user_id}")
+            logger.info(f"[LẤY_HỒ_SƠ] Thành công: {user_id}")
             
             return SuccessResponse(
                 message=Message.PROFILE_GET_SUCCESS_MSG,
@@ -122,7 +122,7 @@ class ProfileController:
             )
 
         except Exception as e:
-            logger.error(f"[GET_PROFILE] Unexpected error: {e}", exc_info=True)
+            logger.error(f"[LẤY_HỒ_SƠ] Lỗi không mong muốn: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.PROFILE_GET_ERROR_MSG,
                 error_code=ErrorCode.PROFILE_GET_ERROR,
@@ -134,15 +134,15 @@ class ProfileController:
         self,
         user_id: str
     ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
-        """Get user profile by string user ID (converts to UUID)."""
+        """Lấy hồ sơ người dùng theo ID người dùng dạng chuỗi (chuyển đổi thành UUID)."""
         try:
-            logger.info(f"[GET_PROFILE_STR] Getting profile for user: {user_id}")
+            logger.info(f"[LẤY_HỒ_SƠ_STR] Đang lấy hồ sơ cho người dùng: {user_id}")
             
             # Convert string to UUID
             try:
                 uuid_user_id = uuid.UUID(user_id)
             except ValueError:
-                logger.warning(f"[GET_PROFILE_STR] Invalid UUID format: {user_id}")
+                logger.warning(f"[LẤY_HỒ_SƠ_STR] Định dạng UUID không hợp lệ: {user_id}")
                 return ErrorResponse(
                     message=Message.USER_INVALID_DATA_MSG,
                     error_code=ErrorCode.USER_INVALID_DATA,
@@ -153,7 +153,7 @@ class ProfileController:
             profile = await self.profile_service.get_profile_by_user_id(uuid_user_id)
 
             if not profile:
-                logger.warning(f"[GET_PROFILE_STR] Profile not found: {user_id}")
+                logger.warning(f"[LẤY_HỒ_SƠ_STR] Không tìm thấy hồ sơ: {user_id}")
                 return ErrorResponse(
                     message=Message.PROFILE_NOT_FOUND_MSG,
                     error_code=ErrorCode.PROFILE_NOT_FOUND,
@@ -165,7 +165,7 @@ class ProfileController:
                 profile
             )
 
-            logger.info(f"[GET_PROFILE_STR] Success: {user_id}")
+            logger.info(f"[LẤY_HỒ_SƠ_STR] Thành công: {user_id}")
             
             return SuccessResponse(
                 message=Message.PROFILE_GET_SUCCESS_MSG,
@@ -173,7 +173,7 @@ class ProfileController:
             )
 
         except Exception as e:
-            logger.error(f"[GET_PROFILE_STR] Unexpected error: {e}", exc_info=True)
+            logger.error(f"[LẤY_HỒ_SƠ_STR] Lỗi không mong muốn: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.INTERNAL_ERROR_MSG,
                 error_code=ErrorCode.INTERNAL_ERROR,
@@ -184,14 +184,14 @@ class ProfileController:
     async def get_profile_statistics(
         self
     ) -> Union[SuccessResponse[ProfileStatisticsResponse], ErrorResponse]:
-        """Get statistics about user profiles."""
+        """Lấy thống kê về hồ sơ người dùng."""
         try:
-            logger.info("[STATISTICS] Getting profile statistics")
+            logger.info("[THỐNG_KÊ] Đang lấy thống kê hồ sơ")
             
             stats = await self.profile_service.get_profile_statistics()
 
             logger.info(
-                f"[STATISTICS] Success - Total profiles: {stats.total_profiles if hasattr(stats, 'total_profiles') else 'N/A'}"
+                f"[THỐNG_KÊ] Thành công - Tổng hồ sơ: {stats.total_profiles if hasattr(stats, 'total_profiles') else 'N/A'}"
             )
             
             return SuccessResponse(
@@ -200,7 +200,7 @@ class ProfileController:
             )
 
         except Exception as e:
-            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            logger.error(f"[THỐNG_KÊ] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.PROFILE_STATISTICS_ERROR_MSG,
                 error_code=ErrorCode.PROFILE_STATISTICS_ERROR,
@@ -217,12 +217,12 @@ class ProfileController:
         limit: int = 20,
         offset: int = 0
     ) -> Union[SuccessResponse[List[UserProfileResponse]], ErrorResponse]:
-        """Search profiles with filters."""
+        """Tìm kiếm hồ sơ với bộ lọc."""
         try:
             logger.info(
-                f"[SEARCH_PROFILES] Searching - name: {full_name}, "
-                f"gender: {gender}, age: {min_age}-{max_age}, "
-                f"limit: {limit}, offset: {offset}"
+                f"[TÌM_KIẾM_HỒ_SƠ] Đang tìm kiếm - tên: {full_name}, "
+                f"giới tính: {gender}, tuổi: {min_age}-{max_age}, "
+                f"giới hạn: {limit}, offset: {offset}"
             )
             
             profiles = await self.profile_service.search_profiles(
@@ -242,7 +242,7 @@ class ProfileController:
                 profile_responses.append(profile_response)
 
             logger.info(
-                f"[SEARCH_PROFILES] Success: {len(profile_responses)} profiles found"
+                f"[TÌM_KIẾM_HỒ_SƠ] Thành công: tìm thấy {len(profile_responses)} hồ sơ"
             )
             
             return SuccessResponse(
@@ -253,7 +253,7 @@ class ProfileController:
             )
 
         except Exception as e:
-            logger.error(f"[SEARCH_PROFILES] Error: {e}", exc_info=True)
+            logger.error(f"[TÌM_KIẾM_HỒ_SƠ] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.PROFILE_SEARCH_ERROR_MSG,
                 error_code=ErrorCode.PROFILE_SEARCH_ERROR,
@@ -265,10 +265,10 @@ class ProfileController:
         self,
         user_id: uuid.UUID
     ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Get suggestions for profile completion."""
+        """Lấy gợi ý để hoàn thiện hồ sơ."""
         try:
             logger.info(
-                f"[COMPLETION_SUGGESTIONS] Getting suggestions for user: {user_id}"
+                f"[GỢI_Ý_HOÀN_THIỆN] Đang lấy gợi ý cho người dùng: {user_id}"
             )
             
             suggestions = await self.profile_service.get_profile_completion_suggestions(
@@ -276,8 +276,8 @@ class ProfileController:
             )
 
             logger.info(
-                f"[COMPLETION_SUGGESTIONS] Success: {user_id} - "
-                f"Completion: {suggestions.get('completion_percentage', 0)}%"
+                f"[GỢI_Ý_HOÀN_THIỆN] Thành công: {user_id} - "
+                f"Hoàn thiện: {suggestions.get('completion_percentage', 0)}%"
             )
             
             return SuccessResponse(
@@ -287,7 +287,7 @@ class ProfileController:
 
         except AppBaseException as e:
             logger.error(
-                f"[COMPLETION_SUGGESTIONS] AppBaseException: {e.message}"
+                f"[GỢI_Ý_HOÀN_THIỆN] AppBaseException: {e.message}"
             )
             
             if e.error_code == ErrorCode.USER_NOT_FOUND:
@@ -313,7 +313,7 @@ class ProfileController:
 
         except Exception as e:
             logger.error(
-                f"[COMPLETION_SUGGESTIONS] Unexpected error: {e}",
+                f"[GỢI_Ý_HOÀN_THIỆN] Lỗi không mong muốn: {e}",
                 exc_info=True
             )
             return ErrorResponse(

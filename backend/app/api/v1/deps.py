@@ -536,6 +536,30 @@ async def get_current_active_user(
     return current_user
 
 
+async def get_current_verified_user(
+    current_user: User = Depends(get_current_user)
+) -> Optional[Dict[str, Any]]:
+    """
+    Dependency: Lấy user hiện tại đã verified dưới dạng dict
+
+    Returns:
+        Dict chứa thông tin user hoặc None nếu chưa verified
+
+    Raises:
+        HTTPException: Nếu user chưa verified
+    """
+    await check_email_verified(current_user, required=True)
+
+    return {
+        "user_id": str(current_user.user_id),
+        "email": current_user.email,
+        "is_verified": current_user.is_verified,
+        "is_active": current_user.is_active,
+        "created_at": current_user.created_at,
+        "updated_at": current_user.updated_at
+    }
+
+
 # ==================== FLEXIBLE ACCESS CONTROL ====================
 
 def allow_access(
@@ -765,6 +789,10 @@ require_auth = allow_access(require_auth=True, require_verified=False)
 require_verified = allow_access(require_auth=True, require_verified=True)
 guest_only = allow_access(allow_guest_only=True)
 
+# --- BỔ SUNG DÒNG NÀY ---
+# Dependency này sẽ trả về User nếu có token, hoặc None nếu không có token (không báo lỗi 401)
+get_optional_user = allow_access(require_auth=False, require_verified=False)
+
 # Role shortcuts
 require_admin = require_role(["admin"])
 require_user = require_role(["user"])
@@ -777,3 +805,4 @@ require_manage_users = require_permission("manage_users")
 require_manage_firstaid = require_permission("manage_firstaid")
 require_read_all_history = require_permission("read_all_history")
 require_read_logs = require_permission("read_logs")
+

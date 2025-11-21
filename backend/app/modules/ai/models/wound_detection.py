@@ -45,29 +45,3 @@ class WoundDetection(SQLModel, table=True):
     wound_analysis: Optional["WoundAnalysis"] = Relationship(
         back_populates="wound_detections"
     )
-
-    @classmethod
-    def create_detection(
-        cls,
-        analysis_id: uuid.UUID,
-        wound_type: str,
-        severity: str,
-        sub_type: Optional[str] = None,
-        confidence_score: float = 0.0,
-        bounding_box: dict = None,
-        detection_index: int = 0,
-        firstaidguide_id: Optional[uuid.UUID] = None,
-        firstaid_snapshot: dict = None
-    ) -> "WoundDetection":
-        return cls(
-            analysis_id=analysis_id,
-            wound_type=wound_type,
-            severity=severity,
-            sub_type=sub_type,
-            confidence_score=confidence_score,
-            bounding_box=bounding_box or {},
-            detection_index=detection_index,
-            firstaidguide_id=firstaidguide_id,
-            firstaid_snapshot=firstaid_snapshot,
-            created_at=datetime.now(timezone.utc).replace(tzinfo=None)
-        )

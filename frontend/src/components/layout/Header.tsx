@@ -6,7 +6,7 @@ import Logo from "../../assets/images/general/logo.png";
 import { useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import CountryFlag from "react-country-flag";
+import LanguageSwitcher from "../common/LanguageSwitcher";
 
 const Header = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -16,31 +16,31 @@ const Header = () => {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   // --- 2. TẠO COMPONENT CHUYỂN NGÔN NGỮ ---
-  const LanguageSwitcher = () => (
-    <div className={styles.languageSwitcher}>
-      <button
-        onClick={() => i18n.changeLanguage("en")}
-        className={`${styles.flagButton} ${
-          i18n.language === "en" ? styles.activeFlag : ""
-        }`}
-        aria-label="Switch to English"
-      >
-        <CountryFlag countryCode="US" svg />
-      </button>
-      <span className={styles.divider}>|</span>
-      <button
-        onClick={() => i18n.changeLanguage("vi")}
-        className={`${styles.flagButton} ${
-          i18n.language === "vi" ? styles.activeFlag : ""
-        }`}
-        aria-label="Switch to Vietnamese"
-      >
-        <CountryFlag countryCode="VN" svg />
-      </button>
-    </div>
-  );
+  // const LanguageSwitcher = () => (
+  //   <div className={styles.languageSwitcher}>
+  //     <button
+  //       onClick={() => i18n.changeLanguage("en")}
+  //       className={`${styles.flagButton} ${
+  //         i18n.language === "en" ? styles.activeFlag : ""
+  //       }`}
+  //       aria-label="Switch to English"
+  //     >
+  //       <CountryFlag countryCode="US" svg />
+  //     </button>
+  //     <span className={styles.divider}>|</span>
+  //     <button
+  //       onClick={() => i18n.changeLanguage("vi")}
+  //       className={`${styles.flagButton} ${
+  //         i18n.language === "vi" ? styles.activeFlag : ""
+  //       }`}
+  //       aria-label="Switch to Vietnamese"
+  //     >
+  //       <CountryFlag countryCode="VN" svg />
+  //     </button>
+  //   </div>
+  // );
   return (
     <header className={styles.header}>
       {/* 1. NÚT HAMBURGER (BÊN TRÁI - CHỈ HIỆN TRÊN MOBILE) */}
