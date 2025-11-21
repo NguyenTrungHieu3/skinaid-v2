@@ -789,6 +789,10 @@ require_auth = allow_access(require_auth=True, require_verified=False)
 require_verified = allow_access(require_auth=True, require_verified=True)
 guest_only = allow_access(allow_guest_only=True)
 
+# --- BỔ SUNG DÒNG NÀY ---
+# Dependency này sẽ trả về User nếu có token, hoặc None nếu không có token (không báo lỗi 401)
+get_optional_user = allow_access(require_auth=False, require_verified=False)
+
 # Role shortcuts
 require_admin = require_role(["admin"])
 require_user = require_role(["user"])
@@ -801,3 +805,4 @@ require_manage_users = require_permission("manage_users")
 require_manage_firstaid = require_permission("manage_firstaid")
 require_read_all_history = require_permission("read_all_history")
 require_read_logs = require_permission("read_logs")
+

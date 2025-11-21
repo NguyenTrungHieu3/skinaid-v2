@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/authService";
 import { isAxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 
 export type RegisterFormData = {
   username: string;
@@ -83,6 +84,8 @@ const validateField = (
 };
 
 const RegisterForm = () => {
+  const { t } = useTranslation();
+
   // Tạo state cho tất cả dữ liệu form
   const [formData, setFormData] = useState<RegisterFormData>({
     username: "",
@@ -239,7 +242,7 @@ const RegisterForm = () => {
   return (
     <form onSubmit={handleSubmit} noValidate>
       <div className={styles.formGroup}>
-        <label>Username</label>
+        <label>{t("auth_page.username")}</label>
 
         <div className={styles.inputWrapper}>
           <FaRegUser className={styles.icon} />
@@ -260,7 +263,7 @@ const RegisterForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label>Password</label>
+        <label>{t("auth_page.password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
@@ -284,7 +287,7 @@ const RegisterForm = () => {
         )}
       </div>
       <div className={styles.formGroup}>
-        <label>Confirm Password</label>
+        <label>{t("auth_page.confirm_password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
@@ -308,7 +311,7 @@ const RegisterForm = () => {
         )}
       </div>
       <div className={styles.formGroup}>
-        <label>Email</label>
+        <label>{t("auth_page.email")}</label>
         <div className={styles.inputWrapper}>
           <MdOutlineEmail className={styles.icon} />
           <input
@@ -334,7 +337,7 @@ const RegisterForm = () => {
             checked={formData.gender === "male"}
             onChange={handleChange}
           />
-          <label htmlFor="male">Male</label>
+          <label htmlFor="male">{t("auth_page.male")}</label>
           <input
             type="radio"
             id="female"
@@ -343,7 +346,7 @@ const RegisterForm = () => {
             checked={formData.gender === "female"}
             onChange={handleChange}
           />
-          <label htmlFor="female">Female</label>
+          <label htmlFor="female">{t("auth_page.female")}</label>
         </div>
       </div>
 
@@ -360,11 +363,11 @@ const RegisterForm = () => {
           onChange={handleChange}
         />
 
-        <label htmlFor="agree">I agree to the terms and conditions</label>
+        <label htmlFor="agree">{t("auth_page.term")}</label>
       </div>
       {errors.agree && <p className={styles.errorMessage}>{errors.agree}</p>}
       <button type="submit" className={styles.submitButton}>
-        Register
+        {t("auth_page.register_button")}
       </button>
       {apiError && <div className={styles.apiErrorMessage}>{apiError}</div>}
     </form>

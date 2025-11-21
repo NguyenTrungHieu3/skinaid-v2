@@ -6,6 +6,7 @@ from typing import Optional, List
 from app.api.v1.deps import get_current_verified_user, get_db
 from app.modules.ai.controllers.ai_controller import AIController
 
+
 router = APIRouter(prefix="/ai")
 
 async def get_session_id(

@@ -1,4 +1,21 @@
 {
+  "auth_page": {
+    "left_title": "Chào mừng bạn đến với SkinAid",
+    "left_desc": "Hệ thống hỗ trợ phát hiện và phân loại vết thương thông minh",
+    "login_tab": "ĐĂNG NHẬP",
+    "register_tab": "ĐĂNG KÝ",
+    "username": "Tên người dùng",
+    "password": "Mật khẩu",
+    "remember_me": "Ghi nhớ tôi",
+    "forgot_password": "Quên mật khẩu?",
+    "email": "Email",
+    "confirm_password": "Xác nhận mật khẩu",
+    "male": "Nam",
+    "female": "Nữ",
+    "term": "Tôi đồng ý với Điều khoản và Điều kiện",
+    "login_button": "Đăng nhập",
+    "register_button": "Đăng ký"
+  },
   "header": {
     "home": "Trang chủ",
     "upload_image": "Tải ảnh lên",

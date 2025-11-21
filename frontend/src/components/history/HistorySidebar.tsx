@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styles from "./HistorySidebar.module.css";
-// Thêm icon 'SlidersHorizontal' cho thanh trượt
-import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import LogoPlaceholder from "../../assets/images/general/logo_placeholder.png";
 import type { HistoryEvent } from "./Timeline";
 
@@ -17,7 +16,15 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const filters = ["7 ngày", "2 tuần", "1 tháng", "3 tháng"];
+  const filters = [
+    "1 ngày",
+    "3 ngày",
+    "7 ngày",
+    "1 tháng",
+    "3 tháng",
+    "6 tháng",
+    "1 năm",
+  ];
 
   // Filter events based on search query and date filter
   const filterEvents = (query: string, dateFilter: string) => {
@@ -25,14 +32,17 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
 
     // Filter by date range
     const now = new Date();
-    const daysToSubtract = {
+    const daysToSubtract: { [key: string]: number } = {
+      "1 ngày": 1,
+      "3 ngày": 3,
       "7 ngày": 7,
-      "2 tuần": 14,
       "1 tháng": 30,
       "3 tháng": 90,
+      "6 tháng": 180,
+      "1 năm": 365,
     };
 
-    const days = daysToSubtract[dateFilter as keyof typeof daysToSubtract] || 7;
+    const days = daysToSubtract[dateFilter] || 7;
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
     filtered = filtered.filter((event) => {

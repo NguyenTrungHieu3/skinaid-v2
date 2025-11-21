@@ -1,4 +1,22 @@
 {
+  "auth_page": {
+    "left_title": "Welcome to SkinAid",
+    "left_desc": "Smart Wound Detection & Classification Support System",
+    "login_tab": "LOGIN",
+    "register_tab": "REGISTER",
+    "username": "Username",
+    "password": "Password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot Password?",
+    "email": "Email",
+    "confirm_password": "Confirm Password",
+    "male": "Male",
+    "female": "Female",
+    "term": "I agree to the Terms and Conditions",
+    "login_button": "Login",
+    "register_button": "Register"
+  },
+
   "header": {
     "home": "Home",
     "upload_image": "Upload Image",

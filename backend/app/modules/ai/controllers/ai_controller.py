@@ -37,11 +37,22 @@ class AIController:
         """
         Phân tích một ảnh vết thương.
         """
+        import uuid
+
         logger.info(f"[ANALYZE_IMAGE] Starting analysis - user: {user_id}, session: {session_id}")
         
-        # Validate identifiers
+        # --- SỬA LOGIC VALIDATE ---
+        
+        # 1. Xử lý trường hợp gửi cả 2 (Ưu tiên User, bỏ qua Session)
+        if user_id is not None and session_id is not None:
+            logger.info("[ANALYZE_IMAGE] Both identifiers provided, prioritizing user_id")
+            session_id = None # Reset session_id để tránh lỗi logic sau này
+
+        # Validate identifiers 
+        # Xử lý trường hợp không có cái nào (Khách vãng lai không có ID)
         if user_id is None and session_id is None:
             logger.warning("[ANALYZE_IMAGE] Missing identifier")
+            session_id = uuid.uuid4()  # Tạo session_id mới cho khách vãng lai
             return ErrorResponse(
                 message=Message.AI_MISSING_IDENTIFIER_MSG,
                 error_code=ErrorCode.AI_MISSING_IDENTIFIER,
@@ -241,6 +252,10 @@ class AIController:
         """
         Phân tích nhiều ảnh vết thương cùng lúc
         """
+
+        # import uuid
+
+
         logger.info(
             f"[BATCH_ANALYZE] Starting - "
             f"files: {len(files)}, user: {user_id}, session: {session_id}"
@@ -263,6 +278,7 @@ class AIController:
                 },
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+
         
         if user_id is None and session_id is None:
             return ErrorResponse(
