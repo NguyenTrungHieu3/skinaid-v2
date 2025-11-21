@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "./AnalysisDetails.module.css";
 import { FaCheck } from "react-icons/fa";
 

@@ -10,7 +10,6 @@ import DashboardHero from "../assets/images/home-page/dashboard-hero.png";
 import { FaCamera, FaFirstAid, FaHistory, FaCheck } from "react-icons/fa";
 import { FaChartLine, FaListAlt, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { enableSmoothScrollSnap } from "../utils/scrollEffects";
 
 const HomePage = () => {
   // Chúng ta có thể dùng useAuth để thay đổi nút "Start Analysis"

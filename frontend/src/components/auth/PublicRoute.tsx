@@ -4,11 +4,20 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const PublicRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // 3. Sửa điều kiện: "if (isAuthenticated)"
   if (isAuthenticated) {
-    // Nếu ĐÃ đăng nhập, điều hướng về homepage
+    // Check if user is admin
+    const userRoles = user?.roles || [];
+    const isAdmin = userRoles.some((role: string) => 
+      role.toLowerCase() === 'admin'
+    );
+    
+    // Nếu ĐÃ đăng nhập, điều hướng dựa trên role
+    if (isAdmin) {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

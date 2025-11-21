@@ -2,7 +2,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.api.v1.deps import require_admin
-from app.modules.auth.services.token_cleanup_service import TokenCleanupService
+from app.core.tasks.cleanup_tokens import (
+    cleanup_expired_tokens,
+    cleanup_old_verification_tokens,
+    get_blacklist_stats,
+    get_cleanup_stats,
+    revoke_all_user_tokens,
+    cleanup_all
+)
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from typing import Union
 
@@ -21,9 +28,9 @@ async def get_cleanup_statistics(
     """
     Xem có bao nhiêu records cần cleanup
     """
-    stats = await TokenCleanupService.get_cleanup_stats(db)
+    stats = await get_cleanup_stats(db)
     return SuccessResponse(
-        message="Đã lấy thành công thống kê cleanup",
+        message="Cleanup statistics retrieved successfully",
         data=stats
     )
 
@@ -40,9 +47,9 @@ async def get_blacklist_statistics(
     """
     Thống kê chi tiết về token blacklist
     """
-    stats = await TokenCleanupService.get_blacklist_stats(db)
+    stats = await get_blacklist_stats(db)
     return SuccessResponse(
-        message="Đã lấy thành công thống kê blacklist",
+        message="Blacklist statistics retrieved successfully",
         data=stats
     )
 
@@ -59,7 +66,7 @@ async def run_cleanup_tokens(
     """
     Xóa tất cả tokens trong blacklist đã hết hạn
     """
-    deleted = await TokenCleanupService.cleanup_expired_tokens(db)
+    deleted = await cleanup_expired_tokens(db)
     return SuccessResponse(
         message=f"Đã xóa {deleted} tokens đã hết hạn",
         data={"deleted": deleted}
@@ -78,7 +85,7 @@ async def run_cleanup_verifications(
     """
     Xóa tất cả verification tokens đã hết hạn hoặc đã sử dụng
     """
-    deleted = await TokenCleanupService.cleanup_old_verification_tokens(db)
+    deleted = await cleanup_old_verification_tokens(db)
     return SuccessResponse(
         message=f"Đã xóa {deleted} verification tokens",
         data={"deleted": deleted}
@@ -97,7 +104,7 @@ async def run_full_cleanup(
     """
     Chạy tất cả cleanup tasks cùng lúc
     """
-    result = await TokenCleanupService.cleanup_all(db)
+    result = await cleanup_all(db)
     
     return SuccessResponse(
         message="Full cleanup hoàn tất",
@@ -117,7 +124,8 @@ async def run_cleanup_token_families(
     """
     Xóa tất cả token families đã hết hạn
     """
-    deleted = await TokenCleanupService.cleanup_expired_token_families(db)
+    from app.core.tasks.token_family_service import cleanup_expired_token_families
+    deleted = await cleanup_expired_token_families(db)
     return SuccessResponse(
         message=f"Đã xóa {deleted} token families đã hết hạn",
         data={"deleted": deleted}
@@ -137,7 +145,7 @@ async def admin_revoke_user_tokens(
     """
     Admin force revoke tất cả tokens của user
     """
-    result = await TokenCleanupService.revoke_all_user_tokens(db, user_id)
+    result = await revoke_all_user_tokens(db, user_id)
     
     if not result["success"]:
         return ErrorResponse(

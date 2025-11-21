@@ -1,0 +1,134 @@
+/* Sidebar Styles - Converted from SCSS to CSS */
+
+.admin-sidebar {
+  width: 256px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-sidebar .admin-sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-sidebar .admin-sidebar-header .admin-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-sidebar .admin-sidebar-header .admin-sidebar-brand .logo_skinaid {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-sidebar .admin-sidebar-header .admin-sidebar-brand .admin-sidebar-brand-text h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.admin-sidebar .admin-sidebar-header .admin-sidebar-brand .admin-sidebar-brand-text h1 span {
+  color: #1E9378;
+}
+
+.admin-sidebar .admin-sidebar-header .admin-sidebar-brand .admin-sidebar-brand-text p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.admin-sidebar .admin-sidebar-nav {
+  flex: 1;
+  padding: 16px;
+}
+
+.admin-sidebar .admin-sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-sidebar .admin-sidebar-nav ul li {
+  margin-bottom: 4px;
+}
+
+.admin-sidebar .admin-sidebar-nav ul li button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.admin-sidebar .admin-sidebar-nav ul li button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.admin-sidebar .admin-sidebar-nav ul li button:hover {
+  background-color: #f1f5f9;
+}
+
+.admin-sidebar .admin-sidebar-nav ul li button.active {
+  background: linear-gradient(to right, #1E9378, #17805f);
+  color: #ffffff;
+  box-shadow: 0 10px 15px -3px rgba(30, 147, 120, 0.3);
+}
+
+.admin-sidebar .admin-sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.admin-sidebar .admin-sidebar-footer .admin-sidebar-status {
+  background: linear-gradient(to bottom right, #ecfdf5, #dbeafe);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #a5f3fc;
+}
+
+.admin-sidebar .admin-sidebar-footer .admin-sidebar-status p {
+  color: #155e75;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  font-size: 14px;
+}
+
+.admin-sidebar .admin-sidebar-footer .admin-sidebar-status .admin-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-sidebar .admin-sidebar-footer .admin-sidebar-status .admin-status-indicator .status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #10b981;
+  border-radius: 50%;
+}
+
+.admin-sidebar .admin-sidebar-footer .admin-sidebar-status .admin-status-indicator span {
+  color: #047857;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    display: none;
+  }
+}

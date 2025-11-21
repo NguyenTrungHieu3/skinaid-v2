@@ -1,0 +1,19 @@
+.adminDashboardContainer {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background-color: #f5f7fa;
+}
+
+.adminMainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.adminPageContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}

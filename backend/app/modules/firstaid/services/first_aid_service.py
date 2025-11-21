@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import text
 import logging
 import uuid
+import json
 
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 
@@ -65,6 +66,7 @@ class FirstAidService:
                   AND severity = :severity
                   AND sub_type = :sub_type
                   AND is_active = true
+                  AND is_deleted = false
                 ORDER BY version DESC
                 LIMIT 1
             """)
@@ -94,6 +96,7 @@ class FirstAidService:
                 WHERE wound_type = :wound_type
                   AND severity = :severity
                   AND is_active = true
+                  AND is_deleted = false
                   AND (sub_type IS NULL OR sub_type = '')
                 ORDER BY version DESC
                 LIMIT 1
@@ -132,7 +135,8 @@ class FirstAidService:
             "version": guide.get("version"),
             "created_by": str(created_by_str) if created_by_str else None,
             "created_at": guide.get("created_at"),
-            "updated_at": guide.get("updated_at")
+            "updated_at": guide.get("updated_at"),
+            "is_deleted": guide.get("is_deleted", False)
         }
 
     async def get_available_wound_types(self) -> List[Dict[str, Any]]:
@@ -141,6 +145,7 @@ class FirstAidService:
                 SELECT DISTINCT wound_type, severity
                 FROM firstaid_guides
                 WHERE is_active = true
+                  AND is_deleted = false
                 ORDER BY wound_type, severity
             """)
 
@@ -171,11 +176,17 @@ class FirstAidService:
         self,
         wound_type: Optional[str] = None,
         severity: Optional[str] = None,
-        limit: int = 20
-    ) -> List[Dict[str, Any]]:
+        limit: int = 20,
+        offset: int = 0,
+        is_active: Optional[bool] = None
+    ) -> Dict[str, Any]:
         try:
-            where_conditions = ["is_active = true"]
-            params = {"limit": limit}
+            where_conditions = []
+            params = {"limit": limit, "offset": offset}
+
+            if is_active is not None:
+                where_conditions.append("is_active = :is_active")
+                params["is_active"] = is_active
 
             if wound_type:
                 where_conditions.append("wound_type = :wound_type")
@@ -185,13 +196,24 @@ class FirstAidService:
                 where_conditions.append("severity = :severity")
                 params["severity"] = severity
 
-            where_clause = " AND ".join(where_conditions)
+            where_conditions.append("is_deleted = false")
 
+            where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+
+            # Get total count
+            count_sql = text(f"""
+                SELECT COUNT(*) FROM firstaid_guides
+                WHERE {where_clause}
+            """)
+            count_result = await self.db.execute(count_sql, params)
+            total_count = count_result.scalar()
+
+            # Get paginated items
             sql = text(f"""
                 SELECT * FROM firstaid_guides
                 WHERE {where_clause}
                 ORDER BY wound_type, severity
-                LIMIT :limit
+                LIMIT :limit OFFSET :offset
             """)
 
             result = await self.db.execute(sql, params)
@@ -202,27 +224,45 @@ class FirstAidService:
                 guide = dict(row)
                 guides.append(self._format_guide_response(guide))
 
-            logger.info(f"Tìm thấy {len(guides)} hướng dẫn sơ cứu")
-            return guides
+            logger.info(f"Tìm thấy {len(guides)} hướng dẫn sơ cứu (Tổng: {total_count})")
+            return {
+                "items": guides,
+                "total": total_count
+            }
 
         except Exception as e:
             logger.error(f"Không thể tìm kiếm hướng dẫn sơ cứu: {e}")
-            return []
+            return {
+                "items": [],
+                "total": 0
+            }
 
     async def get_guide_statistics(self) -> Dict[str, Any]:
         try:
+            # Total guides (both active and inactive)
             total_query = text("""
                 SELECT COUNT(*) as total 
                 FROM firstaid_guides 
-                WHERE is_active = true
+                WHERE is_deleted = false
             """)
             total_result = await self.db.execute(total_query)
             total_guides = total_result.scalar()
+
+            # Active guides
+            active_query = text("""
+                SELECT COUNT(*) as total 
+                FROM firstaid_guides 
+                WHERE is_active = true
+                  AND is_deleted = false
+            """)
+            active_result = await self.db.execute(active_query)
+            active_guides = active_result.scalar()
 
             type_query = text("""
                 SELECT wound_type, COUNT(*) as count
                 FROM firstaid_guides
                 WHERE is_active = true
+                  AND is_deleted = false
                 GROUP BY wound_type
                 ORDER BY count DESC
             """)
@@ -233,6 +273,7 @@ class FirstAidService:
                 SELECT severity, COUNT(*) as count
                 FROM firstaid_guides
                 WHERE is_active = true
+                  AND is_deleted = false
                 GROUP BY severity
                 ORDER BY count DESC
             """)
@@ -241,13 +282,14 @@ class FirstAidService:
 
             return {
                 "total_guides": total_guides,
+                "active_guides": active_guides,
                 "wound_type_breakdown": {
                     row["wound_type"]: row["count"] for row in type_stats
                 },
                 "severity_breakdown": {
                     row["severity"]: row["count"] for row in severity_stats
                 },
-                "coverage_percentage": min(100, (total_guides / 15) * 100)
+                "coverage_percentage": min(100, (active_guides / 15) * 100)
             }
 
         except Exception as e:
@@ -295,6 +337,22 @@ class FirstAidService:
     ) -> Optional[Dict[str, Any]]:
         """Tạo hướng dẫn sơ cứu mới."""
         try:
+            # Check for existing active guide with same wound_type, severity, and sub_type
+            wound_type = guide_data["wound_type"]
+            severity = guide_data["severity"]
+            sub_type = guide_data.get("sub_type")
+            is_active = guide_data.get("is_active", True)
+
+            if is_active:
+                # Check for active guides that are NOT deleted
+                existing_active = await self._find_guide_specific(wound_type, severity, sub_type) if sub_type else await self._find_guide_general(wound_type, severity)
+                
+                if existing_active:
+                    msg = f"Active guide already exists for {wound_type} - {severity}"
+                    if sub_type:
+                        msg += f" ({sub_type})"
+                    raise ValueError(msg)
+
             # Convert lists to JSONB format
             steps_jsonb = {"items": guide_data.get("steps", [])}
             warnings_jsonb = {"items": guide_data.get("warnings", [])} if guide_data.get("warnings") else None
@@ -317,18 +375,24 @@ class FirstAidService:
                 created_by=str(created_by) if created_by else None
             )
 
+            # Ensure is_active is set correctly from input
+            guide.is_active = is_active
+
             self.db.add(guide)
             await self.db.commit()
             await self.db.refresh(guide)
 
-            logger.info(f"Đã tạo hướng dẫn sơ cứu: {guide.firstaidguide_id}")
+            logger.info(f"First aid guide created: {guide.firstaidguide_id}")
             
             # Convert to dict for response
             return self._model_to_dict(guide)
 
+        except ValueError as e:
+            # Re-raise ValueError to be handled by controller
+            raise e
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Không thể tạo hướng dẫn sơ cứu: {e}", exc_info=True)
+            logger.error(f"Failed to create first aid guide: {e}", exc_info=True)
             raise
 
     async def update_first_aid_guide(
@@ -348,51 +412,92 @@ class FirstAidService:
             existing_guide = result.mappings().first()
             
             if not existing_guide:
-                logger.warning(f"Không tìm thấy hướng dẫn: {guide_id}")
+                logger.warning(f"Guide not found: {guide_id}")
                 return None
 
+            # Check for duplicate active guide if setting to active
+            if update_data.get("is_active") is True:
+                wound_type = existing_guide.wound_type
+                severity = existing_guide.severity
+                sub_type = existing_guide.sub_type
+                
+                # Check against other guides
+                check_sql = text("""
+                    SELECT 1 FROM firstaid_guides
+                    WHERE wound_type = :wound_type
+                      AND severity = :severity
+                      AND (sub_type = :sub_type OR (:sub_type IS NULL AND sub_type IS NULL))
+                      AND is_active = true
+                      AND is_deleted = false
+                      AND firstaidguide_id != :guide_id
+                """)
+                
+                check_result = await self.db.execute(check_sql, {
+                    "wound_type": wound_type,
+                    "severity": severity,
+                    "sub_type": sub_type,
+                    "guide_id": guide_id
+                })
+                
+                if check_result.first():
+                    msg = f"Active guide already exists for {wound_type} - {severity}"
+                    if sub_type:
+                        msg += f" ({sub_type})"
+                    raise ValueError(msg)
+
+            # Whitelist of allowed fields to prevent SQL injection
+            allowed_fields = {
+                "title", "description", "steps", "warnings", "dos", 
+                "donts", "supplies_needed", "estimated_healing_time", "is_active"
+            }
+            
             # Prepare update fields
             update_fields = []
             params = {"guide_id": guide_id}
             
-            if "title" in update_data:
+            if "title" in update_data and "title" in allowed_fields:
                 update_fields.append("title = :title")
                 params["title"] = update_data["title"]
             
-            if "description" in update_data:
+            if "description" in update_data and "description" in allowed_fields:
                 update_fields.append("description = :description")
                 params["description"] = update_data["description"]
             
-            if "steps" in update_data:
+            if "steps" in update_data and "steps" in allowed_fields:
                 update_fields.append("steps = :steps")
-                params["steps"] = {"items": update_data["steps"]}
+                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
+                params["steps"] = json.dumps({"items": update_data["steps"]})
             
-            if "warnings" in update_data:
+            if "warnings" in update_data and "warnings" in allowed_fields:
                 update_fields.append("warnings = :warnings")
-                params["warnings"] = {"items": update_data["warnings"]} if update_data["warnings"] else None
+                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
+                params["warnings"] = json.dumps({"items": update_data["warnings"]}) if update_data["warnings"] else None
             
-            if "dos" in update_data:
+            if "dos" in update_data and "dos" in allowed_fields:
                 update_fields.append("dos = :dos")
-                params["dos"] = {"items": update_data["dos"]} if update_data["dos"] else None
+                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
+                params["dos"] = json.dumps({"items": update_data["dos"]}) if update_data["dos"] else None
             
-            if "donts" in update_data:
+            if "donts" in update_data and "donts" in allowed_fields:
                 update_fields.append("donts = :donts")
-                params["donts"] = {"items": update_data["donts"]} if update_data["donts"] else None
+                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
+                params["donts"] = json.dumps({"items": update_data["donts"]}) if update_data["donts"] else None
             
-            if "supplies_needed" in update_data:
+            if "supplies_needed" in update_data and "supplies_needed" in allowed_fields:
                 update_fields.append("supplies_needed = :supplies_needed")
-                params["supplies_needed"] = {"items": update_data["supplies_needed"]} if update_data["supplies_needed"] else None
+                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
+                params["supplies_needed"] = json.dumps({"items": update_data["supplies_needed"]}) if update_data["supplies_needed"] else None
             
-            if "estimated_healing_time" in update_data:
+            if "estimated_healing_time" in update_data and "estimated_healing_time" in allowed_fields:
                 update_fields.append("estimated_healing_time = :estimated_healing_time")
                 params["estimated_healing_time"] = update_data["estimated_healing_time"]
             
-            if "is_active" in update_data:
+            if "is_active" in update_data and "is_active" in allowed_fields:
                 update_fields.append("is_active = :is_active")
                 params["is_active"] = update_data["is_active"]
             
             if not update_fields:
-                logger.warning("Không có trường nào để cập nhật")
+                logger.warning("No fields to update")
                 return dict(existing_guide)
             
             # Add updated_at
@@ -411,12 +516,14 @@ class FirstAidService:
             updated_guide = result.mappings().first()
             await self.db.commit()
             
-            logger.info(f"Đã cập nhật hướng dẫn sơ cứu: {guide_id}")
+            logger.info(f"First aid guide updated: {guide_id}")
             return self._format_guide_response(dict(updated_guide))
 
+        except ValueError as e:
+            raise e
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Không thể cập nhật hướng dẫn sơ cứu: {e}", exc_info=True)
+            logger.error(f"Failed to update first aid guide: {e}", exc_info=True)
             raise
 
     async def delete_first_aid_guide(
@@ -434,10 +541,10 @@ class FirstAidService:
                     RETURNING firstaidguide_id
                 """)
             else:
-                # Soft delete - chỉ set is_active = false
+                # Soft delete - set is_deleted = true and is_active = false
                 sql = text("""
                     UPDATE firstaid_guides
-                    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+                    SET is_active = false, is_deleted = true, updated_at = CURRENT_TIMESTAMP
                     WHERE firstaidguide_id = :guide_id
                     RETURNING firstaidguide_id
                 """)
@@ -446,18 +553,18 @@ class FirstAidService:
             deleted = result.mappings().first()
             
             if not deleted:
-                logger.warning(f"Không tìm thấy hướng dẫn để xóa: {guide_id}")
+                logger.warning(f"Guide not found for deletion: {guide_id}")
                 return False
             
             await self.db.commit()
             
             delete_type = "hard" if hard_delete else "soft"
-            logger.info(f"Đã {delete_type} xóa hướng dẫn sơ cứu: {guide_id}")
+            logger.info(f"First aid guide {delete_type} deleted: {guide_id}")
             return True
 
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Không thể xóa hướng dẫn sơ cứu: {e}", exc_info=True)
+            logger.error(f"Failed to delete first aid guide: {e}", exc_info=True)
             raise
 
     async def get_guide_by_id(self, guide_id: uuid.UUID) -> Optional[Dict[str, Any]]:

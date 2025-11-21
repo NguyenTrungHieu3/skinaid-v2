@@ -1,0 +1,137 @@
+.adminTopbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 15px 30px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.adminTopbarContent {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
+.adminTopbarTitle h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1E9378 0%, #17805f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #0f172a;
+  /* Fallback */
+}
+
+.adminTopbarActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.adminUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  padding: 5px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.adminUserInfo:hover {
+  background-color: #f8fafc;
+}
+
+.adminUserText {
+  text-align: right;
+}
+
+.adminUserText p:first-child {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.adminUserText p:last-child {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.adminUserAvatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(to bottom right, #1E9378, #17805f);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.logoutMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  width: 200px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.logoutMenuHeader {
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logoutMenuName {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.logoutMenuEmail {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoutMenuDivider {
+  height: 1px;
+  background-color: #e2e8f0;
+}
+
+.logoutMenuButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: #ef4444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutMenuButton:hover {
+  background-color: #fef2f2;
+}

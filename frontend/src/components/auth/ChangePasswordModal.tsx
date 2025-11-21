@@ -42,7 +42,7 @@ const ChangePasswordModal = ({ onClose }: ModalProps) => {
     confirm: false,
   });
 
-  const { user, logout } = useAuth(); // <-- 2. LẤY USER TỪ CONTEXT
+  const { logout } = useAuth(); // <-- 2. LẤY USER TỪ CONTEXT
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));

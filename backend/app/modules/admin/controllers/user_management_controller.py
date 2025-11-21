@@ -14,12 +14,14 @@ from app.modules.admin.schemas.user_management_schemas import (
     UserStatsResponse
 )
 from app.shared.schemas.response import SuccessResponse
+from app.utils.logging_utils import sanitize_user_data, log_admin_action
+from app.utils.decorators import handle_admin_errors
 
 logger = logging.getLogger(__name__)
 
 
 class UserManagementController:
-    """Controller cho các thao tác quản lý user"""
+    """Controller for user management operations"""
     
     def __init__(self, db: AsyncSession):
         self.service = UserManagementService(db)
@@ -33,7 +35,7 @@ class UserManagementController:
         status: Optional[str] = None
     ) -> SuccessResponse[UserListResponse]:
         """
-        Lấy danh sách user được phân trang với bộ lọc
+        Get paginated list of users with filters
         """
         try:
             users, pagination = await self.service.get_users(
@@ -50,26 +52,26 @@ class UserManagementController:
             )
             
             return SuccessResponse(
-                message="Đã lấy thành công danh sách users",
+                message="Users retrieved successfully",
                 data=response_data
             )
         except Exception as e:
-            logger.error(f"Không thể lấy danh sách users: {e}")
+            logger.error(f"Failed to retrieve users: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể lấy danh sách users: {str(e)}"
+                detail=f"Failed to retrieve users: {str(e)}"
             )
     
     async def get_user_detail(self, user_id: str) -> SuccessResponse[UserDetailResponse]:
         """
-        Lấy thông tin chi tiết về một user cụ thể
+        Get detailed information about a specific user
         """
         try:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Định dạng user ID không hợp lệ"
+                detail="Invalid user ID format"
             )
         
         try:
@@ -78,22 +80,22 @@ class UserManagementController:
             if not user_detail:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy user với ID {user_id}"
+                    detail=f"User with ID {user_id} not found"
                 )
             
             response_data = UserDetailResponse(user=user_detail)
             
             return SuccessResponse(
-                message="Đã lấy thành công chi tiết user",
+                message="User detail retrieved successfully",
                 data=response_data
             )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Không thể lấy chi tiết user: {e}")
+            logger.error(f"Failed to retrieve user detail: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể lấy chi tiết user: {str(e)}"
+                detail=f"Failed to retrieve user detail: {str(e)}"
             )
     
     async def create_user(
@@ -101,27 +103,34 @@ class UserManagementController:
         user_data: CreateUserRequest
     ) -> SuccessResponse[UserDetailResponse]:
         """
-        Tạo user mới
+        Create a new user
         """
         try:
+            # Log sanitized user creation (password will be redacted)
+            sanitized_data = sanitize_user_data(user_data.dict())
+            logger.info(log_admin_action("CREATE_USER", user_data.email, sanitized_data))
+            
             user_detail = await self.service.create_user(user_data)
             
             response_data = UserDetailResponse(user=user_detail)
             
+            logger.info(f"Successfully created user: {user_detail.get('user_id')}")
+            
             return SuccessResponse(
-                message="Đã tạo thành công user",
+                message="User created successfully",
                 data=response_data
             )
         except ValueError as e:
+            logger.warning(f"Failed to create user (validation error): {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
         except Exception as e:
-            logger.error(f"Không thể tạo user: {e}")
+            logger.error(f"Failed to create user: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể tạo user: {str(e)}"
+                detail=f"Failed to create user: {str(e)}"
             )
     
     async def update_user(
@@ -130,14 +139,14 @@ class UserManagementController:
         user_data: UpdateUserRequest
     ) -> SuccessResponse[UserDetailResponse]:
         """
-        Cập nhật thông tin user
+        Update user information
         """
         try:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Định dạng user ID không hợp lệ"
+                detail="Invalid user ID format"
             )
         
         try:
@@ -146,13 +155,13 @@ class UserManagementController:
             if not user_detail:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy user với ID {user_id}"
+                    detail=f"User with ID {user_id} not found"
                 )
             
             response_data = UserDetailResponse(user=user_detail)
             
             return SuccessResponse(
-                message="Đã cập nhật thành công user",
+                message="User updated successfully",
                 data=response_data
             )
         except ValueError as e:
@@ -163,45 +172,41 @@ class UserManagementController:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Không thể cập nhật user: {e}")
+            logger.error(f"Failed to update user: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể cập nhật user: {str(e)}"
+                detail=f"Failed to update user: {str(e)}"
             )
     
+    @handle_admin_errors("delete_user")
     async def delete_user(self, user_id: str) -> SuccessResponse:
         """
-        Xóa user (xóa mềm)
+        Delete a user (soft delete)
         """
         try:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Định dạng user ID không hợp lệ"
+                detail="Invalid user ID format"
             )
         
-        try:
-            success = await self.service.delete_user(user_uuid)
-            
-            if not success:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy user với ID {user_id}"
-                )
-            
-            return SuccessResponse(
-                message="Đã xóa thành công user",
-                data={"user_id": user_id}
-            )
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Không thể xóa user: {e}")
+        logger.info(log_admin_action("DELETE_USER", user_id))
+        
+        success = await self.service.delete_user(user_uuid)
+        
+        if not success:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể xóa user: {str(e)}"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User with ID {user_id} not found"
             )
+        
+        logger.info(f"Successfully deleted user: {user_id}")
+        
+        return SuccessResponse(
+            message="User deleted successfully",
+            data={"user_id": user_id}
+        )
     
     async def update_user_status(
         self,
@@ -209,14 +214,14 @@ class UserManagementController:
         status_data: UpdateUserStatusRequest
     ) -> SuccessResponse[UserDetailResponse]:
         """
-        Cập nhật trạng thái active của user
+        Update user active status
         """
         try:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Định dạng user ID không hợp lệ"
+                detail="Invalid user ID format"
             )
         
         try:
@@ -228,54 +233,54 @@ class UserManagementController:
             if not user_detail:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy user với ID {user_id}"
+                    detail=f"User with ID {user_id} not found"
                 )
             
             response_data = UserDetailResponse(user=user_detail)
             
-            status_text = "đã kích hoạt" if status_data.is_active else "đã vô hiệu hóa"
+            status_text = "activated" if status_data.is_active else "deactivated"
             
             return SuccessResponse(
-                message=f"User {status_text} thành công",
+                message=f"User {status_text} successfully",
                 data=response_data
             )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Không thể cập nhật trạng thái user: {e}")
+            logger.error(f"Failed to update user status: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể cập nhật trạng thái user: {str(e)}"
+                detail=f"Failed to update user status: {str(e)}"
             )
     
     async def get_user_stats(self) -> SuccessResponse[UserStatsResponse]:
         """
-        Lấy thống kê tổng quan về users
+        Get overall user statistics
         """
         try:
             stats = await self.service.get_user_stats()
             
             return SuccessResponse(
-                message="Đã lấy thành công thống kê users",
+                message="User statistics retrieved successfully",
                 data=stats
             )
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê users: {e}")
+            logger.error(f"Failed to retrieve user statistics: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể lấy thống kê users: {str(e)}"
+                detail=f"Failed to retrieve user statistics: {str(e)}"
             )
     
     async def resend_verification_email(self, user_id: str) -> SuccessResponse:
         """
-        Gửi lại email xác thực cho user chưa xác thực
+        Resend verification email to unverified user
         """
         try:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Định dạng user ID không hợp lệ"
+                detail="Invalid user ID format"
             )
         
         try:
@@ -284,18 +289,18 @@ class UserManagementController:
             if not success:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Không tìm thấy user với ID {user_id} hoặc đã được xác thực"
+                    detail=f"User with ID {user_id} not found or already verified"
                 )
             
             return SuccessResponse(
-                message="Đã gửi thành công email xác thực",
+                message="Verification email sent successfully",
                 data={"user_id": user_id}
             )
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Không thể gửi lại email xác thực: {e}")
+            logger.error(f"Failed to resend verification email: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Không thể gửi lại email xác thực: {str(e)}"
+                detail=f"Failed to resend verification email: {str(e)}"
             )

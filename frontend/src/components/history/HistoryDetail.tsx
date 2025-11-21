@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./HistoryDetail.module.css";
 import { ArrowLeft } from "lucide-react";
 import {

@@ -1,6 +1,5 @@
-import React from "react";
 // Import type từ file DUMMY_DATA
-import type { SelectedEvent } from "../../DUMMY_DATA";
+import type { CombinedEventDetail } from "../../DUMMY_DATA";
 
 // (Bạn sẽ style file này sau)
 const styles = {
@@ -22,7 +21,7 @@ const styles = {
 };
 
 interface DetailProps {
-  selectedEvent: SelectedEvent;
+  selectedEvent: CombinedEventDetail | null;
 }
 
 const DetailedTimelineCard = ({ selectedEvent }: DetailProps) => {
@@ -48,10 +47,6 @@ const DetailedTimelineCard = ({ selectedEvent }: DetailProps) => {
       {/* Hiển thị chi tiết (nếu có) */}
       {selectedEvent.detail && (
         <pre>{JSON.stringify(selectedEvent.detail, null, 2)}</pre>
-      )}
-      {/* Hiển thị lỗi (nếu có) */}
-      {selectedEvent.error && (
-        <p style={{ color: "red" }}>{selectedEvent.error}</p>
       )}
     </div>
   );

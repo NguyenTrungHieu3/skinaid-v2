@@ -1,7 +1,6 @@
 import api from "./api"; // Giả định import từ file api.ts của bạn
 import {
   type ApiSuccessResponse,
-  type ApiErrorResponse,
 } from "../types/responseTypes";
 import {
   type ApiHistoryListResponse,

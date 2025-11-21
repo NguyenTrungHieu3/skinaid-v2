@@ -1,4 +1,3 @@
-import React from 'react';
 import styles from './MedicalDisclaimer.module.css';
 import { FaExclamationCircle } from 'react-icons/fa';
 

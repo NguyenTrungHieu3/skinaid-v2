@@ -32,17 +32,12 @@ class CreateFirstAidGuideRequest(BaseModel):
             raise ValueError(f'severity phải là một trong {valid_severities}')
         return v.lower()
     
-    @validator('sub_type')
-    def validate_sub_type(cls, v, values):
-        if v:
-            wound_type = values.get('wound_type', '').lower()
-            if wound_type != 'burn':
-                raise ValueError('sub_type chỉ được phép cho vết bỏng')
-            valid_subtypes = ['blister', 'skintear']
-            if v.lower() not in valid_subtypes:
-                raise ValueError(f'sub_type cho burn phải là một trong {valid_subtypes}')
-            return v.lower()
-        return v
+    # @validator('sub_type')
+    # def validate_sub_type(cls, v, values):
+    #     if v:
+    #         # Allow any sub_type for now
+    #         return v.lower()
+    #     return v
 
 class UpdateFirstAidGuideRequest(BaseModel):
     title: Optional[str] = Field(None, min_length=5, max_length=200, description="Tiêu đề")
@@ -56,6 +51,7 @@ class UpdateFirstAidGuideRequest(BaseModel):
     
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     is_active: Optional[bool] = Field(None, description="Trạng thái hoạt động")
+    sub_type: Optional[str] = Field(None, description="Loại phụ")
 
 class FirstAidGuideResponse(BaseModel):
     firstaidguide_id: uuid.UUID = Field(..., description="ID hướng dẫn sơ cứu")

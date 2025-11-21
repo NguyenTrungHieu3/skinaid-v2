@@ -9,20 +9,22 @@ class DashboardOverviewResponse(BaseModel):
     new_users_this_month: int = Field(description="Number of new users registered this month")
     growth_rate: float 
     
-    # Image Statistics
+    # Upload Statistics
     total_images: int
     analyzed_images: int
     image_growth_rate: float
+    new_uploads_week: int = Field(description="Number of new uploads in the last 7 days")
     
-    # Active Users Statistics (new)
-    active_users: int = Field(description="Number of active users in the last 7 days")
-    active_users_growth: float = Field(description="Active users growth percentage")
-    online_now: int = Field(description="Number of users online right now")
+    # Detection Statistics (replaced Active Users)
+    total_detections: int = Field(description="Total number of detected wounds")
+    detection_growth_rate: float = Field(description="Detection growth percentage")
+    severe_detections: int = Field(description="Number of severe wound detections")
+    new_detections_week: int = Field(description="Number of new detections in the last 7 days")
     
-    # Session Statistics
-    total_sessions: int
-    avg_session_duration_seconds: int
-    session_growth_rate: float
+    # Model Accuracy Statistics (replaces Session Statistics)
+    model_accuracy: float = Field(description="Average model confidence score percentage")
+    accuracy_trend: float = Field(description="Accuracy trend compared to previous period")
+    high_confidence_detections: int = Field(description="Number of high-confidence detections (>80%)")
 
     class Config:
         json_schema_extra = {
@@ -33,12 +35,14 @@ class DashboardOverviewResponse(BaseModel):
                 "total_images": 12483,
                 "analyzed_images": 11956,
                 "image_growth_rate": 8.0,
-                "active_users": 1523,
-                "active_users_growth": 15.5,
-                "online_now": 28,
-                "total_sessions": 28394,
-                "avg_session_duration_seconds": 512,
-                "session_growth_rate": 18.0
+                "new_uploads_week": 145,
+                "total_detections": 15230,
+                "detection_growth_rate": 15.5,
+                "severe_detections": 120,
+                "new_detections_week": 210,
+                "model_accuracy": 87.5,
+                "accuracy_trend": 2.3,
+                "high_confidence_detections": 12000
             }
         }
 
