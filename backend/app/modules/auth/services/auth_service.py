@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 import os
 import uuid
 import asyncio
@@ -24,7 +25,6 @@ from app.utils.constants.error_codes import (
     USER_INVALID_DATA,
     USER_NOT_FOUND,
 )
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.validators.auth_validators import (
     validate_password_strength,
     validate_email,
@@ -62,8 +62,8 @@ class AuthService:
         try:
             email_error = validate_email(email)
             if email_error:
-                raise AppBaseException(
-                    message=f"Định dạng email không hợp lệ: {email_error}",
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=f"Định dạng email không hợp lệ: {email_error}",
                     error_code=USER_INVALID_DATA,
                 )
 
@@ -83,7 +83,7 @@ class AuthService:
                 return None
 
             return User.model_validate(dict(row))
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
@@ -247,24 +247,21 @@ class AuthService:
             # Validate email
             email_errors = validate_email(user_data.email)
             if email_errors:
-                raise AppBaseException(
-                    message=f"Xác thực email thất bại: {email_errors}",
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=f"Xác thực email thất bại: {email_errors}",
                     error_code=USER_INVALID_DATA,
                 )
 
             # Check duplicate email
             existing_user_email = await self.get_user_by_email(user_data.email)
             if existing_user_email:
-                raise AppBaseException(
-                    message="Email đã được đăng ký",
-                    error_code=AUTH_EMAIL_EXISTS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email đã được đăng ký")
 
             # Validate username
             username_error = validate_username(user_data.user_name, user_data.email)
             if username_error:
-                raise AppBaseException(
-                    message=username_error,
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=username_error,
                     error_code=USER_INVALID_DATA,
                 )
 
@@ -273,10 +270,7 @@ class AuthService:
                 user_data.user_name
             )
             if existing_user_username:
-                raise AppBaseException(
-                    message="Tên người dùng đã được sử dụng",
-                    error_code=USER_INVALID_DATA,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tên người dùng đã được sử dụng")
 
             # Validate password
             password_errors = validate_password_strength(
@@ -285,8 +279,8 @@ class AuthService:
                 email=user_data.email
             )
             if password_errors:
-                raise AppBaseException(
-                    message=password_errors,
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
 
@@ -428,10 +422,7 @@ class AuthService:
             user_mapping = user_result.mappings().first()
             if not user_mapping:
                 logger.error("Không tìm thấy user sau khi tạo: %s", user_id)
-                raise AppBaseException(
-                    message="Không thể lấy lại user đã tạo",
-                    error_code=USER_INVALID_DATA,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể lấy lại user đã tạo")
 
             user = User.model_validate(dict(user_mapping))
             logger.info(
@@ -440,7 +431,7 @@ class AuthService:
             )
             return user
 
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
@@ -458,10 +449,7 @@ class AuthService:
                     str(rollback_error),
                 )
 
-            raise AppBaseException(
-                message="Không thể tạo user do lỗi nội bộ",
-                error_code=USER_INVALID_DATA,
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể tạo user do lỗi nội bộ")
 
     # =====================================================================
     # AUTHENTICATE
@@ -471,29 +459,17 @@ class AuthService:
         try:
             user = await self.get_user_by_username(user_name)
             if not user:
-                raise AppBaseException(
-                    message="Tên người dùng hoặc mật khẩu không hợp lệ",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tên người dùng hoặc mật khẩu không hợp lệ")
 
             if not user.is_active:
-                raise AppBaseException(
-                    message="Tài khoản đã bị vô hiệu hóa",
-                    error_code=AUTH_ACCOUNT_INACTIVE,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tài khoản đã bị vô hiệu hóa")
 
             # Nếu hệ thống vẫn muốn đảm bảo account verified:
             if not user.is_verified:
-                raise AppBaseException(
-                    message="Yêu cầu xác minh tài khoản",
-                    error_code=AUTH_VERIFICATION_REQUIRED,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Yêu cầu xác minh tài khoản")
 
             if not verify_password(password, user.hashed_password):
-                raise AppBaseException(
-                    message="Tên người dùng hoặc mật khẩu không hợp lệ",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tên người dùng hoặc mật khẩu không hợp lệ")
 
             # Cập nhật updated_at
             await self.db.execute(
@@ -514,25 +490,19 @@ class AuthService:
             # Lấy lại user đầy đủ (có profile, roles)
             updated_user = await self.get_user_by_id(user.user_id)
             if updated_user is None:
-                raise AppBaseException(
-                    message="Không tìm thấy user sau khi xác thực",
-                    error_code=USER_NOT_FOUND,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy user sau khi xác thực")
 
             logger.info("User đã xác thực thành công: %s", user_name)
             return updated_user
 
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình xác thực: %s",
                 str(e),
             )
-            raise AppBaseException(
-                message="Xác thực thất bại do lỗi nội bộ",
-                error_code=AUTH_INVALID_CREDENTIALS,
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Xác thực thất bại do lỗi nội bộ")
 
     # =====================================================================
     # PASSWORD RESET
@@ -609,17 +579,14 @@ class AuthService:
 
             return True
 
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình khởi tạo đặt lại mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
-                message="Khởi tạo đặt lại mật khẩu thất bại do lỗi nội bộ",
-                error_code=AUTH_INVALID_CREDENTIALS,
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Khởi tạo đặt lại mật khẩu thất bại do lỗi nội bộ")
 
     async def reset_password(
         self,
@@ -630,8 +597,8 @@ class AuthService:
         try:
             password_errors = validate_password_strength(new_password, email=email)
             if password_errors:
-                raise AppBaseException(
-                    message=password_errors,
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
 
@@ -653,18 +620,12 @@ class AuthService:
             token_row = result.mappings().first()
 
             if not token_row:
-                raise AppBaseException(
-                    message="Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn")
 
             verification_token = VerificationToken.model_validate(dict(token_row))
 
             if verification_token.is_expired:
-                raise AppBaseException(
-                    message="Token đặt lại mật khẩu đã hết hạn",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token đặt lại mật khẩu đã hết hạn")
 
             await self.db.execute(
                 text(
@@ -703,17 +664,14 @@ class AuthService:
             logger.info("Đặt lại mật khẩu thành công cho user: %s", email)
             return True
 
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình đặt lại mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
-                message="Đặt lại mật khẩu thất bại do lỗi nội bộ",
-                error_code=AUTH_INVALID_CREDENTIALS,
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Đặt lại mật khẩu thất bại do lỗi nội bộ")
 
     # =====================================================================
     # CHANGE PASSWORD
@@ -728,10 +686,7 @@ class AuthService:
         try:
             user = await self.get_user_by_id(user_id=user_id)
             if not user:
-                raise AppBaseException(
-                    message="Không tìm thấy người dùng",
-                    error_code=USER_NOT_FOUND,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy người dùng")
 
             password_errors = validate_password_strength(
                 new_password, 
@@ -739,16 +694,13 @@ class AuthService:
                 email=user.email
             )
             if password_errors:
-                raise AppBaseException(
-                    message=password_errors,
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail=password_errors,
                     error_code=AUTH_PASSWORD_WEAK,
                 )
 
             if not verify_password(old_password, user.hashed_password):
-                raise AppBaseException(
-                    message="Mật khẩu hiện tại không đúng",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mật khẩu hiện tại không đúng")
 
             hashed_password = hash_password(new_password)
 
@@ -795,17 +747,14 @@ class AuthService:
             )
             return True
 
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình thay đổi mật khẩu: %s",
                 str(e),
             )
-            raise AppBaseException(
-                message="Thay đổi mật khẩu thất bại do lỗi nội bộ",
-                error_code="PASSWORD_CHANGE_ERROR",
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Thay đổi mật khẩu thất bại do lỗi nội bộ")
 
     # =====================================================================
     # TOKEN VERSION (REVOKE ALL TOKENS)
@@ -893,7 +842,4 @@ class AuthService:
                 user_id,
                 str(e),
             )
-            raise AppBaseException(
-                message="Không thể thu hồi tokens",
-                error_code="TOKEN_REVOKE_ERROR",
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể thu hồi tokens")

@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { analyzeImage } from "../services/aiService";
 import { isAxiosError } from "axios";
+import { useGuestSession } from "../hooks/useGuestSession";
 
 // Định nghĩa các hằng số
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -39,6 +40,9 @@ const UploadPage = () => {
   const navigate = useNavigate();
 
   const { t } = useTranslation();
+
+  // Initialize guest session for unauthenticated users
+  useGuestSession();
 
   // useEffect(() => {
   //   // Tác dụng 1: Reset state khi location thay đổi

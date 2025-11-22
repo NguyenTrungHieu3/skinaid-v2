@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 import asyncio
 from fastapi import UploadFile, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -22,7 +23,6 @@ from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
-from app.utils.exceptions.base_exceptions import AppBaseException
 
 import logging
 logger = logging.getLogger(__name__)
@@ -153,9 +153,9 @@ class ImageProcessingService:
                 status_code=status.HTTP_201_CREATED
             )
             
-        except AppBaseException as e:
+        except HTTPException as e:
             logger.error(
-                f"[PROCESS_SINGLE] AppBaseException for '{file.filename}': {e.message}"
+                f"[PROCESS_SINGLE] HTTPException for '{file.filename}': {e.detail}"
             )
             return ErrorResponse(
                 message=e.message,

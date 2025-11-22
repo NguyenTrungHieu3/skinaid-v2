@@ -1,21 +1,15 @@
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
-from fastapi import status
 import logging
 import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import (
-    UserProfileUpdate,
-    UserProfileResponse,
-    ProfileStatisticsResponse
+    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 )
 from app.modules.profile.services.profile_service import ProfileService
-from app.utils.exceptions.base_exceptions import AppBaseException
-
-# Import constants
-from app.utils.constants import error_codes as ErrorCode
-from app.utils.constants import messages as Message
+from app.utils.constants import error_codes as ErrorCode, messages as Message
 
 logger = logging.getLogger(__name__)
 
@@ -25,300 +19,140 @@ class ProfileController:
         self.db = db
         self.profile_service = ProfileService(db)
 
-    async def update_profile(
-        self,
-        user_id: uuid.UUID,
-        profile_data: UserProfileUpdate
-    ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
-        """
-        Cập nhật thông tin hồ sơ người dùng.
+    def _handle_http_exception(self, e: HTTPException, user_id: Optional[uuid.UUID] = None) -> ErrorResponse:
+        """Handle HTTPException and return appropriate ErrorResponse"""
+        error_code = getattr(e, 'error_code', ErrorCode.UNKNOWN_ERROR)
+        message = getattr(e, 'message', str(e.detail))
+        
+        status_map = {
+            ErrorCode.USER_NOT_FOUND: status.HTTP_404_NOT_FOUND,
+            ErrorCode.PROFILE_NOT_FOUND: status.HTTP_404_NOT_FOUND,
+            ErrorCode.USER_INVALID_DATA: status.HTTP_400_BAD_REQUEST
+        }
+        
+        return ErrorResponse(
+            message=message,
+            error_code=error_code,
+            error_details={"user_id": str(user_id)} if user_id else {"error": str(e)},
+            status_code=status_map.get(error_code, status.HTTP_400_BAD_REQUEST)
+        )
 
-        Args:
-            user_id: ID người dùng
-            profile_data: Dữ liệu hồ sơ cần cập nhật
+    def _internal_error(self, message: str, error_code: str, error: Exception) -> ErrorResponse:
+        """Create internal server error response"""
+        return ErrorResponse(
+            message=message, error_code=error_code,
+            error_details={"error": str(error)},
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-        Returns:
-            SuccessResponse với dữ liệu hồ sơ hoặc ErrorResponse
-        """
+    async def update_profile(self, user_id: uuid.UUID, profile_data: UserProfileUpdate) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+        """Cập nhật thông tin hồ sơ"""
         try:
-            logger.info(f"[CẬP_NHẬT_HỒ_SƠ] Đang cập nhật hồ sơ cho người dùng: {user_id}")
+            logger.info(f"[UPDATE_PROFILE] {user_id}")
+            updated_profile = await self.profile_service.update_profile(user_id, profile_data)
+            profile_response = await self.profile_service.create_profile_response(updated_profile)
             
-            updated_profile = await self.profile_service.update_profile(
-                user_id, profile_data
-            )
-
-            profile_response = await self.profile_service.create_profile_response(
-                updated_profile
-            )
-
-            logger.info(f"[CẬP_NHẬT_HỒ_SƠ] Thành công: {user_id}")
-            
-            return SuccessResponse(
-                message=Message.PROFILE_UPDATE_SUCCESS_MSG,
-                data=profile_response
-            )
-
-        except AppBaseException as e:
-            logger.error(f"[CẬP_NHẬT_HỒ_SƠ] AppBaseException: {e.message}")
-            
-            if e.error_code == ErrorCode.USER_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            elif e.error_code == ErrorCode.USER_INVALID_DATA:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"validation_error": str(e)},
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
-            else:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
-
+            logger.info(f"[UPDATE_PROFILE] Success: {user_id}")
+            return SuccessResponse(message=Message.PROFILE_UPDATE_SUCCESS_MSG, data=profile_response)
+        except HTTPException as e:
+            logger.error(f"[UPDATE_PROFILE] HTTPException: {e.detail}")
+            return self._handle_http_exception(e, user_id)
         except Exception as e:
-            logger.error(f"[CẬP_NHẬT_HỒ_SƠ] Lỗi không mong muốn: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.INTERNAL_ERROR_MSG,
-                error_code=ErrorCode.INTERNAL_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[UPDATE_PROFILE] Error: {e}", exc_info=True)
+            return self._internal_error(Message.INTERNAL_ERROR_MSG, ErrorCode.INTERNAL_ERROR, e)
 
-    async def get_profile(
-        self,
-        user_id: uuid.UUID
-    ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
-        """Lấy thông tin hồ sơ người dùng."""
+    async def get_profile(self, user_id: uuid.UUID) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+        """Lấy thông tin hồ sơ"""
         try:
-            logger.info(f"[LẤY_HỒ_SƠ] Đang lấy hồ sơ cho người dùng: {user_id}")
-            
+            logger.info(f"[GET_PROFILE] {user_id}")
             profile = await self.profile_service.get_profile_by_user_id(user_id)
 
             if not profile:
-                logger.warning(f"[LẤY_HỒ_SƠ] Không tìm thấy hồ sơ: {user_id}")
+                logger.warning(f"[GET_PROFILE] Not found: {user_id}")
                 return ErrorResponse(
-                    message=Message.PROFILE_NOT_FOUND_MSG,
-                    error_code=ErrorCode.PROFILE_NOT_FOUND,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
+                    message=Message.PROFILE_NOT_FOUND_MSG, error_code=ErrorCode.PROFILE_NOT_FOUND,
+                    error_details={"user_id": str(user_id)}, status_code=status.HTTP_404_NOT_FOUND
                 )
 
-            profile_response = await self.profile_service.create_profile_response(
-                profile
-            )
-
-            logger.info(f"[LẤY_HỒ_SƠ] Thành công: {user_id}")
-            
-            return SuccessResponse(
-                message=Message.PROFILE_GET_SUCCESS_MSG,
-                data=profile_response
-            )
-
+            profile_response = await self.profile_service.create_profile_response(profile)
+            logger.info(f"[GET_PROFILE] Success: {user_id}")
+            return SuccessResponse(message=Message.PROFILE_GET_SUCCESS_MSG, data=profile_response)
         except Exception as e:
-            logger.error(f"[LẤY_HỒ_SƠ] Lỗi không mong muốn: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.PROFILE_GET_ERROR_MSG,
-                error_code=ErrorCode.PROFILE_GET_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[GET_PROFILE] Error: {e}", exc_info=True)
+            return self._internal_error(Message.PROFILE_GET_ERROR_MSG, ErrorCode.PROFILE_GET_ERROR, e)
 
-    async def get_profile_by_str_id(
-        self,
-        user_id: str
-    ) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
-        """Lấy hồ sơ người dùng theo ID người dùng dạng chuỗi (chuyển đổi thành UUID)."""
+    async def get_profile_by_str_id(self, user_id: str) -> Union[SuccessResponse[UserProfileResponse], ErrorResponse]:
+        """Lấy hồ sơ theo string ID (convert to UUID)"""
         try:
-            logger.info(f"[LẤY_HỒ_SƠ_STR] Đang lấy hồ sơ cho người dùng: {user_id}")
+            logger.info(f"[GET_PROFILE_STR] {user_id}")
             
-            # Convert string to UUID
+            # Convert to UUID
             try:
                 uuid_user_id = uuid.UUID(user_id)
             except ValueError:
-                logger.warning(f"[LẤY_HỒ_SƠ_STR] Định dạng UUID không hợp lệ: {user_id}")
+                logger.warning(f"[GET_PROFILE_STR] Invalid UUID: {user_id}")
                 return ErrorResponse(
-                    message=Message.USER_INVALID_DATA_MSG,
-                    error_code=ErrorCode.USER_INVALID_DATA,
+                    message=Message.USER_INVALID_DATA_MSG, error_code=ErrorCode.USER_INVALID_DATA,
                     error_details={"user_id": user_id, "error": "Invalid UUID format"},
                     status_code=status.HTTP_400_BAD_REQUEST
                 )
             
-            profile = await self.profile_service.get_profile_by_user_id(uuid_user_id)
-
-            if not profile:
-                logger.warning(f"[LẤY_HỒ_SƠ_STR] Không tìm thấy hồ sơ: {user_id}")
-                return ErrorResponse(
-                    message=Message.PROFILE_NOT_FOUND_MSG,
-                    error_code=ErrorCode.PROFILE_NOT_FOUND,
-                    error_details={"user_id": user_id},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-
-            profile_response = await self.profile_service.create_profile_response(
-                profile
-            )
-
-            logger.info(f"[LẤY_HỒ_SƠ_STR] Thành công: {user_id}")
-            
-            return SuccessResponse(
-                message=Message.PROFILE_GET_SUCCESS_MSG,
-                data=profile_response
-            )
-
+            # Reuse get_profile logic
+            return await self.get_profile(uuid_user_id)
         except Exception as e:
-            logger.error(f"[LẤY_HỒ_SƠ_STR] Lỗi không mong muốn: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.INTERNAL_ERROR_MSG,
-                error_code=ErrorCode.INTERNAL_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[GET_PROFILE_STR] Error: {e}", exc_info=True)
+            return self._internal_error(Message.INTERNAL_ERROR_MSG, ErrorCode.INTERNAL_ERROR, e)
 
-    async def get_profile_statistics(
-        self
-    ) -> Union[SuccessResponse[ProfileStatisticsResponse], ErrorResponse]:
-        """Lấy thống kê về hồ sơ người dùng."""
+    async def get_profile_statistics(self) -> Union[SuccessResponse[ProfileStatisticsResponse], ErrorResponse]:
+        """Lấy thống kê hồ sơ"""
         try:
-            logger.info("[THỐNG_KÊ] Đang lấy thống kê hồ sơ")
-            
+            logger.info("[STATISTICS] Fetching profile stats")
             stats = await self.profile_service.get_profile_statistics()
-
-            logger.info(
-                f"[THỐNG_KÊ] Thành công - Tổng hồ sơ: {stats.total_profiles if hasattr(stats, 'total_profiles') else 'N/A'}"
-            )
             
-            return SuccessResponse(
-                message=Message.PROFILE_STATISTICS_SUCCESS_MSG,
-                data=stats
-            )
-
+            total = stats.total_profiles if hasattr(stats, 'total_profiles') else 'N/A'
+            logger.info(f"[STATISTICS] Success - Total: {total}")
+            return SuccessResponse(message=Message.PROFILE_STATISTICS_SUCCESS_MSG, data=stats)
         except Exception as e:
-            logger.error(f"[THỐNG_KÊ] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.PROFILE_STATISTICS_ERROR_MSG,
-                error_code=ErrorCode.PROFILE_STATISTICS_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            return self._internal_error(Message.PROFILE_STATISTICS_ERROR_MSG, ErrorCode.PROFILE_STATISTICS_ERROR, e)
 
-    async def search_profiles(
-        self,
-        full_name: Optional[str] = None,
-        gender: Optional[str] = None,
-        min_age: Optional[int] = None,
-        max_age: Optional[int] = None,
-        limit: int = 20,
-        offset: int = 0
-    ) -> Union[SuccessResponse[List[UserProfileResponse]], ErrorResponse]:
-        """Tìm kiếm hồ sơ với bộ lọc."""
+    async def search_profiles(self, full_name: Optional[str] = None, gender: Optional[str] = None,
+                             min_age: Optional[int] = None, max_age: Optional[int] = None,
+                             limit: int = 20, offset: int = 0) -> Union[SuccessResponse[List[UserProfileResponse]], ErrorResponse]:
+        """Tìm kiếm hồ sơ với bộ lọc"""
         try:
-            logger.info(
-                f"[TÌM_KIẾM_HỒ_SƠ] Đang tìm kiếm - tên: {full_name}, "
-                f"giới tính: {gender}, tuổi: {min_age}-{max_age}, "
-                f"giới hạn: {limit}, offset: {offset}"
-            )
+            logger.info(f"[SEARCH] name: {full_name}, gender: {gender}, age: {min_age}-{max_age}")
             
             profiles = await self.profile_service.search_profiles(
-                full_name=full_name,
-                gender=gender,
-                min_age=min_age,
-                max_age=max_age,
-                limit=limit,
-                offset=offset
+                full_name=full_name, gender=gender, min_age=min_age, max_age=max_age, limit=limit, offset=offset
             )
 
-            profile_responses = []
-            for profile in profiles:
-                profile_response = await self.profile_service.create_profile_response(
-                    profile
-                )
-                profile_responses.append(profile_response)
+            # Use list comprehension instead of loop
+            profile_responses = [
+                await self.profile_service.create_profile_response(p) for p in profiles
+            ]
 
-            logger.info(
-                f"[TÌM_KIẾM_HỒ_SƠ] Thành công: tìm thấy {len(profile_responses)} hồ sơ"
-            )
-            
+            logger.info(f"[SEARCH] Success: {len(profile_responses)} profiles")
             return SuccessResponse(
-                message=Message.PROFILE_SEARCH_FOUND_COUNT_MSG.format(
-                    count=len(profile_responses)
-                ),
+                message=Message.PROFILE_SEARCH_FOUND_COUNT_MSG.format(count=len(profile_responses)),
                 data=profile_responses
             )
-
         except Exception as e:
-            logger.error(f"[TÌM_KIẾM_HỒ_SƠ] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.PROFILE_SEARCH_ERROR_MSG,
-                error_code=ErrorCode.PROFILE_SEARCH_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[SEARCH] Error: {e}", exc_info=True)
+            return self._internal_error(Message.PROFILE_SEARCH_ERROR_MSG, ErrorCode.PROFILE_SEARCH_ERROR, e)
 
-    async def get_profile_completion_suggestions(
-        self,
-        user_id: uuid.UUID
-    ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Lấy gợi ý để hoàn thiện hồ sơ."""
+    async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
+        """Lấy gợi ý hoàn thiện hồ sơ"""
         try:
-            logger.info(
-                f"[GỢI_Ý_HOÀN_THIỆN] Đang lấy gợi ý cho người dùng: {user_id}"
-            )
+            logger.info(f"[COMPLETION] {user_id}")
+            suggestions = await self.profile_service.get_profile_completion_suggestions(user_id)
             
-            suggestions = await self.profile_service.get_profile_completion_suggestions(
-                user_id
-            )
-
-            logger.info(
-                f"[GỢI_Ý_HOÀN_THIỆN] Thành công: {user_id} - "
-                f"Hoàn thiện: {suggestions.get('completion_percentage', 0)}%"
-            )
-            
-            return SuccessResponse(
-                message=Message.PROFILE_COMPLETION_SUGGESTIONS_SUCCESS_MSG,
-                data=suggestions
-            )
-
-        except AppBaseException as e:
-            logger.error(
-                f"[GỢI_Ý_HOÀN_THIỆN] AppBaseException: {e.message}"
-            )
-            
-            if e.error_code == ErrorCode.USER_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            elif e.error_code == ErrorCode.PROFILE_NOT_FOUND:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code,
-                    error_details={"user_id": str(user_id)},
-                    status_code=status.HTTP_404_NOT_FOUND
-                )
-            else:
-                return ErrorResponse(
-                    message=e.message,
-                    error_code=e.error_code or ErrorCode.UNKNOWN_ERROR,
-                    status_code=status.HTTP_400_BAD_REQUEST
-                )
-
+            completion = suggestions.get('completion_percentage', 0)
+            logger.info(f"[COMPLETION] Success: {user_id} - {completion}%")
+            return SuccessResponse(message=Message.PROFILE_COMPLETION_SUGGESTIONS_SUCCESS_MSG, data=suggestions)
+        except HTTPException as e:
+            logger.error(f"[COMPLETION] HTTPException: {e.detail}")
+            return self._handle_http_exception(e, user_id)
         except Exception as e:
-            logger.error(
-                f"[GỢI_Ý_HOÀN_THIỆN] Lỗi không mong muốn: {e}",
-                exc_info=True
-            )
-            return ErrorResponse(
-                message=Message.PROFILE_COMPLETION_SUGGESTIONS_ERROR_MSG,
-                error_code=ErrorCode.PROFILE_COMPLETION_SUGGESTIONS_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            logger.error(f"[COMPLETION] Error: {e}", exc_info=True)
+            return self._internal_error(Message.PROFILE_COMPLETION_SUGGESTIONS_ERROR_MSG, ErrorCode.PROFILE_COMPLETION_SUGGESTIONS_ERROR, e)

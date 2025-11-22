@@ -1,4 +1,2 @@
-from app.utils.exceptions.base_exceptions import (
-    AppBaseException,
-    AppHTTPException
-)
+# App exceptions module
+# Custom exceptions have been replaced with FastAPI HTTPException

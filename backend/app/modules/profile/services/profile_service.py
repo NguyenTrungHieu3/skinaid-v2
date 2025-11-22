@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text, UUID
 from typing import Optional, Dict, Any, List
@@ -7,7 +8,6 @@ from datetime import datetime, timezone
 
 from app.modules.profile.models.user_profile import UserProfile
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_INVALID_DATA, USER_NOT_FOUND
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class ProfileService:
             UserProfile object đã được cập nhật
             
         Raises:
-            AppBaseException: Nếu user không tồn tại hoặc dữ liệu không hợp lệ
+            HTTPException: Nếu user không tồn tại hoặc dữ liệu không hợp lệ
         """
         try:
             existing_profile = await self.get_profile_by_user_id(user_id)
@@ -83,10 +83,7 @@ class ProfileService:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise AppBaseException(
-                        message="Không tìm thấy profile",
-                        error_code=USER_NOT_FOUND
-                    )
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy profile")
             if existing_profile:
                 set_clauses = []
                 params = {"user_id": user_id, "updated_at": current_time}
@@ -155,19 +152,13 @@ class ProfileService:
                 await self.db.commit()
             row = result.mappings().first()
             if row is None:
-                raise AppBaseException(
-                    message="Không thể cập nhật profile",
-                    error_code=USER_INVALID_DATA
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile")
             return UserProfile.model_validate(dict(row))
-        except AppBaseException:
+        except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
-            raise AppBaseException(
-                message="Không thể cập nhật profile do lỗi nội bộ",
-                error_code=USER_INVALID_DATA
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile do lỗi nội bộ")
         
     async def create_profile_response(self, profile) -> UserProfileResponse:
         """

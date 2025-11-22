@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
-from app.api.v1.deps import require_admin
+from app.core.dependencies import require_admin
 from app.modules.auth.services.token_cleanup_service import TokenCleanupService
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from typing import Union

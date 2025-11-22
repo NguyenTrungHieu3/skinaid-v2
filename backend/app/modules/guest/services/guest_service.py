@@ -17,7 +17,12 @@ class GuestService:
         sql = text("""
             INSERT INTO guest_sessions (session_id, ip_address, user_agent, created_at, expires_at, last_activity_at, upload_count, analysis_count, is_active, is_converted_to_user)
             VALUES (:session_id, :ip_address, :user_agent, :created_at, :expires_at, :last_activity_at, :upload_count, :analysis_count, :is_active, :is_converted_to_user)
-            RETURNING *
+            RETURNING *,
+                   CASE WHEN expires_at < NOW() THEN true ELSE false END as is_expired,
+                   CASE WHEN expires_at >= NOW() AND is_active = true AND upload_count < 5 THEN true ELSE false END as can_upload,
+                   CASE WHEN expires_at >= NOW() AND is_active = true AND analysis_count < 3 THEN true ELSE false END as can_analyze,
+                   (5 - upload_count) as remaining_uploads,
+                   (3 - analysis_count) as remaining_analyses
         """)
 
         session_id = uuid.uuid4()
@@ -80,10 +85,19 @@ class GuestService:
         converted_users_result = await self.db.execute(converted_users_sql)
         converted_users = converted_users_result.scalar() or 0
 
+        # Calculate average session duration (in hours)
+        avg_duration_sql = text("""
+            SELECT AVG(EXTRACT(EPOCH FROM (COALESCE(last_activity_at, NOW()) - created_at)) / 3600) as avg_hours
+            FROM guest_sessions
+        """)
+        avg_duration_result = await self.db.execute(avg_duration_sql)
+        avg_duration = avg_duration_result.scalar() or 0.0
+
         return {
             "total_sessions": total_sessions,
             "active_sessions": active_sessions,
             "total_uploads": total_uploads,
             "total_analyses": total_analyses,
-            "converted_users": converted_users
+            "converted_users": converted_users,
+            "average_session_duration": round(avg_duration, 2)
         }

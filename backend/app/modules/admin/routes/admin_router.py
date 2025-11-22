@@ -10,7 +10,7 @@ from app.modules.admin.schemas.admin_schemas import (
     SystemLogsResponse,
     SeverityStatsResponse
 )
-from app.api.v1.deps import get_db, require_admin
+from app.core.dependencies import get_db, require_admin
 from app.modules.auth.models.user import User
 from app.core.database import get_session
 

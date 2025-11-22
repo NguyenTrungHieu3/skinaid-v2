@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from typing import Dict, Any, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -7,7 +8,6 @@ from datetime import datetime, timezone
 
 from app.modules.auth.models.user import User
 from app.modules.profile.models.user_profile import UserProfile
-from app.utils.exceptions.base_exceptions import AppBaseException
 from app.utils.constants.error_codes import USER_NOT_FOUND, USER_INVALID_DATA
 
 logger = logging.getLogger(__name__)
@@ -203,24 +203,18 @@ class UserService:
             row = result.mappings().first()
 
             if not row:
-                raise AppBaseException(
-                    message="Không thể tạo user (không có hàng trả về)",
-                    error_code=USER_INVALID_DATA,
-                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể tạo user (không có hàng trả về)")
 
             await self.db.commit()
             return User.model_validate(dict(row))
 
-        except AppBaseException:
+        except HTTPException:
             await self.db.rollback()
             raise
         except Exception as e:
             logger.error(f"Không thể tạo user: {e}", exc_info=True)
             await self.db.rollback()
-            raise AppBaseException(
-                message="Không thể tạo user",
-                error_code=USER_INVALID_DATA,
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể tạo user")
 
     # ======================== UPDATE STATUS ========================
 
