@@ -1,4 +1,4 @@
-import { Link /*useNavigate*/ } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styles from "./Form.module.css";
 import { FaRegUser } from "react-icons/fa";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
@@ -51,7 +51,7 @@ const LoginForm = () => {
   const [rememberMe, setRememberMe] = useState(false);
 
   // Tạo hook
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // Lấy hàm login từ context
   const { login } = useAuth();
@@ -114,9 +114,16 @@ const LoginForm = () => {
 
     loginUser(formData)
       .then((response) => {
+        // Debug: Log toàn bộ response
+        console.log('🔍 Full login response:', response.data);
+        
         // Đăng nhập thành công , API trả vè token
         const token = response.data.data.access_token;
         const userObject = response.data.data.user;
+
+        // Debug: Kiểm tra user object
+        console.log('🔍 User object:', userObject);
+        console.log('🔍 User roles:', userObject.roles);
 
         // --- THAY ĐỔI LỚN ---
         // Thay vì tự lưu token, hãy gọi hàm login từ context
@@ -126,8 +133,26 @@ const LoginForm = () => {
           rememberMe
         );
 
-        // Bạn không cần gọi navigate('/') nữa.
-        // PublicRoute sẽ tự động đá bạn ra khỏi trang login.
+        // Redirect based on user role
+        const userRoles = userObject.roles || [];
+        console.log('🔍 Checking roles:', userRoles);
+        
+        const isAdmin = userRoles.some((role: string) => {
+          const isAdminRole = role.toLowerCase() === 'admin';
+          console.log(`🔍 Checking role "${role}": ${isAdminRole}`);
+          return isAdminRole;
+        });
+        
+        console.log('🔍 Is admin?', isAdmin);
+        
+        // Chuyển hướng dựa trên role
+        if (isAdmin) {
+          console.log('✅ Admin user detected, redirecting to /admin');
+          navigate('/admin', { replace: true });
+        } else {
+          console.log('✅ Regular user detected, redirecting to /');
+          navigate('/', { replace: true });
+        }
       })
       .catch((error) => {
         if (isAxiosError(error)) {

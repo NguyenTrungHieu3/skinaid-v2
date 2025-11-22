@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import styles from "./HistoryPage.module.css";
 import Timeline, { type HistoryEvent } from "../components/history/Timeline";
-import HistorySidebar from "../components/history/HistorySideBar";
+import HistorySidebar from "../components/history/HistorySidebar";
 import HistoryDetail from "../components/history/HistoryDetail";
 
 // Import kiểu frontend
 import {
   type CombinedEventDetail,
-  type SingleWoundDetail,
 } from "../DUMMY_DATA"; // Hoặc từ src/types/appTypes.ts
 
 // Import service

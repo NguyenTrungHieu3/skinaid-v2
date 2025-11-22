@@ -45,13 +45,15 @@ async def search_first_aid_guides(
     severity: Optional[str] = Query(None, description="Lọc theo mức độ"),
     limit: int = Query(20, description="Số lượng tối đa", le=100, ge=1),
     offset: int = Query(0, description="Số bản ghi bỏ qua", ge=0),
+    is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái (true/false)"),
+    search: Optional[str] = Query(None, description="Tìm kiếm theo tiêu đề"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Tìm kiếm hướng dẫn sơ cứu với bộ lọc.
     """
     controller = FirstAidController(db)
-    return await controller.search_first_aid_guides(wound_type, severity, limit, offset)
+    return await controller.search_first_aid_guides(wound_type, severity, limit, offset, is_active, search)
 
 @router.get("/statistics", response_model=SuccessResponse[Dict[str, Any]])
 async def get_first_aid_statistics(

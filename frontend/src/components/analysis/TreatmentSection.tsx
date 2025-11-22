@@ -1,5 +1,5 @@
 // src/components/analysis/TreatmentSection.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./TreatmentSection.module.css"; // File CSS Module mới
 import {
   IoIosArrowDown,

@@ -31,7 +31,9 @@ class FirstAidGuide(SQLModel, table=True):
     supplies_needed: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
 
     estimated_healing_time: Optional[str] = None
+    source: Optional[str] = None
     is_active: bool = Field(default=True, index=True)
+    is_deleted: bool = Field(default=False, index=True)
     version: int = Field(default=1)
     created_by: Optional[uuid.UUID] = Field(default=None, foreign_key="users.user_id")
 
@@ -62,7 +64,9 @@ class FirstAidGuide(SQLModel, table=True):
         donts: Optional[Dict[str, Any]] = None,
         supplies_needed: Optional[Dict[str, Any]] = None,
         estimated_healing_time: Optional[str] = None,
-        created_by: Optional[str] = None
+        source: Optional[str] = None,
+        is_active: bool = True,
+        created_by: Optional[uuid.UUID] = None
     ) -> "FirstAidGuide":
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
         
@@ -78,6 +82,8 @@ class FirstAidGuide(SQLModel, table=True):
             donts=donts,
             supplies_needed=supplies_needed,
             estimated_healing_time=estimated_healing_time,
+            source=source,
+            is_active=is_active,
             created_by=created_by,
             created_at=current_time,
             updated_at=current_time
@@ -102,13 +108,14 @@ class FirstAidGuide(SQLModel, table=True):
             logger.error(f"Mức độ nghiêm trọng không hợp lệ: {self.severity}")
             return False
 
-        if self.sub_type:
-            if self.wound_type.lower() != "burn":
-                logger.error("Sub_type chỉ được phép cho vết bỏng")
-                return False
-            if self.sub_type.lower() not in valid_burn_subtypes:
-                logger.error(f"Sub_type bỏng không hợp lệ: {self.sub_type}")
-                return False
+        # Sub-type validation removed to allow flexibility
+        # if self.sub_type:
+        #     if self.wound_type.lower() != "burn":
+        #         logger.error("Sub_type chỉ được phép cho vết bỏng")
+        #         return False
+        #     if self.sub_type.lower() not in valid_burn_subtypes:
+        #         logger.error(f"Sub_type bỏng không hợp lệ: {self.sub_type}")
+        #         return False
 
         return True
 
@@ -121,7 +128,8 @@ class FirstAidGuide(SQLModel, table=True):
             "dos": self.extract_list(self.dos),
             "donts": self.extract_list(self.donts),
             "supplies_needed": self.extract_list(self.supplies_needed),
-            "estimated_healing_time": self.estimated_healing_time
+            "estimated_healing_time": self.estimated_healing_time,
+            "source": self.source
         }
 
     def __repr__(self) -> str:

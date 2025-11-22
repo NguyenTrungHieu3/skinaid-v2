@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./HistorySidebar.module.css";
 // Thêm icon 'SlidersHorizontal' cho thanh trượt
-import { Search, Filter, SlidersHorizontal, Pointer } from "lucide-react";
+import { Search, Filter, SlidersHorizontal } from "lucide-react";
 import LogoPlaceholder from "../../assets/images/general/logo_placeholder.png";
 
 const HistorySidebar = () => {

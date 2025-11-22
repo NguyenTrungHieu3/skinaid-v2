@@ -128,16 +128,18 @@ class AuditService:
         resource_type: Optional[str] = None,
         success: Optional[bool] = None,
         is_guest: Optional[bool] = None,
+        search: Optional[str] = None,
+        role_name: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         limit: int = 50,
         offset: int = 0
-    ) -> Tuple[List[AuditLog], int]:
+    ) -> Tuple[List[Dict[str, Any]], int]:
         """
         Truy vấn audit logs với bộ lọc.
 
         Trả về:
-            Tuple[List[AuditLog], int]: (logs, total_count)
+            Tuple[List[Dict[str, Any]], int]: (logs, total_count)
         """
         try:
             # Xây dựng bộ lọc
@@ -149,11 +151,10 @@ class AuditService:
                 "is_guest": is_guest
             }
 
-            where_clauses = [
-                f"{field} = :{field}"
-                for field, value in filter_fields.items()
-                if value is not None
-            ]
+            where_clauses = []
+            for field, value in filter_fields.items():
+                if value is not None:
+                    where_clauses.append(f"al.{field} = :{field}")
 
             params = {
                 field: value
@@ -162,22 +163,46 @@ class AuditService:
             }
 
             if start_date is not None:
-                where_clauses.append("timestamp >= :start_date")
+                where_clauses.append("al.timestamp >= :start_date")
                 params["start_date"] = start_date
 
             if end_date is not None:
-                where_clauses.append("timestamp <= :end_date")
+                where_clauses.append("al.timestamp <= :end_date")
                 params["end_date"] = end_date
+
+            # Add search filter
+            if search is not None and search.strip():
+                search_pattern = f"%{search.strip()}%"
+                where_clauses.append(
+                    "(al.action ILIKE :search OR "
+                    "u.user_name ILIKE :search OR "
+                    "u.email ILIKE :search OR "
+                    "al.error_message ILIKE :search)"
+                )
+                params["search"] = search_pattern
+
+            # Add role_name filter
+            if role_name is not None and role_name.strip():
+                where_clauses.append(
+                    "EXISTS ("
+                    "SELECT 1 FROM user_roles ur "
+                    "JOIN roles r ON ur.role_id = r.role_id "
+                    "WHERE ur.user_id = al.user_id AND r.role_name = :role_name"
+                    ")"
+                )
+                params["role_name"] = role_name.strip()
 
             where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
 
             # TRUY VẤN 1: Đếm tổng số bản ghi phù hợp
             count_query = text(f"""
                 SELECT COUNT(*)
-                FROM audit_logs
+                FROM audit_logs al
+                LEFT JOIN users u ON al.user_id = u.user_id
                 WHERE {where_sql}
             """)
 
+            # Ensure we are using the session correctly
             count_result = await self.db.execute(count_query, params)
             total_count = count_result.scalar() or 0
 
@@ -187,19 +212,47 @@ class AuditService:
 
             query_sql = text(f"""
                 SELECT
-                    audit_action_id, user_id, action, resource_type, resource_id,
-                    ip_address, user_agent, success, error_message, is_guest,
-                    guest_session_id, details, timestamp
-                FROM audit_logs
+                    al.audit_action_id, al.user_id, al.action, al.resource_type, al.resource_id,
+                    al.ip_address, al.user_agent, al.success, al.error_message, al.is_guest,
+                    al.guest_session_id, al.details, al.timestamp,
+                    u.user_name, u.email,
+                    (
+                        SELECT STRING_AGG(r.role_name, ', ')
+                        FROM user_roles ur
+                        JOIN roles r ON ur.role_id = r.role_id
+                        WHERE ur.user_id = al.user_id
+                    ) as role_name
+                FROM audit_logs al
+                LEFT JOIN users u ON al.user_id = u.user_id
                 WHERE {where_sql}
-                ORDER BY timestamp DESC
+                ORDER BY al.timestamp DESC
                 LIMIT :limit OFFSET :offset
             """)
 
             result = await self.db.execute(query_sql, params)
             rows = result.fetchall()
 
-            logs = [self._map_row_to_audit_log(row) for row in rows]
+            logs = []
+            for row in rows:
+                log_dict = {
+                    "audit_action_id": row.audit_action_id,
+                    "user_id": row.user_id,
+                    "action": row.action,
+                    "resource_type": row.resource_type,
+                    "resource_id": row.resource_id,
+                    "ip_address": row.ip_address,
+                    "user_agent": row.user_agent,
+                    "success": row.success,
+                    "error_message": row.error_message,
+                    "is_guest": row.is_guest,
+                    "guest_session_id": row.guest_session_id,
+                    "details": row.details,
+                    "timestamp": row.timestamp,
+                    "user_name": row.user_name,
+                    "email": row.email,
+                    "role_name": row.role_name
+                }
+                logs.append(log_dict)
 
             logger.info(
                 f"Đã lấy {len(logs)}/{total_count} audit logs với bộ lọc: "

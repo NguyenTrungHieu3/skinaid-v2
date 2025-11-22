@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
@@ -14,39 +14,40 @@ from app.modules.admin.schemas.user_management_schemas import (
 )
 from app.api.v1.deps import get_db, require_admin
 from app.modules.auth.models.user import User
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/admin/users", tags=["Admin - User Management"])
 
 
 async def get_user_controller(db: AsyncSession = Depends(get_db)) -> UserManagementController:
-    """Dependency để lấy instance user management controller"""
+    """Dependency to get user management controller instance"""
     return UserManagementController(db)
 
 
 @router.get(
     "",
     response_model=SuccessResponse[UserListResponse],
-    summary="Lấy Danh sách Users",
-    description="Lấy danh sách users được phân trang với các bộ lọc tùy chọn"
+    summary="Get Users List",
+    description="Get paginated list of users with optional filters"
 )
 async def get_users(
-    page: int = Query(1, ge=1, description="Số trang (bắt đầu từ 1)"),
-    limit: int = Query(10, ge=1, le=100, description="Số users trên mỗi trang"),
-    search: Optional[str] = Query(None, description="Tìm kiếm theo email hoặc tên hiển thị"),
-    role: Optional[str] = Query(None, description="Lọc theo vai trò (user, moderator, admin)"),
-    status: Optional[str] = Query(None, description="Lọc theo trạng thái (active, inactive)"),
+    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
+    limit: int = Query(10, ge=1, le=100, description="Number of users per page"),
+    search: Optional[str] = Query(None, description="Search by email or display name"),
+    role: Optional[str] = Query(None, description="Filter by role (user, moderator, admin)"),
+    status: Optional[str] = Query(None, description="Filter by status (active, inactive)"),
     controller: UserManagementController = Depends(get_user_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy danh sách users được phân trang với bộ lọc:
-    - **page**: Số trang (bắt đầu từ 1)
-    - **limit**: Bản ghi trên mỗi trang (1-100)
-    - **search**: Tìm kiếm trong email và tên hiển thị
-    - **role**: Lọc theo vai trò (user, moderator, admin)
-    - **status**: Lọc theo trạng thái (active, inactive)
+    Get paginated list of users with filters:
+    - **page**: Page number (starts from 1)
+    - **limit**: Records per page (1-100)
+    - **search**: Search in email and display name
+    - **role**: Filter by role (user, moderator, admin)
+    - **status**: Filter by status (active, inactive)
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
     return await controller.get_users(
         page=page,
@@ -105,7 +106,9 @@ async def get_user_detail(
     description="Create a new user account",
     status_code=201
 )
+@limiter.limit("100/minute")
 async def create_user(
+    request: Request,
     user_data: CreateUserRequest,
     controller: UserManagementController = Depends(get_user_controller),
     current_user: User = Depends(require_admin)
@@ -119,6 +122,7 @@ async def create_user(
     
     Admin-created users are automatically verified.
     
+    **Rate Limited**: 100 requests per minute
     **Requires admin role**
     """
     return await controller.create_user(user_data)

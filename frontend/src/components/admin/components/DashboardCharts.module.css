@@ -1,0 +1,63 @@
+.mt24 {
+  margin-top: 24px;
+}
+
+.adminChartList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.adminChartCard {
+  background-color: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 5px 10px 3px rgba(0, 0, 0, 0.1);
+}
+
+.adminChartHeader {
+  margin-bottom: 20px;
+}
+
+.adminChartTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.adminChartDescription {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.adminChartContent {
+  width: 100%;
+}
+
+.woundLegend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.woundLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.woundLegendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.woundLegendName {
+  font-weight: 500;
+}

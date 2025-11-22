@@ -73,6 +73,9 @@ async def login_user(
 )
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     """Lấy thông tin cá nhân của user hiện tại."""
+    # Lấy roles từ user_roles relationship
+    roles = [user_role.role.role_name for user_role in current_user.user_roles if user_role.role]
+    
     user_response = UserResponse(
         user_id=current_user.user_id,
         user_name=current_user.user_name,
@@ -85,7 +88,8 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         full_name=current_user.profile.full_name if current_user.profile else None,
         phone=current_user.profile.phone if current_user.profile else None,
         gender=current_user.profile.gender if current_user.profile else None,
-        avatar_url=current_user.profile.avatar_url if current_user.profile else None
+        avatar_url=current_user.profile.avatar_url if current_user.profile else None,
+        roles=roles  # Thêm roles vào response
     )
 
     return SuccessResponse(

@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useState,
   useContext,
@@ -24,12 +24,13 @@ interface User {
   gender?: string | null;
   avatar_url?: string | null;
   roles?: string[];
-  created_at: string;
+  created_at?: string;
 }
 
 // ====== Kiểu dữ liệu context (SỬA HÀM LOGIN) ======
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
   user: User | null;
   // 2. Sửa: 'login' bây giờ nhận 'User' object, không trả về Promise
   login: (token: string, user: User, rememberMe: boolean) => void;
@@ -54,31 +55,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 3. SỬA HÀM FETCHUSER (ĐỂ GỌI CẢ 2 API KHI RELOAD)
   const fetchUser = async (token: string) => {
     try {
+      console.log("🔍 [fetchUser] Starting to fetch user data...");
+
       // Gọi cả 2 API cùng lúc
       const [authResponse, profileResponse] = await Promise.all([
-        getMe(token), // (1) Lấy auth data (username, email...)
-        getMyProfile(), // (2) Lấy profile data (full_name, phone...)
+        getMe(token), // (1) Lấy auth data (username, email...) - BẮT BUỘC
+        getMyProfile().catch(() => ({ data: { success: false, data: null } })), // (2) Lấy profile data - TÙY CHỌN
       ]);
 
-      if (authResponse.data.success && profileResponse.data.success) {
-        // Gộp 2 kết quả lại
-        const authData = authResponse.data.data;
-        const profileData = profileResponse.data.data;
+      console.log("🔍 [fetchUser] API responses:", {
+        authSuccess: authResponse.data.success,
+        profileSuccess: profileResponse.data.success
+      });
 
-        // 'full_name' từ profileData sẽ ghi đè 'full_name: null' từ authData
-        const fullUser: User = {
-          ...authData,
-          ...profileData,
-        };
+      // CHỈ CẦN authResponse thành công là đủ
+      if (authResponse.data.success) {
+        const authData = authResponse.data.data;
+
+        // Nếu profile API thành công, merge data. Nếu không, chỉ dùng authData
+        let fullUser: User = authData;
+
+        if (profileResponse.data.success && profileResponse.data.data) {
+          const profileData = profileResponse.data.data;
+          fullUser = {
+            ...authData,
+            ...profileData,
+          };
+          console.log("✅ [fetchUser] User data merged with profile");
+        } else {
+          console.log("⚠️ [fetchUser] Profile API failed, using auth data only");
+        }
+
+        console.log("✅ [fetchUser] User authenticated successfully", {
+          userId: fullUser.user_id,
+          roles: fullUser.roles,
+          fullUserData: fullUser
+        });
 
         setUser(fullUser);
         setIsAuthenticated(true);
       } else {
-        // Nếu 1 trong 2 API lỗi, vẫn logout
-        throw new Error("Failed to fetch full user data");
+        // Chỉ khi auth API fail mới logout
+        console.error("❌ [fetchUser] Auth API failed");
+        throw new Error("Failed to fetch auth data");
       }
     } catch (error) {
-      console.error("❌ Lỗi khi gộp fetch /me và /profile/me:", error);
+      console.error("❌ [fetchUser] Lỗi khi fetch user data:", error);
       logout();
     }
   };
@@ -89,19 +111,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
 
     const initializeAuth = async () => {
+      console.log("🔍 [AuthContext] Initializing auth...", { hasToken: !!token });
+
       if (token) {
         try {
           const decoded: { exp: number } = jwtDecode(token);
+          console.log("🔍 [AuthContext] Token decoded", { exp: decoded.exp, now: Date.now() / 1000 });
+
           if (decoded.exp * 1000 > Date.now()) {
+            console.log("✅ [AuthContext] Token valid, fetching user...");
             await fetchUser(token); // Chờ fetchUser (đã sửa) chạy xong
+            console.log("✅ [AuthContext] User fetched successfully");
           } else {
+            console.log("❌ [AuthContext] Token expired");
             logout();
           }
         } catch (error) {
-          console.error("❌ Token không hợp lệ:", error);
+          console.error("❌ [AuthContext] Token không hợp lệ:", error);
           logout();
         }
+      } else {
+        console.log("ℹ️ [AuthContext] No token found");
       }
+
+      console.log("🔍 [AuthContext] Setting isLoading to false");
       setIsLoading(false); // Báo là xong
     };
 
@@ -137,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Giá trị context (Giữ nguyên)
   const value: AuthContextType = {
     isAuthenticated,
+    isLoading,
     user,
     login,
     logout,

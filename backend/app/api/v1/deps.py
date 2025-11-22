@@ -317,7 +317,7 @@ async def revoke_token(
 
 async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
     """
-    Lấy user từ database theo ID
+    Lấy user từ database theo ID với eager loading cho relationships
     
     Args:
         db: Database session
@@ -326,20 +326,26 @@ async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
     Returns:
         User object hoặc None nếu không tìm thấy/inactive
     """
-    query = text("""
-        SELECT * FROM users
-        WHERE user_id = CAST(:user_id AS UUID)
-        AND is_active = true
-        AND is_deleted = false
-    """)
+    from sqlmodel import select
+    from sqlalchemy.orm import selectinload
+    from app.modules.auth.models.user_roles import UserRole
     
-    result = await db.execute(query, {"user_id": user_id})
-    user_row = result.mappings().first()
+    # Sử dụng SQLModel select với selectinload để eager load relationships
+    statement = (
+        select(User)
+        .where(User.user_id == uuid.UUID(user_id))
+        .where(User.is_active == True)
+        .where(User.is_deleted == False)
+        .options(
+            selectinload(User.user_roles).selectinload(UserRole.role),  # type: ignore
+            selectinload(User.profile)  # type: ignore
+        )
+    )
     
-    if user_row is None:
-        return None
+    result = await db.execute(statement)
+    user = result.scalar_one_or_none()
     
-    return User.model_validate(dict(user_row))
+    return user
 
 
 async def check_email_verified(user: User, required: bool = True) -> None:

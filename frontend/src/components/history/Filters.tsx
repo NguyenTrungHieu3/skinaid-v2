@@ -1,5 +1,3 @@
-import React from "react";
-
 // (CSS cho file này sẽ được tạo sau)
 const Filters = () => {
   return (

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
 
-from app.core.database import get_db
+from app.core.database import get_db, get_session
 from app.modules.audit.controllers.audit_controller import AuditController
 from app.modules.audit.schemas.audit_schemas import (
     AuditLogListResponse,
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/audit")
 )
 async def get_audit_logs(
     filters: AuditLogFilterParams = Depends(),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user = Depends(require_permission("read_system_logs"))
 ) -> Union[SuccessResponse[AuditLogListResponse], ErrorResponse]:
     controller = AuditController(db)
@@ -37,7 +37,7 @@ async def get_audit_logs(
     description="Lấy thống kê tổng quan về audit logs. Yêu cầu quyền 'read_system_logs'."
 )
 async def get_audit_stats(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_session),
     current_user = Depends(require_permission("read_system_logs"))
 ) -> Union[SuccessResponse[AuditStatsResponse], ErrorResponse]:
     controller = AuditController(db)
@@ -51,7 +51,7 @@ async def get_audit_stats(
     description="Kiểm tra trạng thái audit service"
 )
 async def health_check(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_session)
 ) -> SuccessResponse[dict]:
     controller = AuditController(db)
     return await controller.health_check()

@@ -8,75 +8,83 @@ from app.modules.auth.models.user import User
 from app.modules.ai.models.wound_analysis import WoundAnalysis
 from app.modules.ai.models.wound_detection import WoundDetection
 from app.modules.guest.models.guest_session import GuestSession
+from app.modules.audit.models.audit_log import AuditLog
 
 logger = logging.getLogger(__name__)
 
 
 class StatisticsService:
-    """Service thu thập thống kê dashboard"""
+    """Service for gathering dashboard statistics"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_dashboard_overview(self) -> Dict[str, Any]:
+    async def get_dashboard_overview(self, period: str = 'month') -> Dict[str, Any]:
         """
-        Lấy thống kê tổng quan cho admin dashboard
-        Trả về dữ liệu cho tất cả 4 thẻ chính
+        Get overview statistics for admin dashboard
+        Returns data for all 4 main cards
         """
         try:
-            # Lấy thống kê người dùng
-            user_stats = await self._get_user_statistics()
+            start_date, prev_start_date = self._get_date_range(period)
+
+            # Get user statistics
+            user_stats = await self._get_user_statistics(start_date, prev_start_date)
             
-            # Lấy thống kê hình ảnh/upload
-            image_stats = await self._get_image_statistics()
+            # Get image/upload statistics
+            image_stats = await self._get_image_statistics(start_date, prev_start_date)
             
-            # Lấy thống kê người dùng hoạt động
-            active_users_stats = await self._get_active_users_statistics()
+            # Get detection statistics
+            detection_stats = await self._get_detection_statistics(start_date, prev_start_date)
             
-            # Lấy thống kê phiên
-            session_stats = await self._get_session_statistics()
+            # Get model accuracy statistics
+            accuracy_stats = await self._get_model_accuracy_statistics(start_date, prev_start_date)
 
             return {
                 **user_stats,
                 **image_stats,
-                **active_users_stats,
-                **session_stats
+                **detection_stats,
+                **accuracy_stats
             }
 
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê dashboard: {e}")
+            logger.error(f"Failed to get dashboard overview: {e}")
             return self._get_default_overview()
 
-    async def _get_user_statistics(self) -> Dict[str, Any]:
-        """Lấy thống kê liên quan đến người dùng"""
+    async def _get_user_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
+        """Get user-related statistics"""
         try:
-            # Tổng số người dùng
-            total_users_query = text("SELECT COUNT(*) as total FROM users WHERE is_active = true")
-            total_result = await self.db.execute(total_users_query)
+            # Total users (created in this period)
+            if start_date == datetime.min:
+                total_users_query = text("SELECT COUNT(*) as total FROM users WHERE is_active = true")
+                total_result = await self.db.execute(total_users_query)
+            else:
+                total_users_query = text("SELECT COUNT(*) as total FROM users WHERE created_at >= :start_date AND is_active = true")
+                total_result = await self.db.execute(total_users_query, {"start_date": start_date})
+            
             total_users = total_result.scalar() or 0
 
-            # Người dùng mới trong tháng này (users được tạo trong 30 ngày qua)
-            last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
-            new_users_query = text("SELECT COUNT(*) as total FROM users WHERE created_at >= :last_30_days AND is_active = true")
-            new_users_result = await self.db.execute(new_users_query, {"last_30_days": last_30_days})
-            new_users_this_month = new_users_result.scalar() or 0
+            # New users in this period (same as total if filtered, but keeping logic for consistency)
+            # If period is 'all', this might be same as total
+            new_users_this_month = total_users
 
-            # Người dùng từ 30 ngày trước (để tính tăng trưởng)
-            prev_30_days_start = last_30_days - timedelta(days=30)
-            prev_users_query = text("""
-                SELECT COUNT(*) as total
-                FROM users
-                WHERE created_at >= :prev_start
-                AND created_at < :last_30_days
-                AND is_active = true
-            """)
-            prev_result = await self.db.execute(prev_users_query, {
-                "prev_start": prev_30_days_start,
-                "last_30_days": last_30_days
-            })
-            prev_new_users = prev_result.scalar() or 0
+            # Users from previous period (for growth calculation)
+            if prev_start_date == datetime.min:
+                prev_new_users = 0
+            else:
+                prev_users_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM users 
+                    WHERE created_at >= :prev_start 
+                    AND created_at < :start_date 
+                    AND is_active = true
+                """)
+                prev_result = await self.db.execute(prev_users_query, {
+                    "prev_start": prev_start_date,
+                    "start_date": start_date
+                })
+                prev_new_users = prev_result.scalar() or 0
 
-            # Tính tốc độ tăng trưởng: ((hiện tại - trước đó) / trước đó) * 100
+            # Calculate growth rate: ((current - previous) / previous) * 100
             if prev_new_users > 0:
                 growth_rate = ((new_users_this_month - prev_new_users) / prev_new_users) * 100
             else:
@@ -89,223 +97,323 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê người dùng: {e}")
+            logger.error(f"Failed to get user statistics: {e}")
             return {
                 "total_users": 0,
                 "new_users_this_month": 0,
                 "growth_rate": 0.0
             }
 
-    async def _get_image_statistics(self) -> Dict[str, Any]:
-        """Lấy thống kê hình ảnh/upload"""
+    async def _get_image_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
+        """Get image/upload statistics"""
         try:
-            # Tổng số uploads
-            total_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs")
-            total_result = await self.db.execute(total_uploads_query)
+            # Total uploads in period
+            if start_date == datetime.min:
+                total_uploads_query = text("""SELECT COUNT(*) as total FROM audit_logs 
+                    WHERE action IN ('image_upload', 'upload_image') AND success = true""")
+                total_result = await self.db.execute(total_uploads_query)
+            else:
+                total_uploads_query = text("""SELECT COUNT(*) as total FROM audit_logs 
+                    WHERE action IN ('image_upload', 'upload_image') AND success = true
+                    AND timestamp >= :start_date""")
+                total_result = await self.db.execute(total_uploads_query, {"start_date": start_date})
+            
             total_images = total_result.scalar() or 0
 
-            # Hình ảnh đã phân tích (phân tích thành công)
-            analyzed_query = text("""
-                SELECT COUNT(*) as total
-                FROM wound_analyses
-                WHERE is_deleted = false
-            """)
-            analyzed_result = await self.db.execute(analyzed_query)
+            # Analyzed images (successful analyses) in period
+            if start_date == datetime.min:
+                analyzed_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_analyses 
+                    WHERE is_deleted = false
+                """)
+                analyzed_result = await self.db.execute(analyzed_query)
+            else:
+                analyzed_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_analyses 
+                    WHERE is_deleted = false
+                    AND analyzed_at >= :start_date
+                """)
+                analyzed_result = await self.db.execute(analyzed_query, {"start_date": start_date})
+            
             analyzed_images = analyzed_result.scalar() or 0
 
-            # Uploads trong 30 ngày qua
-            last_30_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=30)
-            new_uploads_query = text("SELECT COUNT(*) as total FROM upload_logs WHERE created_at >= :last_30_days")
-            new_uploads_result = await self.db.execute(new_uploads_query, {"last_30_days": last_30_days})
-            new_uploads_last_month = new_uploads_result.scalar() or 0
-
-            # Uploads từ 30 ngày trước (để tính tăng trưởng)
-            prev_30_days_start = last_30_days - timedelta(days=30)
-            prev_uploads_query = text("""
-                SELECT COUNT(*) as total
-                FROM upload_logs
-                WHERE created_at >= :prev_start
-                AND created_at < :last_30_days
-            """)
-            prev_result = await self.db.execute(prev_uploads_query, {
-                "prev_start": prev_30_days_start,
-                "last_30_days": last_30_days
-            })
-            prev_uploads = prev_result.scalar() or 0
-
-            # Tính tốc độ tăng trưởng: ((hiện tại - trước đó) / trước đó) * 100
-            if prev_uploads > 0:
-                image_growth_rate = ((new_uploads_last_month - prev_uploads) / prev_uploads) * 100
+            # Uploads from previous period (for growth calculation)
+            if prev_start_date == datetime.min:
+                prev_uploads = 0
             else:
-                image_growth_rate = 100.0 if new_uploads_last_month > 0 else 0.0
+                prev_uploads_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM audit_logs 
+                    WHERE action IN ('image_upload', 'upload_image') AND success = true
+                    AND timestamp >= :prev_start 
+                    AND timestamp < :start_date
+                """)
+                prev_result = await self.db.execute(prev_uploads_query, {
+                    "prev_start": prev_start_date,
+                    "start_date": start_date
+                })
+                prev_uploads = prev_result.scalar() or 0
+
+            # Ensure total_images is at least equal to analyzed_images
+            # This handles cases where audit logs might be missing or actions are named differently
+            if total_images < analyzed_images:
+                total_images = analyzed_images
+
+            # Calculate growth rate
+            if prev_uploads > 0:
+                image_growth_rate = ((total_images - prev_uploads) / prev_uploads) * 100
+            else:
+                image_growth_rate = 100.0 if total_images > 0 else 0.0
+
+            # Calculate new uploads in last 7 days (always last 7 days regardless of period)
+            week_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+            week_uploads_query = text("""
+                SELECT COUNT(*) as total 
+                FROM audit_logs 
+                WHERE action IN ('image_upload', 'upload_image') AND success = true
+                AND timestamp >= :week_start
+            """)
+            week_result = await self.db.execute(week_uploads_query, {"week_start": week_start})
+            new_uploads_week = week_result.scalar() or 0
 
             return {
                 "total_images": total_images,
                 "analyzed_images": analyzed_images,
-                "image_growth_rate": round(image_growth_rate, 1)
+                "image_growth_rate": round(image_growth_rate, 1),
+                "new_uploads_week": new_uploads_week
             }
 
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê hình ảnh: {e}")
+            logger.error(f"Failed to get image statistics: {e}")
             return {
                 "total_images": 0,
                 "analyzed_images": 0,
-                "image_growth_rate": 0.0
+                "image_growth_rate": 0.0,
+                "new_uploads_week": 0
             }
 
-    async def _get_active_users_statistics(self) -> Dict[str, Any]:
-        """Get active users statistics for the new Active Users card"""
+    async def _get_detection_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
+        """Get wound detection statistics"""
         try:
-            # Active users in last 7 days (users who created analyses)
-            last_7_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
-            active_users_query = text("""
-                SELECT COUNT(DISTINCT user_id) as active_count
-                FROM wound_analyses
-                WHERE user_id IS NOT NULL
-                AND created_at >= :last_7_days
-                AND is_deleted = false
-            """)
-            active_result = await self.db.execute(active_users_query, {"last_7_days": last_7_days})
-            active_users = active_result.scalar() or 0
+            # Total detections in period
+            if start_date == datetime.min:
+                detection_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                """)
+                detection_result = await self.db.execute(detection_query)
+            else:
+                detection_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :start_date
+                """)
+                detection_result = await self.db.execute(detection_query, {"start_date": start_date})
+            
+            total_detections = detection_result.scalar() or 0
 
-            # Active users in previous 7 days (for growth calculation)
-            prev_7_days_start = last_7_days - timedelta(days=7)
-            prev_active_query = text("""
-                SELECT COUNT(DISTINCT user_id) as active_count
-                FROM wound_analyses
-                WHERE user_id IS NOT NULL
-                AND created_at >= :prev_start
-                AND created_at < :last_7_days
-                AND is_deleted = false
-            """)
-            prev_result = await self.db.execute(prev_active_query, {
-                "prev_start": prev_7_days_start,
-                "last_7_days": last_7_days
-            })
-            prev_active_users = prev_result.scalar() or 0
+            # Detections in previous period (for growth calculation)
+            if prev_start_date == datetime.min:
+                prev_detections = 0
+            else:
+                prev_detection_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :prev_start
+                    AND wa.analyzed_at < :start_date
+                """)
+                prev_result = await self.db.execute(prev_detection_query, {
+                    "prev_start": prev_start_date,
+                    "start_date": start_date
+                })
+                prev_detections = prev_result.scalar() or 0
 
             # Calculate growth rate
-            if prev_active_users > 0:
-                active_users_growth = ((active_users - prev_active_users) / prev_active_users) * 100
+            if prev_detections > 0:
+                detection_growth_rate = ((total_detections - prev_detections) / prev_detections) * 100
             else:
-                active_users_growth = 100.0 if active_users > 0 else 0.0
+                detection_growth_rate = 100.0 if total_detections > 0 else 0.0
 
-            # Online now (users who created analyses in last 15 minutes)
-            last_15_min = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=15)
-            online_query = text("""
-                SELECT COUNT(DISTINCT user_id) as online_count
-                FROM wound_analyses
-                WHERE user_id IS NOT NULL
-                AND created_at >= :last_15_min
-                AND is_deleted = false
-            """)
-            online_result = await self.db.execute(online_query, {"last_15_min": last_15_min})
-            online_now = online_result.scalar() or 0
-
-            return {
-                "active_users": active_users,
-                "active_users_growth": round(active_users_growth, 1),
-                "online_now": online_now
-            }
-
-        except Exception as e:
-            logger.error(f"Failed to get active users statistics: {e}")
-            return {
-                "active_users": 0,
-                "active_users_growth": 0.0,
-                "online_now": 0
-            }
-
-    async def _get_session_statistics(self) -> Dict[str, Any]:
-        """Get session statistics (guest + authenticated)"""
-        try:
-            # Count guest sessions
-            guest_sessions_query = text("SELECT COUNT(*) as total FROM guest_sessions")
-            guest_result = await self.db.execute(guest_sessions_query)
-            guest_sessions = guest_result.scalar() or 0
-
-            # Estimate authenticated sessions (analyses by users)
-            auth_sessions_query = text("""
-                SELECT COUNT(DISTINCT user_id) as total 
-                FROM wound_analyses 
-                WHERE user_id IS NOT NULL 
-                AND is_deleted = false
-            """)
-            auth_result = await self.db.execute(auth_sessions_query)
-            auth_sessions = auth_result.scalar() or 0
-
-            total_sessions = guest_sessions + auth_sessions
-
-            # Calculate average session duration from guest_sessions
-            # Only calculate if there are actual guest sessions
-            avg_duration = 0
-            if guest_sessions > 0:
-                avg_duration_query = text("""
-                    SELECT AVG(EXTRACT(EPOCH FROM (last_activity_at - created_at))) as avg_seconds
-                    FROM guest_sessions
-                    WHERE last_activity_at > created_at
+            # Get severe detections count
+            if start_date == datetime.min:
+                severe_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND LOWER(wd.severity) = 'severe'
                 """)
-                duration_result = await self.db.execute(avg_duration_query)
-                avg_duration = duration_result.scalar() or 0
-
-            # Guest sessions in last 7 days
-            last_7_days = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
-            new_sessions_query = text("SELECT COUNT(*) as total FROM guest_sessions WHERE created_at >= :last_7_days")
-            new_sessions_result = await self.db.execute(new_sessions_query, {"last_7_days": last_7_days})
-            new_sessions_last_week = new_sessions_result.scalar() or 0
-
-            # Guest sessions from previous 7 days (for growth calculation)
-            prev_7_days_start = last_7_days - timedelta(days=7)
-            prev_sessions_query = text("""
-                SELECT COUNT(*) as total 
-                FROM guest_sessions 
-                WHERE created_at >= :prev_start 
-                AND created_at < :last_7_days
-            """)
-            prev_result = await self.db.execute(prev_sessions_query, {
-                "prev_start": prev_7_days_start,
-                "last_7_days": last_7_days
-            })
-            prev_sessions = prev_result.scalar() or 0
-
-            # Calculate growth rate: ((current - previous) / previous) * 100
-            if prev_sessions > 0:
-                session_growth_rate = ((new_sessions_last_week - prev_sessions) / prev_sessions) * 100
+                severe_result = await self.db.execute(severe_query)
             else:
-                session_growth_rate = 100.0 if new_sessions_last_week > 0 else 0.0
+                severe_query = text("""
+                    SELECT COUNT(*) as total 
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :start_date
+                    AND LOWER(wd.severity) = 'severe'
+                """)
+                severe_result = await self.db.execute(severe_query, {"start_date": start_date})
+            
+            severe_detections = severe_result.scalar() or 0
+
+            # Calculate new detections in last 7 days (always last 7 days regardless of period)
+            week_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
+            week_detections_query = text("""
+                SELECT COUNT(*) as total 
+                FROM wound_detections wd
+                JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                WHERE wa.is_deleted = false
+                AND wa.analyzed_at >= :week_start
+            """)
+            week_det_result = await self.db.execute(week_detections_query, {"week_start": week_start})
+            new_detections_week = week_det_result.scalar() or 0
 
             return {
-                "total_sessions": total_sessions,
-                "avg_session_duration_seconds": int(avg_duration),
-                "session_growth_rate": round(session_growth_rate, 1)
+                "total_detections": total_detections,
+                "detection_growth_rate": round(detection_growth_rate, 1),
+                "severe_detections": severe_detections,
+                "new_detections_week": new_detections_week
             }
 
         except Exception as e:
-            logger.error(f"Failed to get session statistics: {e}")
+            logger.error(f"Failed to get detection statistics: {e}")
             return {
-                "total_sessions": 0,
-                "avg_session_duration_seconds": 0,
-                "session_growth_rate": 0.0
+                "total_detections": 0,
+                "detection_growth_rate": 0.0,
+                "severe_detections": 0,
+                "new_detections_week": 0
             }
 
-    async def get_wound_type_distribution(self) -> Dict[str, Any]:
+    async def _get_model_accuracy_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
+        """Get AI model accuracy statistics based on confidence scores"""
+        try:
+            # Average confidence score from wound_detections in period
+            if start_date == datetime.min:
+                avg_confidence_query = text("""
+                    SELECT AVG(wd.confidence_score) as avg_score
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                """)
+                avg_result = await self.db.execute(avg_confidence_query)
+            else:
+                avg_confidence_query = text("""
+                    SELECT AVG(wd.confidence_score) as avg_score
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :start_date
+                """)
+                avg_result = await self.db.execute(avg_confidence_query, {"start_date": start_date})
+            
+            avg_confidence = avg_result.scalar() or 0.0
+            # Convert to percentage
+            avg_confidence_percent = round(avg_confidence * 100, 1)
+
+            # Average confidence in previous period
+            if prev_start_date == datetime.min:
+                prev_avg_confidence_percent = 0.0
+            else:
+                prev_avg_query = text("""
+                    SELECT AVG(wd.confidence_score) as avg_score
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :prev_start
+                    AND wa.analyzed_at < :start_date
+                """)
+                prev_result = await self.db.execute(prev_avg_query, {
+                    "prev_start": prev_start_date,
+                    "start_date": start_date
+                })
+                prev_avg_confidence = prev_result.scalar() or 0.0
+                prev_avg_confidence_percent = prev_avg_confidence * 100
+
+            # Calculate accuracy trend (absolute difference, not percentage growth)
+            if prev_avg_confidence_percent > 0:
+                accuracy_trend = avg_confidence_percent - prev_avg_confidence_percent
+            else:
+                accuracy_trend = 0.0
+
+            # Count high-confidence detections (confidence > 0.8)
+            if start_date == datetime.min:
+                high_conf_query = text("""
+                    SELECT COUNT(*) as total
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wd.confidence_score > 0.8
+                """)
+                high_conf_result = await self.db.execute(high_conf_query)
+            else:
+                high_conf_query = text("""
+                    SELECT COUNT(*) as total
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wd.confidence_score > 0.8
+                    AND wa.analyzed_at >= :start_date
+                """)
+                high_conf_result = await self.db.execute(high_conf_query, {"start_date": start_date})
+            
+            high_confidence_count = high_conf_result.scalar() or 0
+
+            return {
+                "model_accuracy": avg_confidence_percent,
+                "accuracy_trend": round(accuracy_trend, 1),
+                "high_confidence_detections": high_confidence_count
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to get model accuracy statistics: {e}")
+            return {
+                "model_accuracy": 0.0,
+                "accuracy_trend": 0.0,
+                "high_confidence_detections": 0
+            }
+
+    async def get_wound_type_distribution(self, period: str = 'month') -> Dict[str, Any]:
         """
         Get distribution of wound types for pie chart
         """
         try:
+            start_date, _ = self._get_date_range(period)
+
             # Query wound types from detections
-            distribution_query = text("""
-                SELECT 
-                    wound_type,
-                    COUNT(*) as count
-                FROM wound_detections wd
-                JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
-                WHERE wa.is_deleted = false
-                GROUP BY wound_type
-                ORDER BY count DESC
-            """)
-            
-            result = await self.db.execute(distribution_query)
+            if start_date == datetime.min:
+                distribution_query = text("""
+                    SELECT 
+                        wound_type,
+                        COUNT(*) as count
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    GROUP BY wound_type
+                    ORDER BY count DESC
+                """)
+                result = await self.db.execute(distribution_query)
+            else:
+                distribution_query = text("""
+                    SELECT 
+                        wound_type,
+                        COUNT(*) as count
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :start_date
+                    GROUP BY wound_type
+                    ORDER BY count DESC
+                """)
+                result = await self.db.execute(distribution_query, {"start_date": start_date})
             rows = result.fetchall()
 
             # Color mapping for wound types
@@ -343,12 +451,8 @@ class StatisticsService:
         except Exception as e:
             logger.error(f"Failed to get wound type distribution: {e}")
             return {
-                "distribution": [
-                    {"name": "Abrasion", "value": 145, "color": "#06b6d4"},
-                    {"name": "Burn", "value": 89, "color": "#3b82f6"},
-                    {"name": "Bruise", "value": 98, "color": "#ec4899"}
-                ],
-                "total_detections": 332
+                "distribution": [],
+                "total_detections": 0
             }
 
     async def get_weekly_activity(self) -> Dict[str, Any]:
@@ -363,11 +467,12 @@ class StatisticsService:
             # Get daily uploads
             uploads_query = text("""
                 SELECT 
-                    DATE(created_at) as date,
+                    DATE(timestamp) as date,
                     COUNT(*) as uploads
-                FROM upload_logs
-                WHERE created_at >= :start_date
-                GROUP BY DATE(created_at)
+                FROM audit_logs
+                WHERE action IN ('image_upload', 'upload_image') AND success = true
+                AND timestamp >= :start_date
+                GROUP BY DATE(timestamp)
                 ORDER BY date ASC
             """)
             
@@ -436,12 +541,12 @@ class StatisticsService:
             # Get recent failed uploads
             failed_uploads_query = text("""
                 SELECT 
-                    created_at,
+                    timestamp,
                     error_message,
                     user_id
-                FROM upload_logs
-                WHERE upload_status = 'failed'
-                ORDER BY created_at DESC
+                FROM audit_logs
+                WHERE action IN ('image_upload', 'upload_image') AND success = false
+                ORDER BY timestamp DESC
                 LIMIT :limit
             """)
             
@@ -498,9 +603,9 @@ class StatisticsService:
             # Count unresolved errors
             unresolved_query = text("""
                 SELECT COUNT(*) as total
-                FROM upload_logs
-                WHERE upload_status = 'failed'
-                AND created_at >= NOW() - INTERVAL '24 hours'
+                FROM audit_logs
+                WHERE action IN ('image_upload', 'upload_image') AND success = false
+                AND timestamp >= NOW() - INTERVAL '24 hours'
             """)
             unresolved_result = await self.db.execute(unresolved_query)
             unresolved_errors = unresolved_result.scalar() or 0
@@ -539,6 +644,30 @@ class StatisticsService:
         except:
             return "Unknown"
 
+    def _get_date_range(self, period: str) -> Tuple[datetime, datetime]:
+        """
+        Calculate start date and previous period start date based on period
+        """
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        
+        if period == 'day':
+            start = now - timedelta(days=1)
+            prev = start - timedelta(days=1)
+        elif period == 'week':
+            start = now - timedelta(days=7)
+            prev = start - timedelta(days=7)
+        elif period == 'month':
+            start = now - timedelta(days=30)
+            prev = start - timedelta(days=30)
+        elif period == 'year':
+            start = now - timedelta(days=365)
+            prev = start - timedelta(days=365)
+        else: # 'all'
+            start = datetime.min
+            prev = datetime.min
+            
+        return start, prev
+
     def _get_default_overview(self) -> Dict[str, Any]:
         """Default values when database query fails"""
         return {
@@ -548,12 +677,14 @@ class StatisticsService:
             "total_images": 0,
             "analyzed_images": 0,
             "image_growth_rate": 0.0,
-            "active_users": 0,
-            "active_users_growth": 0.0,
-            "online_now": 0,
-            "total_sessions": 0,
-            "avg_session_duration_seconds": 0,
-            "session_growth_rate": 0.0
+            "new_uploads_week": 0,
+            "total_detections": 0,
+            "detection_growth_rate": 0.0,
+            "severe_detections": 0,
+            "new_detections_week": 0,
+            "model_accuracy": 0.0,
+            "accuracy_trend": 0.0,
+            "high_confidence_detections": 0
         }
 
     def _get_default_weekly_activity(self) -> Dict[str, Any]:
@@ -574,26 +705,41 @@ class StatisticsService:
 
 
 
-    async def get_severity_stats(self) -> Dict[str, Any]:
+    async def get_severity_stats(self, period: str = 'month') -> Dict[str, Any]:
         """
         Get severity level statistics from wound detections
         Returns distribution of Mild, Moderate, and Severe wounds
         Always returns all 3 severity levels even if count is 0
         """
         try:
+            start_date, _ = self._get_date_range(period)
+
             # Query severity distribution from wound_detections table
-            severity_query = text("""
-                SELECT 
-                    LOWER(severity) as severity_level,
-                    COUNT(*) as count
-                FROM wound_detections wd
-                JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
-                WHERE wa.is_deleted = false
-                GROUP BY LOWER(severity)
-                ORDER BY count DESC
-            """)
-            
-            result = await self.db.execute(severity_query)
+            if start_date == datetime.min:
+                severity_query = text("""
+                    SELECT 
+                        LOWER(severity) as severity_level,
+                        COUNT(*) as count
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    GROUP BY LOWER(severity)
+                    ORDER BY count DESC
+                """)
+                result = await self.db.execute(severity_query)
+            else:
+                severity_query = text("""
+                    SELECT 
+                        LOWER(severity) as severity_level,
+                        COUNT(*) as count
+                    FROM wound_detections wd
+                    JOIN wound_analyses wa ON wd.analysis_id = wa.analysis_id
+                    WHERE wa.is_deleted = false
+                    AND wa.analyzed_at >= :start_date
+                    GROUP BY LOWER(severity)
+                    ORDER BY count DESC
+                """)
+                result = await self.db.execute(severity_query, {"start_date": start_date})
             rows = result.fetchall()
 
             # Color mapping for severity levels
@@ -638,11 +784,11 @@ class StatisticsService:
                         "color": color
                     }
 
-            # Convert to list and sort by value (descending), then by predefined order
-            severity_order = {"severe": 0, "moderate": 1, "mild": 2}  # For sorting
+            # Convert to list and sort by severity order: Mild -> Moderate -> Severe
+            severity_order = {"mild": 0, "moderate": 1, "severe": 2}
             stats = sorted(
                 severity_data.values(),
-                key=lambda x: (-x["value"], severity_order.get(x["name"].lower(), 999))
+                key=lambda x: severity_order.get(x["name"].lower(), 999)
             )
 
             return {

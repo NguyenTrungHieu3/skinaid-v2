@@ -18,6 +18,9 @@ class AuditLogResponse(BaseModel):
     guest_session_id: Optional[UUID] = Field(None, description="ID phiên khách nếu là guest")
     details: Optional[Dict[str, Any]] = Field(None, description="Thông tin chi tiết thêm")
     timestamp: datetime = Field(..., description="Thời gian xảy ra hành động")
+    user_name: Optional[str] = Field(None, description="Tên người dùng")
+    email: Optional[str] = Field(None, description="Email người dùng")
+    role_name: Optional[str] = Field(None, description="Vai trò người dùng")
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -92,6 +95,8 @@ class AuditLogFilterParams(BaseModel):
     resource_type: Optional[str] = Field(None, max_length=50, description="Lọc theo loại tài nguyên")
     success: Optional[bool] = Field(None, description="Lọc theo trạng thái thành công/thất bại")
     is_guest: Optional[bool] = Field(None, description="Lọc theo guest/user")
+    search: Optional[str] = Field(None, max_length=255, description="Tìm kiếm trong action, user_name, email, error_message")
+    role_name: Optional[str] = Field(None, max_length=50, description="Lọc theo vai trò người dùng (admin, user, ...)")
     start_date: Optional[datetime] = Field(None, description="Lọc từ ngày (ISO 8601: 2025-11-01T00:00:00Z)")
     end_date: Optional[datetime] = Field(None, description="Lọc đến ngày (ISO 8601: 2025-11-11T23:59:59Z)")
     page: int = Field(1, ge=1, description="Số trang (bắt đầu từ 1)")

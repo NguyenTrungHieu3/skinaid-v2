@@ -9,6 +9,7 @@ class SuccessResponse(BaseModel, Generic[T]):
     success: bool = Field(default=True, description="Luôn là True cho thành công")
     message: str = Field(..., description="Thông báo thành công")
     data: Optional[T] = Field(None, description="Dữ liệu trả về")
+    total: Optional[int] = Field(None, description="Tổng số item (cho phân trang)")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status_code: int = Field(default=status.HTTP_200_OK, description="HTTP status code")
 

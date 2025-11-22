@@ -1,5 +1,5 @@
 // src/pages/UploadPage.tsx
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { DragEvent, ChangeEvent } from "react";
 import styles from "./UploadPage.module.css"; // Dùng CSS Modules

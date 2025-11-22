@@ -1,5 +1,5 @@
 // src/components/profile/Settings.tsx
-import React, { useState } from "react"; // <-- Thêm useState
+import { useState } from "react"; // <-- Thêm useState
 
 import styles from "../../pages/ProfilePage.module.css";
 import {
@@ -8,7 +8,6 @@ import {
   FaShieldAlt, // <-- Icon mới
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import ChangePasswordModal from "../auth/ChangePasswordModal";
 
 // Component Toggle Switch (giữ nguyên)
@@ -35,8 +34,6 @@ const ToggleSwitch = ({
 const Settings = () => {
   // 1. Khởi tạo hook
   const { t } = useTranslation();
-
-  const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 

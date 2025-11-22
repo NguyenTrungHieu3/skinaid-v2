@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./AnalysisResultPage.module.css"; // CSS cho layout 2 cột
 import AnalysisSidebar from "../components/analysis/AnalysisSidebar"; // Import sidebar mới
 import MainHeader from "../components/analysis/MainHeader";

@@ -39,6 +39,8 @@ class AuditController:
                 resource_type=filters.resource_type,
                 success=filters.success,
                 is_guest=filters.is_guest,
+                search=filters.search,
+                role_name=filters.role_name,
                 start_date=filters.start_date,
                 end_date=filters.end_date,
                 limit=filters.limit,
@@ -46,7 +48,7 @@ class AuditController:
             )
             # Chuyển đổi sang AuditLogResponse
             audit_logs = [
-                AuditLogResponse(**log.to_dict())
+                AuditLogResponse(**log)
                 for log in logs
             ]
             # Tính toán metadata phân trang

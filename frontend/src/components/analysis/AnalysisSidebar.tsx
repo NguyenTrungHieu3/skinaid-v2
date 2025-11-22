@@ -1,6 +1,6 @@
 import styles from "./AnalysisSidebar.module.css"; // File CSS mới
 import { FaCheckCircle, FaUpload } from "react-icons/fa";
-import React, { useRef, type ChangeEvent } from "react"; // <-- 1. IMPORT THÊM
+import { useRef, type ChangeEvent } from "react"; // <-- 1. IMPORT THÊM
 import { Link, useNavigate } from "react-router-dom";
 import Logo from "../../assets/images/general/logo.png"; // Giả sử bạn có logo ở đây
 import { useTranslation } from "react-i18next";

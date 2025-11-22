@@ -11,11 +11,6 @@ import type { SuccessResponse, UserResponse } from "../types/index";
 
 // Kiểu dữ liệu cho data bên trong SuccessResponse (khi đăng nhập)
 // Dựa trên schema TokenResponse của backend
-interface TokenResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-}
 
 interface LoginResponseData {
   access_token: string;

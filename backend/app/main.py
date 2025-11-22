@@ -2,9 +2,13 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.core.config import settings
 from app.core.cors import setup_cors
 from app.core.events import lifespan
+from app.core.rate_limit import limiter
 
 # Khởi tạo FastAPI app với lifespan
 app = FastAPI(
@@ -13,6 +17,10 @@ app = FastAPI(
     description=settings.APP_DESCRIPTION,
     lifespan=lifespan,
 )
+
+# Setup rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Setup CORS
 setup_cors(app)

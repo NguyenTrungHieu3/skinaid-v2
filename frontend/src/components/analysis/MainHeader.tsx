@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "./MainHeader.module.css";
 import { FaSave, FaDownload, FaHeart } from "react-icons/fa";
 

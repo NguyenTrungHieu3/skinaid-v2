@@ -94,9 +94,10 @@ class AuthService:
 
     async def get_user_by_username(self, user_name: str) -> Optional[User]:
         """
-        Lấy user theo user_name (user chưa bị xóa).
+        Lấy user theo user_name (user chưa bị xóa) kèm roles.
         """
         try:
+            # Query user
             sql = text(
                 """
                 SELECT *
@@ -112,7 +113,38 @@ class AuthService:
             if not row:
                 return None
 
-            return User.model_validate(dict(row))
+            user = User.model_validate(dict(row))
+            
+            # Load user roles separately
+            roles_sql = text(
+                """
+                SELECT r.role_id, r.role_name, r.description, r.is_active, 
+                       ur.assigned_at, ur.assigned_by
+                FROM user_roles ur
+                JOIN roles r ON ur.role_id = r.role_id
+                WHERE ur.user_id = :user_id
+            """
+            )
+            
+            roles_result = await self.db.execute(roles_sql, {"user_id": user.user_id})
+            roles_rows = roles_result.mappings().all()
+            
+            # Attach roles to user
+            if roles_rows:
+                user_roles = []
+                for role_row in roles_rows:
+                    role = Role.model_validate(dict(role_row))
+                    user_role = UserRole(
+                        user_id=user.user_id,
+                        role_id=role.role_id,
+                        assigned_at=role_row['assigned_at'],
+                        assigned_by=role_row['assigned_by']
+                    )
+                    user_role.role = role
+                    user_roles.append(user_role)
+                user.user_roles = user_roles
+
+            return user
         except Exception as e:
             logger.error(
                 "Lỗi khi lấy user theo username %s: %s",

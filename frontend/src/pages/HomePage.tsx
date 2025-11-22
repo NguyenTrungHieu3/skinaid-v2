@@ -10,7 +10,7 @@ import DashboardHero from "../assets/images/home-page/dashboard-hero.png";
 import { FaCamera, FaFirstAid, FaHistory, FaCheck } from "react-icons/fa";
 import { FaChartLine, FaListAlt, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import { enableSmoothScrollSnap } from "../utils/scrollEffects";
+
 import NearbyMap from "../components/Map/NearbyMap";
 
 

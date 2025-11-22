@@ -18,70 +18,72 @@ router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 
 
 async def get_admin_controller(db: AsyncSession = Depends(get_db)) -> AdminController:
-    """Dependency để lấy instance admin controller"""
+    """Dependency to get admin controller instance"""
     return AdminController(db)
 
 
 @router.get(
     "/dashboard/overview",
     response_model=SuccessResponse[DashboardOverviewResponse],
-    summary="Lấy Tổng quan Dashboard",
-    description="Lấy thống kê tổng quan cho dashboard admin (4 thẻ chính)"
+    summary="Get Dashboard Overview",
+    description="Get overview statistics for admin dashboard (4 main cards)"
 )
 async def get_dashboard_overview(
+    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Time period for statistics"),
     controller: AdminController = Depends(get_admin_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy thống kê tổng quan dashboard bao gồm:
-    - Tổng số users và active hôm nay
-    - Tổng số images và số đã phân tích
-    - Các chỉ số độ chính xác model
-    - Thống kê session
+    Get dashboard overview statistics including:
+    - Total users and active today
+    - Total images and analyzed count
+    - Model accuracy metrics
+    - Session statistics
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
-    return await controller.get_dashboard_overview()
+    return await controller.get_dashboard_overview(period=period)
 
 
 @router.get(
     "/wound-types/distribution",
     response_model=SuccessResponse[WoundTypeDistributionResponse],
-    summary="Lấy Phân bố Loại Vết thương",
-    description="Lấy phân bố các loại vết thương để hiển thị biểu đồ tròn"
+    summary="Get Wound Type Distribution",
+    description="Get distribution of wound types for pie chart visualization"
 )
 async def get_wound_type_distribution(
+    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Time period for statistics"),
     controller: AdminController = Depends(get_admin_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy dữ liệu phân bố loại vết thương cho biểu đồ tròn:
-    - Tên các loại vết thương (Trầy xước, Bỏng, Bầm tím, v.v.)
-    - Số lượng cho mỗi loại
-    - Màu hiển thị
+    Get wound type distribution data for pie chart:
+    - Wound type names (Abrasion, Burn, Bruise, etc.)
+    - Count for each type
+    - Display colors
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
-    return await controller.get_wound_type_distribution()
+    return await controller.get_wound_type_distribution(period=period)
 
 
 @router.get(
     "/activity/weekly",
     response_model=SuccessResponse[WeeklyActivityResponse],
-    summary="Lấy Hoạt động Hàng tuần",
-    description="Lấy thống kê hoạt động hàng tuần cho biểu đồ cột (7 ngày gần đây)"
+    summary="Get Weekly Activity",
+    description="Get weekly activity statistics for bar chart (last 7 days)"
 )
 async def get_weekly_activity(
     controller: AdminController = Depends(get_admin_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy thống kê hoạt động hàng tuần cho biểu đồ cột:
-    - Số lượng upload hàng ngày
-    - Số lượng phân tích hàng ngày
-    - Dữ liệu 7 ngày gần đây
+    Get weekly activity statistics for bar chart:
+    - Daily upload counts
+    - Daily analysis counts
+    - Last 7 days of data
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
     return await controller.get_weekly_activity()
 
@@ -89,44 +91,45 @@ async def get_weekly_activity(
 @router.get(
     "/severity/stats",
     response_model=SuccessResponse[SeverityStatsResponse],
-    summary="Lấy Thống kê Mức độ Nghiêm trọng",
-    description="Lấy phân bố mức độ nghiêm trọng vết thương (Nhẹ, Trung bình, Nặng)"
+    summary="Get Severity Level Statistics",
+    description="Get distribution of wound severity levels (Mild, Moderate, Severe)"
 )
 async def get_severity_stats(
+    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Time period for statistics"),
     controller: AdminController = Depends(get_admin_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy thống kê mức độ nghiêm trọng cho biểu đồ cột:
-    - Số lượng vết thương nhẹ
-    - Số lượng vết thương trung bình
-    - Số lượng vết thương nặng
-    - Tổng số phát hiện
+    Get severity level statistics for bar chart:
+    - Mild wound count
+    - Moderate wound count
+    - Severe wound count
+    - Total detections
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
-    return await controller.get_severity_stats()
+    return await controller.get_severity_stats(period=period)
 
 
 @router.get(
     "/logs/recent",
     response_model=SuccessResponse[SystemLogsResponse],
-    summary="Lấy Logs Hệ thống Gần đây",
-    description="Lấy logs và cảnh báo hệ thống gần đây để giám sát"
+    summary="Get Recent System Logs",
+    description="Get recent system logs and alerts for monitoring"
 )
 async def get_system_logs(
-    limit: int = Query(10, ge=1, le=50, description="Số lượng logs để lấy"),
+    limit: int = Query(10, ge=1, le=50, description="Number of logs to retrieve"),
     controller: AdminController = Depends(get_admin_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Lấy logs và cảnh báo hệ thống gần đây:
-    - Logs lỗi
-    - Thông điệp cảnh báo
-    - Thông báo thông tin
-    - Sự kiện thành công
+    Get recent system logs and alerts:
+    - Error logs
+    - Warning messages
+    - Info notifications
+    - Success events
     
-    **Yêu cầu vai trò admin**
+    **Requires admin role**
     """
     return await controller.get_system_logs(limit=limit)
 
@@ -134,13 +137,13 @@ async def get_system_logs(
 @router.get(
     "/health",
     response_model=SuccessResponse[dict],
-    summary="Kiểm tra Sức khỏe Dịch vụ Admin",
-    description="Kiểm tra xem dịch vụ admin có khỏe mạnh không"
+    summary="Admin Service Health Check",
+    description="Check if admin service is healthy"
 )
 async def admin_health_check():
-    """Endpoint kiểm tra sức khỏe cho dịch vụ admin"""
+    """Health check endpoint for admin service"""
     return SuccessResponse(
-        message="Dịch vụ admin hoạt động bình thường",
+        message="Admin service is healthy",
         data={
             "status": "healthy",
             "service": "admin_dashboard",

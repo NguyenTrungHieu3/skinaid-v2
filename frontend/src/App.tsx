@@ -7,11 +7,11 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import PublicRoute from "./components/auth/PublicRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout"; // Component layout chính
-import Footer from "./components/layout/Footer"; // Import Footer
 import UploadPage from "./pages/UploadPage";
 import ProfilePage from "./pages/ProfilePage";
 import AnalysisResultPage from "./pages/AnalysisResultPage";
 import HistoryPage from "./pages/HistoryPage";
+import AdminPage from "./pages/AdminPage";
 
 function App() {
   return (
@@ -87,6 +87,16 @@ function App() {
       <Route
         path="/analysis-result/:analysis_id"
         element={<AnalysisResultPage />}
+      />
+
+      {/* Trang Admin - Protected route chỉ cho admin */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
       />
     </Routes>
   );

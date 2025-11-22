@@ -1,5 +1,5 @@
 // src/components/profile/Overview.tsx
-import React, { useRef, type ChangeEvent } from "react"; // <-- THÊM useRef, ChangeEvent
+import { useRef, type ChangeEvent } from "react"; // <-- THÊM useRef, ChangeEvent
 import { useNavigate } from "react-router-dom"; // <-- THÊM useNavigate
 import styles from "../../pages/ProfilePage.module.css";
 import { FaHistory, FaUpload, FaFileExport } from "react-icons/fa";
