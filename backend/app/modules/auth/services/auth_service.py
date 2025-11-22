@@ -502,29 +502,17 @@ class AuthService:
         try:
             user = await self.get_user_by_username(user_name)
             if not user:
-                raise Exception(
-                    message="Tên người dùng hoặc mật khẩu không hợp lệ",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise ValueError("Tên người dùng hoặc mật khẩu không hợp lệ")
 
             if not user.is_active:
-                raise Exception(
-                    message="Tài khoản đã bị vô hiệu hóa",
-                    error_code=AUTH_ACCOUNT_INACTIVE,
-                )
+                raise ValueError("Tài khoản đã bị vô hiệu hóa")
 
             # Nếu hệ thống vẫn muốn đảm bảo account verified:
             if not user.is_verified:
-                raise Exception(
-                    message="Yêu cầu xác minh tài khoản",
-                    error_code=AUTH_VERIFICATION_REQUIRED,
-                )
+                raise ValueError("Yêu cầu xác minh tài khoản")
 
             if not verify_password(password, user.hashed_password):
-                raise Exception(
-                    message="Tên người dùng hoặc mật khẩu không hợp lệ",
-                    error_code=AUTH_INVALID_CREDENTIALS,
-                )
+                raise ValueError("Tên người dùng hoặc mật khẩu không hợp lệ")
 
             # Cập nhật updated_at
             await self.db.execute(
@@ -545,25 +533,20 @@ class AuthService:
             # Lấy lại user đầy đủ (có profile, roles)
             updated_user = await self.get_user_by_id(user.user_id)
             if updated_user is None:
-                raise Exception(
-                    message="Không tìm thấy user sau khi xác thực",
-                    error_code=USER_NOT_FOUND,
-                )
+                raise ValueError("Không tìm thấy user sau khi xác thực")
 
             logger.info("User đã xác thực thành công: %s", user_name)
             return updated_user
 
-        except Exception:
+        except ValueError:
+            # Re-raise validation errors as-is
             raise
         except Exception as e:
             logger.error(
                 "Lỗi không mong muốn trong quá trình xác thực: %s",
                 str(e),
             )
-            raise Exception(
-                message="Xác thực thất bại do lỗi nội bộ",
-                error_code=AUTH_INVALID_CREDENTIALS,
-            )
+            raise ValueError("Xác thực thất bại do lỗi nội bộ")
 
     # =====================================================================
     # PASSWORD RESET

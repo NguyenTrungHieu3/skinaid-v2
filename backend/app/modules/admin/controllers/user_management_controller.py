@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import Optional
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status as http_status
 import logging
 
 from app.modules.admin.services.user_management_service import UserManagementService
@@ -61,7 +61,7 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to retrieve users: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to retrieve users: {str(e)}"
             )
     
@@ -73,7 +73,7 @@ class UserManagementController:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Invalid user ID format"
             )
         
@@ -82,7 +82,7 @@ class UserManagementController:
             
             if not user_detail:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
                     detail=f"User with ID {user_id} not found"
                 )
             
@@ -97,7 +97,7 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to retrieve user detail: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to retrieve user detail: {str(e)}"
             )
     
@@ -118,17 +118,17 @@ class UserManagementController:
             await self.audit_service.log_event(
                 action="admin_user_create",
                 resource_type="user",
-                resource_id=str(user_detail["user_id"]),
+                resource_id=str(user_detail.user_id),
                 success=True,
                 details={
                     "email": user_data.email,
-                    "user_name": user_data.user_name
+                    "user_name": user_data.display_name  # Use display_name as user_name might not be in request
                 }
             )
             
             response_data = UserDetailResponse(user=user_detail)
             
-            logger.info(f"Successfully created user: {user_detail.get('user_id')}")
+            logger.info(f"Successfully created user: {user_detail.user_id}")
             
             return SuccessResponse(
                 message="User created successfully",
@@ -137,13 +137,13 @@ class UserManagementController:
         except ValueError as e:
             logger.warning(f"Failed to create user (validation error): {str(e)}")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
         except Exception as e:
             logger.error(f"Failed to create user: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to create user: {str(e)}"
             )
     
@@ -159,7 +159,7 @@ class UserManagementController:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Invalid user ID format"
             )
         
@@ -168,7 +168,7 @@ class UserManagementController:
             
             if not user_detail:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
                     detail=f"User with ID {user_id} not found"
                 )
             
@@ -187,7 +187,7 @@ class UserManagementController:
             )
         except ValueError as e:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail=str(e)
             )
         except HTTPException:
@@ -195,7 +195,7 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to update user: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to update user: {str(e)}"
             )
     
@@ -208,7 +208,7 @@ class UserManagementController:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Invalid user ID format"
             )
         
@@ -218,7 +218,7 @@ class UserManagementController:
         
         if not success:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=http_status.HTTP_404_NOT_FOUND,
                 detail=f"User with ID {user_id} not found"
             )
         
@@ -241,7 +241,7 @@ class UserManagementController:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Invalid user ID format"
             )
         
@@ -253,7 +253,7 @@ class UserManagementController:
             
             if not user_detail:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
                     detail=f"User with ID {user_id} not found"
                 )
             
@@ -270,7 +270,7 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to update user status: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to update user status: {str(e)}"
             )
     
@@ -288,7 +288,7 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to retrieve user statistics: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to retrieve user statistics: {str(e)}"
             )
     
@@ -300,7 +300,7 @@ class UserManagementController:
             user_uuid = UUID(user_id)
         except ValueError:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Invalid user ID format"
             )
         
@@ -309,7 +309,7 @@ class UserManagementController:
             
             if not success:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=http_status.HTTP_404_NOT_FOUND,
                     detail=f"User with ID {user_id} not found or already verified"
                 )
             
@@ -322,6 +322,6 @@ class UserManagementController:
         except Exception as e:
             logger.error(f"Failed to resend verification email: {e}")
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to resend verification email: {str(e)}"
             )

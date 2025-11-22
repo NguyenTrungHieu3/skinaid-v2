@@ -6,6 +6,7 @@ from typing import Optional, List, Tuple
 from uuid import UUID
 import uuid
 import logging
+from datetime import datetime
 
 from app.modules.auth.models.user import User
 from app.modules.profile.models.user_profile import UserProfile
@@ -86,8 +87,11 @@ class UserManagementService:
         # Áp dụng phân trang và sắp xếp
         query = query.offset(offset).limit(limit).order_by(User.created_at.desc())
         
-        # Tải profile người dùng sắn
-        query = query.options(selectinload(User.profile))
+        # Tải profile người dùng sắn và roles
+        query = query.options(
+            selectinload(User.profile),
+            selectinload(User.user_roles).selectinload(UserRole.role)
+        )
         
         # Thực thi truy vấn
         result = await self.db.execute(query)
@@ -96,8 +100,12 @@ class UserManagementService:
         # Xây dựng danh sách người dùng với thông tin bổ sung
         user_list = []
         for user in users:
-            # Lấy vai trò người dùng
-            roles = await self._get_user_roles(user.user_id)
+            # Lấy vai trò người dùng từ eager loaded data
+            roles = []
+            if user.user_roles:
+                for ur in user.user_roles:
+                    if ur.role and (not ur.expires_at or ur.expires_at > datetime.now()):
+                        roles.append(ur.role.role_name)
             
             # Lấy số lượng upload
             upload_count = await self._get_user_upload_count(user.user_id)
@@ -142,15 +150,22 @@ class UserManagementService:
             UserDetailInfo or None if not found
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
-        query = query.options(selectinload(User.profile))
+        query = query.options(
+            selectinload(User.profile),
+            selectinload(User.user_roles).selectinload(UserRole.role)
+        )
         result = await self.db.execute(query)
         user = result.scalar_one_or_none()
         
         if not user:
             return None
         
-        # Lấy vai trò người dùng
-        roles = await self._get_user_roles(user.user_id)
+        # Lấy vai trò người dùng từ eager loaded data
+        roles = []
+        if user.user_roles:
+            for ur in user.user_roles:
+                if ur.role and (not ur.expires_at or ur.expires_at > datetime.now()):
+                    roles.append(ur.role.role_name)
         
         # Lấy số lượng upload
         upload_count = await self._get_user_upload_count(user.user_id)
@@ -190,30 +205,34 @@ class UserManagementService:
         Raises:
             ValueError: If email already exists or role not found or other validation errors
         """
-        # Kiểm tra email đã tồn tại chưa
-        existing_user = await self._get_user_by_email(user_data.email)
-        if existing_user:
-            raise ValueError("Email already registered")
-        
-        # Xác thực tên hiển thị
-        if not user_data.display_name or len(user_data.display_name.strip()) < 2:
-            raise ValueError("Display name must be at least 2 characters")
-        
-        if len(user_data.display_name) > 100:
-            raise ValueError("Display name must not exceed 100 characters")
-        
-        # Xác thực mật khẩu
-        if len(user_data.password) < 6:
-            raise ValueError("Password must be at least 6 characters")
-        
-        # Tạo username từ email (phần trước @)
-        user_name = user_data.email.split('@')[0]
-        # Kiểm tra username đã tồn tại, nếu có thì thêm hậu tố ngẫu nhiên
-        existing_username = await self._get_user_by_username(user_name)
-        if existing_username:
-            user_name = f"{user_name}_{uuid.uuid4().hex[:6]}"
-        
+        logger.info(f"Starting create_user for {user_data.email}")
         try:
+            # Ensure clean session state
+            await self.db.rollback() 
+            
+            # Kiểm tra email đã tồn tại chưa
+            existing_user = await self._get_user_by_email(user_data.email)
+            if existing_user:
+                raise ValueError("Email already registered")
+            
+            # Xác thực tên hiển thị
+            if not user_data.display_name or len(user_data.display_name.strip()) < 2:
+                raise ValueError("Display name must be at least 2 characters")
+            
+            if len(user_data.display_name) > 100:
+                raise ValueError("Display name must not exceed 100 characters")
+            
+            # Xác thực mật khẩu
+            if len(user_data.password) < 6:
+                raise ValueError("Password must be at least 6 characters")
+            
+            # Tạo username từ email (phần trước @)
+            user_name = user_data.email.split('@')[0]
+            # Kiểm tra username đã tồn tại, nếu có thì thêm hậu tố ngẫu nhiên
+            existing_username = await self._get_user_by_username(user_name)
+            if existing_username:
+                user_name = f"{user_name}_{uuid.uuid4().hex[:6]}"
+            
             # Mã hóa mật khẩu
             hashed_password = hash_password(user_data.password)
             
@@ -569,6 +588,7 @@ class UserManagementService:
                 "updated_at": now,
             },
         )
+        await self.db.commit()
 
         try:
             await email_service.send_verification_email_async(user.email, verification_token)

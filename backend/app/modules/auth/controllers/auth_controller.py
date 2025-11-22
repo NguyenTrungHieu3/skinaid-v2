@@ -191,14 +191,39 @@ class AuthController:
                 data=token_response,
             )
 
+        except ValueError as e:
+            # Authentication/validation errors - return 401
+            try:
+                await self.audit_service.log_event(
+                    action="login",
+                    success=False,
+                    error_message=str(e),
+                    details={"user_name": credentials.user_name}
+                )
+            except Exception as audit_error:
+                logger.warning(f"[LOGIN] Failed to log audit event: {audit_error}")
+
+            logger.warning("[LOGIN] Authentication failed: %s", str(e))
+
+            return ErrorResponse(
+                message=str(e),
+                error_code=ErrorCode.AUTH_INVALID_CREDENTIALS,
+                error_details={"error": str(e)},
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
         except Exception as e:
 
-            await self.audit_service.log_event(
-                action="login",
-                success=False,
-                error_message=str(e),
-                details={"user_name": credentials.user_name}
-            )
+            try:
+                await self.audit_service.log_event(
+                    action="login",
+                    success=False,
+                    error_message=str(e),
+                    details={"user_name": credentials.user_name}
+                )
+            except Exception as audit_error:
+                # Don't let audit logging failure crash the error response
+                logger.warning(f"[LOGIN] Failed to log audit event: {audit_error}")
 
             logger.error("[LOGIN] Lỗi: %s", str(e), exc_info=True)
 

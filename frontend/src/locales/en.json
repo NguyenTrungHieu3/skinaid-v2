@@ -73,9 +73,7 @@
     "how_work_step3_item4": "Wash the wound with clean water or saline solution.",
     "how_work_step3_item5": "Lightly disinfect the wound, avoid deep penetration.",
     "how_work_step3_item6": "Let dry, cover with sterile gauze or medical tape.",
-    "how_work_step3_item7": "Rest, avoid impact on the injured area.",
-    "map_title": "Find Nearby Hospitals & Pharmacies",
-    "map_desc": "Quickly locate the nearest medical facilities based on your current location."
+    "how_work_step3_item7": "Rest, avoid impact on the injured area."
   },
   "upload_page": {
     "title": "Upload Skin Wound Image",

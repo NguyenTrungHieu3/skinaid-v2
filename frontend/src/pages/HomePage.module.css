@@ -646,47 +646,6 @@
   line-height: 1.4;
 }
 
-/* 5. Map Section */
-.mapSection {
-  padding: 2rem 2rem;
-  text-align: center;
-  min-height: calc(100vh - 60px);
-  scroll-snap-align: start;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background-color: #f9f9f9;
-}
-
-.mapSection h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.mapSubtitle {
-  font-size: 1.1rem;
-  color: #555;
-  margin-bottom: 2rem;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.mapContainer {
-  width: 100%;
-  max-width: 1200px;
-  height: 500px;
-  margin: 0 auto;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e0e0e0;
-  position: relative;
-  /* Ensure z-index works inside */
-  z-index: 1;
-}
-
 /* Responsive */
 @media (max-width: 900px) {
   .hero {
@@ -724,8 +683,7 @@
   .hero,
   .features,
   .stats,
-  .howItWorks,
-  .mapSection {
+  .howItWorks {
     height: auto;
     /* Để chiều cao tự động */
     scroll-snap-align: none;
@@ -736,8 +694,7 @@
 
   /* 3. Reset lại căn giữa (nếu có) để nội dung về đầu */
   .features,
-  .howItWorks,
-  .mapSection {
+  .howItWorks {
     justify-content: flex-start;
   }
 }

@@ -60,6 +60,13 @@ class AuditService:
             timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
 
             details_json = json.dumps(details) if details else None
+            
+            # Ensure clean session state
+            try:
+                await self.db.rollback()
+            except Exception:
+                # Ignore rollback errors - session might already be in bad state
+                pass
 
             query = text("""
                 INSERT INTO audit_logs(
@@ -118,7 +125,11 @@ class AuditService:
                 f"Không thể ghi audit event: hành động={action}, "
                 f"user_id={user_id}, lỗi={str(e)}"
             )
-            await self.db.rollback()
+            try:
+                await self.db.rollback()
+            except Exception:
+                # Ignore rollback errors
+                pass
             raise
 
     async def get_audit_logs(
