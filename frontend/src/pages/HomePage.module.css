@@ -1,18 +1,8 @@
 /* src/pages/HomePage.module.css */
 .homePage {
   width: 100%;
-
-  /* 1. Đặt chiều cao bằng đúng không gian còn lại (100% trừ đi 60px của Header) */
-  height: calc(100vh - 60px);
-
-  /* 2. Cho phép container này cuộn */
-  overflow-y: scroll;
-
-  /* 3. Bật "bắt dính" theo chiều dọc (y) */
-  scroll-snap-type: y mandatory;
-
-  /* 4. Thêm hiệu ứng cuộn "mượt" (tùy chọn) */
-  scroll-behavior: smooth;
+  /* Removed fixed height and scroll-snap for natural scrolling */
+  min-height: 100vh;
 }
 
 /* Tiện ích chung */
@@ -75,12 +65,13 @@
   /* --- THÊM 2 DÒNG SAU --- */
   min-height: calc(100vh - 60px);
   /* Đặt chiều cao bằng container cha */
-  scroll-snap-align: start;
-  /* Bắt dính vào lề trên */
+  min-height: calc(100vh - 60px);
+  /* Đặt chiều cao bằng container cha */
 
   padding: 1rem 0;
   display: flex;
   align-items: center;
+  scroll-margin-top: 80px;
 }
 
 /* 2. THÊM CLASS .heroContainer MỚI */
@@ -189,10 +180,11 @@
   padding: 2rem 2rem;
   text-align: center;
   min-height: calc(100vh - 60px);
-  scroll-snap-align: start;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
+  scroll-margin-top: 80px;
 }
 
 .features h2 {
@@ -342,9 +334,10 @@
 
   /* --- THÊM 2 DÒNG SAU --- */
   min-height: calc(100vh - 60px);
-  scroll-snap-align: start;
+
   align-items: center;
   /* (Thêm) Căn giữa nội dung stats cho đẹp */
+  scroll-margin-top: 80px;
 }
 
 .stats h3 {
@@ -366,13 +359,14 @@
   text-align: center;
   min-height: calc(100vh - 60px);
   /* Giữ nguyên 1 khung hình */
-  scroll-snap-align: start;
+
   display: flex;
   flex-direction: column;
   justify-content: center;
   background-color: #fff;
   box-sizing: border-box;
   /* Giữ padding bên trong */
+  scroll-margin-top: 80px;
 }
 
 .howItWorks h2 {

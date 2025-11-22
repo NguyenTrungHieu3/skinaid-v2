@@ -17,13 +17,13 @@ interface UserFormModalProps {
   isSubmitting: boolean;
 }
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  initialData, 
-  isEdit, 
-  isSubmitting 
+const UserFormModal: React.FC<UserFormModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  isEdit,
+  isSubmitting
 }) => {
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
@@ -113,18 +113,18 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           <h2>{isEdit ? 'Edit User' : 'Add New User'}</h2>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
-        
+
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label>Email *</label>
-            <input 
+            <input
               type="email"
               required
               value={formData.email}
               onChange={(e) => {
-                setFormData({...formData, email: e.target.value});
+                setFormData({ ...formData, email: e.target.value });
                 if (validationErrors.email) {
-                  setValidationErrors({...validationErrors, email: ''});
+                  setValidationErrors({ ...validationErrors, email: '' });
                 }
               }}
               className={validationErrors.email ? styles.error : ''}
@@ -136,14 +136,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
           <div className={styles.formGroup}>
             <label>Display Name *</label>
-            <input 
+            <input
               type="text"
               required
               value={formData.display_name}
               onChange={(e) => {
-                setFormData({...formData, display_name: e.target.value});
+                setFormData({ ...formData, display_name: e.target.value });
                 if (validationErrors.display_name) {
-                  setValidationErrors({...validationErrors, display_name: ''});
+                  setValidationErrors({ ...validationErrors, display_name: '' });
                 }
               }}
               className={validationErrors.display_name ? styles.error : ''}
@@ -156,15 +156,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           {!isEdit && (
             <div className={styles.formGroup}>
               <label>Password *</label>
-              <input 
+              <input
                 type="password"
                 required
                 minLength={8}
                 value={formData.password}
                 onChange={(e) => {
-                  setFormData({...formData, password: e.target.value});
+                  setFormData({ ...formData, password: e.target.value });
                   if (validationErrors.password) {
-                    setValidationErrors({...validationErrors, password: ''});
+                    setValidationErrors({ ...validationErrors, password: '' });
                   }
                 }}
                 className={validationErrors.password ? styles.error : ''}
@@ -180,9 +180,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
           <div className={styles.formGroup}>
             <label>Role</label>
-            <select 
+            <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
               <option value="user">User</option>
               <option value="moderator">Moderator</option>
@@ -191,16 +191,16 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </div>
 
           <div className={styles.modalActions}>
-            <button 
-              type="button" 
-              className={styles.btnSecondary} 
+            <button
+              type="button"
+              className={styles.btnSecondary}
               onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className={styles.adminBtnPrimary}
               disabled={isSubmitting}
             >

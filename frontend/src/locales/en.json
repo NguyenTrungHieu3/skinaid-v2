@@ -7,7 +7,9 @@
     "hi": "Hi",
     "sign_out": "Sign out",
     "sign_in": "Sign in",
-    "sign_up": "Sign up"
+    "sign_up": "Sign up",
+    "features": "Features",
+    "how_it_works": "How it Works"
   },
   "footer": {
     "title_desc": "AI web application to recognize, classify and support first aid for wounds.",

@@ -22,9 +22,8 @@ const Header = () => {
     <div className={styles.languageSwitcher}>
       <button
         onClick={() => i18n.changeLanguage("en")}
-        className={`${styles.flagButton} ${
-          i18n.language === "en" ? styles.activeFlag : ""
-        }`}
+        className={`${styles.flagButton} ${i18n.language === "en" ? styles.activeFlag : ""
+          }`}
         aria-label="Switch to English"
       >
         <CountryFlag countryCode="US" svg />
@@ -32,9 +31,8 @@ const Header = () => {
       <span className={styles.divider}>|</span>
       <button
         onClick={() => i18n.changeLanguage("vi")}
-        className={`${styles.flagButton} ${
-          i18n.language === "vi" ? styles.activeFlag : ""
-        }`}
+        className={`${styles.flagButton} ${i18n.language === "vi" ? styles.activeFlag : ""
+          }`}
         aria-label="Switch to Vietnamese"
       >
         <CountryFlag countryCode="VN" svg />
@@ -62,9 +60,8 @@ const Header = () => {
 
       {/* 3. CONTAINER CHO MENU VÀ AUTH (MENU SLIDE TRÊN MOBILE - HIỆN RA TRÊN DESKTOP) */}
       <div
-        className={`${styles.navContainer} ${
-          menuOpen ? styles.mobileMenuOpen : ""
-        }`}
+        className={`${styles.navContainer} ${menuOpen ? styles.mobileMenuOpen : ""
+          }`}
       >
         {/* Lớp phủ (overlay) để bấm vào là tắt menu trên mobile */}
         {menuOpen && <div className={styles.overlay} onClick={closeMenu}></div>}
@@ -86,6 +83,20 @@ const Header = () => {
             >
               {t("header.upload_image")}
             </NavLink>
+
+            <a
+              href="/#features"
+              onClick={closeMenu}
+            >
+              {t("header.features")}
+            </a>
+
+            <a
+              href="/#how-it-works"
+              onClick={closeMenu}
+            >
+              {t("header.how_it_works")}
+            </a>
 
             {isAuthenticated && (
               <NavLink

@@ -7,7 +7,9 @@
     "hi": "Xin chào",
     "sign_out": "Đăng xuất",
     "sign_in": "Đăng nhập",
-    "sign_up": "Đăng ký"
+    "sign_up": "Đăng ký",
+    "features": "Tính năng",
+    "how_it_works": "Cách hoạt động"
   },
   "footer": {
     "title_desc": "Ứng dụng web AI nhận diện, phân loại và hỗ trợ sơ cứu vết thương.",
@@ -58,7 +60,6 @@
     "how_work_step1_item1_status": "Đã tải lên",
     "how_work_step2_title": "Phát hiện & Phân loại AI",
     "how_work_step2_desc": "Các thuật toán AI tiên tiến sẽ phân tích vết thương, cung cấp các phép đo, phân loại và đánh giá mức độ của vết thương.",
-
     "how_work_step2_item1": "Loại",
     "how_work_step2_item1_result": "Trầy xước",
     "how_work_step2_item2": "Mức độ",
@@ -70,7 +71,6 @@
     "how_work_step3_item1": "Hướng dẫn sơ cứu",
     "how_work_step3_item1_desc": "Được WHO chuẩn hóa",
     "how_work_step3_item2": "Rửa tay bằng xà phòng và nước.",
-
     "how_work_step3_item3": "Dùng gạc/vải sạch ấn trực tiếp để cầm máu.",
     "how_work_step3_item4": "Rửa vết thương bằng nước sạch hoặc dung dịch muối sinh lý.",
     "how_work_step3_item5": "Khử trùng nhẹ vết thương, tránh để vết thương sâu.",

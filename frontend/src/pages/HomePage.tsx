@@ -1,6 +1,6 @@
 // src/pages/HomePage.tsx
 import styles from "./HomePage.module.css";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Footer from "../components/layout/Footer";
 import { FaPlay, FaVideo } from "react-icons/fa";
 import Logo from "../assets/images/home-page/skin-hero-home.png";
@@ -10,6 +10,8 @@ import DashboardHero from "../assets/images/home-page/dashboard-hero.png";
 import { FaCamera, FaFirstAid, FaHistory, FaCheck } from "react-icons/fa";
 import { FaChartLine, FaListAlt, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import ScrollAnimation from "../components/common/ScrollAnimation";
+import { useEffect } from "react";
 
 const HomePage = () => {
   // Chúng ta có thể dùng useAuth để thay đổi nút "Start Analysis"
@@ -17,12 +19,23 @@ const HomePage = () => {
   // const startLink = isAuthenticated ? "/upload" : "/login";
 
   const { t } = useTranslation();
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const element = document.getElementById(hash.replace("#", ""));
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [hash]);
+
   return (
     <div className={styles.homePage}>
       {/* 1. Hero Section */}
-      <section className={styles.hero}>
+      <section className={styles.hero} id="hero">
         <div className={styles.heroContainer}>
-          <div className={styles.heroContent}>
+          <ScrollAnimation animation="fade-right" className={styles.heroContent}>
             <h1 className={styles.heroTitle}>
               {/* 2. Giữ lại chữ SkinAid */}
               <span>SkinAid</span>
@@ -41,28 +54,30 @@ const HomePage = () => {
                 <span>{t("home_page.hero_demo_button")}</span>
               </Link>
             </div>
-          </div>
-          <div className={styles.heroImage}>
+          </ScrollAnimation>
+          <ScrollAnimation animation="fade-left" className={styles.heroImage}>
             <img
               src={DashboardHero}
               alt="SkinAid Dashboard"
               className={styles.imgPlaceholder}
             />
-          </div>
+          </ScrollAnimation>
         </div>
       </section>
 
       {/* 2. Features Section (Cập nhật) */}
-      <section className={styles.features}>
-        <h2>{t("home_page.feature_title")}</h2>
-        {/* 2. THÊM TIÊU ĐỀ PHỤ */}
-        <p className={styles.featuresSubtitle}>
-          {t("home_page.feature_title_desc")}
-        </p>
+      <section className={styles.features} id="features">
+        <ScrollAnimation animation="fade-up">
+          <h2>{t("home_page.feature_title")}</h2>
+          {/* 2. THÊM TIÊU ĐỀ PHỤ */}
+          <p className={styles.featuresSubtitle}>
+            {t("home_page.feature_title_desc")}
+          </p>
+        </ScrollAnimation>
 
         <div className={styles.featureGrid}>
           {/* --- THẺ 1 --- */}
-          <div className={`${styles.featureCard} ${styles.cardGreen}`}>
+          <ScrollAnimation animation="zoom-in" delay={0.1} className={`${styles.featureCard} ${styles.cardGreen}`}>
             {/* 3. THÊM ICON */}
             <div className={`${styles.featureIconWrapper} ${styles.iconGreen}`}>
               <FaCamera />
@@ -84,10 +99,10 @@ const HomePage = () => {
                 {t("home_page.feature_card1_item3")}
               </li>
             </ul>
-          </div>
+          </ScrollAnimation>
 
           {/* --- THẺ 2 --- */}
-          <div className={`${styles.featureCard} ${styles.cardGreen}`}>
+          <ScrollAnimation animation="zoom-in" delay={0.2} className={`${styles.featureCard} ${styles.cardGreen}`}>
             <div className={`${styles.featureIconWrapper} ${styles.iconGreen}`}>
               <FaFirstAid />
             </div>
@@ -107,10 +122,10 @@ const HomePage = () => {
                 {t("home_page.feature_card2_item3")}
               </li>
             </ul>
-          </div>
+          </ScrollAnimation>
 
           {/* --- THẺ 3 --- */}
-          <div className={`${styles.featureCard} ${styles.cardOrange}`}>
+          <ScrollAnimation animation="zoom-in" delay={0.3} className={`${styles.featureCard} ${styles.cardOrange}`}>
             <div
               className={`${styles.featureIconWrapper} ${styles.iconOrange}`}
             >
@@ -132,39 +147,41 @@ const HomePage = () => {
                 {t("home_page.feature_card3_item3")}
               </li>
             </ul>
-          </div>
+          </ScrollAnimation>
         </div>
       </section>
 
       {/* 3. Stats Section */}
-      <section className={styles.stats}>
-        <div>
+      <section className={styles.stats} id="stats">
+        <ScrollAnimation animation="fade-up" delay={0.1}>
           <h3>5,000+</h3>
           <p>{t("home_page.stats_item1_desc")}</p>
-        </div>
-        <div>
+        </ScrollAnimation>
+        <ScrollAnimation animation="fade-up" delay={0.2}>
           <h3>3,000</h3>
           <p>{t("home_page.stats_item2_desc")}</p>
-        </div>
-        <div>
+        </ScrollAnimation>
+        <ScrollAnimation animation="fade-up" delay={0.3}>
           <h3>65%</h3>
           <p>{t("home_page.stats_item3_desc")}</p>
-        </div>
-        <div>
+        </ScrollAnimation>
+        <ScrollAnimation animation="fade-up" delay={0.4}>
           <h3>24/7</h3>
           <p>{t("home_page.stats_item4_desc")}</p>
-        </div>
+        </ScrollAnimation>
       </section>
 
       {/* 4. How It Works Section (Đã cập nhật) */}
-      <section className={styles.howItWorks}>
-        <h2>{t("home_page.how_work_title")}</h2>
-        {/* 2. Thêm Subtitle */}
-        <p className={styles.howSubtitle}>{t("home_page.how_work_desc")}</p>
+      <section className={styles.howItWorks} id="how-it-works">
+        <ScrollAnimation animation="fade-up">
+          <h2>{t("home_page.how_work_title")}</h2>
+          {/* 2. Thêm Subtitle */}
+          <p className={styles.howSubtitle}>{t("home_page.how_work_desc")}</p>
+        </ScrollAnimation>
 
         <div className={styles.stepsGrid}>
           {/* --- Step 1 --- */}
-          <div className={styles.step}>
+          <ScrollAnimation animation="fade-right" delay={0.1} className={styles.step}>
             <div className={styles.stepNumber}>
               <span>1</span>
               {/* 3. Thêm icon badge */}
@@ -184,10 +201,10 @@ const HomePage = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </ScrollAnimation>
 
           {/* --- Step 2 --- */}
-          <div className={styles.step}>
+          <ScrollAnimation animation="fade-up" delay={0.2} className={styles.step}>
             <div className={styles.stepNumber}>
               <span>2</span>
               <span className={`${styles.stepBadge} ${styles.badgeChart}`}>
@@ -216,10 +233,10 @@ const HomePage = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollAnimation>
 
           {/* --- Step 3 --- */}
-          <div className={styles.step}>
+          <ScrollAnimation animation="fade-left" delay={0.3} className={styles.step}>
             <div className={styles.stepNumber}>
               <span>3</span>
               <span className={`${styles.stepBadge} ${styles.badgeList}`}>
@@ -248,7 +265,7 @@ const HomePage = () => {
                 </ul>
               </div>
             </div>
-          </div>
+          </ScrollAnimation>
         </div>
       </section>
 

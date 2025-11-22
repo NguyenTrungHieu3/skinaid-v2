@@ -9,11 +9,17 @@
 /* --- DESKTOP FIRST STYLES (MẶC ĐỊNH) --- */
 .header {
   display: flex;
-  align-items: center; /* Căn giữa các item theo chiều dọc */
+  align-items: center;
+  /* Căn giữa các item theo chiều dọc */
   padding: 0.5rem 2rem;
   height: 60px;
   border-bottom: 1px solid #eee;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: #fff;
 }
 
 .logo {
@@ -26,9 +32,11 @@
   color: #333;
   /* (Xóa margin-right) */
 }
+
 .logo img {
   height: 35px;
 }
+
 .logoAid {
   color: var(--primary-color);
 }
@@ -43,14 +51,17 @@
 /* 1. Xóa container 'navContainer' không cần thiết trên desktop */
 .navContainer {
   /* Chúng ta sẽ dùng .menuContent trực tiếp */
-  flex-grow: 1; /* Cho phép co giãn */
+  flex-grow: 1;
+  /* Cho phép co giãn */
 }
 
 /* 2. Sửa .menuContent */
 .menuContent {
   display: flex;
-  flex-direction: row; /* Xếp ngang */
-  align-items: center; /* Căn giữa */
+  flex-direction: row;
+  /* Xếp ngang */
+  align-items: center;
+  /* Căn giữa */
   width: 100%;
   align-items: baseline;
 }
@@ -58,18 +69,22 @@
 /* 3. Sửa .nav */
 .nav {
   display: flex;
-  flex-direction: row; /* Xếp ngang */
+  flex-direction: row;
+  /* Xếp ngang */
   gap: 2rem;
-  margin-left: 2.5rem; /* Khoảng cách từ logo đến nav */
+  margin-left: 2.5rem;
+  /* Khoảng cách từ logo đến nav */
 }
 
 /* 4. Sửa .authButtons (Đây là mấu chốt) */
 .authButtons {
   display: flex;
-  flex-direction: row; /* Xếp ngang */
+  flex-direction: row;
+  /* Xếp ngang */
   align-items: center;
   gap: 1rem;
-  margin-left: auto; /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
+  margin-left: auto;
+  /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
   border: none;
   padding: 0;
 }
@@ -90,6 +105,7 @@
   border-bottom: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
 }
+
 .nav a:hover,
 .nav a.active {
   color: var(--primary-color);
@@ -100,18 +116,24 @@
   font-weight: 600;
   color: #333;
   white-space: nowrap;
-  text-decoration: none; /* <-- Thêm: Xóa gạch chân */
-  transition: color 0.2s; /* <-- Thêm: Hiệu ứng hover */
+  text-decoration: none;
+  /* <-- Thêm: Xóa gạch chân */
+  transition: color 0.2s;
+  /* <-- Thêm: Hiệu ứng hover */
   /* THÊM 4 DÒNG NÀY ĐỂ GIỚI HẠN VÀ THÊM DẤU "..." */
-  display: block; /* Cần thiết để max-width hoạt động */
-  max-width: 150px; /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
+  display: block;
+  /* Cần thiết để max-width hoạt động */
+  max-width: 150px;
+  /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .welcomeLink:hover {
-  color: var(--primary-color); /* <-- Thêm: Đổi màu khi di chuột */
+  color: var(--primary-color);
+  /* <-- Thêm: Đổi màu khi di chuột */
 }
+
 .authBtn {
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -124,13 +146,16 @@
   transition: all 0.2s;
   text-align: center;
 }
+
 .authBtn:hover {
   background-color: #f0f9f8;
 }
+
 .signUp {
   background-color: var(--primary-color);
   color: #fff;
 }
+
 .signUp:hover {
   background-color: var(--primary-color-dark);
 }
@@ -139,17 +164,20 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 1rem; /* Tạo khoảng cách với các nút khác */
+  padding: 0 1rem;
+  /* Tạo khoảng cách với các nút khác */
 }
 
 .flagButton {
   background: none;
   border: none;
   cursor: pointer;
-  opacity: 0.5; /* Mặc định làm mờ cờ không được chọn */
+  opacity: 0.5;
+  /* Mặc định làm mờ cờ không được chọn */
   transition: opacity 0.2s ease-in-out;
   padding: 0;
-  display: flex; /* Giúp căn chỉnh cờ tốt hơn */
+  display: flex;
+  /* Giúp căn chỉnh cờ tốt hơn */
 }
 
 .flagButton:hover {
@@ -157,17 +185,21 @@
 }
 
 .flagButton svg {
-  width: 24px !important; /* Ghi đè kích thước cờ */
+  width: 24px !important;
+  /* Ghi đè kích thước cờ */
   height: auto !important;
-  border-radius: 3px; /* Bo góc cờ một chút */
+  border-radius: 3px;
+  /* Bo góc cờ một chút */
 }
 
 .activeFlag {
-  opacity: 1; /* Cờ được chọn sẽ rõ nét */
+  opacity: 1;
+  /* Cờ được chọn sẽ rõ nét */
 }
 
 .divider {
-  color: var(--color-gray-light, #ccc); /* Màu của dấu gạch đứng */
+  color: var(--color-gray-light, #ccc);
+  /* Màu của dấu gạch đứng */
   font-size: 1rem;
 }
 
@@ -179,10 +211,12 @@
 .menuContent {
   display: flex;
   flex-direction: row;
-  align-items: center; /* Căn giữa theo chiều dọc */
+  align-items: center;
+  /* Căn giữa theo chiều dọc */
   width: 100%;
   /* XÓA: align-items: baseline; */
-  justify-content: space-between; /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
+  justify-content: space-between;
+  /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
 }
 
 .nav {
@@ -196,7 +230,8 @@
 .rightWrapper {
   display: flex;
   align-items: center;
-  gap: 1rem; /* Khoảng cách giữa cờ và nút auth */
+  gap: 1rem;
+  /* Khoảng cách giữa cờ và nút auth */
 }
 
 /* SỬA CLASS NÀY */
@@ -205,7 +240,8 @@
   flex-direction: row;
   align-items: center;
   gap: 1rem;
-  margin-left: 0; /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
+  margin-left: 0;
+  /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
   border: none;
   padding: 0;
 }
@@ -244,7 +280,8 @@
     visibility: hidden;
     z-index: 1000;
     transition: visibility 0.3s ease;
-    margin-left: 0; /* Reset margin-left */
+    margin-left: 0;
+    /* Reset margin-left */
   }
 
   .overlay {
@@ -278,9 +315,11 @@
   .mobileMenuOpen {
     visibility: visible;
   }
+
   .mobileMenuOpen .overlay {
     opacity: 1;
   }
+
   .mobileMenuOpen .menuContent {
     transform: translateX(0);
   }
@@ -288,9 +327,12 @@
   .nav {
     flex-direction: column;
     gap: 1.5rem;
-    margin-left: 0; /* Reset margin-left */
-    width: 100%; /* Đảm bảo nav links chiếm đủ rộng */
-    order: 1; /* 1. Nav links (nằm trên) */
+    margin-left: 0;
+    /* Reset margin-left */
+    width: 100%;
+    /* Đảm bảo nav links chiếm đủ rộng */
+    order: 1;
+    /* 1. Nav links (nằm trên) */
   }
 
   /* SỬA CLASS NÀY */
@@ -298,19 +340,25 @@
     /* Cho wrapper xếp dọc trên mobile */
     flex-direction: column;
     width: 100%;
-    align-items: stretch; /* Dãn các nút auth ra */
+    align-items: stretch;
+    /* Dãn các nút auth ra */
     gap: 1.5rem;
-    order: 2; /* 2. Khối Auth + Cờ (nằm dưới) */
-    margin-top: auto; /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
+    order: 2;
+    /* 2. Khối Auth + Cờ (nằm dưới) */
+    margin-top: auto;
+    /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
     padding-top: 1.5rem;
     border-top: 1px solid #eee;
   }
 
   /* SỬA CLASS NÀY */
   .languageSwitcher {
-    order: 2; /* Cờ nằm dưới nút auth */
-    justify-content: center; /* Căn giữa cờ */
-    padding: 0; /* Xóa padding ngang */
+    order: 2;
+    /* Cờ nằm dưới nút auth */
+    justify-content: center;
+    /* Căn giữa cờ */
+    padding: 0;
+    /* Xóa padding ngang */
   }
 
   .authButtons {
@@ -319,7 +367,8 @@
     /* border-top: 1px solid #eee;
     padding-top: 1.5rem; */
     align-items: stretch;
-    margin-left: 0; /* Reset margin-left */
+    margin-left: 0;
+    /* Reset margin-left */
     order: 1;
   }
 
@@ -328,6 +377,7 @@
     padding: 0.5rem;
     border-bottom: none;
   }
+
   .nav a.active {
     background-color: #f0f9f8;
     border-radius: 6px;
