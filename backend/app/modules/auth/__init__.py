@@ -7,7 +7,6 @@ from .models.role_permissions import RolePermission
 
 # Dịch vụ
 from .services.auth_service import AuthService
-from .services.user_service import UserService
 
 # Controllers
 from .controllers.auth_controller import AuthController
@@ -27,7 +26,7 @@ __all__ = [
     "User", "VerificationToken",
     "Role", "Permission", "UserRole", "RolePermission",
 
-    "AuthService", "UserService",
+    "AuthService",
 
     "AuthController",
 

@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 from app.modules.profile.controllers.profile_controller import ProfileController
-from app.api.v1.deps import get_db, get_current_active_user, require_admin, require_permission
+from app.core.dependencies import get_db, get_current_active_user, require_admin, require_permission
 from app.modules.auth.models.user import User
+from app.modules.audit.services.audit_service import AuditService
 
 router = APIRouter(prefix="/profile", tags=["User Profile Management"])
 
@@ -20,12 +21,31 @@ async def get_profile_controller(db: AsyncSession = Depends(get_db)) -> ProfileC
     description="Cập nhật thông tin cá nhân của user như full_name, phone, address, etc."
 )
 async def update_profile(
+    request: Request,
     profile_data: UserProfileUpdate,
     controller: ProfileController = Depends(get_profile_controller),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Cập nhật thông tin profile cá nhân."""
-    return await controller.update_profile(current_user.user_id, profile_data)
+    result = await controller.update_profile(current_user.user_id, profile_data)
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    fields_updated = [k for k, v in profile_data.model_dump(exclude_unset=True).items() if v is not None]
+    await audit_service.log_event(
+        action="update_profile",
+        user_id=current_user.user_id,
+        success=isinstance(result, SuccessResponse),
+        resource_type="user_profile",
+        resource_id=str(current_user.user_id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        details={"fields_updated": fields_updated},
+        error_message=result.message if isinstance(result, ErrorResponse) else None
+    )
+    
+    return result
 
 @router.get(
     "/me",

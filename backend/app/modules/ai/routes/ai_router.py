@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Cookie, Header
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Cookie, Header, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 from typing import Optional, List
 
-from app.api.v1.deps import get_current_verified_user, get_db
+from app.core.dependencies import allow_guest, get_db
+from app.modules.auth.models.user import User
 from app.modules.ai.controllers.ai_controller import AIController
+from app.modules.audit.services.audit_service import AuditService
+from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
 router = APIRouter(prefix="/ai")
 
@@ -24,14 +27,15 @@ async def get_session_id(
 
 @router.post("/analyze")
 async def analyze_wound_image(
+    request: Request,
     file: UploadFile = File(..., description="Wound image (JPEG/PNG, max 5MB)"),
-    current_user: Optional[dict] = Depends(get_current_verified_user),
+    current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
 
-    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    user_id = current_user.user_id if current_user else None
     if not user_id and not session_id:
         raise HTTPException(
             status_code=401,
@@ -43,6 +47,33 @@ async def analyze_wound_image(
         user_id=user_id,
         session_id=session_id
     )
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    if isinstance(result, SuccessResponse):
+        await audit_service.log_event(
+            action="upload_image",
+            user_id=user_id,
+            success=True,
+            resource_type="wound_analysis",
+            resource_id=str(result.data.analysis_id) if hasattr(result.data, 'analysis_id') else None,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            is_guest=user_id is None,
+            guest_session_id=session_id if user_id is None else None,
+            details={"file_name": file.filename, "content_type": file.content_type}
+        )
+    else:
+        await audit_service.log_event(
+            action="upload_image",
+            user_id=user_id,
+            success=False,
+            error_message=result.message if isinstance(result, ErrorResponse) else "Upload failed",
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            is_guest=user_id is None,
+            guest_session_id=session_id if user_id is None else None
+        )
 
     return result
 
@@ -50,13 +81,13 @@ async def analyze_wound_image(
 async def get_analysis_history(
     limit: int = 50,
     offset: int = 0,
-    current_user: Optional[dict] = Depends(get_current_verified_user),
+    current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
 
-    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    user_id = current_user.user_id if current_user else None
 
     if not user_id and not session_id:
         raise HTTPException(
@@ -76,13 +107,13 @@ async def get_analysis_history(
 @router.get("/analysis/{analysis_id}")
 async def get_analysis_detail(
     analysis_id: UUID,
-    current_user: Optional[dict] = Depends(get_current_verified_user),
+    current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
 
-    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    user_id = current_user.user_id if current_user else None
 
     result = await controller.get_analysis_detail(
         analysis_id=analysis_id,
@@ -94,19 +125,34 @@ async def get_analysis_detail(
 
 @router.delete("/analysis/{analysis_id}")
 async def delete_analysis(
+    request: Request,
     analysis_id: UUID,
-    current_user: Optional[dict] = Depends(get_current_verified_user),
+    current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
 ):
     controller = AIController(db)
 
-    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    user_id = current_user.user_id if current_user else None
 
     result = await controller.delete_analysis(
         analysis_id=analysis_id,
         user_id=user_id,
         session_id=session_id
+    )
+    
+    audit_service = AuditService(db)
+    await audit_service.log_event(
+        action="delete_analysis",
+        user_id=user_id,
+        success=isinstance(result, SuccessResponse),
+        resource_type="wound_analysis",
+        resource_id=str(analysis_id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        is_guest=user_id is None,
+        guest_session_id=session_id if user_id is None else None,
+        error_message=result.message if isinstance(result, ErrorResponse) else None
     )
 
     return result
@@ -117,7 +163,7 @@ async def analyze_multiple_wound_images(
         ...,
         description="Danh sách ảnh vết thương (JPEG/PNG, mỗi ảnh max 5MB, tối đa 10 ảnh)"
     ),
-    current_user: Optional[dict] = Depends(get_current_verified_user),
+    current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -126,7 +172,7 @@ async def analyze_multiple_wound_images(
     """
     controller = AIController(db)
     
-    user_id = UUID(current_user.get('user_id')) if current_user and current_user.get('user_id') else None
+    user_id = current_user.user_id if current_user else None
     
     if not user_id and not session_id:
         raise HTTPException(

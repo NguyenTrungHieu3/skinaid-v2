@@ -1,15 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
-from app.api.v1.deps import require_admin
-from app.core.tasks.cleanup_tokens import (
-    cleanup_expired_tokens,
-    cleanup_old_verification_tokens,
-    get_blacklist_stats,
-    get_cleanup_stats,
-    revoke_all_user_tokens,
-    cleanup_all
-)
+from app.core.dependencies import require_admin
+from app.modules.auth.services.token_cleanup_service import TokenCleanupService
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from typing import Union
 

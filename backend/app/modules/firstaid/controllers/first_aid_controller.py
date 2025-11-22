@@ -5,14 +5,9 @@ import logging
 import uuid
 
 from app.modules.firstaid.services.first_aid_service import FirstAidService
-from app.modules.firstaid.schemas.first_aid_schemas import (
-    FirstAidGuideResponse,
-    WoundTypeResponse,
-)
+from app.modules.firstaid.schemas.first_aid_schemas import FirstAidGuideResponse, WoundTypeResponse
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-
-from app.utils.constants import error_codes as ErrorCode
-from app.utils.constants import messages as Message
+from app.utils.constants import error_codes as ErrorCode, messages as Message
 
 logger = logging.getLogger(__name__)
 
@@ -21,544 +16,31 @@ class FirstAidController:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.first_aid_service = FirstAidService(db)
-
-    async def get_first_aid_guide(
-        self,
-        wound_type: str,
-        severity: str,
-        sub_type: Optional[str] = None,
-    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Get first aid guide for specific wound type and severity."""
-        try:
-            logger.info(
-                f"[FIRSTAID_GUIDE] Đang lấy hướng dẫn cho: {wound_type}/{severity}, sub_type: {sub_type}"
-            )
-
-            guide = await self.first_aid_service.get_first_aid_guide(
-                wound_type, severity, sub_type
-            )
-
-            if not guide:
-                logger.warning(
-                    f"[FIRSTAID_GUIDE] Không tìm thấy: {wound_type}/{severity}, sub_type: {sub_type}"
-                )
-
-                # Định dạng thông báo lỗi dựa trên sự hiện diện của sub_type
-                if sub_type:
-                    error_message = (
-                        Message.FIRSTAID_GUIDE_NOT_FOUND_WITH_SUBTYPE_MSG.format(
-                            wound_type=wound_type,
-                            severity=severity,
-                            sub_type=sub_type,
-                        )
-                    )
-                else:
-                    error_message = Message.FIRSTAID_GUIDE_NOT_FOUND_FOR_MSG.format(
-                        wound_type=wound_type,
-                        severity=severity,
-                    )
-
-                available_combinations = await self._get_available_combinations()
-
-                return ErrorResponse(
-                    message=error_message,
-                    error_code=ErrorCode.FIRSTAID_GUIDE_NOT_FOUND,
-                    error_details={
-                        "wound_type": wound_type,
-                        "severity": severity,
-                        "sub_type": sub_type,
-                        "available_types": available_combinations,
-                    },
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            guide_response = self._create_guide_response(
-                guide, wound_type, severity
-            )
-
-            # Định dạng thông báo thành công dựa trên sự hiện diện của sub_type
-            if sub_type:
-                success_message = (
-                    f"{Message.FIRSTAID_GUIDE_FOUND_FOR_MSG.format(wound_type=wound_type, severity=severity)} với sub_type '{sub_type}'"
-                )
-            else:
-                success_message = Message.FIRSTAID_GUIDE_FOUND_FOR_MSG.format(
-                    wound_type=wound_type,
-                    severity=severity,
-                )
-
-            logger.info(f"[FIRSTAID_GUIDE] Thành công: {guide.get('firstaidguide_id')}")
-
-            return SuccessResponse(
-                message=success_message,
-                data=guide_response,
-            )
-
-        except Exception as e:
-            logger.error(f"[FIRSTAID_GUIDE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_GUIDE_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def get_available_wound_types(
-        self,
-    ) -> Union[SuccessResponse[List[WoundTypeResponse]], ErrorResponse]:
-        """Get all available wound types."""
-        try:
-            logger.info("[WOUND_TYPES] Đang lấy các loại vết thương có sẵn")
-
-            wound_types = await self.first_aid_service.get_available_wound_types()
-
-            wound_type_responses = [
-                WoundTypeResponse(**wt) for wt in wound_types
-            ]
-
-            logger.info(
-                f"[WOUND_TYPES] Thành công: {len(wound_type_responses)} loại được tìm thấy"
-            )
-
-            return SuccessResponse(
-                message=Message.WOUND_TYPES_SUCCESS_MSG,
-                data=wound_type_responses,
-            )
-
-        except Exception as e:
-            logger.error(f"[WOUND_TYPES] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.WOUND_TYPES_ERROR_MSG,
-                error_code=ErrorCode.WOUND_TYPES_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def search_first_aid_guides(
-        self,
-        wound_type: Optional[str] = None,
-        severity: Optional[str] = None,
-        limit: int = 20,
-        offset: int = 0,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
-    ) -> Union[SuccessResponse[List[FirstAidGuideResponse]], ErrorResponse]:
-        """Search first aid guides with optional filters."""
-        try:
-            logger.info(
-                f"[SEARCH_GUIDES] Đang tìm kiếm - wound_type: {wound_type}, "
-                f"severity: {severity}, limit: {limit}, offset: {offset}, is_active: {is_active}"
-            )
-
-            result = await self.first_aid_service.search_first_aid_guides(
-                wound_type, severity, limit, offset, is_active, search
-            )
-
-            guides = result.get("items", [])
-            total_count = result.get("total", 0)
-
-            guide_responses: List[FirstAidGuideResponse] = []
-            for guide in guides:
-                guide_response = self._create_guide_response(
-                    guide,
-                    guide.get("wound_type", ""),
-                    guide.get("severity", ""),
-                )
-                guide_responses.append(guide_response)
-
-            logger.info(
-                f"[SEARCH_GUIDES] Thành công: {len(guide_responses)} hướng dẫn được tìm thấy (Tổng: {total_count})"
-            )
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_GUIDES_FOUND_COUNT_MSG.format(
-                    count=total_count
-                ),
-                data=guide_responses,
-                total=total_count
-            )
-
-        except Exception as e:
-            logger.error(f"[SEARCH_GUIDES] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_SEARCH_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def get_statistics(
-        self,
-    ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Get statistics about first aid knowledge base."""
-        try:
-            logger.info("[STATISTICS] Đang lấy thống kê sơ cứu")
-
-            stats = await self.first_aid_service.get_guide_statistics()
-
-            logger.info(
-                f"[STATISTICS] Thành công - Tổng số hướng dẫn: {stats.get('total_guides', 0)}"
-            )
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_STATISTICS_SUCCESS_MSG,
-                data=stats,
-            )
-
-        except Exception as e:
-            logger.error(f"[STATISTICS] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_STATISTICS_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def validate_guide_availability(
-        self,
-        wound_type: str,
-        severity: str,
-        sub_type: Optional[str] = None,
-    ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Check availability of first aid guide."""
-        try:
-            logger.info(
-                f"[VALIDATE] Đang kiểm tra tính khả dụng: {wound_type}/{severity}, "
-                f"sub_type: {sub_type}"
-            )
-
-            guide = await self.first_aid_service.get_first_aid_guide(
-                wound_type, severity, sub_type
-            )
-
-            if guide:
-                # Định dạng thông báo thành công dựa trên sự hiện diện của sub_type
-                if sub_type:
-                    success_message = (
-                        Message.FIRSTAID_GUIDE_AVAILABLE_WITH_SUBTYPE_MSG.format(
-                            wound_type=wound_type,
-                            severity=severity,
-                            sub_type=sub_type,
-                        )
-                    )
-                else:
-                    success_message = (
-                        Message.FIRSTAID_GUIDE_AVAILABLE_FOR_MSG.format(
-                            wound_type=wound_type,
-                            severity=severity,
-                        )
-                    )
-
-                logger.info(
-                    f"[VALIDATE] Có sẵn: {guide.get('firstaidguide_id')}"
-                )
-
-                return SuccessResponse(
-                    message=success_message,
-                    data={
-                        "available": True,
-                        "guide_id": guide.get("firstaidguide_id"),
-                        "sub_type": guide.get("sub_type"),
-                        "version": guide.get("version"),
-                        "last_updated": guide.get("updated_at"),
-                    },
-                )
-            else:
-                # Lấy các lựa chọn thay thế
-                available_types = (
-                    await self.first_aid_service.get_available_wound_types()
-                )
-                alternatives: List[str] = []
-
-                for wt in available_types:
-                    for sev in wt.get("severities", []):
-                        if not (
-                            wt["wound_type"] == wound_type and sev == severity
-                        ):
-                            alternatives.append(f"{wt['wound_type']}/{sev}")
-
-                # Định dạng thông báo dựa trên sự hiện diện của sub_type
-                if sub_type:
-                    message = (
-                        Message.FIRSTAID_GUIDE_NOT_AVAILABLE_WITH_SUBTYPE_MSG.format(
-                            wound_type=wound_type,
-                            severity=severity,
-                            sub_type=sub_type,
-                        )
-                    )
-                else:
-                    message = (
-                        Message.FIRSTAID_GUIDE_NOT_AVAILABLE_FOR_MSG.format(
-                            wound_type=wound_type,
-                            severity=severity,
-                        )
-                    )
-
-                logger.info(
-                    f"[VALIDATE] Không có sẵn: {wound_type}/{severity}, "
-                    f"tìm thấy {len(alternatives)} lựa chọn thay thế"
-                )
-
-                return SuccessResponse(
-                    message=message,
-                    data={
-                        "available": False,
-                        "alternatives": alternatives[:5],
-                        "total_alternatives": len(alternatives),
-                    },
-                )
-
-        except Exception as e:
-            logger.error(f"[VALIDATE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_VALIDATION_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def create_first_aid_guide(
-        self,
-        guide_data: Dict[str, Any],
-        user_id: uuid.UUID,
-    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Create a new first aid guide."""
-        try:
-            logger.info(f"[CREATE_GUIDE] Đang tạo hướng dẫn mới bởi user: {user_id}")
-
-            # Validate completeness
-            completeness = await self.first_aid_service.validate_guide_completeness(
-                guide_data
-            )
-            if not completeness["is_complete"]:
-                logger.warning(
-                    f"[CREATE_GUIDE] Dữ liệu không đầy đủ: {completeness['issues']}"
-                )
-                # We can still create it, but maybe log a warning or return a specific message
-                # For now, we proceed but the frontend should have validated this too
-
-            new_guide = await self.first_aid_service.create_first_aid_guide(
-                guide_data, user_id
-            )
-
-            guide_response = self._create_guide_response(
-                new_guide,
-                new_guide.get("wound_type", ""),
-                new_guide.get("severity", ""),
-            )
-
-            logger.info(
-                f"[CREATE_GUIDE] Thành công: {new_guide.get('firstaidguide_id')}"
-            )
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_GUIDE_CREATED_SUCCESS_MSG,
-                data=guide_response,
-                status_code=status.HTTP_201_CREATED,
-            )
-
-        except ValueError as e:
-            logger.warning(f"[CREATE_GUIDE] Dữ liệu không hợp lệ: {e}")
-            return ErrorResponse(
-                message=str(e),
-                error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        except Exception as e:
-            logger.error(f"[CREATE_GUIDE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_GUIDE_CREATE_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_GUIDE_CREATE_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def get_guide_by_id(
-        self,
-        guide_id: uuid.UUID,
-    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Get first aid guide by ID."""
-        try:
-            logger.info(f"[GET_GUIDE] Đang lấy hướng dẫn theo ID: {guide_id}")
-
-            guide = await self.first_aid_service.get_guide_by_id(guide_id)
-
-            if not guide:
-                logger.warning(f"[GET_GUIDE] Không tìm thấy: {guide_id}")
-                return ErrorResponse(
-                    message=Message.FIRSTAID_GUIDE_NOT_FOUND_MSG,
-                    error_code=ErrorCode.FIRSTAID_GUIDE_NOT_FOUND,
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            guide_response = self._create_guide_response(
-                guide,
-                guide.get("wound_type", ""),
-                guide.get("severity", ""),
-            )
-
-            logger.info(f"[GET_GUIDE] Thành công: {guide_id}")
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_GUIDE_FOUND_MSG,
-                data=guide_response,
-            )
-
-        except Exception as e:
-            logger.error(f"[GET_GUIDE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_GUIDE_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def update_first_aid_guide(
-        self,
-        guide_id: uuid.UUID,
-        update_data: Dict[str, Any],
-    ) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Update first aid guide."""
-        try:
-            logger.info(f"[UPDATE_GUIDE] Đang cập nhật hướng dẫn: {guide_id}")
-
-            updated_guide = await self.first_aid_service.update_first_aid_guide(
-                guide_id, update_data
-            )
-
-            if not updated_guide:
-                logger.warning(f"[UPDATE_GUIDE] Không tìm thấy: {guide_id}")
-                return ErrorResponse(
-                    message=Message.FIRSTAID_GUIDE_NOT_FOUND_MSG,
-                    error_code=ErrorCode.FIRSTAID_GUIDE_NOT_FOUND,
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            guide_response = self._create_guide_response(
-                updated_guide,
-                updated_guide.get("wound_type", ""),
-                updated_guide.get("severity", ""),
-            )
-
-            logger.info(f"[UPDATE_GUIDE] Thành công: {guide_id}")
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_GUIDE_UPDATED_SUCCESS_MSG,
-                data=guide_response,
-            )
-
-        except ValueError as e:
-            logger.warning(f"[UPDATE_GUIDE] Dữ liệu không hợp lệ: {e}")
-            return ErrorResponse(
-                message=str(e),
-                error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        except Exception as e:
-            logger.error(f"[UPDATE_GUIDE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_GUIDE_UPDATE_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_GUIDE_UPDATE_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    async def delete_first_aid_guide(
-        self,
-        guide_id: uuid.UUID,
-        hard_delete: bool = False,
-    ) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Delete first aid guide."""
-        try:
-            logger.info(
-                f"[DELETE_GUIDE] Đang xóa hướng dẫn: {guide_id}, hard_delete={hard_delete}"
-            )
-
-            success = await self.first_aid_service.delete_first_aid_guide(
-                guide_id, hard_delete
-            )
-
-            if not success:
-                logger.warning(f"[DELETE_GUIDE] Không tìm thấy: {guide_id}")
-                return ErrorResponse(
-                    message=Message.FIRSTAID_GUIDE_NOT_FOUND_MSG,
-                    error_code=ErrorCode.FIRSTAID_GUIDE_NOT_FOUND,
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            logger.info(f"[DELETE_GUIDE] Thành công: {guide_id}")
-
-            return SuccessResponse(
-                message=Message.FIRSTAID_GUIDE_DELETED_SUCCESS_MSG,
-                data={"guide_id": guide_id, "hard_delete": hard_delete},
-            )
-
-        except Exception as e:
-            logger.error(f"[DELETE_GUIDE] Lỗi: {e}", exc_info=True)
-            return ErrorResponse(
-                message=Message.FIRSTAID_GUIDE_DELETE_ERROR_MSG,
-                error_code=ErrorCode.FIRSTAID_GUIDE_DELETE_ERROR,
-                error_details={"error": str(e)},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-    # ============================================
-    # Phương thức trợ giúp riêng tư
-    # ============================================
-
-    def _get_severity_display(self, severity: str) -> str:
-        """Convert severity to Vietnamese display name."""
-        severity_map = {
-            "mild": "Nhẹ",
-            "moderate": "Trung bình",
-            "severe": "Nặng",
-        }
-        return severity_map.get(severity.lower(), severity)
-
-    def _count_instructions(self, steps: Optional[Dict[str, Any]]) -> int:
-        """Count number of instruction steps."""
-        if not steps:
+        self._severity_map = {"mild": "Nhẹ", "moderate": "Trung bình", "severe": "Nặng"}
+
+    def _format_message(self, base_msg: str, wound_type: str, severity: str, sub_type: Optional[str] = None) -> str:
+        """Format message with optional sub_type"""
+        msg = base_msg.format(wound_type=wound_type, severity=severity)
+        return f"{msg} với sub_type '{sub_type}'" if sub_type else msg
+
+    def _count_items(self, data: Optional[Union[List, Dict]]) -> int:
+        """Count items in list or dict with 'items' key"""
+        if not data:
             return 0
-        if isinstance(steps, list):
-            return len(steps)
-        if isinstance(steps, dict):
-            return len(steps.get("items", []))
+        if isinstance(data, list):
+            return len(data)
+        if isinstance(data, dict):
+            return len(data.get("items", []))
         return 0
 
-    def _count_supplies(self, supplies: Optional[Dict[str, Any]]) -> int:
-        """Count number of supplies needed."""
-        if not supplies:
-            return 0
-        if isinstance(supplies, list):
-            return len(supplies)
-        if isinstance(supplies, dict):
-            return len(supplies.get("items", []))
-        return 0
-
-    def _create_guide_response(
-        self,
-        guide: Dict[str, Any],
-        expected_wound_type: str,
-        expected_severity: str,
-    ) -> FirstAidGuideResponse:
-        """Create FirstAidGuideResponse from guide data."""
-        firstaidguide_id_str = guide.get("firstaidguide_id", "")
-        created_by_str = guide.get("created_by")
-
+    def _create_guide_response(self, guide: Dict[str, Any], expected_wound_type: str, expected_severity: str) -> FirstAidGuideResponse:
+        """Create FirstAidGuideResponse from guide data"""
         return FirstAidGuideResponse(
-            firstaidguide_id=uuid.UUID(firstaidguide_id_str)
-            if firstaidguide_id_str
-            else uuid.UUID("00000000-0000-0000-0000-000000000000"),
+            firstaidguide_id=uuid.UUID(guide.get("firstaidguide_id", "00000000-0000-0000-0000-000000000000")),
             wound_type=guide.get("wound_type", expected_wound_type),
             severity=guide.get("severity", expected_severity),
             sub_type=guide.get("sub_type"),
-            severity_display=self._get_severity_display(
-                guide.get("severity", expected_severity)
-            ),
+            severity_display=self._severity_map.get(guide.get("severity", expected_severity).lower(), guide.get("severity", expected_severity)),
             title=guide.get("title", ""),
             description=guide.get("description"),
             steps=guide.get("steps"),
@@ -570,31 +52,157 @@ class FirstAidController:
             source=guide.get("source"),
             is_active=guide.get("is_active", True),
             version=guide.get("version", 1),
-            created_by=uuid.UUID(created_by_str)
-            if created_by_str
-            else None,
+            created_by=uuid.UUID(guide["created_by"]) if guide.get("created_by") else None,
             created_at=guide.get("created_at"),
             updated_at=guide.get("updated_at"),
-            has_complete_instructions=bool(
-                guide.get("dos") and guide.get("donts")
-            ),
-            instructions_count=self._count_instructions(guide.get("steps")),
-            supplies_count=self._count_supplies(
-                guide.get("supplies_needed")
-            ),
+            has_complete_instructions=bool(guide.get("dos") and guide.get("donts")),
+            instructions_count=self._count_items(guide.get("steps")),
+            supplies_count=self._count_items(guide.get("supplies_needed"))
         )
 
     async def _get_available_combinations(self) -> List[str]:
-        """Get list of available wound_type/severity combinations."""
+        """Get available wound_type/severity combinations"""
         try:
             wound_types = await self.first_aid_service.get_available_wound_types()
-            combinations: List[str] = []
-            for wt in wound_types:
-                for severity in wt.get("severities", []):
-                    combinations.append(f"{wt['wound_type']}/{severity}")
-            return combinations
+            return [f"{wt['wound_type']}/{sev}" for wt in wound_types for sev in wt.get("severities", [])]
         except Exception as e:
-            logger.warning(
-                f"[COMBINATIONS] Không thể lấy các kết hợp: {e}"
-            )
+            logger.warning(f"[COMBINATIONS] Error: {e}")
             return []
+
+    async def get_first_aid_guide(self, wound_type: str, severity: str, sub_type: Optional[str] = None) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
+        """Get first aid guide for specific wound type and severity"""
+        try:
+            logger.info(f"[FIRSTAID_GUIDE] {wound_type}/{severity}, sub_type: {sub_type}")
+            guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity, sub_type)
+
+            if not guide:
+                logger.warning(f"[FIRSTAID_GUIDE] Not found: {wound_type}/{severity}")
+                error_msg = Message.FIRSTAID_GUIDE_NOT_FOUND_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_NOT_FOUND_FOR_MSG
+                
+                return ErrorResponse(
+                    message=self._format_message(error_msg, wound_type, severity, sub_type),
+                    error_code=ErrorCode.FIRSTAID_GUIDE_NOT_FOUND,
+                    error_details={
+                        "wound_type": wound_type, "severity": severity, "sub_type": sub_type,
+                        "available_types": await self._get_available_combinations()
+                    },
+                    status_code=status.HTTP_404_NOT_FOUND
+                )
+
+            guide_response = self._create_guide_response(guide, wound_type, severity)
+            logger.info(f"[FIRSTAID_GUIDE] Success: {guide.get('firstaidguide_id')}")
+            
+            return SuccessResponse(
+                message=self._format_message(Message.FIRSTAID_GUIDE_FOUND_FOR_MSG, wound_type, severity, sub_type),
+                data=guide_response
+            )
+        except Exception as e:
+            logger.error(f"[FIRSTAID_GUIDE] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.FIRSTAID_GUIDE_ERROR_MSG, error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    async def get_available_wound_types(self) -> Union[SuccessResponse[List[WoundTypeResponse]], ErrorResponse]:
+        """Get all available wound types"""
+        try:
+            logger.info("[WOUND_TYPES] Fetching available wound types")
+            wound_types = await self.first_aid_service.get_available_wound_types()
+            wound_type_responses = [WoundTypeResponse(**wt) for wt in wound_types]
+            
+            logger.info(f"[WOUND_TYPES] Success: {len(wound_type_responses)} types")
+            return SuccessResponse(message=Message.WOUND_TYPES_SUCCESS_MSG, data=wound_type_responses)
+        except Exception as e:
+            logger.error(f"[WOUND_TYPES] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.WOUND_TYPES_ERROR_MSG, error_code=ErrorCode.WOUND_TYPES_ERROR,
+                error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    async def search_first_aid_guides(self, wound_type: Optional[str] = None, severity: Optional[str] = None,
+                                     limit: int = 20, offset: int = 0) -> Union[SuccessResponse[List[FirstAidGuideResponse]], ErrorResponse]:
+        """Search first aid guides with filters"""
+        try:
+            logger.info(f"[SEARCH_GUIDES] wound_type: {wound_type}, severity: {severity}, limit: {limit}")
+            guides = await self.first_aid_service.search_first_aid_guides(wound_type, severity, limit)
+            
+            guide_responses = [
+                self._create_guide_response(g, g.get("wound_type", ""), g.get("severity", ""))
+                for g in guides
+            ]
+            
+            logger.info(f"[SEARCH_GUIDES] Success: {len(guide_responses)} guides")
+            return SuccessResponse(
+                message=Message.FIRSTAID_GUIDES_FOUND_COUNT_MSG.format(count=len(guide_responses)),
+                data=guide_responses
+            )
+        except Exception as e:
+            logger.error(f"[SEARCH_GUIDES] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.FIRSTAID_SEARCH_ERROR_MSG, error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
+                error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    async def get_statistics(self) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
+        """Get statistics about first aid knowledge base"""
+        try:
+            logger.info("[STATISTICS] Fetching statistics")
+            stats = await self.first_aid_service.get_guide_statistics()
+            
+            logger.info(f"[STATISTICS] Success - Total guides: {stats.get('total_guides', 0)}")
+            return SuccessResponse(message=Message.FIRSTAID_STATISTICS_SUCCESS_MSG, data=stats)
+        except Exception as e:
+            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.FIRSTAID_STATISTICS_ERROR_MSG, error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
+                error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    async def validate_guide_availability(self, wound_type: str, severity: str, 
+                                         sub_type: Optional[str] = None) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
+        """Check availability of first aid guide"""
+        try:
+            logger.info(f"[VALIDATE] {wound_type}/{severity}, sub_type: {sub_type}")
+            guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity, sub_type)
+
+            if guide:
+                success_msg = Message.FIRSTAID_GUIDE_AVAILABLE_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_AVAILABLE_FOR_MSG
+                logger.info(f"[VALIDATE] Available: {guide.get('firstaidguide_id')}")
+                
+                return SuccessResponse(
+                    message=self._format_message(success_msg, wound_type, severity, sub_type),
+                    data={
+                        "available": True,
+                        "guide_id": guide.get("firstaidguide_id"),
+                        "sub_type": guide.get("sub_type"),
+                        "version": guide.get("version"),
+                        "last_updated": guide.get("updated_at")
+                    }
+                )
+            else:
+                # Get alternatives
+                available_types = await self.first_aid_service.get_available_wound_types()
+                alternatives = [
+                    f"{wt['wound_type']}/{sev}"
+                    for wt in available_types
+                    for sev in wt.get("severities", [])
+                    if not (wt["wound_type"] == wound_type and sev == severity)
+                ]
+                
+                not_avail_msg = Message.FIRSTAID_GUIDE_NOT_AVAILABLE_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_NOT_AVAILABLE_FOR_MSG
+                logger.info(f"[VALIDATE] Not available, {len(alternatives)} alternatives")
+                
+                return SuccessResponse(
+                    message=self._format_message(not_avail_msg, wound_type, severity, sub_type),
+                    data={
+                        "available": False,
+                        "alternatives": alternatives[:5],
+                        "total_alternatives": len(alternatives)
+                    }
+                )
+        except Exception as e:
+            logger.error(f"[VALIDATE] Error: {e}", exc_info=True)
+            return ErrorResponse(
+                message=Message.FIRSTAID_VALIDATION_ERROR_MSG, error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
+                error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

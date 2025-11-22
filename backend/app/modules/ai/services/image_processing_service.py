@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 import asyncio
 from fastapi import UploadFile, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -22,7 +23,10 @@ from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
+<<<<<<< HEAD
 from app.modules.audit.services.audit_service import AuditService
+=======
+>>>>>>> my-temp-changes
 
 import logging
 logger = logging.getLogger(__name__)
@@ -169,6 +173,15 @@ class ImageProcessingService:
                 status_code=status.HTTP_201_CREATED
             )
             
+        except HTTPException as e:
+            logger.error(
+                f"[PROCESS_SINGLE] HTTPException for '{file.filename}': {e.detail}"
+            )
+            return ErrorResponse(
+                message=e.message,
+                error_code=e.error_code or ErrorCode.AI_ANALYSIS_ERROR,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
             await self.audit_service.log_event(
                 action="wound_analysis_failed",

@@ -20,10 +20,7 @@ class GuestController:
         user_agent: Optional[str] = None
     ) -> SuccessResponse:
         """
-        Tạo guest session mới.
-        
-        Returns:
-            SuccessResponse với session data bao gồm session_id
+        Tạo guest session mới
         """
         session = await self.guest_service.create_guest_session(
             ip_address=ip_address,
@@ -51,16 +48,7 @@ class GuestController:
         session_id: uuid.UUID
     ) -> SuccessResponse:
         """
-        Lấy thông tin guest session.
-        
-        Args:
-            session_id: UUID của session
-            
-        Returns:
-            SuccessResponse với thông tin session
-            
-        Raises:
-            HTTPException 404: Nếu session không tồn tại
+        Lấy thông tin guest session
         """
         session = await self.guest_service.get_guest_session(session_id)
         
@@ -74,10 +62,7 @@ class GuestController:
     
     async def get_guest_statistics(self) -> SuccessResponse:
         """
-        Lấy thống kê guest activities (admin).
-        
-        Returns:
-            SuccessResponse với statistics data
+        Lấy thống kê guest activities (admin)
         """
         stats = await self.guest_service.get_guest_statistics()
         

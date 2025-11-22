@@ -9,7 +9,7 @@ from app.modules.audit.schemas.audit_schemas import (
     AuditStatsResponse,
     AuditLogFilterParams
 )
-from app.api.v1.deps import require_permission
+from app.core.dependencies import require_permission
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
 router = APIRouter(prefix="/audit")

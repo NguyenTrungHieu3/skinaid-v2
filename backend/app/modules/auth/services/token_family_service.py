@@ -7,50 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-async def create_token_family(
-    db: AsyncSession,
-    user_id: str,
-    refresh_jti: str,
-    access_jti: str,
-    refresh_exp: datetime,
-    parent_jti: Optional[str] = None
-) -> None:
-    return await TokenFamilyService.create_token_family(
-        db=db,
-        user_id=user_id,
-        refresh_jti=refresh_jti,
-        access_jti=access_jti,
-        refresh_exp=refresh_exp,
-        parent_jti=parent_jti
-    )
-
-
-async def check_token_family_revoked(
-    db: AsyncSession,
-    refresh_jti: str
-) -> bool:
-    return await TokenFamilyService.check_token_family_revoked(
-        db=db,
-        refresh_jti=refresh_jti
-    )
-
-
-async def revoke_token_family(
-    db: AsyncSession,
-    jti: str
-) -> int:
-    return await TokenFamilyService.revoke_token_family(
-        db=db,
-        jti=jti
-    )
-
-
-async def revoke_entire_chain(db: AsyncSession, refresh_jti: str) -> int:
-    return await TokenFamilyService.revoke_entire_chain(
-        db=db,
-        refresh_jti=refresh_jti
-    )
-
 
 class TokenFamilyService:
     

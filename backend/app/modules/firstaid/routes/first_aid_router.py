@@ -10,7 +10,7 @@ from app.modules.firstaid.schemas.first_aid_schemas import (
     CreateFirstAidGuideRequest,
     UpdateFirstAidGuideRequest
 )
-from app.api.v1.deps import get_db, require_auth, allow_guest, require_admin
+from app.core.dependencies import get_db, require_auth, allow_guest, require_admin
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 
 router = APIRouter(prefix="/first-aid")

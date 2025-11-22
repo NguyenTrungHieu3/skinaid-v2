@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union
+from typing import Union, Optional
 from pydantic import BaseModel
 from datetime import datetime, timezone
 
@@ -21,8 +21,9 @@ from app.modules.auth.schemas.user_schemas import (
 from app.modules.auth.models.user import User
 from app.modules.auth.schemas.token_schemas import TokenResponse
 from app.modules.auth.controllers.auth_controller import AuthController
-from app.api.v1.deps import get_db, get_current_active_user, get_token
+from app.core.dependencies import get_db, get_current_active_user, get_token
 from app.core.Security.jwt import JWTHandler
+from app.modules.audit.services.audit_service import AuditService
 
 jwt_handler = JWTHandler()
 
@@ -48,11 +49,38 @@ async def get_auth_controller(db: AsyncSession = Depends(get_db)) -> AuthControl
     summary="Đăng ký user mới",
 )
 async def register_user(
+    request: Request,
     user_data: UserCreate,
     controller: AuthController = Depends(get_auth_controller),
+    db: AsyncSession = Depends(get_db),
 ):
     """Đăng ký tài khoản mới. Sau khi đăng ký sẽ gửi email xác thực."""
-    return handle_controller_response(await controller.register_user(user_data))
+    result = await controller.register_user(user_data)
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    if isinstance(result, SuccessResponse):
+        await audit_service.log_event(
+            action="register",
+            user_id=result.data.user_id,
+            success=True,
+            resource_type="user",
+            resource_id=str(result.data.user_id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            details={"email": user_data.email, "user_name": user_data.user_name}
+        )
+    else:
+        await audit_service.log_event(
+            action="register",
+            success=False,
+            error_message=result.message,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            details={"email": user_data.email}
+        )
+    
+    return handle_controller_response(result)
 
 @router.post(
     "/signin",
@@ -60,11 +88,38 @@ async def register_user(
     summary="Đăng nhập",
 )
 async def login_user(
+    request: Request,
     credentials: UserLogin,
     controller: AuthController = Depends(get_auth_controller),
+    db: AsyncSession = Depends(get_db),
 ):
     """Đăng nhập hệ thống và trả về token xác thực."""
-    return handle_controller_response(await controller.login_user(credentials))
+    result = await controller.login_user(credentials)
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    if isinstance(result, SuccessResponse):
+        await audit_service.log_event(
+            action="login",
+            user_id=result.data.user.user_id,
+            success=True,
+            resource_type="user",
+            resource_id=str(result.data.user.user_id),
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            details={"user_name": credentials.user_name}
+        )
+    else:
+        await audit_service.log_event(
+            action="login",
+            success=False,
+            error_message=result.message,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            details={"attempted_username": credentials.user_name}
+        )
+    
+    return handle_controller_response(result)
 
 @router.get(
     "/me",
@@ -117,11 +172,27 @@ async def request_password_reset(
     summary="Xác nhận đặt lại mật khẩu",
 )
 async def confirm_password_reset(
+    request: Request,
     reset_data: PasswordResetConfirm,
     controller: AuthController = Depends(get_auth_controller),
+    db: AsyncSession = Depends(get_db),
 ):
     """Xác nhận đặt lại mật khẩu với token từ email."""
-    return handle_controller_response(await controller.reset_password(reset_data))
+    result = await controller.reset_password(reset_data)
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    await audit_service.log_event(
+        action="password_reset",
+        success=isinstance(result, SuccessResponse),
+        resource_type="user",
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        details={"email": reset_data.email},
+        error_message=result.message if isinstance(result, ErrorResponse) else None
+    )
+    
+    return handle_controller_response(result)
 
 
 @router.get(
@@ -153,11 +224,32 @@ async def refresh_token(
     summary="Đăng xuất",
 )
 async def logout_user(
+    request: Request,
     token: str = Depends(get_token),
     controller: AuthController = Depends(get_auth_controller),
+    db: AsyncSession = Depends(get_db),
 ):
     """Đăng xuất khỏi hệ thống và vô hiệu hóa token."""
-    return handle_controller_response(await controller.logout_user(token))
+    result = await controller.logout_user(token)
+    
+    # Audit logging - extract user_id from token
+    audit_service = AuditService(db)
+    try:
+        payload = jwt_handler.decode_token(token, verify_exp=False)
+        user_id = payload.get("sub")
+        await audit_service.log_event(
+            action="logout",
+            user_id=user_id,
+            success=True,
+            resource_type="user",
+            resource_id=user_id,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent")
+        )
+    except:
+        pass  # Token invalid, skip audit
+    
+    return handle_controller_response(result)
 
 @router.post(
     "/logout-all-devices",
@@ -179,12 +271,29 @@ async def logout_all_devices(
     summary="Thay đổi mật khẩu (auto logout all devices)"
 )
 async def change_password(
+    request: Request,
     password_data: ChangePasswordRequest,
     controller: AuthController = Depends(get_auth_controller),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Thay đổi mật khẩu tài khoản (đã đăng nhập)."""
-    return handle_controller_response(await controller.change_password(current_user, password_data))
+    result = await controller.change_password(current_user, password_data)
+    
+    # Audit logging
+    audit_service = AuditService(db)
+    await audit_service.log_event(
+        action="change_password",
+        user_id=current_user.user_id,
+        success=isinstance(result, SuccessResponse),
+        resource_type="user",
+        resource_id=str(current_user.user_id),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        error_message=result.message if isinstance(result, ErrorResponse) else None
+    )
+    
+    return handle_controller_response(result)
 
 # ============= Email Verification Endpoints =============
 # @router.post(

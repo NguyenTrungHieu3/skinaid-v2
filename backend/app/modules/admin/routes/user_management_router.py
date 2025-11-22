@@ -12,7 +12,7 @@ from app.modules.admin.schemas.user_management_schemas import (
     UserDetailResponse,
     UserStatsResponse
 )
-from app.api.v1.deps import get_db, require_admin
+from app.core.dependencies import get_db, require_admin
 from app.modules.auth.models.user import User
 from app.core.rate_limit import limiter
 

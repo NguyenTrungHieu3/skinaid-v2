@@ -18,13 +18,19 @@ apiClient.interceptors.request.use(
     // 2. Nếu có token, gắn nó vào header
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // 3. Nếu KHÔNG có token (guest user), gửi session_id
+      const sessionId = localStorage.getItem("guest_session_id");
+      if (sessionId) {
+        config.headers["X-Session-ID"] = sessionId;
+      }
     }
 
-    // 3. KHÔNG làm gì với 'Content-Type' cả.
+    // 4. KHÔNG làm gì với 'Content-Type' cả.
     // Xóa bỏ toàn bộ logic "if (config.data instanceof FormData)..."
     // Hãy để Axios tự động xử lý.
 
-    return config; // 4. Trả về config đã cập nhật
+    return config; // 5. Trả về config đã cập nhật
   },
   (error) => {
     // Trả về lỗi nếu có

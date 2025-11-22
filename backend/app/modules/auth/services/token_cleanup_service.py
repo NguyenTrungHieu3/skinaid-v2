@@ -7,7 +7,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TokenCleanupService:
-    """Service quản lý cleanup tokens"""
     
     @staticmethod
     async def cleanup_old_verification_tokens(db: AsyncSession) -> int:
