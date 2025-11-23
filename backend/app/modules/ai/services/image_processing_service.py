@@ -152,9 +152,10 @@ class ImageProcessingService:
                 f"[PROCESS_SINGLE] HTTPException for '{file.filename}': {e.detail}"
             )
             return ErrorResponse(
-                message=e.message,
-                error_code=e.error_code or ErrorCode.AI_ANALYSIS_ERROR,
-                status_code=status.HTTP_400_BAD_REQUEST
+                message=str(e.detail),
+                error_code=ErrorCode.AI_ANALYSIS_ERROR,
+                error_details={"error": str(e.detail)},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error(

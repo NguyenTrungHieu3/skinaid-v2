@@ -1,7 +1,7 @@
 import logging
 from typing import Union
 from datetime import datetime
-from fastapi import status
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.audit.services.audit_service import AuditService
 from app.modules.audit.schemas.audit_schemas import (
@@ -71,6 +71,14 @@ class AuditController:
                 message=Message.AUDIT_LOGS_SUCCESS_MSG,
                 data=response_data
             )
+        except HTTPException as e:
+            logger.warning(f"[GET_AUDIT_LOGS] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.AUDIT_LOGS_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(
                 f"[GET_AUDIT_LOGS] Unexpected error: {str(e)}",
@@ -110,6 +118,14 @@ class AuditController:
             return SuccessResponse(
                 message=Message.AUDIT_STATS_SUCCESS_MSG,
                 data=response_data
+            )
+        except HTTPException as e:
+            logger.warning(f"[GET_AUDIT_STATS] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.AUDIT_STATS_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error(

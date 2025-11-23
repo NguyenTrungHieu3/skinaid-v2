@@ -96,6 +96,14 @@ class FirstAidController:
                 message=self._format_message(Message.FIRSTAID_GUIDE_FOUND_FOR_MSG, wound_type, severity, sub_type),
                 data=guide_response
             )
+        except HTTPException as e:
+            logger.warning(f"[FIRSTAID_GUIDE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[FIRSTAID_GUIDE] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -112,6 +120,14 @@ class FirstAidController:
             
             logger.info(f"[WOUND_TYPES] Success: {len(wound_type_responses)} types")
             return SuccessResponse(message=Message.WOUND_TYPES_SUCCESS_MSG, data=wound_type_responses)
+        except HTTPException as e:
+            logger.warning(f"[WOUND_TYPES] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.WOUND_TYPES_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[WOUND_TYPES] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -144,6 +160,14 @@ class FirstAidController:
                 data=guide_responses,
                 total=total_count
             )
+        except HTTPException as e:
+            logger.warning(f"[SEARCH_GUIDES] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[SEARCH_GUIDES] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -159,6 +183,14 @@ class FirstAidController:
             
             logger.info(f"[STATISTICS] Success - Total guides: {stats.get('total_guides', 0)}")
             return SuccessResponse(message=Message.FIRSTAID_STATISTICS_SUCCESS_MSG, data=stats)
+        except HTTPException as e:
+            logger.warning(f"[STATISTICS] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -208,6 +240,14 @@ class FirstAidController:
                         "total_alternatives": len(alternatives)
                     }
                 )
+        except HTTPException as e:
+            logger.warning(f"[VALIDATE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[VALIDATE] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -235,6 +275,14 @@ class FirstAidController:
             return SuccessResponse(
                 message="Tạo hướng dẫn sơ cứu thành công",
                 data=guide_response
+            )
+        except HTTPException as e:
+            logger.warning(f"[CREATE_GUIDE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except ValueError as e:
             logger.warning(f"[CREATE_GUIDE] Validation error: {e}")
@@ -273,6 +321,14 @@ class FirstAidController:
                 message="Lấy hướng dẫn sơ cứu thành công",
                 data=guide_response
             )
+        except HTTPException as e:
+            logger.warning(f"[GET_GUIDE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[GET_GUIDE] Error: {e}", exc_info=True)
             return ErrorResponse(
@@ -302,6 +358,14 @@ class FirstAidController:
             return SuccessResponse(
                 message="Cập nhật hướng dẫn sơ cứu thành công",
                 data=guide_response
+            )
+        except HTTPException as e:
+            logger.warning(f"[UPDATE_GUIDE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except ValueError as e:
             logger.warning(f"[UPDATE_GUIDE] Validation error: {e}")
@@ -339,6 +403,14 @@ class FirstAidController:
             return SuccessResponse(
                 message=f"Xóa hướng dẫn sơ cứu {delete_type} thành công",
                 data={"guide_id": str(guide_id), "hard_delete": hard_delete}
+            )
+        except HTTPException as e:
+            logger.warning(f"[DELETE_GUIDE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error(f"[DELETE_GUIDE] Error: {e}", exc_info=True)

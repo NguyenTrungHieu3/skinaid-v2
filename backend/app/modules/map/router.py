@@ -32,6 +32,20 @@ async def get_ip_location():
     return await map_controller.get_user_location_from_ip()
 
 
+@router.get(
+    "/location",
+    response_model=LocationResponse,
+    summary="Lấy vị trí từ IP (alias)",
+    description="Alias endpoint for /ip-location for backward compatibility"
+)
+async def get_location():
+    """
+    Alias for get_ip_location - backward compatibility
+    """
+    logger.info("[MAP_API] GET /location (alias for /ip-location)")
+    return await map_controller.get_user_location_from_ip()
+
+
 @router.post(
     "/nearby-places",
     response_model=List[PlaceResponse],
@@ -44,6 +58,23 @@ async def find_nearby_places(request: NearbyPlacesRequest):
     """
     logger.info(
         f"[MAP_API] POST /nearby-places: "
+        f"category={request.category}, radius={request.radius}m"
+    )
+    return await map_controller.find_nearby_healthcare_facilities(request)
+
+
+@router.post(
+    "/nearby",
+    response_model=List[PlaceResponse],
+    summary="Tìm địa điểm gần đây (alias)",
+    description="Alias endpoint for /nearby-places for backward compatibility"
+)
+async def find_nearby(request: NearbyPlacesRequest):
+    """
+    Alias for find_nearby_places - backward compatibility
+    """
+    logger.info(
+        f"[MAP_API] POST /nearby (alias): "
         f"category={request.category}, radius={request.radius}m"
     )
     return await map_controller.find_nearby_healthcare_facilities(request)

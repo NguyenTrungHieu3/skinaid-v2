@@ -61,7 +61,7 @@ class WoundAnalysis(SQLModel, table=True):
 
     @property
     def average_confidence(self) -> float:
-        if not hasattr(self, 'wound_detactions') or not self.wound_detections:
+        if not hasattr(self, 'wound_detections') or not self.wound_detections:
             return 0.0
         try:
             total = sum(d.confidence_score for d in self.wound_detections)

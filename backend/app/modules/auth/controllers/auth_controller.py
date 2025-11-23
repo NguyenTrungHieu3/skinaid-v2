@@ -49,6 +49,14 @@ class AuthController:
                 data=self._build_user_response(user),
                 status_code=status.HTTP_201_CREATED
             )
+        except HTTPException as e:
+            logger.warning("[REGISTER] Validation error: %s", e.detail)
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.USER_INVALID_DATA,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error("[REGISTER] Error: %s", e, exc_info=True)
             return ErrorResponse(

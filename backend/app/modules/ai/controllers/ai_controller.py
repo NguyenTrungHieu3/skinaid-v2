@@ -80,6 +80,14 @@ class AIController:
             )
             logger.info(f"[GET_HISTORY] Success: {len(analyses)} analyses")
             return SuccessResponse(message=Message.AI_HISTORY_SUCCESS_MSG, data=response_data, total=len(analyses))
+        except HTTPException as e:
+            logger.warning(f"[GET_HISTORY] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.AI_HISTORY_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[GET_HISTORY] Error", exc_info=True)
             return ErrorResponse(
@@ -108,6 +116,14 @@ class AIController:
             response_data = self.response_mapper.map_wound_analysis(analysis, include_detections=True)
             logger.info(f"[GET_DETAIL] Success: {analysis_id}")
             return SuccessResponse(message=Message.AI_DETAIL_SUCCESS_MSG, data=response_data)
+        except HTTPException as e:
+            logger.warning(f"[GET_DETAIL] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.AI_DETAIL_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
+            )
         except Exception as e:
             logger.error(f"[GET_DETAIL] Error", exc_info=True)
             return ErrorResponse(
@@ -138,6 +154,14 @@ class AIController:
             return SuccessResponse(
                 message=Message.AI_DELETE_SUCCESS_MSG,
                 data={"analysis_id": str(analysis_id), "deleted": True}
+            )
+        except HTTPException as e:
+            logger.warning(f"[DELETE_ANALYSIS] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.AI_DELETE_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error(f"[DELETE_ANALYSIS] Error", exc_info=True)
@@ -176,6 +200,14 @@ class AIController:
             return SuccessResponse(
                 message=f"Đã phân tích {batch_response.successful}/{batch_response.total_files} ảnh thành công",
                 data=batch_response
+            )
+        except HTTPException as e:
+            logger.warning(f"[BATCH_ANALYZE] HTTPException: {e.detail}")
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.INTERNAL_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error(f"[BATCH_ANALYZE] Error", exc_info=True)

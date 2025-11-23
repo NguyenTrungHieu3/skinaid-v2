@@ -73,14 +73,17 @@ class GuestService:
         active_sessions_result = await self.db.execute(active_sessions_sql)
         active_sessions = active_sessions_result.scalar() or 0
 
-        total_uploads_sql = text("SELECT COUNT(*) as total FROM guest_uploads WHERE is_deleted = false")
+        # Total uploads (sum of upload_count from all sessions)
+        total_uploads_sql = text("SELECT COALESCE(SUM(upload_count), 0) as total FROM guest_sessions")
         total_uploads_result = await self.db.execute(total_uploads_sql)
         total_uploads = total_uploads_result.scalar() or 0
 
-        total_analyses_sql = text("SELECT COUNT(*) as total FROM guest_analyses WHERE is_deleted = false")
+        # Total analyses (sum of analysis_count from all sessions)
+        total_analyses_sql = text("SELECT COALESCE(SUM(analysis_count), 0) as total FROM guest_sessions")
         total_analyses_result = await self.db.execute(total_analyses_sql)
         total_analyses = total_analyses_result.scalar() or 0
 
+        # Converted users
         converted_users_sql = text("SELECT COUNT(*) as converted FROM guest_sessions WHERE is_converted_to_user = true")
         converted_users_result = await self.db.execute(converted_users_sql)
         converted_users = converted_users_result.scalar() or 0
@@ -96,8 +99,8 @@ class GuestService:
         return {
             "total_sessions": total_sessions,
             "active_sessions": active_sessions,
-            "total_uploads": total_uploads,
-            "total_analyses": total_analyses,
+            "total_uploads": int(total_uploads),
+            "total_analyses": int(total_analyses),
             "converted_users": converted_users,
             "average_session_duration": round(avg_duration, 2)
         }
