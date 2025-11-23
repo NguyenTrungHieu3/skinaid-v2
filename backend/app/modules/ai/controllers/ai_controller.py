@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 class AIController:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self.audit_service = AuditService(db)
         self.image_processor = ImageProcessingService(db)
         self.analysis_service = WoundAnalysisService(db)
         self.response_mapper = ResponseMapper()
@@ -45,13 +44,13 @@ class AIController:
 
     def _check_access(self, analysis, user_id: Optional[UUID], session_id: Optional[UUID]) -> Optional[ErrorResponse]:
         """Check if user/session has access to analysis"""
-        if user_id and analysis.user_id and UUID(user_id) != analysis.user_id:
+        if user_id and analysis.user_id and user_id != analysis.user_id:
             return ErrorResponse(
                 message=Message.AI_ACCESS_DENIED_MSG,
                 error_code=ErrorCode.AI_ACCESS_DENIED,
                 status_code=status.HTTP_403_FORBIDDEN
             )
-        if session_id and analysis.session_id and UUID(session_id) != analysis.session_id:
+        if session_id and analysis.session_id and session_id != analysis.session_id:
             return ErrorResponse(
                 message=Message.AI_ACCESS_DENIED_MSG,
                 error_code=ErrorCode.AI_ACCESS_DENIED,
@@ -80,7 +79,7 @@ class AIController:
                 events=[self.response_mapper.map_wound_analysis(a, include_detections=False) for a in analyses]
             )
             logger.info(f"[GET_HISTORY] Success: {len(analyses)} analyses")
-            return SuccessResponse(message=Message.AI_HISTORY_SUCCESS_MSG, data=response_data)
+            return SuccessResponse(message=Message.AI_HISTORY_SUCCESS_MSG, data=response_data, total=len(analyses))
         except Exception as e:
             logger.error(f"[GET_HISTORY] Error", exc_info=True)
             return ErrorResponse(

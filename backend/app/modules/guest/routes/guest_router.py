@@ -40,9 +40,9 @@ async def create_guest_session(
             action="create_guest_session",
             success=True,
             resource_type="guest_session",
-            resource_id=str(result.data.session_id),
+            resource_id=str(result.data["session_id"]),
             is_guest=True,
-            guest_session_id=result.data.session_id,
+            guest_session_id=result.data["session_id"],
             ip_address=ip_address,
             user_agent=user_agent
         )

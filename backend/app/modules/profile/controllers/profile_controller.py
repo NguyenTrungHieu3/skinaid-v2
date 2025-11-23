@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 class ProfileController:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.audit_service = AuditService(db)
         self.profile_service = ProfileService(db)
 
     def _handle_http_exception(self, e: HTTPException, user_id: Optional[uuid.UUID] = None) -> ErrorResponse:

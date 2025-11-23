@@ -23,10 +23,6 @@ from app.modules.firstaid.services.first_aid_service import FirstAidService
 
 from app.utils.constants import error_codes as ErrorCode
 from app.utils.constants import messages as Message
-<<<<<<< HEAD
-from app.modules.audit.services.audit_service import AuditService
-=======
->>>>>>> my-temp-changes
 
 import logging
 logger = logging.getLogger(__name__)
@@ -35,14 +31,7 @@ logger = logging.getLogger(__name__)
 class ImageProcessingService:
     
     def __init__(self, db: AsyncSession):
-        """
-        Initialize service với database session.
-        
-        Args:
-            db: AsyncSession để thao tác với database
-        """
         self.db = db
-        self.audit_service = AuditService(db)
         self.validator = FileValidator()
         self.file_service = FileService()
         self.ai_service = WoundAIService()
@@ -145,21 +134,6 @@ class ImageProcessingService:
             await self.db.commit()
             await self.db.refresh(analysis, ['wound_detections'])
             
-            await self.audit_service.log_event(
-                action="wound_analysis_completed",
-                user_id=user_id,
-                resource_type="wound_analysis",
-                resource_id=str(analysis.analysis_id),
-                is_guest=(session_id is not None),
-                guest_session_id=session_id,
-                success=True,
-                details={
-                    "total_detections": analysis.total_detections,
-                    "processing_time_ms": analysis.processing_time_ms,
-                    "file_name": file.filename
-                }
-            )
-            
             response_data = self.response_mapper.map_wound_analysis_basic(analysis)
             
             logger.debug(
@@ -183,17 +157,6 @@ class ImageProcessingService:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            await self.audit_service.log_event(
-                action="wound_analysis_failed",
-                user_id=user_id,
-                resource_type="wound_analysis",
-                is_guest=(session_id is not None),
-                guest_session_id=session_id,
-                success=False,
-                error_message=str(e),
-                details={"file_name": file.filename}
-            )
-            
             logger.error(
                 f"[PROCESS_SINGLE] Unexpected error for '{file.filename}'",
                 exc_info=True

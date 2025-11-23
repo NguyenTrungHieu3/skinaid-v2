@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Union, Optional, List
 import uuid
 
-from fastapi import status
+from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
@@ -36,7 +36,7 @@ class AuthController:
             phone=user.profile.phone if user.profile else None,
             gender=user.profile.gender if user.profile else None,
             avatar_url=user.profile.avatar_url if user.profile else None,
-            roles=roles
+            roles=roles if roles is not None else []
         )
 
     async def register_user(self, user_data: UserCreate) -> Union[SuccessResponse[UserResponse], ErrorResponse]:
@@ -81,11 +81,11 @@ class AuthController:
                     user=self._build_user_response(user, user_roles)
                 )
             )
-        except ValueError as e:
-            logger.warning("[LOGIN] Auth failed: %s", e)
+        except HTTPException as e:
+            logger.warning("[LOGIN] Auth failed: %s", e.detail)
             return ErrorResponse(
-                message=str(e), error_code=ErrorCode.AUTH_INVALID_CREDENTIALS,
-                error_details={"error": str(e)}, status_code=status.HTTP_401_UNAUTHORIZED
+                message=e.detail, error_code=ErrorCode.AUTH_INVALID_CREDENTIALS,
+                error_details={"error": e.detail}, status_code=e.status_code
             )
         except Exception as e:
             logger.error("[LOGIN] Error: %s", e, exc_info=True)
@@ -126,6 +126,14 @@ class AuthController:
                 message=Message.AUTH_RESET_PASSWORD_FAILED_MSG,
                 error_code=ErrorCode.PASSWORD_RESET_ERROR,
                 status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except HTTPException as e:
+            logger.warning("[RESET_PASSWORD] Validation error: %s", e.detail)
+            return ErrorResponse(
+                message=e.detail,
+                error_code=ErrorCode.PASSWORD_RESET_ERROR,
+                error_details={"error": e.detail},
+                status_code=e.status_code
             )
         except Exception as e:
             logger.error("[RESET_PASSWORD] Error", exc_info=True)
