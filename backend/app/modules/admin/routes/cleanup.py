@@ -143,7 +143,6 @@ async def admin_revoke_user_tokens(
     if not result["success"]:
         return ErrorResponse(
             message=result["message"],
-            error_code="USER_NOT_FOUND",
             status_code=404
         )
     

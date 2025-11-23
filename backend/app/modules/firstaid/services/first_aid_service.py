@@ -378,7 +378,6 @@ class FirstAidService:
                 donts=donts_jsonb,
                 supplies_needed=supplies_jsonb,
                 estimated_healing_time=guide_data.get("estimated_healing_time"),
-                source=guide_data.get("source"),
                 created_by=str(created_by) if created_by else None
             )
 
@@ -455,7 +454,7 @@ class FirstAidService:
             # Whitelist of allowed fields to prevent SQL injection
             allowed_fields = {
                 "title", "description", "steps", "warnings", "dos", 
-                "donts", "supplies_needed", "estimated_healing_time", "is_active", "source"
+                "donts", "supplies_needed", "estimated_healing_time", "is_active"
             }
             
             # Prepare update fields
@@ -499,9 +498,6 @@ class FirstAidService:
                 update_fields.append("estimated_healing_time = :estimated_healing_time")
                 params["estimated_healing_time"] = update_data["estimated_healing_time"]
             
-            if "source" in update_data and "source" in allowed_fields:
-                update_fields.append("source = :source")
-                params["source"] = update_data["source"]
             
             if "is_active" in update_data and "is_active" in allowed_fields:
                 update_fields.append("is_active = :is_active")
@@ -613,7 +609,6 @@ class FirstAidService:
             "donts": FirstAidGuide.extract_list(guide.donts),
             "supplies_needed": FirstAidGuide.extract_list(guide.supplies_needed),
             "estimated_healing_time": guide.estimated_healing_time,
-            "source": guide.source,
             "is_active": guide.is_active,
             "version": guide.version,
             "created_by": str(guide.created_by) if guide.created_by else None,

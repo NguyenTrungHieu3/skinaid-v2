@@ -126,10 +126,16 @@ async def login_user(
     response_model=SuccessResponse[UserResponse],
     summary="Thông tin user hiện tại",
 )
-async def read_users_me(current_user: User = Depends(get_current_active_user)):
+async def read_users_me(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db)
+):
     """Lấy thông tin cá nhân của user hiện tại."""
-    # Lấy roles từ user_roles relationship
-    roles = [user_role.role.role_name for user_role in current_user.user_roles if user_role.role]
+    # Import get_user_roles helper
+    from app.core.dependencies.user import get_user_roles
+    
+    # Lấy roles từ database (KHÔNG THỂ dùng user_roles relationship vì không được eager load)
+    roles = await get_user_roles(db, str(current_user.user_id))
     
     user_response = UserResponse(
         user_id=current_user.user_id,
@@ -144,7 +150,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
         phone=current_user.profile.phone if current_user.profile else None,
         gender=current_user.profile.gender if current_user.profile else None,
         avatar_url=current_user.profile.avatar_url if current_user.profile else None,
-        roles=roles  # Thêm roles vào response
+        roles=roles  # Roles từ get_user_roles helper
     )
 
     return SuccessResponse(

@@ -76,7 +76,6 @@ def raise_if_validation_fails(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=validation_result,
-            error_code=error_code,
         )
 
 async def send_email_async(

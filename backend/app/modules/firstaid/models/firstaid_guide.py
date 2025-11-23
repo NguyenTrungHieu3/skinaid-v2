@@ -31,7 +31,6 @@ class FirstAidGuide(SQLModel, table=True):
     supplies_needed: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
 
     estimated_healing_time: Optional[str] = None
-    source: Optional[str] = None
     is_active: bool = Field(default=True, index=True)
     is_deleted: bool = Field(default=False, index=True)
     version: int = Field(default=1)
@@ -64,7 +63,6 @@ class FirstAidGuide(SQLModel, table=True):
         donts: Optional[Dict[str, Any]] = None,
         supplies_needed: Optional[Dict[str, Any]] = None,
         estimated_healing_time: Optional[str] = None,
-        source: Optional[str] = None,
         is_active: bool = True,
         created_by: Optional[uuid.UUID] = None
     ) -> "FirstAidGuide":
@@ -82,7 +80,6 @@ class FirstAidGuide(SQLModel, table=True):
             donts=donts,
             supplies_needed=supplies_needed,
             estimated_healing_time=estimated_healing_time,
-            source=source,
             is_active=is_active,
             created_by=created_by,
             created_at=current_time,
@@ -128,8 +125,7 @@ class FirstAidGuide(SQLModel, table=True):
             "dos": self.extract_list(self.dos),
             "donts": self.extract_list(self.donts),
             "supplies_needed": self.extract_list(self.supplies_needed),
-            "estimated_healing_time": self.estimated_healing_time,
-            "source": self.source
+            "estimated_healing_time": self.estimated_healing_time
         }
 
     def __repr__(self) -> str:

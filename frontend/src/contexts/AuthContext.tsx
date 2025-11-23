@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       console.log("🔍 [fetchUser] API responses:", {
         authSuccess: authResponse.data.success,
-        profileSuccess: profileResponse.data.success
+        profileSuccess: profileResponse.data.success,
       });
 
       // CHỈ CẦN authResponse thành công là đủ
@@ -83,13 +83,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           };
           console.log("✅ [fetchUser] User data merged with profile");
         } else {
-          console.log("⚠️ [fetchUser] Profile API failed, using auth data only");
+          console.log(
+            "⚠️ [fetchUser] Profile API failed, using auth data only"
+          );
         }
 
         console.log("✅ [fetchUser] User authenticated successfully", {
           userId: fullUser.user_id,
           roles: fullUser.roles,
-          fullUserData: fullUser
+          fullUserData: fullUser,
         });
 
         setUser(fullUser);
@@ -111,31 +113,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
 
     const initializeAuth = async () => {
-      console.log("🔍 [AuthContext] Initializing auth...", { hasToken: !!token });
+      console.log("🔍 [AuthContext] Initializing auth...", {
+        hasToken: !!token,
+      });
 
-      if (token) {
-        try {
-          const decoded: { exp: number } = jwtDecode(token);
-          console.log("🔍 [AuthContext] Token decoded", { exp: decoded.exp, now: Date.now() / 1000 });
+      try {
+        if (token) {
+          try {
+            const decoded: { exp: number } = jwtDecode(token);
+            console.log("🔍 [AuthContext] Token decoded", {
+              exp: decoded.exp,
+              now: Date.now() / 1000,
+            });
 
-          if (decoded.exp * 1000 > Date.now()) {
-            console.log("✅ [AuthContext] Token valid, fetching user...");
-            await fetchUser(token); // Chờ fetchUser (đã sửa) chạy xong
-            console.log("✅ [AuthContext] User fetched successfully");
-          } else {
-            console.log("❌ [AuthContext] Token expired");
+            if (decoded.exp * 1000 > Date.now()) {
+              console.log("✅ [AuthContext] Token valid, fetching user...");
+              await fetchUser(token); // Chờ fetchUser (đã sửa) chạy xong
+              console.log("✅ [AuthContext] User fetched successfully");
+            } else {
+              console.log("❌ [AuthContext] Token expired");
+              logout();
+            }
+          } catch (error) {
+            console.error("❌ [AuthContext] Token không hợp lệ:", error);
             logout();
           }
-        } catch (error) {
-          console.error("❌ [AuthContext] Token không hợp lệ:", error);
-          logout();
+        } else {
+          console.log("ℹ️ [AuthContext] No token found");
         }
-      } else {
-        console.log("ℹ️ [AuthContext] No token found");
+      } finally {
+        // CRITICAL FIX: Use finally block to ensure setIsLoading(false) runs
+        // AFTER all async operations complete (success or failure)
+        console.log("🔍 [AuthContext] Setting isLoading to false");
+        setIsLoading(false);
       }
-
-      console.log("🔍 [AuthContext] Setting isLoading to false");
-      setIsLoading(false); // Báo là xong
     };
 
     initializeAuth();

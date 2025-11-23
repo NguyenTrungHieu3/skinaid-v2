@@ -8,7 +8,10 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+const ProtectedRoute = ({
+  children,
+  requireAdmin = false,
+}: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
@@ -16,16 +19,19 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
     isLoading,
     isAuthenticated,
     hasUser: !!user,
+    userRoles: user?.roles,
     requireAdmin,
-    pathname: location.pathname
+    pathname: location.pathname,
   });
 
-  // Show loading screen while checking authentication
+  // CRITICAL: Show loading screen while checking authentication
+  // This prevents premature redirects during page refresh
   if (isLoading) {
     console.log("⏳ [ProtectedRoute] Still loading, showing loading screen");
     return <div>Loading...</div>;
   }
 
+  // Only check authentication AFTER loading is complete
   if (!isAuthenticated) {
     console.log("❌ [ProtectedRoute] Not authenticated, redirecting to login");
     // Nếu chưa đăng nhập , điều hướng về /login
@@ -36,8 +42,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   // Check admin role if required
   if (requireAdmin) {
     const userRoles = user?.roles || [];
-    const isAdmin = userRoles.some((role: string) =>
-      role.toLowerCase() === 'admin'
+    const isAdmin = userRoles.some(
+      (role: string) => role.toLowerCase() === "admin"
     );
 
     console.log("🔍 [ProtectedRoute] Admin check", { userRoles, isAdmin });

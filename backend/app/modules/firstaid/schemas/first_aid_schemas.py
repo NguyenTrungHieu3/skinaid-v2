@@ -16,8 +16,8 @@ class CreateFirstAidGuideRequest(BaseModel):
     donts: Optional[List[str]] = Field(default=None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(default=None, description="Vật dụng cần thiết")
     
+    
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
-    source: Optional[str] = Field(None, max_length=255, description="Nguồn tài liệu tham khảo")
     
     @validator('wound_type')
     def validate_wound_type(cls, v):
@@ -51,7 +51,6 @@ class UpdateFirstAidGuideRequest(BaseModel):
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
     
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
-    source: Optional[str] = Field(None, max_length=255, description="Nguồn tài liệu tham khảo")
     is_active: Optional[bool] = Field(None, description="Trạng thái hoạt động")
     sub_type: Optional[str] = Field(None, description="Loại phụ")
 
@@ -71,7 +70,6 @@ class FirstAidGuideResponse(BaseModel):
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
 
     estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
-    source: Optional[str] = Field(None, description="Nguồn tài liệu tham khảo")
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
     version: int = Field(..., description="Phiên bản")
 
