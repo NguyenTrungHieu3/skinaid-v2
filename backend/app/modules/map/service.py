@@ -51,9 +51,12 @@ class GeoapifyService:
         url = f"{self.base_url}/v2/places"
 
         filter_area = f"circle:{longitude},{latitude},{radius}"
+        
+        # Map category to Geoapify format
+        geoapify_category = self._map_category_to_geoapify(category)
 
         params = {
-            "categories": category,
+            "categories": geoapify_category,
             "filter": filter_area,
             "limit": limit,
             "apiKey": self.api_key
@@ -61,7 +64,7 @@ class GeoapifyService:
 
         logger.info(
             f"[MAP_SERVICE] Tìm địa điểm: "
-            f"category={category}, "
+            f"category={category} (mapped to {geoapify_category}), "
             f"center=({latitude}, {longitude}), "
             f"radius={radius}m"
         )
@@ -95,76 +98,95 @@ class GeoapifyService:
 
         return places
 
-        async def calculate_route(
-            self,
-            start_lat: float,
-            start_lon: float,
-            end_lat: float,
-            end_lon: float,
-            mode: str = "drive"  # drive, walk, bike
-        ) -> Dict[str, Any]:
-            url = f"{self.base_url}/v1/routing"
+    async def calculate_route(
+        self,
+        start_lat: float,
+        start_lon: float,
+        end_lat: float,
+        end_lon: float,
+        mode: str = "drive"  # drive, walk, bike
+    ) -> Dict[str, Any]:
+        url = f"{self.base_url}/v1/routing"
 
-            waypoints = f"{start_lat},{start_lon}|{end_lat},{end_lon}"
+        waypoints = f"{start_lat},{start_lon}|{end_lat},{end_lon}"
 
-            params = {
-                "waypoints": waypoints,
-                "mode": mode,
-                "apiKey": self.api_key
-            }
+        params = {
+            "waypoints": waypoints,
+            "mode": mode,
+            "apiKey": self.api_key
+        }
 
-            logger.info(
-                f"[MAP_SERVICE] Tính route: "
-                f"({start_lat},{start_lon}) → ({end_lat},{end_lon}), "
-                f"mode={mode}"
-            )
+        logger.info(
+            f"[MAP_SERVICE] Tính route: "
+            f"({start_lat},{start_lon}) → ({end_lat},{end_lon}), "
+            f"mode={mode}"
+        )
 
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                data = response.json()
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
 
-            # Extract thông tin route
-            features = data.get("features", [])
-            if not features:
-                logger.warning("[MAP_SERVICE] Không tìm thấy route")
-                return {
-                    "distance": 0,
-                    "duration": 0,
-                    "geometry": [],
-                    "steps": []
-                }
-
-            feature = features[0]
-            props = feature.get("properties", {})
-            geometry = feature.get("geometry", {})
-
-            coordinates = geometry.get("coordinates", [])
-            geometry_points = [[coord[1], coord[0]] for coord in coordinates]
-
-            steps = []
-            for leg in props.get("legs", []):
-                for step in leg.get("steps", []):
-                    steps.append({
-                        "instruction": step.get("instruction", {}).get("text", ""),
-                        "distance": step.get("distance", 0),
-                        "duration": step.get("time", 0)
-                    })
-
-            result = {
-                "distance": props.get("distance", 0),  # mét
-                "duration": props.get("time", 0),  # giây
-                "geometry": geometry_points,
-                "steps": steps,
+        # Extract thông tin route
+        features = data.get("features", [])
+        if not features:
+            logger.warning("[MAP_SERVICE] Không tìm thấy route")
+            return {
+                "distance": 0,
+                "duration": 0,
+                "geometry": [],
+                "steps": [],
                 "mode": mode
             }
 
-            logger.info(
-                f"[MAP_SERVICE] Route tìm thấy: "
-                f"{result['distance']}m, {result['duration']}s"
-            )
+        feature = features[0]
+        props = feature.get("properties", {})
+        geometry = feature.get("geometry", {})
 
-            return result
+        coordinates = geometry.get("coordinates", [])
+        
+        # Geoapify trả về LineString với coordinates = [[lon, lat], [lon, lat], ...]
+        # hoặc có thể là MultiLineString = [[[lon, lat], ...], [[lon, lat], ...]]
+        # Chúng ta cần flatten nếu là MultiLineString và convert [lon, lat] -> [lat, lon]
+        
+        geometry_points = []
+        if coordinates:
+            # Kiểm tra xem có phải MultiLineString không (nested 3 levels)
+            if isinstance(coordinates[0][0], list):
+                # MultiLineString: [[[lon, lat], ...], ...]
+                # Lấy LineString đầu tiên
+                coords_list = coordinates[0]
+            else:
+                # LineString: [[lon, lat], ...]
+                coords_list = coordinates
+            
+            # Convert [lon, lat] -> [lat, lon]
+            geometry_points = [[coord[1], coord[0]] for coord in coords_list]
+
+        steps = []
+        for leg in props.get("legs", []):
+            for step in leg.get("steps", []):
+                steps.append({
+                    "instruction": step.get("instruction", {}).get("text", ""),
+                    "distance": step.get("distance", 0),
+                    "duration": step.get("time", 0)
+                })
+
+        result = {
+            "distance": props.get("distance", 0),  # mét
+            "duration": props.get("time", 0),  # giây
+            "geometry": geometry_points,
+            "steps": steps,
+            "mode": mode
+        }
+
+        logger.info(
+            f"[MAP_SERVICE] Route tìm thấy: "
+            f"{result['distance']}m, {result['duration']}s, "
+            f"{len(geometry_points)} points"
+        )
+
+        return result
 
     async def geocode_address(self, address: str) -> Dict[str, Any]:
         url = f"{self.base_url}/v1/geocode/search"
@@ -276,6 +298,28 @@ class GeoapifyService:
         )
 
         return url
+
+    def _map_category_to_geoapify(self, category: str) -> str:
+        """
+        Map user-friendly category names to Geoapify's category format.
+        
+        Geoapify requires categories in format: "healthcare.hospital", "healthcare.clinic", etc.
+        Users can input simple names like "hospital", "clinic", "pharmacy", "all"
+        """
+        category_mapping = {
+            "hospital": "healthcare.hospital",
+            "clinic": "healthcare.clinic,healthcare.doctors",
+            "pharmacy": "healthcare.pharmacy",
+            "dentist": "healthcare.dentist",
+            "all": "healthcare",  # Tìm tất cả loại healthcare
+            "healthcare": "healthcare"  # Nếu đã đúng format thì giữ nguyên
+        }
+        
+        mapped = category_mapping.get(category.lower(), category)
+        
+        logger.debug(f"[MAP_SERVICE] Category mapping: '{category}' -> '{mapped}'")
+        
+        return mapped
 
     def _format_address(self, properties: Dict[str, Any]) -> str:
         if "formatted" in properties:

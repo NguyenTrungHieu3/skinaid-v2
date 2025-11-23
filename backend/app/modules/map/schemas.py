@@ -46,16 +46,40 @@ class RouteRequest(BaseModel):
     end_longitude: float = Field(..., description="Kinh độ điểm kết thúc", ge=-180, le=180)
     mode: str = Field(
         default="drive",
-        description="Phương thức di chuyển: drive, walk, bike"
+        description="Phương thức di chuyển: drive, walk, bike (hoặc driving, walking, bicycling)"
     )
 
     @validator("mode")
     def validate_mode(cls, v):
-        """Validate mode phải là drive/walk/bike"""
-        allowed = ["drive", "walk", "bike"]
-        if v not in allowed:
-            raise ValueError(f"mode phải là một trong: {', '.join(allowed)}")
-        return v
+        """
+        Validate và map mode về format Geoapify.
+        Accept cả Google Maps format (driving, walking, bicycling, transit)
+        và Geoapify format (drive, walk, bike)
+        """
+        # Mapping từ các format phổ biến sang Geoapify format
+        mode_mapping = {
+            # Google Maps style
+            "driving": "drive",
+            "walking": "walk",
+            "bicycling": "bike",
+            "transit": "drive",  # Geoapify không có transit, fallback to drive
+            # Geoapify style (giữ nguyên)
+            "drive": "drive",
+            "walk": "walk",
+            "bike": "bike"
+        }
+        
+        # Normalize to lowercase
+        v_lower = v.lower()
+        
+        if v_lower not in mode_mapping:
+            allowed = list(mode_mapping.keys())
+            raise ValueError(
+                f"mode phải là một trong: {', '.join(allowed)}"
+            )
+        
+        # Return mapped value
+        return mode_mapping[v_lower]
 
     class Config:
         json_schema_extra = {
