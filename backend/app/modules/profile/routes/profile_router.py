@@ -5,7 +5,7 @@ from typing import Union, List, Dict, Any, Optional
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 from app.modules.profile.controllers.profile_controller import ProfileController
-from app.core.dependencies import get_db, get_current_active_user, require_admin, require_permission
+from app.core.dependencies import get_db, get_current_active_user, require_admin
 from app.modules.auth.models.user import User
 from app.modules.audit.services.audit_service import AuditService
 

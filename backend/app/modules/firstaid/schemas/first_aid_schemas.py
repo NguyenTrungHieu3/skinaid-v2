@@ -1,7 +1,11 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import List, Optional
 from datetime import datetime
 import uuid
+
+VALID_SUB_TYPES = {
+    'burn': ["blister", "skintear"]
+}
 
 class CreateFirstAidGuideRequest(BaseModel):
     wound_type: str = Field(..., description="Loại vết thương (abrasion, bruise, burn, cut)")
@@ -19,26 +23,46 @@ class CreateFirstAidGuideRequest(BaseModel):
     
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     
-    @validator('wound_type')
+    @field_validator('wound_type')
     def validate_wound_type(cls, v):
         valid_types = ['abrasion', 'bruise', 'burn', 'cut']
         if v.lower() not in valid_types:
             raise ValueError(f'wound_type phải là một trong {valid_types}')
         return v.lower()
     
-    @validator('severity')
+    @field_validator('severity')
     def validate_severity(cls, v):
         valid_severities = ['mild', 'moderate', 'severe']
         if v.lower() not in valid_severities:
             raise ValueError(f'severity phải là một trong {valid_severities}')
         return v.lower()
     
-    # @validator('sub_type')
-    # def validate_sub_type(cls, v, values):
-    #     if v:
-    #         # Allow any sub_type for now
-    #         return v.lower()
-    #     return v
+    @model_validator(mode="before")
+    def validate_sub_type(cls, values):
+        """Validate sub_type dựa trên wound_type"""
+        wound_type = values.get('wound_type')
+        sub_type = values.get('sub_type')
+        
+        # Nếu không có sub_type → OK
+        if not sub_type:
+            return values
+        
+        sub_type = sub_type.lower()
+        
+        # Nếu wound_type không hỗ trợ sub_type → Error
+        if wound_type not in VALID_SUB_TYPES:
+            raise ValueError(f'{wound_type} không hỗ trợ sub_type')
+        
+        # Nếu sub_type không hợp lệ → Error
+        if sub_type not in VALID_SUB_TYPES[wound_type]:
+            raise ValueError(
+                f'sub_type "{sub_type}" không hợp lệ cho {wound_type}. '
+                f'Chỉ chấp nhận: {VALID_SUB_TYPES[wound_type]}'
+            )
+        
+        values['sub_type'] = sub_type
+        return values
+
 
 class UpdateFirstAidGuideRequest(BaseModel):
     title: Optional[str] = Field(None, min_length=5, max_length=200, description="Tiêu đề")

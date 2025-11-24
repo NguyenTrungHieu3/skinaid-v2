@@ -62,9 +62,9 @@ class FirstAidService:
             sql = text("""
                 SELECT *
                 FROM firstaid_guides
-                WHERE wound_type = :wound_type
-                  AND severity = :severity
-                  AND sub_type = :sub_type
+                WHERE LOWER(wound_type) = LOWER(:wound_type)
+                  AND LOWER(severity) = LOWER(:severity)
+                  AND LOWER(sub_type) = LOWER(:sub_type)
                   AND is_active = true
                   AND is_deleted = false
                 ORDER BY version DESC
@@ -93,8 +93,8 @@ class FirstAidService:
             sql = text("""
                 SELECT *
                 FROM firstaid_guides
-                WHERE wound_type = :wound_type
-                  AND severity = :severity
+                WHERE LOWER(wound_type) = LOWER(:wound_type)
+                  AND LOWER(severity) = LOWER(:severity)
                   AND is_active = true
                   AND is_deleted = false
                   AND (sub_type IS NULL OR sub_type = '')
@@ -191,11 +191,11 @@ class FirstAidService:
                 params["is_active"] = is_active
 
             if wound_type:
-                where_conditions.append("wound_type = :wound_type")
+                where_conditions.append("LOWER(wound_type) = LOWER(:wound_type)")
                 params["wound_type"] = wound_type
 
             if severity:
-                where_conditions.append("severity = :severity")
+                where_conditions.append("LOWER(severity) = LOWER(:severity)")
                 params["severity"] = severity
 
             if search:
@@ -430,9 +430,9 @@ class FirstAidService:
                 # Check against other guides
                 check_sql = text("""
                     SELECT 1 FROM firstaid_guides
-                    WHERE wound_type = :wound_type
-                      AND severity = :severity
-                      AND (sub_type = :sub_type OR (:sub_type IS NULL AND sub_type IS NULL))
+                    WHERE LOWER(wound_type) = LOWER(:wound_type)
+                      AND LOWER(severity) = LOWER(:severity)
+                      AND (LOWER(sub_type) = LOWER(:sub_type) OR (:sub_type IS NULL AND sub_type IS NULL))
                       AND is_active = true
                       AND is_deleted = false
                       AND firstaidguide_id != :guide_id

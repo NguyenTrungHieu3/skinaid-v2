@@ -21,7 +21,7 @@ async def get_first_aid_guide(
     severity: str,
     sub_type: Optional[str] = Query(None, description="Loại phụ (chỉ dành cho burn: blister, skintear)"),
     db: AsyncSession = Depends(get_db),
-    current_user = Depends(require_auth)
+    current_user = Depends(allow_guest)
 ):
     """
     Lấy hướng dẫn sơ cứu cho loại và mức độ vết thương cụ thể.
@@ -31,7 +31,8 @@ async def get_first_aid_guide(
 
 @router.get("/wound-types", response_model=SuccessResponse[List[WoundTypeResponse]])
 async def get_available_wound_types(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(allow_guest)
 ):
     """
     Lấy danh sách các loại vết thương có hướng dẫn sơ cứu.
@@ -47,7 +48,8 @@ async def search_first_aid_guides(
     offset: int = Query(0, description="Số bản ghi bỏ qua", ge=0),
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái (true/false)"),
     search: Optional[str] = Query(None, description="Tìm kiếm theo tiêu đề"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(allow_guest)
 ):
     """
     Tìm kiếm hướng dẫn sơ cứu với bộ lọc.
@@ -57,7 +59,8 @@ async def search_first_aid_guides(
 
 @router.get("/statistics", response_model=SuccessResponse[Dict[str, Any]])
 async def get_first_aid_statistics(
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(allow_guest)
 ):
     """
     Lấy thống kê về first aid knowledge base.
@@ -70,7 +73,8 @@ async def validate_guide_availability(
     wound_type: str,
     severity: str,
     sub_type: Optional[str] = Query(None, description="Loại phụ (chỉ dành cho burn: blister, skintear)"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(allow_guest)
 ):
     """
     Kiểm tra tính khả dụng của hướng dẫn sơ cứu.
@@ -94,7 +98,8 @@ async def create_first_aid_guide(
 @router.get("/guides/{guide_id}", response_model=SuccessResponse[FirstAidGuideResponse])
 async def get_guide_by_id(
     guide_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(allow_guest)
 ):
     """
     Lấy hướng dẫn sơ cứu theo ID.

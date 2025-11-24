@@ -18,9 +18,9 @@ class GuestService:
             INSERT INTO guest_sessions (session_id, ip_address, user_agent, created_at, expires_at, last_activity_at, upload_count, analysis_count, is_active, is_converted_to_user)
             VALUES (:session_id, :ip_address, :user_agent, :created_at, :expires_at, :last_activity_at, :upload_count, :analysis_count, :is_active, :is_converted_to_user)
             RETURNING *,
-                   CASE WHEN expires_at < NOW() THEN true ELSE false END as is_expired,
-                   CASE WHEN expires_at >= NOW() AND is_active = true AND upload_count < 5 THEN true ELSE false END as can_upload,
-                   CASE WHEN expires_at >= NOW() AND is_active = true AND analysis_count < 3 THEN true ELSE false END as can_analyze,
+                   CASE WHEN expires_at < (NOW() AT TIME ZONE 'UTC') THEN true ELSE false END as is_expired,
+                   CASE WHEN expires_at >= (NOW() AT TIME ZONE 'UTC') AND is_active = true AND upload_count < 5 THEN true ELSE false END as can_upload,
+                   CASE WHEN expires_at >= (NOW() AT TIME ZONE 'UTC') AND is_active = true AND analysis_count < 3 THEN true ELSE false END as can_analyze,
                    (5 - upload_count) as remaining_uploads,
                    (3 - analysis_count) as remaining_analyses
         """)
@@ -47,9 +47,9 @@ class GuestService:
     async def get_guest_session(self, session_id: uuid.UUID):
         sql = text("""
             SELECT *,
-                   CASE WHEN expires_at < NOW() THEN true ELSE false END as is_expired,
-                   CASE WHEN expires_at >= NOW() AND is_active = true AND upload_count < 5 THEN true ELSE false END as can_upload,
-                   CASE WHEN expires_at >= NOW() AND is_active = true AND analysis_count < 3 THEN true ELSE false END as can_analyze,
+                   CASE WHEN expires_at < (NOW() AT TIME ZONE 'UTC') THEN true ELSE false END as is_expired,
+                   CASE WHEN expires_at >= (NOW() AT TIME ZONE 'UTC') AND is_active = true AND upload_count < 5 THEN true ELSE false END as can_upload,
+                   CASE WHEN expires_at >= (NOW() AT TIME ZONE 'UTC') AND is_active = true AND analysis_count < 3 THEN true ELSE false END as can_analyze,
                    (5 - upload_count) as remaining_uploads,
                    (3 - analysis_count) as remaining_analyses
             FROM guest_sessions
@@ -68,7 +68,7 @@ class GuestService:
         active_sessions_sql = text("""
             SELECT COUNT(*) as active
             FROM guest_sessions
-            WHERE is_active = true AND expires_at >= NOW()
+            WHERE is_active = true AND expires_at >= (NOW() AT TIME ZONE 'UTC')
         """)
         active_sessions_result = await self.db.execute(active_sessions_sql)
         active_sessions = active_sessions_result.scalar() or 0
