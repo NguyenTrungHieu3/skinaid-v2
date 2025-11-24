@@ -33,7 +33,7 @@ async def analyze_wound(
 ) -> CombinedResponse:
     start_time = time.time()
     
-    if not x_api_key or x_api_key != AI_API_KEY:
+    if AI_API_KEY and (not x_api_key or x_api_key != AI_API_KEY):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     try:

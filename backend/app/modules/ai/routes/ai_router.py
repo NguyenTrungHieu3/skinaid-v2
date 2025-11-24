@@ -8,6 +8,7 @@ from app.modules.auth.models.user import User
 from app.modules.ai.controllers.ai_controller import AIController
 from app.modules.audit.services.audit_service import AuditService
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
+from app.modules.guest.services.guest_service import GuestService
 
 router = APIRouter(prefix="/ai")
 
@@ -37,10 +38,13 @@ async def analyze_wound_image(
 
     user_id = current_user.user_id if current_user else None
     if not user_id and not session_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required or session_id must be provided"
+        # Auto-create guest session for unauthenticated users
+        guest_service = GuestService(db)
+        session_data = await guest_service.create_guest_session(
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent")
         )
+        session_id = session_data["session_id"]
 
     result = await controller.analyze_image(
         file=file,
@@ -175,10 +179,13 @@ async def analyze_multiple_wound_images(
     user_id = current_user.user_id if current_user else None
     
     if not user_id and not session_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required or session_id must be provided"
+        # Auto-create guest session for unauthenticated users
+        guest_service = GuestService(db)
+        session_data = await guest_service.create_guest_session(
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent")
         )
+        session_id = session_data["session_id"]
     
     result = await controller.analyze_multiple_images(
         files=files,

@@ -21,7 +21,7 @@ detector = WoundDetector(str(ai_ml_root / "models/detection/weights/model_2_clas
 
 @router.post("/", response_model=YOLODetectionResponse)
 async def detect_wound(file: UploadFile = File(...), x_api_key: str = Header(None, alias="X-API-Key")):
-    if not x_api_key or x_api_key != AI_API_KEY:
+    if AI_API_KEY and (not x_api_key or x_api_key != AI_API_KEY):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     try:

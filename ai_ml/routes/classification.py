@@ -24,7 +24,7 @@ async def classify_wound(
     file: UploadFile = File(...),
     x_api_key: str = Header(None, alias="X-API-Key")
 ) -> Any:
-    if not x_api_key or x_api_key != AI_API_KEY:
+    if AI_API_KEY and (not x_api_key or x_api_key != AI_API_KEY):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     try:
