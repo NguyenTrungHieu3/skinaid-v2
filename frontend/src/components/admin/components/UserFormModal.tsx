@@ -185,7 +185,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
               <option value="user">User</option>
-              <option value="moderator">Moderator</option>
               <option value="admin">Admin</option>
             </select>
           </div>

@@ -39,7 +39,6 @@ const UserFilters: React.FC<UserFiltersProps> = ({
         >
           <option value="">All Roles</option>
           <option value="user">User</option>
-          <option value="moderator">Moderator</option>
           <option value="admin">Admin</option>
         </select>
 

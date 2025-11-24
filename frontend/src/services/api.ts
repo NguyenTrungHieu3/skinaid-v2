@@ -39,4 +39,26 @@ apiClient.interceptors.request.use(
 );
 // --- HẾT PHẦN SỬA ---
 
+// Add response interceptor to handle errors properly
+apiClient.interceptors.response.use(
+  (response) => {
+    // If response is successful, just return it
+    return response;
+  },
+  (error) => {
+    // If there's an error response from the server, preserve it
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      return Promise.reject(error);
+    } else if (error.request) {
+      // The request was made but no response was received
+      return Promise.reject(new Error('Network Error: Unable to reach the server'));
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      return Promise.reject(error);
+    }
+  }
+);
+
 export default apiClient;

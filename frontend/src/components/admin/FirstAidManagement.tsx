@@ -86,7 +86,7 @@ export default function FirstAidManagement() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [limit] = useState(8);
+  const [limit] = useState(6);
   const [totalCount, setTotalCount] = useState(0);
 
   // Confirm dialog state
@@ -359,11 +359,14 @@ export default function FirstAidManagement() {
         fetchStatistics();
         success('First aid guide created successfully!');
       } else {
+        // Show the actual error message from backend
         toastError(response.message || 'Failed to create guide');
       }
     } catch (err: any) {
       console.error('Error creating guide:', err);
-      toastError(err.response?.data?.message || err.response?.data?.detail || 'Failed to create guide');
+      // Prioritize the message field, then detail, then fallback
+      const errorMessage = err.response?.data?.message || err.response?.data?.detail || err.message || 'Failed to create guide';
+      toastError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

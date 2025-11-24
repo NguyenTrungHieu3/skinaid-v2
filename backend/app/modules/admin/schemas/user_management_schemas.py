@@ -11,7 +11,7 @@ class CreateUserRequest(BaseModel):
     
     @validator('role')
     def validate_role(cls, v):
-        allowed_roles = ['user', 'moderator', 'admin']
+        allowed_roles = ['user', 'admin']
         if v.lower() not in allowed_roles:
             raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
         return v.lower()
@@ -25,7 +25,7 @@ class UpdateUserRequest(BaseModel):
     @validator('role')
     def validate_role(cls, v):
         if v is not None:
-            allowed_roles = ['user', 'moderator', 'admin']
+            allowed_roles = ['user', 'admin']
             if v.lower() not in allowed_roles:
                 raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
             return v.lower()

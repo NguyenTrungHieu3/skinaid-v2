@@ -499,19 +499,19 @@ class UserManagementService:
         return [row[0] for row in result]
     
     async def _get_user_upload_count(self, user_id: UUID) -> int:
-        """Get total upload count for a user"""
-        # Query from upload_logs table if exists
+        """Get total upload count for a user from wound_analyses table"""
         query = text("""
             SELECT COUNT(*) 
-            FROM upload_logs 
-            WHERE user_id = :user_id
+            FROM wound_analyses 
+            WHERE user_id = :user_id 
+            AND is_deleted = FALSE
         """)
         try:
             result = await self.db.execute(query, {"user_id": str(user_id)})
             count = result.scalar()
             return count or 0
-        except:
-            # Table might not exist or no uploads
+        except Exception as e:
+            logger.warning(f"Failed to get upload count for user {user_id}: {e}")
             return 0
     
     async def _get_user_by_email(self, email: str) -> Optional[User]:

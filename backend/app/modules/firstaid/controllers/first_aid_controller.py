@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional, List, Union
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import status
+from fastapi import status, HTTPException
 import logging
 import uuid
 
@@ -286,9 +286,28 @@ class FirstAidController:
             )
         except ValueError as e:
             logger.warning(f"[CREATE_GUIDE] Validation error: {e}")
+            error_msg = str(e)
+            
+            # Check if it's a duplicate error
+            is_duplicate = "already exists" in error_msg.lower()
+            
+            # Enhance the error message for duplicates
+            if is_duplicate:
+                message = f"Duplicate guide: {error_msg}"
+                error_code = "FIRSTAID_GUIDE_DUPLICATE"
+                suggestion = "You can edit the existing guide or set 'is_active' to false to create an inactive version"
+            else:
+                message = error_msg
+                error_code = ErrorCode.FIRSTAID_GUIDE_ERROR
+                suggestion = None
+            
             return ErrorResponse(
-                message=str(e),
-                error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
+                message=message,
+                error_code=error_code,
+                error_details={
+                    "duplicate": is_duplicate,
+                    "suggestion": suggestion
+                } if is_duplicate else None,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
