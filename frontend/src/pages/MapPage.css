@@ -1,0 +1,204 @@
+.map-page {
+    display: flex;
+    height: 100vh;
+    /* Full height since header is hidden */
+    background-color: var(--map-background);
+    overflow: hidden;
+    position: relative;
+}
+
+.map-sidebar {
+    width: 100%;
+    max-width: 400px;
+    border-right: 1px solid var(--map-border);
+    display: flex;
+    flex-direction: column;
+    background-color: var(--map-background);
+    z-index: 20;
+    /* Ensure sidebar is above map if they overlap on small screens */
+    height: 100%;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 1024px) {
+    .map-sidebar {
+        max-width: 400px;
+        /* Keep it consistent */
+    }
+}
+
+.map-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--map-border);
+    background-color: var(--map-background);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2000;
+}
+
+.map-header-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+    position: relative;
+    z-index: 2001;
+}
+
+.map-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--map-primary);
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 2002 !important;
+    position: relative;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.map-menu-btn:hover {
+    background-color: rgba(0, 150, 136, 0.1);
+    border-radius: 4px;
+    color: var(--map-primary);
+}
+
+.map-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--map-primary);
+    margin: 0;
+}
+
+.map-subtitle {
+    font-size: 0.875rem;
+    color: var(--map-muted);
+}
+
+/* New class for sidebar controls (Radius Slider) */
+.map-sidebar-controls {
+    padding: 1rem;
+    border-bottom: 1px solid var(--map-border);
+    background-color: var(--map-background);
+    flex-shrink: 0;
+}
+
+.map-results-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--map-border);
+    background-color: rgba(241, 245, 249, 0.5);
+    /* Light gray background */
+    flex-shrink: 0;
+}
+
+.results-count {
+    margin-left: 0.5rem;
+    color: var(--map-muted);
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+.map-results-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    /* Custom scrollbar styling could go here */
+}
+
+.map-view-wrapper {
+    display: none;
+    flex: 1;
+    padding: 0;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .map-view-wrapper {
+        display: flex;
+    }
+
+    .map-sidebar {
+        width: 400px;
+        flex-shrink: 0;
+    }
+}
+
+.no-results {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--map-muted);
+}
+
+/* Overlay Controls Styles */
+.map-overlay-container {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    /* Above Leaflet controls */
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 480px;
+    max-width: calc(100% - 2rem);
+}
+
+.map-overlay-search {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Override SearchBar styles when inside overlay */
+.map-overlay-search .search-bar {
+    border: none;
+}
+
+.map-overlay-search .search-input {
+    border: none;
+}
+
+.map-overlay-search .search-input:focus {
+    outline: none;
+}
+
+.map-overlay-search .filter-btn {
+    border: none;
+}
+
+.map-overlay-filters {
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    /* Space for scrollbar if needed */
+    scrollbar-width: none;
+    /* Hide scrollbar Firefox */
+}
+
+.map-overlay-filters::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar Chrome/Safari */
+}
+
+/* Override FilterChips styles when inside overlay */
+.map-overlay-filters .filter-chips {
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+    width: max-content;
+    /* Allow growing beyond container */
+}
+
+.map-overlay-filters .chip {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.map-overlay-filters .chip.selected {
+    background-color: var(--map-primary);
+    color: white;
+}

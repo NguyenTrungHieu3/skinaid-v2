@@ -6,11 +6,15 @@
   min-height: 100vh;
   /* Đổi từ height sang min-height để cho phép mở rộng */
   /* Bỏ overflow: hidden để cho phép scroll */
-  padding-top: 60px;
+  padding-top: 80px;
 }
 
 .mainContent {
   flex-grow: 1;
   /* <main> chiếm hết không gian còn lại */
   /* Bỏ overflow: hidden và min-height: 0 để cho phép cuộn tự nhiên */
+}
+
+.mapLayout {
+  padding-top: 0 !important;
 }

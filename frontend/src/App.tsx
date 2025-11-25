@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage";
 import AnalysisResultPage from "./pages/AnalysisResultPage";
 import HistoryPage from "./pages/HistoryPage";
 import AdminPage from "./pages/AdminPage";
+import MapPage from "./pages/MapPage";
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
           }
         />
         {/* Thêm các trang khác cần Header vào đây (ví dụ: /about) */}
+        <Route path="/map" element={<MapPage />} />
       </Route>
 
       {/* === CÁC TRANG KHÔNG CÓ HEADER (Layout riêng) === */}

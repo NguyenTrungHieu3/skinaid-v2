@@ -640,6 +640,90 @@
   line-height: 1.4;
 }
 
+/* 3. Why SkinAid? Section */
+.whySkinAid {
+  padding: 4rem 2rem;
+  background-color: #f9fafb;
+  /* Light gray background */
+  text-align: center;
+  scroll-margin-top: 80px;
+}
+
+.whySkinAid h2 {
+  font-size: 2rem;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.whyGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.whyCard {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.whyCard:hover {
+  transform: translateY(-5px);
+}
+
+.whyIcon {
+  font-size: 2.5rem;
+  color: #009688;
+  margin-bottom: 1rem;
+  background: #e0f2f1;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whyCard h4 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.whyCard p {
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* 6. Medical Disclaimer */
+.medicalDisclaimer {
+  background-color: #f3f4f6;
+  padding: 2rem;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  scroll-margin-top: 80px;
+}
+
+.disclaimerContainer {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.medicalDisclaimer p {
+  color: #6b7280;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .hero {
@@ -663,6 +747,10 @@
     display: none;
   }
 
+  .whyGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   /* 1. Tắt "bắt dính" (snap) trên container cha */
   .homePage {
     height: auto;
@@ -677,7 +765,9 @@
   .hero,
   .features,
   .stats,
-  .howItWorks {
+  .howItWorks,
+  .whySkinAid,
+  .medicalDisclaimer {
     height: auto;
     /* Để chiều cao tự động */
     scroll-snap-align: none;
@@ -742,5 +832,11 @@
   /* 6. Căn giữa các nút bấm */
   .heroButtons {
     justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .whyGrid {
+    grid-template-columns: 1fr;
   }
 }

@@ -9,7 +9,12 @@
     "sign_in": "Sign in",
     "sign_up": "Sign up",
     "features": "Features",
-    "how_it_works": "How it Works"
+    "how_it_works": "How It Works",
+    "map": "Nearby Medical Facility",
+    "why_skinaid": "Why SkinAid?",
+    "trust_safety": "Trust & Safety",
+    "medical_disclaimer": "Medical Disclaimer",
+    "explore": "Explore"
   },
   "footer": {
     "title_desc": "AI web application to recognize, classify and support first aid for wounds.",
@@ -75,7 +80,17 @@
     "how_work_step3_item4": "Wash the wound with clean water or saline solution.",
     "how_work_step3_item5": "Lightly disinfect the wound, avoid deep penetration.",
     "how_work_step3_item6": "Let dry, cover with sterile gauze or medical tape.",
-    "how_work_step3_item7": "Rest, avoid impact on the injured area."
+    "how_work_step3_item7": "Rest, avoid impact on the injured area.",
+    "why_skinaid_title": "Why Choose SkinAid?",
+    "why_skinaid_item1_title": "Smart AI",
+    "why_skinaid_item1_desc": "Identifies >3 common wound types (Burns, Abrasions, Cuts...).",
+    "why_skinaid_item2_title": "Medical Standard",
+    "why_skinaid_item2_desc": "First aid process based on WHO/Ministry of Health data.",
+    "why_skinaid_item3_title": "Easy to Use",
+    "why_skinaid_item3_desc": "No medical knowledge required, accessible to everyone.",
+    "why_skinaid_item4_title": "Tracking",
+    "why_skinaid_item4_desc": "Save wound history for easy progress monitoring.",
+    "medical_disclaimer": "SkinAid is a first aid support tool and does not replace diagnosis and treatment by a specialist. In case of emergency, please visit a medical facility immediately."
   },
   "upload_page": {
     "title": "Upload Skin Wound Image",

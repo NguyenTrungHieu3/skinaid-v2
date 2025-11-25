@@ -1,0 +1,234 @@
+:root {
+    --map-primary: #009688;
+    --map-primary-foreground: #ffffff;
+    --map-background: #ffffff;
+    --map-foreground: #0f172a;
+    --map-muted: #64748b;
+    --map-border: #e2e8f0;
+    --map-radius: 0.5rem;
+    --map-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.facility-card {
+    padding: 1rem;
+    border: 1px solid rgba(0, 150, 136, 0.2);
+    border-radius: var(--map-radius);
+    background-color: var(--map-background);
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+}
+
+.facility-card:hover {
+    border-color: rgba(0, 150, 136, 0.4);
+    box-shadow: var(--map-shadow);
+}
+
+.facility-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.facility-name {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--map-foreground);
+    margin-bottom: 0.25rem;
+}
+
+.facility-type {
+    font-size: 0.875rem;
+    color: var(--map-muted);
+}
+
+.facility-distance {
+    color: var(--map-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+
+.facility-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--map-muted);
+}
+
+.icon-sm {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.icon-sm.address-icon {
+    margin-top: 0.125rem;
+    /* Equivalent to mt-0.5 */
+}
+
+.icon-btn {
+    width: 14px;
+    height: 14px;
+    margin-right: 0.5rem;
+}
+
+.facility-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.map-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--map-radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    height: 2rem;
+    padding: 0 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: 1px solid var(--map-border);
+    background-color: transparent;
+    color: var(--map-foreground);
+}
+
+.map-btn:hover {
+    background-color: #f1f5f9;
+}
+
+.map-btn.primary {
+    background-color: var(--map-primary);
+    color: var(--map-primary-foreground);
+    border-color: var(--map-primary);
+}
+
+.map-btn.primary:hover {
+    background-color: #00796b;
+}
+
+/* Filter Chips */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--map-border);
+    background-color: transparent;
+    color: var(--map-foreground);
+    transition: all 0.2s;
+}
+
+.chip:hover {
+    background-color: #f1f5f9;
+}
+
+.chip.selected {
+    background-color: var(--map-primary);
+    color: var(--map-primary-foreground);
+    border-color: var(--map-primary);
+}
+
+/* Radius Slider */
+.radius-slider-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.slider-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--map-foreground);
+}
+
+.slider-input {
+    width: 100%;
+    cursor: pointer;
+}
+
+.slider-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--map-muted);
+}
+
+.current-value {
+    color: var(--map-primary);
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Search Bar */
+.search-bar {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--map-muted);
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.search-input {
+    width: 100%;
+    height: 3rem;
+    padding-left: 2.5rem;
+    padding-right: 1rem;
+    border: 1px solid var(--map-border);
+    border-radius: var(--map-radius);
+    font-size: 0.875rem;
+}
+
+.search-input:focus {
+    outline: 2px solid var(--map-primary);
+    border-color: transparent;
+}
+
+.filter-btn {
+    height: 3rem;
+    width: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--map-border);
+    border-radius: var(--map-radius);
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.filter-btn:hover {
+    background-color: #f1f5f9;
+}

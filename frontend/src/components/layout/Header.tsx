@@ -1,20 +1,26 @@
-// src/components/layout/Header.tsx
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Header.module.css";
 import Logo from "../../assets/images/general/logo.png";
-import { useState } from "react";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaChevronDown } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import CountryFlag from "react-country-flag";
 
-const Header = () => {
+interface HeaderProps {
+  menuOpen: boolean;
+  setMenuOpen: (open: boolean) => void;
+}
+
+const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
+  const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const location = useLocation();
+  const isMapPage = location.pathname === "/map";
 
-  // Thêm state để quản lí menu mobile
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const closeMenu = () => setMenuOpen(false);
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
 
   const { t, i18n } = useTranslation();
   // --- 2. TẠO COMPONENT CHUYỂN NGÔN NGỮ ---
@@ -40,7 +46,7 @@ const Header = () => {
     </div>
   );
   return (
-    <header className={styles.header}>
+    <header className={`${styles.header} ${isMapPage ? styles.mapHeader : ""}`}>
       {/* 1. NÚT HAMBURGER (BÊN TRÁI - CHỈ HIỆN TRÊN MOBILE) */}
       <button
         className={styles.hamburgerButton}
@@ -51,7 +57,14 @@ const Header = () => {
       </button>
 
       {/* 2. LOGO (GIỮA TRÊN MOBILE - BÊN TRÁI TRÊN DESKTOP) */}
-      <Link to="/" className={styles.logo} onClick={closeMenu}>
+      <Link
+        to="/"
+        className={styles.logo}
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          closeMenu();
+        }}
+      >
         <img src={Logo} alt="SkinAid Logo" />
         <span>
           Skin<span className={styles.logoAid}>Aid</span>
@@ -71,7 +84,10 @@ const Header = () => {
           <nav className={styles.nav}>
             <NavLink
               to="/"
-              onClick={closeMenu}
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                closeMenu();
+              }}
               className={({ isActive }) => (isActive ? styles.active : "")}
             >
               {t("header.home")}
@@ -84,19 +100,15 @@ const Header = () => {
               {t("header.upload_image")}
             </NavLink>
 
-            <a
-              href="/#features"
+            <NavLink
+              to="/map"
               onClick={closeMenu}
+              className={({ isActive }) => (isActive ? styles.active : "")}
             >
-              {t("header.features")}
-            </a>
+              {t("header.map")}
+            </NavLink>
 
-            <a
-              href="/#how-it-works"
-              onClick={closeMenu}
-            >
-              {t("header.how_it_works")}
-            </a>
+
 
             {isAuthenticated && (
               <NavLink
@@ -107,6 +119,23 @@ const Header = () => {
                 {t("header.wound_history")} {/* Giả sử bạn có key "history" */}
               </NavLink>
             )}
+
+            {/* Dropdown for Sections */}
+            <div className={`${styles.dropdown} ${mobileSubmenuOpen ? styles.mobileSubmenuOpen : ""}`}>
+              <button
+                className={styles.dropdownBtn}
+                onClick={() => setMobileSubmenuOpen(!mobileSubmenuOpen)}
+              >
+                {t("header.explore")} <FaChevronDown className={styles.chevron} />
+              </button>
+              <div className={styles.dropdownContent}>
+                <a href="/#how-it-works" onClick={closeMenu}>{t("header.how_it_works")}</a>
+                <a href="/#why-skinaid" onClick={closeMenu}>{t("header.why_skinaid")}</a>
+                <a href="/#features" onClick={closeMenu}>{t("header.features")}</a>
+                <a href="/#trust-safety" onClick={closeMenu}>{t("header.trust_safety")}</a>
+                <a href="/#medical-disclaimer" onClick={closeMenu}>{t("header.medical_disclaimer")}</a>
+              </div>
+            </div>
 
             <NavLink
               to="/about"

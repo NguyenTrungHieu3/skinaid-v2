@@ -9,7 +9,12 @@
     "sign_in": "Đăng nhập",
     "sign_up": "Đăng ký",
     "features": "Tính năng",
-    "how_it_works": "Cách hoạt động"
+    "how_it_works": "Cách hoạt động",
+    "map": "Cơ sở Y tế Gần đây",
+    "why_skinaid": "Tại sao chọn SkinAid?",
+    "trust_safety": "Tin cậy & An toàn",
+    "medical_disclaimer": "Miễn trừ trách nhiệm y tế",
+    "explore": "Khám phá"
   },
   "footer": {
     "title_desc": "Ứng dụng web AI nhận diện, phân loại và hỗ trợ sơ cứu vết thương.",
@@ -76,6 +81,16 @@
     "how_work_step3_item5": "Khử trùng nhẹ vết thương, tránh để vết thương sâu.",
     "how_work_step3_item6": "Để khô, băng lại bằng gạc vô trùng hoặc băng y tế.",
     "how_work_step3_item7": "Nghỉ ngơi, tránh tác động lên vùng bị thương.",
+    "why_skinaid_title": "Tại sao chọn SkinAid?",
+    "why_skinaid_item1_title": "AI Thông minh",
+    "why_skinaid_item1_desc": "Nhận diện >3 loại vết thương phổ biến (Bỏng, Trầy xước, Vết cắt...).",
+    "why_skinaid_item2_title": "Chuẩn Y khoa",
+    "why_skinaid_item2_desc": "Quy trình sơ cứu dựa trên dữ liệu WHO/Bộ Y tế.",
+    "why_skinaid_item3_title": "Dễ sử dụng",
+    "why_skinaid_item3_desc": "Không cần kiến thức y khoa, ai cũng dùng được.",
+    "why_skinaid_item4_title": "Theo dõi",
+    "why_skinaid_item4_desc": "Lưu lịch sử vết thương để người chăm sóc dễ quan sát tiến triển.",
+    "medical_disclaimer": "SkinAid là công cụ hỗ trợ sơ cứu ban đầu, không thay thế chẩn đoán và điều trị của bác sĩ chuyên khoa. Trong trường hợp khẩn cấp, vui lòng đến cơ sở y tế ngay lập tức.",
     "map_title": "Tìm kiếm Bệnh viện & Nhà thuốc",
     "map_desc": "Nhanh chóng tìm thấy các cơ sở y tế gần nhất dựa trên vị trí hiện tại của bạn."
   },
