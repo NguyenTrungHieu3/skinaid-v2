@@ -124,7 +124,7 @@ async def update_first_aid_guide(
 @router.delete("/guides/{guide_id}", response_model=SuccessResponse[Dict[str, Any]])
 async def delete_first_aid_guide(
     guide_id: uuid.UUID,
-    hard_delete: bool = Query(False, description="True = xóa vĩnh viễn, False = soft delete"),
+    hard_delete: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user = Depends(require_admin)
 ):

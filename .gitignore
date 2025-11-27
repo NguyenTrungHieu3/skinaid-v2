@@ -156,6 +156,7 @@ backend/User_Guidelines.md
 .qoder/
 .kilocode/
 backend/tests/image_test
+.agent/
 
 # OS specific
 .DS_Store

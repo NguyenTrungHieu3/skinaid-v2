@@ -3,9 +3,9 @@ from typing import List, Optional
 from datetime import datetime
 import uuid
 
-VALID_SUB_TYPES = {
-    'burn': ["blister", "skintear"]
-}
+# VALID_SUB_TYPES = {
+#     'burn': ["blister", "skintear"]
+# }
 
 class CreateFirstAidGuideRequest(BaseModel):
     wound_type: str = Field(..., description="Loại vết thương (abrasion, bruise, burn, cut)")
@@ -37,31 +37,31 @@ class CreateFirstAidGuideRequest(BaseModel):
             raise ValueError(f'severity phải là một trong {valid_severities}')
         return v.lower()
     
-    @model_validator(mode="before")
-    def validate_sub_type(cls, values):
-        """Validate sub_type dựa trên wound_type"""
-        wound_type = values.get('wound_type')
-        sub_type = values.get('sub_type')
+    # @model_validator(mode="before")
+    # def validate_sub_type(cls, values):
+    #     """Validate sub_type dựa trên wound_type"""
+    #     wound_type = values.get('wound_type')
+    #     sub_type = values.get('sub_type')
         
-        # Nếu không có sub_type → OK
-        if not sub_type:
-            return values
+    #     # Nếu không có sub_type → OK
+    #     if not sub_type:
+    #         return values
         
-        sub_type = sub_type.lower()
+    #     sub_type = sub_type.lower()
         
-        # Nếu wound_type không hỗ trợ sub_type → Error
-        if wound_type not in VALID_SUB_TYPES:
-            raise ValueError(f'{wound_type} không hỗ trợ sub_type')
+    #     # Nếu wound_type không hỗ trợ sub_type → Error
+    #     if wound_type not in VALID_SUB_TYPES:
+    #         raise ValueError(f'{wound_type} không hỗ trợ sub_type')
         
-        # Nếu sub_type không hợp lệ → Error
-        if sub_type not in VALID_SUB_TYPES[wound_type]:
-            raise ValueError(
-                f'sub_type "{sub_type}" không hợp lệ cho {wound_type}. '
-                f'Chỉ chấp nhận: {VALID_SUB_TYPES[wound_type]}'
-            )
+    #     # Nếu sub_type không hợp lệ → Error
+    #     if sub_type not in VALID_SUB_TYPES[wound_type]:
+    #         raise ValueError(
+    #             f'sub_type "{sub_type}" không hợp lệ cho {wound_type}. '
+    #             f'Chỉ chấp nhận: {VALID_SUB_TYPES[wound_type]}'
+    #         )
         
-        values['sub_type'] = sub_type
-        return values
+    #     values['sub_type'] = sub_type
+    #     return values
 
 
 class UpdateFirstAidGuideRequest(BaseModel):
