@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -9,8 +9,9 @@ class CreateUserRequest(BaseModel):
     password: str
     role: str
     
-    @validator('role')
-    def validate_role(cls, v):
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v: str) -> str:
         allowed_roles = ['user', 'admin']
         if v.lower() not in allowed_roles:
             raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
@@ -22,8 +23,9 @@ class UpdateUserRequest(BaseModel):
     role: Optional[str] = None
     is_active: Optional[bool] = None
     
-    @validator('role')
-    def validate_role(cls, v):
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:
             allowed_roles = ['user', 'admin']
             if v.lower() not in allowed_roles:

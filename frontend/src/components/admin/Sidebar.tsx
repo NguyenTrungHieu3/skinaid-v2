@@ -1,4 +1,5 @@
 import { type ElementType } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from '../../assets/images/general/logo.png';
 import styles from "./Sidebar.module.css";
 
@@ -15,6 +16,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ menuItems, currentPage, onPageChange }: SidebarProps) {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.adminSidebar}>
       <div className={styles.adminSidebarHeader}>
@@ -22,7 +25,7 @@ export default function Sidebar({ menuItems, currentPage, onPageChange }: Sideba
           <img className={styles.logoSkinaid} src={Logo} alt="" />
           <div className={styles.adminSidebarBrandText}>
             <h1>Skin<span>Aid</span></h1>
-            <p>Admin Portal</p>
+            <p>{t('admin.sidebar.portal_title')}</p>
           </div>
         </div>
       </div>
@@ -49,11 +52,11 @@ export default function Sidebar({ menuItems, currentPage, onPageChange }: Sideba
 
       <div className={styles.adminSidebarFooter}>
         <div className={styles.adminSidebarStatus}>
-          <p>System Status</p>
-          <p>All systems operational</p>
+          <p>{t('admin.sidebar.system_status')}</p>
+          <p>{t('admin.sidebar.operational')}</p>
           <div className={styles.adminStatusIndicator}>
             <div className={styles.statusDot}></div>
-            <span>Active</span>
+            <span>{t('admin.sidebar.active')}</span>
           </div>
         </div>
       </div>

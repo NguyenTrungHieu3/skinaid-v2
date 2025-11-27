@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './DashboardLogs.module.css';
 
 interface Log {
@@ -13,6 +14,7 @@ interface DashboardLogsProps {
 }
 
 export default function DashboardLogs({ logs }: DashboardLogsProps) {
+  const { t } = useTranslation();
   const getLogIcon = (type: string) => {
     switch (type) {
       case 'error':
@@ -26,9 +28,9 @@ export default function DashboardLogs({ logs }: DashboardLogsProps) {
 
   const getSeverityBadge = (severity: string) => {
     const labels = {
-      high: 'High',
-      medium: 'Medium',
-      low: 'Low'
+      high: t('admin.dashboard.logs.severity.high'),
+      medium: t('admin.dashboard.logs.severity.medium'),
+      low: t('admin.dashboard.logs.severity.low')
     };
     return labels[severity as keyof typeof labels] || severity;
   };
@@ -66,8 +68,8 @@ export default function DashboardLogs({ logs }: DashboardLogsProps) {
     <div className={`${styles.adminErrorLogs} ${styles.mt24}`}>
       <div className={styles.adminErrorLogsHeader}>
         <div>
-          <h3 className={styles.adminErrorLogsTitle}>Recent Logs</h3>
-          <p className={styles.adminErrorLogsDescription}>System notifications and alerts</p>
+          <h3 className={styles.adminErrorLogsTitle}>{t('admin.dashboard.logs.recent_logs_title')}</h3>
+          <p className={styles.adminErrorLogsDescription}>{t('admin.dashboard.logs.recent_logs_desc')}</p>
         </div>
       </div>
       <div className={styles.adminErrorLogsContent}>

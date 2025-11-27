@@ -284,14 +284,17 @@ class UserManagementService:
             
             return user_detail
             
-        except ValueError:
+        except ValueError as ve:
             # Raise lại lỗi xác thực
             await self.db.rollback()
+            logger.error(f"Validation error creating user {user_data.email}: {str(ve)}")
+            logger.error(f"User data: {user_data.model_dump()}")
             raise
         except Exception as e:
             # Rollback khi có lỗi để ngăn dữ liệu bị thiếu
             await self.db.rollback()
-            logger.error(f"Failed to create user {user_data.email}: {e}")
+            logger.error(f"Failed to create user {user_data.email}: {e}", exc_info=True)
+            logger.error(f"User data: {user_data.model_dump()}")
             raise ValueError(f"Failed to create user: {str(e)}")
     
     async def update_user(

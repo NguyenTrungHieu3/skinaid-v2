@@ -52,6 +52,46 @@ async def create_admin_user():
         else:
             print("Role 'admin' already exists.")
 
+        # --- Create Permissions ---
+        from app.modules.auth.models.permissions import Permission
+        from app.modules.auth.models.role_permissions import RolePermission
+
+        permissions_to_create = [
+            "read_system_logs",
+            "manage_users",
+            "manage_firstaid",
+            "read_all_history",
+            "upload_image",
+            "ai_analyze",
+            "read_logs"
+        ]
+
+        for perm_name in permissions_to_create:
+            query = select(Permission).where(Permission.permission_name == perm_name)
+            result = await session.execute(query)
+            permission = result.scalar_one_or_none()
+
+            if not permission:
+                print(f"Creating permission '{perm_name}'...")
+                permission = Permission(permission_name=perm_name, description=f"Permission to {perm_name.replace('_', ' ')}")
+                session.add(permission)
+                await session.commit()
+                await session.refresh(permission)
+            
+            # Assign permission to role
+            query = select(RolePermission).where(
+                RolePermission.role_id == role.role_id,
+                RolePermission.permission_id == permission.permission_id
+            )
+            result = await session.execute(query)
+            role_perm = result.scalar_one_or_none()
+
+            if not role_perm:
+                print(f"Assigning permission '{perm_name}' to admin role...")
+                role_perm = RolePermission(role_id=role.role_id, permission_id=permission.permission_id)
+                session.add(role_perm)
+                await session.commit()
+
         # Assign role to user
         query = select(UserRole).where(UserRole.user_id == user.user_id, UserRole.role_id == role.role_id)
         result = await session.execute(query)

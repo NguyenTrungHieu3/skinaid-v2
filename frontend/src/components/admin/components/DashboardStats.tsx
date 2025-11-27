@@ -1,4 +1,5 @@
 import { Users, Image, TrendingUp, Activity, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './DashboardStats.module.css';
 
 interface OverviewData {
@@ -24,18 +25,19 @@ interface DashboardStatsProps {
 }
 
 export default function DashboardStats({ overview, period }: DashboardStatsProps) {
+  const { t } = useTranslation();
   if (!overview) return null;
 
 
 
   const getPeriodLabel = (p: string) => {
     switch (p) {
-      case 'day': return 'yesterday';
-      case 'week': return 'last week';
-      case 'month': return 'last month';
-      case 'year': return 'last year';
-      case 'all': return 'previous period';
-      default: return 'last period';
+      case 'day': return t('admin.dashboard.periods.yesterday');
+      case 'week': return t('admin.dashboard.periods.last_week');
+      case 'month': return t('admin.dashboard.periods.last_month');
+      case 'year': return t('admin.dashboard.periods.last_year');
+      case 'all': return t('admin.dashboard.periods.previous_period');
+      default: return t('admin.dashboard.periods.last_period');
     }
   };
 
@@ -45,7 +47,7 @@ export default function DashboardStats({ overview, period }: DashboardStatsProps
     <div className={`${styles.adminCardList} ${styles.mt24}`}>
       <div className={`${styles.adminCard} ${styles.adminCardGradientCyan}`}>
         <div className={styles.adminCardHeader}>
-          <h3 className={styles.adminCardTitle}>Total Users</h3>
+          <h3 className={styles.adminCardTitle}>{t('admin.dashboard.stats.total_users')}</h3>
           <div className={`${styles.adminCardIcon} ${styles.iconCyan}`}>
             <Users />
           </div>
@@ -54,17 +56,17 @@ export default function DashboardStats({ overview, period }: DashboardStatsProps
           <div className={styles.adminCardValue}>{overview.total_users.toLocaleString()}</div>
           <p className={`${styles.adminCardChange} ${styles.changeCyan}`}>
             <TrendingUp />
-            <span>+{overview.growth_rate}% from {periodLabel}</span>
+            <span>+{overview.growth_rate}% {t('admin.dashboard.stats.from')} {periodLabel}</span>
           </p>
           <div className={styles.adminCardInfo}>
-            <p>New Users: <span>{overview.new_users_this_month || 0}</span></p>
+            <p>{t('admin.dashboard.stats.new_users')}: <span>{overview.new_users_this_month || 0}</span></p>
           </div>
         </div>
       </div>
 
       <div className={`${styles.adminCard} ${styles.adminCardGradientBlue}`}>
         <div className={styles.adminCardHeader}>
-          <h3 className={styles.adminCardTitle}>Total Uploads</h3>
+          <h3 className={styles.adminCardTitle}>{t('admin.dashboard.stats.total_uploads')}</h3>
           <div className={`${styles.adminCardIcon} ${styles.iconBlue}`}>
             <Image />
           </div>
@@ -73,17 +75,17 @@ export default function DashboardStats({ overview, period }: DashboardStatsProps
           <div className={styles.adminCardValue}>{overview.total_images.toLocaleString()}</div>
           <p className={`${styles.adminCardChange} ${styles.changeBlue}`}>
             <TrendingUp />
-            <span>+{overview.image_growth_rate}% from {periodLabel}</span>
+            <span>+{overview.image_growth_rate}% {t('admin.dashboard.stats.from')} {periodLabel}</span>
           </p>
           <div className={styles.adminCardInfo}>
-            <p>New uploads: <span>{overview.new_uploads_week || 0}</span></p>
+            <p>{t('admin.dashboard.stats.new_uploads')}: <span>{overview.new_uploads_week || 0}</span></p>
           </div>
         </div>
       </div>
 
       <div className={`${styles.adminCard} ${styles.adminCardGradientPurple}`}>
         <div className={styles.adminCardHeader}>
-          <h3 className={styles.adminCardTitle}>Total Detections</h3>
+          <h3 className={styles.adminCardTitle}>{t('admin.dashboard.stats.total_detections')}</h3>
           <div className={`${styles.adminCardIcon} ${styles.iconPurple}`}>
             <Activity />
           </div>
@@ -92,17 +94,17 @@ export default function DashboardStats({ overview, period }: DashboardStatsProps
           <div className={styles.adminCardValue}>{overview.total_detections.toLocaleString()}</div>
           <p className={`${styles.adminCardChange} ${styles.changePurple}`}>
             <TrendingUp />
-            <span>+{overview.detection_growth_rate}% from {periodLabel}</span>
+            <span>+{overview.detection_growth_rate}% {t('admin.dashboard.stats.from')} {periodLabel}</span>
           </p>
           <div className={styles.adminCardInfo}>
-            <p>New detection: <span>{overview.new_detections_week || 0}</span></p>
+            <p>{t('admin.dashboard.stats.new_detection')}: <span>{overview.new_detections_week || 0}</span></p>
           </div>
         </div>
       </div>
 
       <div className={`${styles.adminCard} ${styles.adminCardGradientRose}`}>
         <div className={styles.adminCardHeader}>
-          <h3 className={styles.adminCardTitle}>Model Accuracy</h3>
+          <h3 className={styles.adminCardTitle}>{t('admin.dashboard.stats.model_accuracy')}</h3>
           <div className={`${styles.adminCardIcon} ${styles.iconRose}`}>
             <Target />
           </div>
@@ -111,10 +113,10 @@ export default function DashboardStats({ overview, period }: DashboardStatsProps
           <div className={styles.adminCardValue}>{overview.model_accuracy.toFixed(1)}%</div>
           <p className={`${styles.adminCardChange} ${overview.accuracy_trend >= 0 ? styles.changeRose : styles.changeDecline}`}>
             <TrendingUp />
-            <span>{overview.accuracy_trend >= 0 ? '+' : ''}{overview.accuracy_trend.toFixed(1)}% from {periodLabel}</span>
+            <span>{overview.accuracy_trend >= 0 ? '+' : ''}{overview.accuracy_trend.toFixed(1)}% {t('admin.dashboard.stats.from')} {periodLabel}</span>
           </p>
           <div className={styles.adminCardInfo}>
-            <p>High confidence: <span>{overview.high_confidence_detections || 0}</span></p>
+            <p>{t('admin.dashboard.stats.high_confidence')}: <span>{overview.high_confidence_detections || 0}</span></p>
           </div>
         </div>
       </div>

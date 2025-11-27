@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FC } from 'react';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getUsers, createUser, updateUser, updateUserStatus, deleteUser } from '../../services/userService';
 import { useToast } from '../../contexts/ToastContext';
 import UserFilters from './components/UserFilters';
@@ -34,6 +35,7 @@ interface ApiError {
 }
 
 const UserManagement: FC = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,15 +246,15 @@ const UserManagement: FC = () => {
       {/* Header */}
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>User Management</h1>
-          <p>Manage users and permissions</p>
+          <h1>{t('admin.user_management.title')}</h1>
+          <p>{t('admin.user_management.subtitle')}</p>
         </div>
         <button
           className={styles.adminBtnPrimary}
           onClick={() => setShowAddModal(true)}
         >
           <Plus size={18} strokeWidth={2.5} />
-          Add New User
+          {t('admin.user_management.add_user')}
         </button>
       </div>
 
@@ -268,10 +270,10 @@ const UserManagement: FC = () => {
 
       {/* Users count */}
       <div className={styles.usersCount}>
-        Total Users ({totalUsers} total)
+        {t('admin.user_management.total_users')} ({totalUsers} total)
         {totalUsers > 0 && (
           <span style={{ marginLeft: '1rem', color: '#666', fontSize: '0.9rem' }}>
-            Showing {indexOfFirstUser}-{indexOfLastUser} of {totalUsers}
+            {t('admin.user_management.showing', { start: indexOfFirstUser, end: indexOfLastUser, total: totalUsers })}
           </span>
         )}
       </div>

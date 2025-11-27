@@ -7,6 +7,7 @@ import {
   Loader,
   Eye
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Pagination from '../../common/Pagination';
 import styles from './LogTable.module.css';
 
@@ -46,6 +47,35 @@ const LogTable: React.FC<LogTableProps> = ({
   onPageChange,
   onViewDetails
 }) => {
+  const { t } = useTranslation();
+
+  // Function to translate role
+  const translateRole = (role: string) => {
+    const roleLower = role.toLowerCase();
+    // Check if it's a valid role key
+    if (['user', 'admin', 'guest'].includes(roleLower)) {
+      return t(`admin.logs.filters.roles.${roleLower}`);
+    }
+    return role; // fallback to original if not matched
+  };
+
+  // Function to translate action
+  const translateAction = (action: string) => {
+    const key = `admin.dashboard.logs.actions.${action}`;
+    const translated = t(key);
+    // If translation exists, return it; otherwise return original
+    return translated !== key ? translated : action;
+  };
+
+  // Function to translate log type
+  const translateType = (type: string) => {
+    const typeLower = type.toLowerCase();
+    if (['success', 'error', 'info', 'warning'].includes(typeLower)) {
+      return t(`admin.logs.types.${typeLower}`);
+    }
+    return type;
+  };
+
   const getLogTypeIcon = (type: string) => {
     switch (type) {
       case 'error': return <AlertCircle size={16} />;
@@ -77,7 +107,7 @@ const LogTable: React.FC<LogTableProps> = ({
       <div className={styles.logsTableCard}>
         <div className={styles.loadingState}>
           <Loader className={styles.spinner} />
-          <p>Loading logs...</p>
+          <p>{t('admin.logs.table.loading')}</p>
         </div>
       </div>
     );
@@ -93,7 +123,7 @@ const LogTable: React.FC<LogTableProps> = ({
             className={styles.paginationBtn}
             onClick={() => window.location.reload()}
           >
-            Try Again
+            {t('admin.logs.table.try_again')}
           </button>
         </div>
       </div>
@@ -105,7 +135,7 @@ const LogTable: React.FC<LogTableProps> = ({
       <div className={styles.logsTableCard}>
         <div className={styles.emptyState}>
           <Info size={48} />
-          <p>No logs found matching your criteria</p>
+          <p>{t('admin.logs.table.no_logs')}</p>
         </div>
       </div>
     );
@@ -114,10 +144,13 @@ const LogTable: React.FC<LogTableProps> = ({
   return (
     <div className={styles.logsTableCard}>
       <div className={styles.cardHeader}>
-        <h3>System Activity</h3>
+        <h3>{t('admin.logs.table.title')}</h3>
         <span className={styles.pageInfo}>
-          Showing {((pagination.currentPage - 1) * pagination.limit) + 1}-
-          {Math.min(pagination.currentPage * pagination.limit, pagination.totalLogs)} of {pagination.totalLogs}
+          {t('admin.logs.table.showing', {
+            start: ((pagination.currentPage - 1) * pagination.limit) + 1,
+            end: Math.min(pagination.currentPage * pagination.limit, pagination.totalLogs),
+            total: pagination.totalLogs
+          })}
         </span>
       </div>
 
@@ -126,13 +159,13 @@ const LogTable: React.FC<LogTableProps> = ({
           <table className={styles.logsTable}>
             <thead>
               <tr>
-                <th>Time</th>
-                <th>Type</th>
-                <th>User</th>
-                <th>Role</th>
-                <th>Action</th>
-                <th>Details</th>
-                <th style={{ width: '80px', textAlign: 'center' }}>View Details</th>
+                <th>{t('admin.logs.table.headers.time')}</th>
+                <th>{t('admin.logs.table.headers.type')}</th>
+                <th>{t('admin.logs.table.headers.username')}</th>
+                <th>{t('admin.logs.table.headers.role')}</th>
+                <th>{t('admin.logs.table.headers.action')}</th>
+                <th>{t('admin.logs.table.headers.details')}</th>
+                <th style={{ width: '80px', textAlign: 'center' }}>{t('admin.logs.table.headers.view_details')}</th>
               </tr>
             </thead>
             <tbody>
@@ -152,7 +185,7 @@ const LogTable: React.FC<LogTableProps> = ({
                   <td>
                     <span className={`${styles.logTypeBadge} ${getLogTypeClass(log.type)}`}>
                       {getLogTypeIcon(log.type)}
-                      <span style={{ marginLeft: '4px' }}>{log.type}</span>
+                      <span style={{ marginLeft: '4px' }}>{translateType(log.type)}</span>
                     </span>
                   </td>
                   <td className={styles.userCell}>
@@ -160,10 +193,10 @@ const LogTable: React.FC<LogTableProps> = ({
                   </td>
                   <td>
                     <span className={`${styles.roleBadge} ${getRoleBadgeClass(log.role)}`}>
-                      {log.role}
+                      {translateRole(log.role)}
                     </span>
                   </td>
-                  <td className={styles.standardCell}>{log.action}</td>
+                  <td className={styles.standardCell}>{translateAction(log.action)}</td>
                   <td className={`${styles.logMessage} ${styles.standardCell}`}>
                     <div style={{
                       maxWidth: '200px',
@@ -178,7 +211,7 @@ const LogTable: React.FC<LogTableProps> = ({
                     <button
                       className={styles.viewButton}
                       onClick={() => onViewDetails(log)}
-                      title="View Details"
+                      title={t('admin.logs.table.headers.view_details')}
                     >
                       <Eye size={18} />
                     </button>

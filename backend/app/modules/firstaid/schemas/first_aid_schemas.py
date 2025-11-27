@@ -12,15 +12,13 @@ class CreateFirstAidGuideRequest(BaseModel):
     severity: str = Field(..., description="Mức độ (mild, moderate, severe)")
     sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ cho burn: blister, skintear)")
     title: str = Field(..., min_length=5, max_length=200, description="Tiêu đề hướng dẫn")
-    description: Optional[str] = Field(None, max_length=1000, description="Mô tả chi tiết")
     
     steps: List[str] = Field(..., min_items=1, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(default=None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(default=None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(default=None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(default=None, description="Vật dụng cần thiết")
     
-    
+    source: str = Field(..., min_length=1, max_length=500, description="Nguồn tham khảo (VD: WHO, Bộ Y tế Việt Nam, URL)")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     
     @field_validator('wound_type')
@@ -66,14 +64,13 @@ class CreateFirstAidGuideRequest(BaseModel):
 
 class UpdateFirstAidGuideRequest(BaseModel):
     title: Optional[str] = Field(None, min_length=5, max_length=200, description="Tiêu đề")
-    description: Optional[str] = Field(None, max_length=1000, description="Mô tả")
     
     steps: Optional[List[str]] = Field(None, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
     
+    source: Optional[str] = Field(None, min_length=1, max_length=500, description="Nguồn tham khảo")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     is_active: Optional[bool] = Field(None, description="Trạng thái hoạt động")
     sub_type: Optional[str] = Field(None, description="Loại phụ")
@@ -85,14 +82,13 @@ class FirstAidGuideResponse(BaseModel):
     sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ dành cho burn)")
     severity_display: str = Field(..., description="Tên mức độ tiếng Việt")
     title: str = Field(..., description="Tiêu đề hướng dẫn")
-    description: Optional[str] = Field(None, description="Mô tả chi tiết")
 
     steps: Optional[List[str]] = Field(None, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
 
+    source: Optional[str] = Field(None, description="Nguồn tham khảo hoặc tác giả")
     estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
     version: int = Field(..., description="Phiên bản")

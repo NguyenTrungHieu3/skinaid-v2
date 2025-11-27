@@ -167,5 +167,314 @@
     "old_password": "Enter your current password",
     "new_password": "Enter new password (min. 8 chars)",
     "confirmNew_password": "Confirm your new password"
+  },
+  "admin": {
+    "topbar": {
+      "logout_confirm": "Are you sure you want to logout?",
+      "logout": "Logout",
+      "roles": {
+        "admin": "Administrator",
+        "moderator": "Moderator",
+        "user": "User"
+      }
+    },
+    "sidebar": {
+      "portal_title": "Admin Portal",
+      "dashboard": "Dashboard",
+      "user_management": "User Management",
+      "first_aid_guidance": "First Aid Guidance",
+      "admin_logs": "Admin Logs",
+      "system_status": "System Status",
+      "operational": "All systems operational",
+      "active": "Active"
+    },
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Overview of system performance and statistics",
+      "refresh": "Refresh Data",
+      "refreshing": "Refresh...",
+      "loading": "Loading dashboard...",
+      "retry": "Retry",
+      "periods": {
+        "today": "Today",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "last_year": "Last Year",
+        "all_time": "All Time",
+        "yesterday": "yesterday",
+        "last_week": "last week",
+        "last_month": "last month",
+        "previous_period": "previous period",
+        "last_period": "last period"
+      },
+      "stats": {
+        "total_users": "Total Users",
+        "new_users": "New users",
+        "total_uploads": "Total Uploads",
+        "new_uploads": "New uploads",
+        "total_detections": "Total Detections",
+        "new_detection": "New detections",
+        "model_accuracy": "Model Accuracy",
+        "high_confidence": "High confidence",
+        "from": "from"
+      },
+      "charts": {
+        "wound_distribution_title": "Wound Type Distribution",
+        "wound_distribution_desc": "Breakdown of wound classifications",
+        "severity_stats_title": "Severity Level Stats",
+        "severity_stats_desc": "Distribution of wound severity",
+        "number_of_cases": "Number of Cases",
+        "cases": "cases",
+        "severity_label": "Severity"
+      },
+      "logs": {
+        "recent_logs_title": "Recent Logs",
+        "recent_logs_desc": "System notifications and alerts",
+        "severity": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "actions": {
+          "login": "Login",
+          "logout": "Logout",
+          "create_guest_session": "Create guest session",
+          "guest_session_created": "Guest session created",
+          "create_user": "Create user",
+          "update_user": "Update user",
+          "delete_user": "Delete user",
+          "upload_image": "Upload image",
+          "detect_wound": "Detect wound",
+          "view_firstaid": "View first aid",
+          "create_firstaid": "Create first aid guide",
+          "update_firstaid": "Update first aid guide",
+          "delete_firstaid": "Delete first aid guide"
+        },
+        "resources": {
+          "user": "User",
+          "guest_session": "Guest session",
+          "image": "Image",
+          "wound_analysis": "Wound analysis",
+          "firstaid_guide": "First aid guide",
+          "system": "System"
+        }
+      }
+    },
+    "user_management": {
+      "title": "User Management",
+      "subtitle": "Manage users and permissions",
+      "add_user": "Add New User",
+      "total_users": "Total Users",
+      "showing": "Showing {{start}}-{{end}} of {{total}}",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "table": {
+        "loading": "Loading users...",
+        "no_users": "No users found",
+        "adjust_filters": "Try adjusting your filters",
+        "headers": {
+          "name": "Name",
+          "email": "Email",
+          "role": "Role",
+          "status": "Status",
+          "uploads": "Uploads",
+          "join_date": "Join Date",
+          "actions": "Actions"
+        },
+        "no_name": "No Name",
+        "status_active": "Active",
+        "status_inactive": "Inactive",
+        "actions": {
+          "edit": "Edit",
+          "deactivate": "Deactivate",
+          "activate": "Activate",
+          "processing": "Processing...",
+          "delete": "Delete",
+          "deleting": "Deleting..."
+        }
+      },
+      "form": {
+        "title_edit": "Edit User",
+        "title_add": "Add New User",
+        "labels": {
+          "email": "Email",
+          "username": "Username",
+          "password": "Password",
+          "role": "Role"
+        },
+        "password_hint": "At least 8 characters with 1 uppercase, 1 lowercase, and 1 number",
+        "buttons": {
+          "cancel": "Cancel",
+          "update": "Update User",
+          "create": "Create User",
+          "updating": "Updating...",
+          "creating": "Creating..."
+        },
+        "errors": {
+          "email_required": "Email is required",
+          "email_invalid": "Invalid email format",
+          "name_required": "Display name is required",
+          "name_min": "Display name must be at least 2 characters",
+          "name_max": "Display name must not exceed 50 characters",
+          "password_required": "Password is required",
+          "password_invalid": "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number",
+          "role_required": "Role is required"
+        }
+      }
+    },
+    "first_aid": {
+      "title": "First Aid Guidance Management",
+      "subtitle": "Manage wound care and first aid content",
+      "add_guidance": "Add New Guidance",
+      "total_guides": "Total Guides",
+      "active_guides": "Active Guides",
+      "wound_types": "Wound Types",
+      "search_placeholder": "Search by title...",
+      "filter_wound_type": "Wound Type",
+      "filter_wound_type_all": "All Types",
+      "filter_severity": "Severity",
+      "filter_severity_all": "All Severities",
+      "filter_status": "Active Status",
+      "filter_status_all": "All",
+      "filter_status_active": "Active",
+      "filter_status_inactive": "Inactive",
+      "no_guides": "No first aid guides found",
+      "try_adjusting": "Try adjusting your filters",
+      "view_details": "View Details",
+      "more_steps": "more steps",
+      "loading": "Loading first aid guides..."
+    },
+    "logs": {
+      "title": "System Logs",
+      "subtitle": "View and manage system logs",
+      "security_notice": "Security Notice",
+      "security_desc": "This system is monitored. Unauthorized access or misuse will be logged and reported.",
+      "table": {
+        "loading": "Loading logs...",
+        "try_again": "Try Again",
+        "no_logs": "No logs found matching your criteria",
+        "title": "System Activity",
+        "showing": "Showing {{start}}-{{end}} of {{total}}",
+        "headers": {
+          "time": "Time",
+          "type": "Type",
+          "username": "Username",
+          "role": "Role",
+          "action": "Action",
+          "details": "Details",
+          "view_details": "View Details"
+        }
+      },
+      "details": {
+        "title": "Log Details",
+        "summary": "Summary",
+        "timestamp": "Timestamp:",
+        "action": "Action:",
+        "severity": "Severity:",
+        "user": "User:",
+        "full_details": "Full Details",
+        "close": "Close"
+      },
+      "filters": {
+        "search_placeholder": "Search logs...",
+        "all_types": "All Types",
+        "success": "Success",
+        "error": "Error",
+        "all_roles": "All Roles",
+        "refresh": "Refresh",
+        "roles": {
+          "user": "User",
+          "admin": "Admin",
+          "guest": "Guest"
+        }
+      },
+      "types": {
+        "success": "Success",
+        "error": "Error",
+        "info": "Info",
+        "warning": "Warning"
+      }
+    },
+    "user_filters": {
+      "search_placeholder": "Search users...",
+      "all_roles": "All Roles",
+      "all_status": "All Status",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "first_aid_form": {
+      "title_add": "Create New Guide",
+      "title_edit": "Edit Guide",
+      "medical_warning_title": "Medical Content Warning",
+      "medical_warning_desc": "Please ensure all medical information is accurate and verified by professionals. Incorrect first aid advice can lead to serious harm.",
+      "labels": {
+        "wound_type": "Wound Type",
+        "severity": "Severity",
+        "sub_type": "Sub Type (Optional)",
+        "sub_type_placeholder": "e.g., Blister",
+        "title": "Title",
+        "title_placeholder": "e.g., Basic treatment for abrasion",
+        "description": "Description",
+        "steps": "Steps",
+        "step_placeholder": "Step {{index}}",
+        "dos": "Do's",
+        "do_placeholder": "Do...",
+        "donts": "Don'ts",
+        "dont_placeholder": "Don't...",
+        "supplies": "Supplies Needed",
+        "supply_placeholder": "Supply item",
+        "source": "Source",
+        "source_placeholder": "e.g., WHO, Red Cross, Mayo Clinic"
+      },
+      "buttons": {
+        "add_step": "Add Step",
+        "add_do": "Add Do",
+        "add_dont": "Add Don't",
+        "add_supply": "Add Supply",
+        "cancel": "Cancel",
+        "create": "Create Guide",
+        "creating": "Creating...",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      },
+      "options": {
+        "abrasion": "Scratch / Abrasion",
+        "bruise": "Bruise / Contusion",
+        "burn": "Burn",
+        "cut": "Cut / Laceration",
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      }
+    },
+    "first_aid_view": {
+      "labels": {
+        "wound_type": "Wound Type",
+        "severity": "Severity",
+        "sub_type": "Sub Type",
+        "healing_time": "Healing Time",
+        "description": "Description",
+        "steps": "First Aid Steps",
+        "dos": "Do's",
+        "donts": "Don'ts",
+        "supplies": "Supplies Needed",
+        "source": "Source",
+        "version": "Version",
+        "last_updated": "Last Updated"
+      },
+      "close": "Close"
+    }
   }
 }

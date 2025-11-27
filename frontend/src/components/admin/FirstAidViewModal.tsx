@@ -1,4 +1,5 @@
 import { X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './FirstAidManagement.module.css';
 
 interface Guide {
@@ -40,6 +41,7 @@ export default function FirstAidViewModal({
     formatWoundType,
     getSeverityBadgeClass
 }: FirstAidViewModalProps) {
+    const { t } = useTranslation();
     if (!isOpen || !guide) return null;
 
     return (
@@ -55,22 +57,22 @@ export default function FirstAidViewModal({
                 <div className={styles.modalBody}>
                     <div className={styles.modalInfoGrid}>
                         <div className={styles.infoItem}>
-                            <label>Wound Type</label>
-                            <p>{formatWoundType(guide.wound_type)}</p>
+                            <label>{t('admin.first_aid_view.labels.wound_type')}</label>
+                            <p>{t(`admin.first_aid_form.options.${guide.wound_type}`) || formatWoundType(guide.wound_type)}</p>
                         </div>
                         <div className={styles.infoItem}>
-                            <label>Severity</label>
+                            <label>{t('admin.first_aid_view.labels.severity')}</label>
                             <span className={`${styles.badge} ${getSeverityBadgeClass(guide.severity)}`}>
-                                {guide.severity_display || guide.severity}
+                                {t(`admin.first_aid_form.options.${guide.severity}`) || guide.severity_display || guide.severity}
                             </span>
                         </div>
                         <div className={styles.infoItem}>
-                            <label>Sub Type</label>
+                            <label>{t('admin.first_aid_view.labels.sub_type')}</label>
                             <p>{guide.sub_type || '-'}</p>
                         </div>
                         {guide.estimated_healing_time && (
                             <div className={styles.infoItem}>
-                                <label>Healing Time</label>
+                                <label>{t('admin.first_aid_view.labels.healing_time')}</label>
                                 <p>{guide.estimated_healing_time}</p>
                             </div>
                         )}
@@ -78,14 +80,14 @@ export default function FirstAidViewModal({
 
                     {guide.description && (
                         <div className={styles.modalSection}>
-                            <h3>Description</h3>
+                            <h3>{t('admin.first_aid_view.labels.description')}</h3>
                             <p>{guide.description}</p>
                         </div>
                     )}
 
                     {guide.steps && guide.steps.length > 0 && (
                         <div className={styles.modalSection}>
-                            <h3>First Aid Steps</h3>
+                            <h3>{t('admin.first_aid_view.labels.steps')}</h3>
                             <ol className={styles.stepsListFull}>
                                 {guide.steps.map((step, index) => (
                                     <li key={index}>
@@ -101,7 +103,7 @@ export default function FirstAidViewModal({
                         <div className={`${styles.modalSection} ${styles.modalSectionSuccess}`}>
                             <h3>
                                 <CheckCircle size={16} style={{ display: 'inline', marginRight: '8px' }} />
-                                Do's
+                                {t('admin.first_aid_view.labels.dos')}
                             </h3>
                             <ul className={styles.tipsList}>
                                 {guide.dos.map((item, index) => (
@@ -115,7 +117,7 @@ export default function FirstAidViewModal({
                         <div className={`${styles.modalSection} ${styles.modalSectionDanger}`}>
                             <h3>
                                 <AlertTriangle size={16} style={{ display: 'inline', marginRight: '8px' }} />
-                                Don'ts
+                                {t('admin.first_aid_view.labels.donts')}
                             </h3>
                             <ul className={styles.tipsList}>
                                 {guide.donts.map((item, index) => (
@@ -127,7 +129,7 @@ export default function FirstAidViewModal({
 
                     {guide.supplies_needed && guide.supplies_needed.length > 0 && (
                         <div className={styles.modalSection}>
-                            <h3>Supplies Needed</h3>
+                            <h3>{t('admin.first_aid_view.labels.supplies')}</h3>
                             <ul className={styles.suppliesList}>
                                 {guide.supplies_needed.map((supply, index) => (
                                     <li key={index}>{supply}</li>
@@ -137,15 +139,15 @@ export default function FirstAidViewModal({
                     )}
 
                     <div className={styles.modalFooterInfo}>
-                        <p><strong>Source:</strong> {guide.source || 'Based on WHO and Red Cross guidelines'}</p>
-                        <p><strong>Version:</strong> {guide.version}</p>
-                        <p><strong>Last Updated:</strong> {new Date(guide.updated_at).toLocaleDateString()}</p>
+                        <p><strong>{t('admin.first_aid_view.labels.source')}:</strong> {guide.source || 'Based on WHO and Red Cross guidelines'}</p>
+                        <p><strong>{t('admin.first_aid_view.labels.version')}:</strong> {guide.version}</p>
+                        <p><strong>{t('admin.first_aid_view.labels.last_updated')}:</strong> {new Date(guide.updated_at).toLocaleDateString()}</p>
                     </div>
                 </div>
 
                 <div className={styles.modalActions}>
                     <button className={styles.btnSecondary} onClick={onClose}>
-                        Close
+                        {t('admin.first_aid_view.close')}
                     </button>
                 </div>
             </div>

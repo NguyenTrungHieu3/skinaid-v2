@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Ban
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   searchFirstAidGuides,
   getWoundTypes,
@@ -73,6 +74,7 @@ interface FormData {
 }
 
 export default function FirstAidManagement() {
+  const { t } = useTranslation();
   const { success, error: toastError } = useToast();
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -551,12 +553,12 @@ export default function FirstAidManagement() {
     <div className={styles.firstaidManagementPage}>
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>First Aid Guidance Management</h1>
-          <p>Manage wound care and first aid content</p>
+          <h1>{t('admin.first_aid.title')}</h1>
+          <p>{t('admin.first_aid.subtitle')}</p>
         </div>
         <button className={styles.adminBtnPrimary} onClick={handleOpenAddModal}>
           <Plus size={20} />
-          Add New Guidance
+          {t('admin.first_aid.add_guidance')}
         </button>
       </div>
 
@@ -567,7 +569,7 @@ export default function FirstAidManagement() {
           </div>
           <div className={styles.statDetails}>
             <div className={styles.statValue}>{stats.total_guides}</div>
-            <div className={styles.statLabel}>Total Guides</div>
+            <div className={styles.statLabel}>{t('admin.first_aid.total_guides')}</div>
           </div>
         </div>
         <div className={styles.statCard}>
@@ -576,7 +578,7 @@ export default function FirstAidManagement() {
           </div>
           <div className={styles.statDetails}>
             <div className={styles.statValue}>{stats.active_guides}</div>
-            <div className={styles.statLabel}>Active Guides</div>
+            <div className={styles.statLabel}>{t('admin.first_aid.active_guides')}</div>
           </div>
         </div>
         <div className={styles.statCard}>
@@ -585,18 +587,18 @@ export default function FirstAidManagement() {
           </div>
           <div className={styles.statDetails}>
             <div className={styles.statValue}>{stats.wound_types}</div>
-            <div className={styles.statLabel}>Wound Types</div>
+            <div className={styles.statLabel}>{t('admin.first_aid.wound_types')}</div>
           </div>
         </div>
       </div>
 
       <div className={styles.filtersSection}>
         <div className={styles.filterGroup}>
-          <label>Search</label>
+          <label>{t('admin.first_aid.search_placeholder')}</label>
           <div style={{ position: 'relative' }}>
             <input
               type="text"
-              placeholder="Search by title..."
+              placeholder={t('admin.first_aid.search_placeholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -612,40 +614,40 @@ export default function FirstAidManagement() {
           </div>
         </div>
         <div className={styles.filterGroup}>
-          <label>Wound Type</label>
+          <label>{t('admin.first_aid.filter_wound_type')}</label>
           <select
             value={selectedWoundType}
             onChange={(e) => setSelectedWoundType(e.target.value)}
           >
-            <option value="">All Types</option>
+            <option value="">{t('admin.first_aid.filter_wound_type_all')}</option>
             {woundTypes.map((type) => (
               <option key={type.wound_type} value={type.wound_type}>
-                {formatWoundType(type.wound_type)}
+                {t(`admin.first_aid_form.options.${type.wound_type}`) || formatWoundType(type.wound_type)}
               </option>
             ))}
           </select>
         </div>
         <div className={styles.filterGroup}>
-          <label>Severity</label>
+          <label>{t('admin.first_aid.filter_severity')}</label>
           <select
             value={selectedSeverity}
             onChange={(e) => setSelectedSeverity(e.target.value)}
           >
-            <option value="">All Severities</option>
-            <option value="mild">Mild</option>
-            <option value="moderate">Moderate</option>
-            <option value="severe">Severe</option>
+            <option value="">{t('admin.first_aid.filter_severity_all')}</option>
+            <option value="mild">{t('admin.first_aid_form.options.mild')}</option>
+            <option value="moderate">{t('admin.first_aid_form.options.moderate')}</option>
+            <option value="severe">{t('admin.first_aid_form.options.severe')}</option>
           </select>
         </div>
         <div className={styles.filterGroup}>
-          <label>Active Status</label>
+          <label>{t('admin.first_aid.filter_status')}</label>
           <select
             value={selectedActiveStatus}
             onChange={(e) => setSelectedActiveStatus(e.target.value)}
           >
-            <option value="all">All</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
+            <option value="all">{t('admin.first_aid.filter_status_all')}</option>
+            <option value="true">{t('admin.first_aid.filter_status_active')}</option>
+            <option value="false">{t('admin.first_aid.filter_status_inactive')}</option>
           </select>
         </div>
       </div>
@@ -655,7 +657,7 @@ export default function FirstAidManagement() {
         Total Guides ({totalCount} total)
         {totalCount > 0 && (
           <span style={{ marginLeft: '1rem', color: '#666', fontSize: '0.9rem' }}>
-            Showing {(page - 1) * limit + 1}-{Math.min(page * limit, totalCount)} of {totalCount}
+            {t('admin.user_management.showing', { start: (page - 1) * limit + 1, end: Math.min(page * limit, totalCount), total: totalCount })}
           </span>
         )}
       </div>
@@ -663,7 +665,7 @@ export default function FirstAidManagement() {
       {loading && (
         <div className={styles.loadingState}>
           <div className={styles.loadingSpinner}></div>
-          <p>Loading first aid guides...</p>
+          <p>{t('admin.first_aid.loading')}</p>
         </div>
       )}
 
@@ -671,7 +673,7 @@ export default function FirstAidManagement() {
         <div className={styles.errorState}>
           <div className={styles.errorIcon}>⚠️</div>
           <p>{error}</p>
-          <button onClick={fetchGuides} className={styles.btnRetry}>Retry</button>
+          <button onClick={fetchGuides} className={styles.btnRetry}>{t('admin.dashboard.retry')}</button>
         </div>
       )}
 
@@ -680,8 +682,8 @@ export default function FirstAidManagement() {
           {guides.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📋</div>
-              <p>No first aid guides found</p>
-              <p className={styles.emptySubtitle}>Try adjusting your filters</p>
+              <p>{t('admin.first_aid.no_guides')}</p>
+              <p className={styles.emptySubtitle}>{t('admin.first_aid.try_adjusting')}</p>
             </div>
           ) : (
             guides.map((guide) => (
@@ -699,10 +701,10 @@ export default function FirstAidManagement() {
                         </span>
                       )}
                       <span className={`${styles.badge} ${getSeverityBadgeClass(guide.severity)}`}>
-                        {guide.severity_display || guide.severity}
+                        {t(`admin.first_aid_form.options.${guide.severity}`) || guide.severity_display || guide.severity}
                       </span>
                       <span className={styles.guideDate}>
-                        Updated: {new Date(guide.updated_at).toLocaleDateString()}
+                        {t('admin.first_aid_view.labels.last_updated')}: {new Date(guide.updated_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -714,7 +716,7 @@ export default function FirstAidManagement() {
                   )}
 
                   <div className={styles.guideStepsPreview}>
-                    <p className={styles.stepsTitle}>First Aid Steps:</p>
+                    <p className={styles.stepsTitle}>{t('admin.first_aid_view.labels.steps')}:</p>
                     <ul className={styles.stepsList}>
                       {guide.steps && guide.steps.slice(0, 3).map((step, index) => (
                         <li key={index}>
@@ -724,7 +726,7 @@ export default function FirstAidManagement() {
                       ))}
                     </ul>
                     {guide.steps && guide.steps.length > 3 && (
-                      <p className={styles.stepsMore}>+{guide.steps.length - 3} more steps</p>
+                      <p className={styles.stepsMore}>+{guide.steps.length - 3} {t('admin.first_aid.more_steps')}</p>
                     )}
                   </div>
 
@@ -733,7 +735,7 @@ export default function FirstAidManagement() {
                       className={styles.btnViewFull}
                       onClick={() => handleViewGuide(guide)}
                     >
-                      View Details
+                      {t('admin.first_aid.view_details')}
                     </button>
                     <button
                       className={styles.btnEdit}

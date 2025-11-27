@@ -124,9 +124,7 @@ class FirstAidService:
             "severity": guide.get("severity"),
             "sub_type": guide.get("sub_type"),
             "title": guide.get("title"),
-            "description": guide.get("description"),
             "steps": FirstAidGuide.extract_list(guide.get("steps")),
-            "warnings": FirstAidGuide.extract_list(guide.get("warnings")),
             "dos": FirstAidGuide.extract_list(guide.get("dos")),
             "donts": FirstAidGuide.extract_list(guide.get("donts")),
             "supplies_needed": FirstAidGuide.extract_list(guide.get("supplies_needed")),
@@ -327,9 +325,6 @@ class FirstAidService:
         if not guide_data.get("donts"):
             issues.append("Missing 'donts' (things not to do)")
 
-        if guide_data.get("severity") == "severe" and not guide_data.get("warnings"):
-            issues.append("Severe wounds should have warnings")
-
         return {
             "is_complete": len(issues) == 0,
             "issues": issues,
@@ -361,7 +356,6 @@ class FirstAidService:
 
             # Convert lists to JSONB format
             steps_jsonb = {"items": guide_data.get("steps", [])}
-            warnings_jsonb = {"items": guide_data.get("warnings", [])} if guide_data.get("warnings") else None
             dos_jsonb = {"items": guide_data.get("dos", [])} if guide_data.get("dos") else None
             donts_jsonb = {"items": guide_data.get("donts", [])} if guide_data.get("donts") else None
             supplies_jsonb = {"items": guide_data.get("supplies_needed", [])} if guide_data.get("supplies_needed") else None
@@ -370,13 +364,12 @@ class FirstAidService:
                 wound_type=guide_data["wound_type"],
                 severity=guide_data["severity"],
                 title=guide_data["title"],
-                description=guide_data.get("description"),
                 sub_type=guide_data.get("sub_type"),
                 steps=steps_jsonb,
-                warnings=warnings_jsonb,
                 dos=dos_jsonb,
                 donts=donts_jsonb,
                 supplies_needed=supplies_jsonb,
+                source=guide_data.get("source"),
                 estimated_healing_time=guide_data.get("estimated_healing_time"),
                 created_by=str(created_by) if created_by else None
             )
@@ -453,8 +446,8 @@ class FirstAidService:
 
             # Whitelist of allowed fields to prevent SQL injection
             allowed_fields = {
-                "title", "description", "steps", "warnings", "dos", 
-                "donts", "supplies_needed", "estimated_healing_time", "is_active"
+                "title", "steps", "dos", 
+                "donts", "supplies_needed", "source", "estimated_healing_time", "is_active"
             }
             
             # Prepare update fields
@@ -465,19 +458,10 @@ class FirstAidService:
                 update_fields.append("title = :title")
                 params["title"] = update_data["title"]
             
-            if "description" in update_data and "description" in allowed_fields:
-                update_fields.append("description = :description")
-                params["description"] = update_data["description"]
-            
             if "steps" in update_data and "steps" in allowed_fields:
                 update_fields.append("steps = :steps")
                 # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
                 params["steps"] = json.dumps({"items": update_data["steps"]})
-            
-            if "warnings" in update_data and "warnings" in allowed_fields:
-                update_fields.append("warnings = :warnings")
-                # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
-                params["warnings"] = json.dumps({"items": update_data["warnings"]}) if update_data["warnings"] else None
             
             if "dos" in update_data and "dos" in allowed_fields:
                 update_fields.append("dos = :dos")
@@ -493,6 +477,10 @@ class FirstAidService:
                 update_fields.append("supplies_needed = :supplies_needed")
                 # Fix JSONB encoding: use json.dumps() to serialize dict to JSON string
                 params["supplies_needed"] = json.dumps({"items": update_data["supplies_needed"]}) if update_data["supplies_needed"] else None
+            
+            if "source" in update_data and "source" in allowed_fields:
+                update_fields.append("source = :source")
+                params["source"] = update_data["source"]
             
             if "estimated_healing_time" in update_data and "estimated_healing_time" in allowed_fields:
                 update_fields.append("estimated_healing_time = :estimated_healing_time")
@@ -602,12 +590,11 @@ class FirstAidService:
             "severity": guide.severity,
             "sub_type": guide.sub_type,
             "title": guide.title,
-            "description": guide.description,
             "steps": FirstAidGuide.extract_list(guide.steps),
-            "warnings": FirstAidGuide.extract_list(guide.warnings),
             "dos": FirstAidGuide.extract_list(guide.dos),
             "donts": FirstAidGuide.extract_list(guide.donts),
             "supplies_needed": FirstAidGuide.extract_list(guide.supplies_needed),
+            "source": guide.source,
             "estimated_healing_time": guide.estimated_healing_time,
             "is_active": guide.is_active,
             "version": guide.version,

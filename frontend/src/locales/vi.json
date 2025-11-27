@@ -169,5 +169,314 @@
     "old_password": "Nhập mật khẩu hiện tại của bạn",
     "new_password": "Nhập mật khẩu mới (tối thiểu 8 ký tự)",
     "confirmNew_password": "Xác nhận mật khẩu mới của bạn"
+  },
+  "admin": {
+    "topbar": {
+      "logout_confirm": "Bạn có chắc chắn muốn đăng xuất?",
+      "logout": "Đăng xuất",
+      "roles": {
+        "admin": "Quản trị viên",
+        "moderator": "Điều hành viên",
+        "user": "Người dùng"
+      }
+    },
+    "sidebar": {
+      "portal_title": "Cổng quản trị",
+      "dashboard": "Bảng điều khiển",
+      "user_management": "Quản lý người dùng",
+      "first_aid_guidance": "Hướng dẫn sơ cứu",
+      "admin_logs": "Nhật ký quản trị",
+      "system_status": "Trạng thái hệ thống",
+      "operational": "Tất cả hệ thống hoạt động bình thường",
+      "active": "Đang hoạt động"
+    },
+    "dashboard": {
+      "title": "Bảng điều khiển quản trị",
+      "subtitle": "Tổng quan về hiệu suất và thống kê hệ thống",
+      "refresh": "Làm mới dữ liệu",
+      "refreshing": "Đang làm mới...",
+      "loading": "Đang tải bảng điều khiển...",
+      "retry": "Thử lại",
+      "periods": {
+        "today": "Hôm nay",
+        "last_7_days": "7 ngày qua",
+        "last_30_days": "30 ngày qua",
+        "last_year": "Năm qua",
+        "all_time": "Tất cả thời gian",
+        "yesterday": "hôm qua",
+        "last_week": "tuần trước",
+        "last_month": "tháng trước",
+        "previous_period": "kỳ trước",
+        "last_period": "kỳ trước"
+      },
+      "stats": {
+        "total_users": "Tổng người dùng",
+        "new_users": "Người dùng mới",
+        "total_uploads": "Tổng lượt tải lên",
+        "new_uploads": "Lượt tải mới",
+        "total_detections": "Tổng lượt phát hiện",
+        "new_detection": "Phát hiện mới",
+        "model_accuracy": "Độ chính xác mô hình",
+        "high_confidence": "Độ tin cậy cao",
+        "from": "từ"
+      },
+      "charts": {
+        "wound_distribution_title": "Phân bố loại vết thương",
+        "wound_distribution_desc": "Phân loại các vết thương",
+        "severity_stats_title": "Thống kê mức độ nghiêm trọng",
+        "severity_stats_desc": "Phân bố mức độ nghiêm trọng của vết thương",
+        "number_of_cases": "Số lượng ca",
+        "cases": "ca",
+        "severity_label": "Mức độ"
+      },
+      "logs": {
+        "recent_logs_title": "Nhật ký gần đây",
+        "recent_logs_desc": "Thông báo và cảnh báo hệ thống",
+        "severity": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp"
+        },
+        "actions": {
+          "login": "Đăng nhập",
+          "logout": "Đăng xuất",
+          "create_guest_session": "Tạo phiên khách",
+          "guest_session_created": "Phiên khách đã tạo",
+          "create_user": "Tạo người dùng",
+          "update_user": "Cập nhật người dùng",
+          "delete_user": "Xóa người dùng",
+          "upload_image": "Tải ảnh lên",
+          "detect_wound": "Phát hiện vết thương",
+          "view_firstaid": "Xem sơ cứu",
+          "create_firstaid": "Tạo hướng dẫn sơ cứu",
+          "update_firstaid": "Cập nhật hướng dẫn sơ cứu",
+          "delete_firstaid": "Xóa hướng dẫn sơ cứu"
+        },
+        "resources": {
+          "user": "Người dùng",
+          "guest_session": "Phiên khách",
+          "image": "Ảnh",
+          "wound_analysis": "Phân tích vết thương",
+          "firstaid_guide": "Hướng dẫn sơ cứu",
+          "system": "Hệ thống"
+        }
+      }
+    },
+    "user_management": {
+      "title": "Quản lý người dùng",
+      "subtitle": "Quản lý người dùng và phân quyền",
+      "add_user": "Thêm người dùng mới",
+      "total_users": "Tổng người dùng",
+      "showing": "Hiển thị {{start}}-{{end}} trên tổng số {{total}}",
+      "roles": {
+        "user": "Người dùng",
+        "admin": "Quản trị viên"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động"
+      },
+      "table": {
+        "loading": "Đang tải danh sách người dùng...",
+        "no_users": "Không tìm thấy người dùng",
+        "adjust_filters": "Thử điều chỉnh bộ lọc của bạn",
+        "headers": {
+          "name": "Tên",
+          "email": "Email",
+          "role": "Vai trò",
+          "status": "Trạng thái",
+          "uploads": "Tải lên",
+          "join_date": "Ngày tham gia",
+          "actions": "Hành động"
+        },
+        "no_name": "Không tên",
+        "status_active": "Hoạt động",
+        "status_inactive": "Không hoạt động",
+        "actions": {
+          "edit": "Sửa",
+          "deactivate": "Vô hiệu hóa",
+          "activate": "Kích hoạt",
+          "processing": "Đang xử lý...",
+          "delete": "Xóa",
+          "deleting": "Đang xóa..."
+        }
+      },
+      "form": {
+        "title_add": "Thêm người dùng mới",
+        "title_edit": "Chỉnh sửa người dùng",
+        "labels": {
+          "email": "Email",
+          "username": "Tên đăng nhập",
+          "password": "Mật khẩu",
+          "role": "Vai trò"
+        },
+        "password_hint": "Ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",
+        "buttons": {
+          "cancel": "Hủy",
+          "update": "Cập nhật",
+          "create": "Tạo mới",
+          "updating": "Đang cập nhật...",
+          "creating": "Đang tạo..."
+        },
+        "errors": {
+          "email_required": "Email là bắt buộc",
+          "email_invalid": "Định dạng email không hợp lệ",
+          "name_required": "Tên hiển thị là bắt buộc",
+          "name_min": "Tên hiển thị phải có ít nhất 2 ký tự",
+          "name_max": "Tên hiển thị không được vượt quá 50 ký tự",
+          "password_required": "Mật khẩu là bắt buộc",
+          "password_invalid": "Mật khẩu phải có ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",
+          "role_required": "Vai trò là bắt buộc"
+        }
+      }
+    },
+    "first_aid": {
+      "title": "Quản lý hướng dẫn sơ cứu",
+      "subtitle": "Quản lý nội dung chăm sóc vết thương và sơ cứu",
+      "add_guidance": "Thêm hướng dẫn mới",
+      "total_guides": "Tổng số hướng dẫn",
+      "active_guides": "Hướng dẫn đang hoạt động",
+      "wound_types": "Loại vết thương",
+      "search_placeholder": "Tìm kiếm theo tiêu đề...",
+      "filter_wound_type": "Loại vết thương",
+      "filter_wound_type_all": "Tất cả loại",
+      "filter_severity": "Mức độ nghiêm trọng",
+      "filter_severity_all": "Tất cả mức độ",
+      "filter_status": "Trạng thái hoạt động",
+      "filter_status_all": "Tất cả",
+      "filter_status_active": "Hoạt động",
+      "filter_status_inactive": "Không hoạt động",
+      "no_guides": "Không tìm thấy hướng dẫn sơ cứu nào",
+      "try_adjusting": "Thử điều chỉnh bộ lọc của bạn",
+      "view_details": "Xem chi tiết",
+      "more_steps": "bước nữa",
+      "loading": "Đang tải hướng dẫn sơ cứu..."
+    },
+    "logs": {
+      "title": "Nhật ký hệ thống",
+      "subtitle": "Xem và quản lý nhật ký hệ thống",
+      "security_notice": "Thông báo bảo mật",
+      "security_desc": "Hệ thống này được giám sát. Mọi truy cập trái phép hoặc lạm dụng sẽ được ghi lại và báo cáo.",
+      "table": {
+        "loading": "Đang tải nhật ký...",
+        "try_again": "Thử lại",
+        "no_logs": "Không tìm thấy nhật ký phù hợp",
+        "title": "Hoạt động hệ thống",
+        "showing": "Hiển thị {{start}}-{{end}} trên tổng số {{total}}",
+        "headers": {
+          "time": "Thời gian",
+          "type": "Loại",
+          "username": "Tên đăng nhập",
+          "role": "Vai trò",
+          "action": "Hành động",
+          "details": "Chi tiết",
+          "view_details": "Xem chi tiết"
+        }
+      },
+      "details": {
+        "title": "Chi tiết nhật ký",
+        "summary": "Tóm tắt",
+        "timestamp": "Thời gian:",
+        "action": "Hành động:",
+        "severity": "Mức độ:",
+        "user": "Người dùng:",
+        "full_details": "Chi tiết đầy đủ",
+        "close": "Đóng"
+      },
+      "filters": {
+        "search_placeholder": "Tìm kiếm nhật ký...",
+        "all_types": "Tất cả loại",
+        "success": "Thành công",
+        "error": "Lỗi",
+        "all_roles": "Tất cả vai trò",
+        "refresh": "Làm mới",
+        "roles": {
+          "user": "Người dùng",
+          "admin": "Quản trị viên",
+          "guest": "Khách"
+        }
+      },
+      "types": {
+        "success": "Thành công",
+        "error": "Lỗi",
+        "info": "Thông tin",
+        "warning": "Cảnh báo"
+      }
+    },
+    "user_filters": {
+      "search_placeholder": "Tìm kiếm người dùng...",
+      "all_roles": "Tất cả vai trò",
+      "all_status": "Tất cả trạng thái",
+      "roles": {
+        "user": "Người dùng",
+        "admin": "Quản trị viên"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động"
+      }
+    },
+    "first_aid_form": {
+      "title_add": "Tạo hướng dẫn mới",
+      "title_edit": "Chỉnh sửa hướng dẫn",
+      "medical_warning_title": "Cảnh báo nội dung y tế",
+      "medical_warning_desc": "Vui lòng đảm bảo tất cả thông tin y tế là chính xác và được xác minh bởi các chuyên gia. Lời khuyên sơ cứu không chính xác có thể dẫn đến hậu quả nghiêm trọng.",
+      "labels": {
+        "wound_type": "Loại vết thương",
+        "severity": "Mức độ nghiêm trọng",
+        "sub_type": "Loại phụ (Tùy chọn)",
+        "sub_type_placeholder": "ví dụ: Phồng rộp",
+        "title": "Tiêu đề",
+        "title_placeholder": "ví dụ: Sơ cứu cơ bản cho vết trầy xước",
+        "description": "Mô tả",
+        "steps": "Các bước thực hiện",
+        "step_placeholder": "Bước {{index}}",
+        "dos": "Nên làm",
+        "do_placeholder": "Nên...",
+        "donts": "Không nên làm",
+        "dont_placeholder": "Không nên...",
+        "supplies": "Dụng cụ cần thiết",
+        "supply_placeholder": "Tên dụng cụ",
+        "source": "Nguồn",
+        "source_placeholder": "ví dụ: WHO, Hội Chữ thập đỏ"
+      },
+      "buttons": {
+        "add_step": "Thêm bước",
+        "add_do": "Thêm việc nên làm",
+        "add_dont": "Thêm việc không nên làm",
+        "add_supply": "Thêm dụng cụ",
+        "cancel": "Hủy",
+        "create": "Tạo hướng dẫn",
+        "creating": "Đang tạo...",
+        "save": "Lưu thay đổi",
+        "saving": "Đang lưu..."
+      },
+      "options": {
+        "abrasion": "Trầy xước / Mài mòn",
+        "bruise": "Bầm tím / Chấn thương phần mềm",
+        "burn": "Bỏng",
+        "cut": "Vết cắt / Vết rách",
+        "mild": "Nhẹ",
+        "moderate": "Trung bình",
+        "severe": "Nghiêm trọng"
+      }
+    },
+    "first_aid_view": {
+      "labels": {
+        "wound_type": "Loại vết thương",
+        "severity": "Mức độ nghiêm trọng",
+        "sub_type": "Loại phụ",
+        "healing_time": "Thời gian hồi phục",
+        "description": "Mô tả",
+        "steps": "Các bước sơ cứu",
+        "dos": "Nên làm",
+        "donts": "Không nên làm",
+        "supplies": "Dụng cụ cần thiết",
+        "source": "Nguồn",
+        "version": "Phiên bản",
+        "last_updated": "Cập nhật lần cuối"
+      },
+      "close": "Đóng"
+    }
   }
 }

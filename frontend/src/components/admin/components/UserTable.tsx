@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { MoreVertical, Edit2, RotateCw, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './UserTable.module.css';
 
 interface User {
@@ -37,6 +38,14 @@ const UserTable: React.FC<UserTableProps> = ({
   isDeletingUser,
   isTogglingStatus
 }) => {
+  const { t } = useTranslation();
+
+  // Function to translate role
+  const translateRole = (role: string) => {
+    const roleLower = role.toLowerCase();
+    return t(`admin.user_management.roles.${roleLower}`) || role;
+  };
+
   // Close action menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,6 +55,10 @@ const UserTable: React.FC<UserTableProps> = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    if (actionMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -69,48 +82,46 @@ const UserTable: React.FC<UserTableProps> = ({
 
   // Get role badge class
   const getRoleBadgeClass = (roles: string[]) => {
-    const role = roles[0] || 'user';
-    const roleClasses: Record<string, string> = {
-      user: styles.adminBadgeGray,
-      moderator: styles.adminBadgeBlue,
-      admin: styles.adminBadgePurple
-    };
-    return roleClasses[role] || styles.adminBadgeGray;
+    const role = (roles[0] || 'user').toLowerCase();
+    if (role === 'admin') {
+      return styles.adminBadgePurple;
+    }
+    return styles.adminBadgeBlue;
   };
 
   if (loading) {
     return (
       <div className={styles.adminCard}>
         <div className={styles.adminCardContent} style={{ padding: '3rem', textAlign: 'center' }}>
-          <p>Loading users...</p>
+          <p>{t('admin.user_management.table.loading')}</p>
         </div>
       </div>
     );
   }
 
-  if (users.length === 0) {
+  if (!loading && users.length === 0) {
     return (
       <div className={styles.emptyState}>
         <div className={styles.emptyIcon}>👥</div>
-        <p>No users found</p>
-        <p className={styles.emptySubtitle}>Try adjusting your filters</p>
+        <p>{t('admin.user_management.table.no_users')}</p>
+        <p className={styles.emptySubtitle}>{t('admin.user_management.table.adjust_filters')}</p>
       </div>
     );
   }
 
   return (
     <div className={styles.adminCard}>
-      <div className={styles.tableContainer}>
+      <div className={styles.adminCardContent}>
         <table className={styles.userTable}>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Uploads</th>
-              <th>Join Date</th>
-              <th>Actions</th>
+              <th>{t('admin.user_management.table.headers.name')}</th>
+              <th>{t('admin.user_management.table.headers.email')}</th>
+              <th>{t('admin.user_management.table.headers.role')}</th>
+              <th>{t('admin.user_management.table.headers.status')}</th>
+              <th>{t('admin.user_management.table.headers.uploads')}</th>
+              <th>{t('admin.user_management.table.headers.join_date')}</th>
+              <th>{t('admin.user_management.table.headers.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,18 +132,18 @@ const UserTable: React.FC<UserTableProps> = ({
                     <div className={styles.userAvatar}>
                       {getInitials(user.display_name || user.email)}
                     </div>
-                    <span>{user.display_name || 'No Name'}</span>
+                    <span>{user.display_name || t('admin.user_management.table.no_name')}</span>
                   </div>
                 </td>
                 <td>{user.email}</td>
                 <td>
                   <span className={`${styles.adminBadge} ${getRoleBadgeClass(user.roles)}`}>
-                    {user.roles[0] || 'user'}
+                    {translateRole(user.roles[0] || 'user')}
                   </span>
                 </td>
                 <td>
                   <span className={`${styles.adminBadge} ${user.is_active ? styles.adminBadgeSuccess : styles.adminBadgeGray}`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? t('admin.user_management.table.status_active') : t('admin.user_management.table.status_inactive')}
                   </span>
                 </td>
                 <td>{user.upload_count || 0}</td>
@@ -153,7 +164,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           onClick={() => onEdit(user)}
                           disabled={isSubmitting || !!isDeletingUser || !!isTogglingStatus}
                         >
-                          <Edit2 size={16} /> Edit
+                          <Edit2 size={16} /> {t('admin.user_management.table.actions.edit')}
                         </button>
                         <button
                           className={styles.actionItem}
@@ -165,8 +176,8 @@ const UserTable: React.FC<UserTableProps> = ({
                         >
                           <RotateCw size={16} />
                           {isTogglingStatus === user.user_id
-                            ? 'Processing...'
-                            : user.is_active ? 'Deactivate' : 'Activate'}
+                            ? t('admin.user_management.table.actions.processing')
+                            : user.is_active ? t('admin.user_management.table.actions.deactivate') : t('admin.user_management.table.actions.activate')}
                         </button>
                         <button
                           className={`${styles.actionItem} ${styles.actionItemDanger}`}
@@ -177,7 +188,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           disabled={isDeletingUser === user.user_id || !!isTogglingStatus}
                         >
                           <Trash2 size={16} />
-                          {isDeletingUser === user.user_id ? 'Deleting...' : 'Delete'}
+                          {isDeletingUser === user.user_id ? t('admin.user_management.table.actions.deleting') : t('admin.user_management.table.actions.delete')}
                         </button>
                       </div>
                     )}

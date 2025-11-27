@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import styles from './UserFormModal.module.css';
 
 interface UserFormData {
@@ -25,6 +26,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   isEdit,
   isSubmitting
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
     display_name: '',
@@ -68,29 +70,29 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const errors: Record<string, string> = {};
 
     if (!formData.email || !formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('admin.user_management.form.errors.email_required');
     } else if (!validateEmail(formData.email)) {
-      errors.email = 'Invalid email format';
+      errors.email = t('admin.user_management.form.errors.email_invalid');
     }
 
     if (!formData.display_name || !formData.display_name.trim()) {
-      errors.display_name = 'Display name is required';
+      errors.display_name = t('admin.user_management.form.errors.name_required');
     } else if (formData.display_name.trim().length < 2) {
-      errors.display_name = 'Display name must be at least 2 characters';
+      errors.display_name = t('admin.user_management.form.errors.name_min');
     } else if (formData.display_name.trim().length > 50) {
-      errors.display_name = 'Display name must not exceed 50 characters';
+      errors.display_name = t('admin.user_management.form.errors.name_max');
     }
 
     if (!isEdit) {
       if (!formData.password || !formData.password.trim()) {
-        errors.password = 'Password is required';
+        errors.password = t('admin.user_management.form.errors.password_required');
       } else if (!validatePassword(formData.password)) {
-        errors.password = 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number';
+        errors.password = t('admin.user_management.form.errors.password_invalid');
       }
     }
 
     if (!formData.role) {
-      errors.role = 'Role is required';
+      errors.role = t('admin.user_management.form.errors.role_required');
     }
 
     setValidationErrors(errors);
@@ -110,32 +112,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
-          <h2>{isEdit ? 'Edit User' : 'Add New User'}</h2>
+          <h2>{isEdit ? t('admin.user_management.form.title_edit') : t('admin.user_management.form.title_add')}</h2>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Username */}
           <div className={styles.formGroup}>
-            <label>Email *</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                if (validationErrors.email) {
-                  setValidationErrors({ ...validationErrors, email: '' });
-                }
-              }}
-              className={validationErrors.email ? styles.error : ''}
-            />
-            {validationErrors.email && (
-              <span className={styles.errorMessage}>{validationErrors.email}</span>
-            )}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Display Name *</label>
+            <label>{t('admin.user_management.form.labels.username')} *</label>
             <input
               type="text"
               required
@@ -153,9 +137,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             )}
           </div>
 
+          {/* Password - only for new users */}
           {!isEdit && (
             <div className={styles.formGroup}>
-              <label>Password *</label>
+              <label>{t('admin.user_management.form.labels.password')} *</label>
               <input
                 type="password"
                 required
@@ -173,19 +158,40 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 <span className={styles.errorMessage}>{validationErrors.password}</span>
               )}
               <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
-                At least 8 characters with 1 uppercase, 1 lowercase, and 1 number
+                {t('admin.user_management.form.password_hint')}
               </small>
             </div>
           )}
 
+          {/* Email */}
           <div className={styles.formGroup}>
-            <label>Role</label>
+            <label>{t('admin.user_management.form.labels.email')} *</label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                if (validationErrors.email) {
+                  setValidationErrors({ ...validationErrors, email: '' });
+                }
+              }}
+              className={validationErrors.email ? styles.error : ''}
+            />
+            {validationErrors.email && (
+              <span className={styles.errorMessage}>{validationErrors.email}</span>
+            )}
+          </div>
+
+          {/* Role */}
+          <div className={styles.formGroup}>
+            <label>{t('admin.user_management.form.labels.role')}</label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
             >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
+              <option value="user">{t('admin.user_management.roles.user')}</option>
+              <option value="admin">{t('admin.user_management.roles.admin')}</option>
             </select>
           </div>
 
@@ -196,14 +202,16 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('admin.user_management.form.buttons.cancel')}
             </button>
             <button
               type="submit"
               className={styles.adminBtnPrimary}
               disabled={isSubmitting}
             >
-              {isSubmitting ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update User' : 'Create User')}
+              {isSubmitting
+                ? (isEdit ? t('admin.user_management.form.buttons.updating') : t('admin.user_management.form.buttons.creating'))
+                : (isEdit ? t('admin.user_management.form.buttons.update') : t('admin.user_management.form.buttons.create'))}
             </button>
           </div>
         </form>

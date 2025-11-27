@@ -134,4 +134,4 @@ async def delete_first_aid_guide(
     - hard_delete=True: Hard delete (xóa vĩnh viễn khỏi database)
     """
     controller = FirstAidController(db)
-    return await controller.delete_first_aid_guide(guide_id, hard_delete)
+    return await controller.delete_first_aid_guide(guide_id)

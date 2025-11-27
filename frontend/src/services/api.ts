@@ -30,6 +30,15 @@ apiClient.interceptors.request.use(
     // Xóa bỏ toàn bộ logic "if (config.data instanceof FormData)..."
     // Hãy để Axios tự động xử lý.
 
+    // Debug logging for /admin/users POST requests
+    if (config.url?.includes('/admin/users') && config.method === 'post') {
+      console.log('[API Debug] POST /admin/users request:', {
+        url: config.url,
+        data: config.data,
+        headers: config.headers
+      });
+    }
+
     return config; // 5. Trả về config đã cập nhật
   },
   (error) => {
