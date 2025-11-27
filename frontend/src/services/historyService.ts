@@ -77,7 +77,9 @@ export function transformApiHistoryToTimeline(
       "vi-VN"
     )}`,
     date: event.created_at,
-    status: `${event.total_detections} detection(s)`,
+    status: event.total_detections === 0
+      ? "Không có vết thương"
+      : `${event.total_detections} detection(s)`,
     imageUrl: `http://localhost:8000${event.image_url}`,
   }));
 }
@@ -103,7 +105,7 @@ export function transformApiDetailToCombinedEvent(
         type: wound.wound_type,
         accuracy: wound.confidence_score * 100, // Chuyển 0.95 -> 95
         severity: wound.severity, // Lấy trực tiếp từ 'significant_wounds'
-        description: snapshot.description || "Không có mô tả.",
+        description: snapshot.source || "Không có thông tin nguồn.",
         healingTime: snapshot.estimated_healing_time || "Chưa có dữ liệu",
         firstAid: firstAidString || "Không có gợi ý sơ cứu.",
       };
@@ -116,7 +118,9 @@ export function transformApiDetailToCombinedEvent(
       "vi-VN"
     )}`,
     date: apiEvent.created_at,
-    status: `${apiEvent.total_detections} detection(s)`,
+    status: apiEvent.total_detections === 0
+      ? "Không có vết thương"
+      : `${apiEvent.total_detections} detection(s)`,
     imageUrl: `http://localhost:8000${apiEvent.image_url}`,
     detail: details,
   };

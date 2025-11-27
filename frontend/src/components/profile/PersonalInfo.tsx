@@ -24,8 +24,9 @@ interface InfoFieldProps {
   label: string;
   value: string;
   editable: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   type?: string;
+  options?: { value: string; label: string }[]; // Thêm options cho select
 }
 
 const InfoField = ({
@@ -35,18 +36,34 @@ const InfoField = ({
   editable,
   onChange,
   type = "text",
+  options,
 }: InfoFieldProps) => (
   <div className={styles.infoField}>
     <label>
       {icon && <span className={styles.infoIcon}>{icon}</span>} {label}
     </label>
     {editable ? (
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        className={styles.inlineInput}
-      />
+      type === "select" && options ? (
+        <select
+          value={value}
+          onChange={onChange}
+          className={styles.inlineInput}
+        >
+          <option value="">-- Chọn --</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          value={value}
+          onChange={onChange}
+          className={styles.inlineInput}
+        />
+      )
     ) : (
       <div
         className={styles.infoValue}
@@ -104,7 +121,7 @@ const PersonalInfo = () => {
 
           // Thêm 'gender' vào mapping
           const mappedData = {
-            fullName: profile.full_name || user.user_name || "",
+            fullName: profile.full_name || "", // Không dùng user_name làm fallback
             phone: profile.phone || "",
             dob: formatDate(profile.date_of_birth),
             address: profile.address || "",
@@ -127,11 +144,11 @@ const PersonalInfo = () => {
 
   const handleChange =
     (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-      if (apiSuccess) setApiSuccess(""); // Xóa thông báo khi user sửa
-      if (apiError) setApiError("");
-    };
+      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+        if (apiSuccess) setApiSuccess(""); // Xóa thông báo khi user sửa
+        if (apiError) setApiError("");
+      };
 
   const handleSave = async (
     dataToSave: UserProfileUpdate,
@@ -184,8 +201,21 @@ const PersonalInfo = () => {
       }
     } catch (err) {
       if (isAxiosError(err)) {
-        // Hiển thị lỗi từ server (ví dụ: validation 422)
-        setApiError(err.response?.data?.message || "Failed to save profile.");
+        // Hiển thị chi tiết lỗi validation từ server
+        const errorMessage = err.response?.data?.message || "Failed to save profile.";
+        const errorDetail = err.response?.data?.error_details;
+
+        // Nếu có chi tiết lỗi validation (như gender không hợp lệ)
+        if (errorDetail) {
+          const detailedError = typeof errorDetail === 'string'
+            ? errorDetail
+            : JSON.stringify(errorDetail);
+          setApiError(`${errorMessage}: ${detailedError}`);
+        } else {
+          setApiError(errorMessage);
+        }
+      } else {
+        setApiError("An unexpected error occurred.");
       }
     }
   };
@@ -263,13 +293,19 @@ const PersonalInfo = () => {
               type="date" // <-- THÊM DÙNG NÀY
             />
 
-            {/* THÊM LẠI TRƯỜNG GENDER VÀO JSX */}
+            {/* THÊM LẠI TRƯỜNG GENDER VÀO JSX VỚI SELECT */}
             <InfoField
               icon={<FaVenusMars />}
-              label="Gender" // (Bạn có thể thêm key 'personalInfo.gender' vào file translation)
+              label="Giới tính"
               value={formData.gender}
               editable={isEditingBasic}
               onChange={handleChange("gender")}
+              type="select"
+              options={[
+                { value: "male", label: "Nam" },
+                { value: "female", label: "Nữ" },
+                { value: "other", label: "Khác" },
+              ]}
             />
 
             <InfoField

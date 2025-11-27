@@ -10,7 +10,8 @@
 
 .profileMainWrapper {
   /* Lấy các thuộc tính layout quan trọng từ .profileContent cũ */
-  margin: 1rem auto; /* Kéo lên, đè lên Banner VÀ căn giữa */
+  margin: 1rem auto;
+  /* Kéo lên, đè lên Banner VÀ căn giữa */
   position: relative;
   z-index: 2;
   max-width: 1200px;
@@ -55,11 +56,13 @@
 .profileLeft {
   flex-shrink: 0;
 }
+
 .avatarWrapper {
   position: relative;
   width: 120px;
   height: 120px;
 }
+
 .avatarPlaceholder {
   width: 100%;
   height: 100%;
@@ -72,6 +75,7 @@
   font-size: 3rem;
   border: 4px solid #fff;
 }
+
 .cameraIcon {
   position: absolute;
   bottom: 5px;
@@ -88,17 +92,24 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
+
 .profileRight {
   flex-grow: 1;
-  display: flex; /* <-- Thêm */
-  align-items: center; /* <-- Thêm */
-  justify-content: space-between; /* <-- Thêm */
-  gap: 2rem; /* <-- Thêm (tùy chỉnh khoảng cách) */
+  display: flex;
+  /* <-- Thêm */
+  align-items: center;
+  /* <-- Thêm */
+  justify-content: space-between;
+  /* <-- Thêm */
+  gap: 2rem;
+  /* <-- Thêm (tùy chỉnh khoảng cách) */
 }
+
 .profileInfo h1 {
   font-size: 2rem;
   margin: 0 0 0.5rem 0;
 }
+
 .profileInfo p {
   font-size: 0.9rem;
   opacity: 0.9;
@@ -109,40 +120,52 @@
 /* THÊM CSS MỚI CHO PROFILE BADGES */
 .profileBadges {
   display: flex;
-  gap: 1.5rem; /* Khoảng cách giữa 2 badge */
-  flex-shrink: 0; /* Không cho badge co lại */
+  gap: 1.5rem;
+  /* Khoảng cách giữa 2 badge */
+  flex-shrink: 0;
+  /* Không cho badge co lại */
 }
 
 .badgeCard {
-  background-color: #fff; /* Nền trắng */
-  color: #333; /* Chữ đen */
+  background-color: #fff;
+  /* Nền trắng */
+  color: #333;
+  /* Chữ đen */
   border-radius: 12px;
   padding: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-width: 250px; /* Độ rộng tối thiểu */
-  border-left: 5px solid transparent; /* Viền màu bên trái */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07); /* Đổ bóng nhẹ */
+  min-width: 250px;
+  /* Độ rộng tối thiểu */
+  border-left: 5px solid transparent;
+  /* Viền màu bên trái */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+  /* Đổ bóng nhẹ */
 }
 
 .badgeContent span {
   display: block;
   font-size: 0.9rem;
-  color: #666; /* Màu chữ xám */
+  color: #666;
+  /* Màu chữ xám */
   font-weight: 500;
 }
+
 .badgeContent strong {
   display: block;
-  font-size: 1.75rem; /* Tăng kích cỡ số */
+  font-size: 1.75rem;
+  /* Tăng kích cỡ số */
   font-weight: 600;
   color: #222;
   margin-top: 0.25rem;
 }
 
 .badgeIcon {
-  font-size: 1.5rem; /* Kích cỡ icon */
-  padding: 0.8rem; /* Kích cỡ vòng tròn nền */
+  font-size: 1.5rem;
+  /* Kích cỡ icon */
+  padding: 0.8rem;
+  /* Kích cỡ vòng tròn nền */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -152,28 +175,39 @@
 
 /* Màu cho Badge Green (Total Scans) */
 .badgeGreen {
-  border-left-color: #28a745; /* Màu viền xanh lá */
+  border-left-color: #28a745;
+  /* Màu viền xanh lá */
 }
+
 .iconBgGreen {
-  background-color: #eaf7ec; /* Nền icon xanh lá nhạt */
-  color: #28a745; /* Màu icon xanh lá */
+  background-color: #eaf7ec;
+  /* Nền icon xanh lá nhạt */
+  color: #28a745;
+  /* Màu icon xanh lá */
 }
 
 /* Màu cho Badge Blue (Last Analysis) */
 .badgeBlue {
-  border-left-color: #007bff; /* Màu viền xanh dương */
+  border-left-color: #007bff;
+  /* Màu viền xanh dương */
 }
+
 .iconBgBlue {
-  background-color: #e6f2ff; /* Nền icon xanh dương nhạt */
-  color: #007bff; /* Màu icon xanh dương */
+  background-color: #e6f2ff;
+  /* Nền icon xanh dương nhạt */
+  color: #007bff;
+  /* Màu icon xanh dương */
 }
 
 @media (max-width: 992px) {
+
   /* Khối bên phải (Info + Badges) sẽ tự xếp chồng */
   .profileRight {
     flex-direction: column;
-    align-items: flex-start; /* Căn lề trái cho khối info và badges */
-    gap: 1.5rem; /* Khoảng cách giữa info và badges */
+    align-items: flex-start;
+    /* Căn lề trái cho khối info và badges */
+    gap: 1.5rem;
+    /* Khoảng cách giữa info và badges */
   }
 
   /* Trên tablet, 2 badge vẫn có thể nằm ngang */
@@ -184,10 +218,12 @@
 
 /* Mobile: < 768px */
 @media (max-width: 768px) {
+
   /* Toàn bộ banner xếp chồng */
   .bannerContentWrapper {
     flex-direction: column;
-    align-items: center; /* Căn giữa avatar */
+    align-items: center;
+    /* Căn giữa avatar */
   }
 
   /* Căn giữa cho khối info và badges */
@@ -202,7 +238,8 @@
   }
 
   .profileInfo p {
-    justify-content: center; /* Căn giữa "Member since..." */
+    justify-content: center;
+    /* Căn giữa "Member since..." */
   }
 
   /* 2 badge xếp chồng lên nhau */
@@ -214,43 +251,55 @@
   /* Mỗi badge chiếm 100% chiều rộng */
   .badgeCard {
     width: 100%;
-    min-width: 0; /* Ghi đè min-width cũ */
+    min-width: 0;
+    /* Ghi đè min-width cũ */
   }
 }
 
 /* 3. Tabs */
 .tabsWrapper {
   display: flex;
-  background-color: #dfe2e1; /* Màu nền xám nhạt cho cả thanh */
-  border-radius: 999px; /* Bo tròn để tạo hình con nhộng */
-  padding: 0.3rem; /* Khoảng đệm nhỏ bên trong */
+  background-color: #dfe2e1;
+  /* Màu nền xám nhạt cho cả thanh */
+  border-radius: 999px;
+  /* Bo tròn để tạo hình con nhộng */
+  padding: 0.3rem;
+  /* Khoảng đệm nhỏ bên trong */
   /* margin-bottom: 1.5rem; */
-  border: 1px solid #eee; /* Thêm viền nhẹ */
+  border: 1px solid #eee;
+  /* Thêm viền nhẹ */
 }
 
 .tabButton {
-  flex: 1; /* Cả 3 nút chia đều không gian */
+  flex: 1;
+  /* Cả 3 nút chia đều không gian */
   background: none;
   border: none;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #555; /* Màu chữ khi không active */
+  color: #555;
+  /* Màu chữ khi không active */
   cursor: pointer;
-  border-radius: 999px; /* Bo tròn cho từng nút */
+  border-radius: 999px;
+  /* Bo tròn cho từng nút */
   /* Hiệu ứng chuyển động mượt */
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .tabButton.active {
-  background-color: #fff; /* Nền trắng cho tab active */
-  color: #009688; /* Màu chữ primary (từ code cũ) */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+  background-color: #fff;
+  /* Nền trắng cho tab active */
+  color: #009688;
+  /* Màu chữ primary (từ code cũ) */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Đổ bóng nhẹ */
 }
 
 /* NÚT MŨI TÊN (CSS MỚI) */
 .tabArrow {
-  display: none; /* Mặc định ẨN trên desktop */
+  display: none;
+  /* Mặc định ẨN trên desktop */
   background: none;
   border: none;
   color: #555;
@@ -258,6 +307,7 @@
   cursor: pointer;
   padding: 0 0.75rem;
 }
+
 .tabArrow:hover {
   color: #000;
 }
@@ -277,7 +327,8 @@
 
   /* 2. Hiện LẠI DUY NHẤT tab .active */
   .tabButton.active {
-    display: block; /* Hiển thị nút */
+    display: block;
+    /* Hiển thị nút */
 
     /* THAY ĐỔI QUAN TRỌNG:
       Bỏ 'width: 100%' và 'flex: 0'.
@@ -287,7 +338,8 @@
     */
     flex: 1;
 
-    text-align: center; /* Căn giữa chữ */
+    text-align: center;
+    /* Căn giữa chữ */
   }
 
   /* 3. Hiện các nút mũi tên (Giữ nguyên) */
@@ -316,9 +368,11 @@
   display: flex;
   gap: 1.5rem;
 }
+
 .recentAnalyses {
   flex: 3;
 }
+
 .sectionHeader {
   display: flex;
   justify-content: space-between;
@@ -327,6 +381,7 @@
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
 }
+
 .sectionHeader h2 {
   font-size: 1.25rem;
   display: flex;
@@ -344,11 +399,13 @@
   font-weight: 600;
   font-size: 0.9rem;
 }
+
 .analysesList {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 .analysisItem {
   display: flex;
   align-items: center;
@@ -357,21 +414,26 @@
   border: 1px solid #eee;
   border-radius: 8px;
 }
+
 .itemInfo {
   flex-grow: 1;
 }
+
 .itemInfo h4 {
   font-size: 1rem;
   margin: 0 0 0.25rem 0;
 }
+
 .itemInfo p {
   font-size: 0.9rem;
   color: #777;
   margin: 0;
 }
+
 .itemStatus {
   text-align: right;
 }
+
 .statusTag {
   font-size: 0.8rem;
   font-weight: 600;
@@ -380,6 +442,7 @@
   display: inline-block;
   margin-bottom: 0.25rem;
 }
+
 /* .healing {
   background-color: #e0f2f1;
   color: #00796b;
@@ -395,20 +458,26 @@
 
 /* "Nhẹ" - Màu xanh lá */
 .mild {
-  background-color: #e8f5e9; /* Nền xanh nhạt */
-  color: #388e3c; /* Chữ xanh đậm */
+  background-color: #e8f5e9;
+  /* Nền xanh nhạt */
+  color: #388e3c;
+  /* Chữ xanh đậm */
 }
 
 /* "Trung bình" - Màu vàng/cam */
 .medium {
-  background-color: #fff8e1; /* Nền vàng nhạt */
-  color: #f57f17; /* Chữ vàng đậm */
+  background-color: #fff8e1;
+  /* Nền vàng nhạt */
+  color: #f57f17;
+  /* Chữ vàng đậm */
 }
 
 /* "Nặng" - Màu đỏ */
 .severe {
-  background-color: #ffebee; /* Nền đỏ nhạt */
-  color: #d32f2f; /* Chữ đỏ đậm */
+  background-color: #ffebee;
+  /* Nền đỏ nhạt */
+  color: #d32f2f;
+  /* Chữ đỏ đậm */
 }
 
 .time {
@@ -416,6 +485,7 @@
   color: #777;
   display: block;
 }
+
 .viewLink {
   text-decoration: none;
   padding: 0.5rem 1rem;
@@ -425,17 +495,20 @@
   font-weight: 600;
   font-size: 0.9rem;
 }
+
 .quickActions {
   flex: 1;
   background-color: #f9f9f9;
   border-radius: 8px;
   padding: 1.5rem;
 }
+
 .quickActions h3 {
   margin-top: 0;
   border-bottom: 1px solid #eee;
   padding-bottom: 0.5rem;
 }
+
 .actionBtn {
   width: 100%;
   padding: 0.8rem;
@@ -451,20 +524,24 @@
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
+
 .actionBtn.primary {
   background-color: #009688;
   color: #fff;
   border-color: #009688;
 }
+
 .nextCheckup {
   margin-top: 1.5rem;
   text-align: center;
 }
+
 .nextCheckup p {
   font-weight: 600;
   font-size: 1rem;
   margin: 0.25rem 0;
 }
+
 .nextCheckup span {
   font-size: 0.9rem;
   color: #777;
@@ -475,10 +552,12 @@
     /* Đổi từ xếp ngang (row) sang xếp chồng (column) */
     flex-direction: column;
   }
+
   .recentAnalyses {
     /* Reset lại thuộc tính flex để nó hoạt động tốt trong chế độ column và không chiếm 75% chiều cao */
     flex: 1;
   }
+
   .quickActions {
     flex: 1;
   }
@@ -490,11 +569,14 @@
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
+
 .infoCard {
   border: 1px solid #eee;
   border-radius: 8px;
-  overflow: visible; /* Đảm bảo nội dung không bị cắt */
+  overflow: visible;
+  /* Đảm bảo nội dung không bị cắt */
 }
+
 .cardHeader {
   display: flex;
   justify-content: space-between;
@@ -503,10 +585,12 @@
   border-bottom: 1px solid #eee;
   background-color: #f9f9f9;
 }
+
 .cardHeader h3 {
   margin: 0;
   font-size: 1.1rem;
 }
+
 .editBtn {
   background: none;
   border: none;
@@ -514,16 +598,19 @@
   font-size: 0.9rem;
   cursor: pointer;
 }
+
 .cardBody {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
+
 .infoField {
   display: flex;
   flex-direction: column;
 }
+
 .infoField label {
   font-size: 0.8rem;
   font-weight: 600;
@@ -533,13 +620,16 @@
   align-items: center;
   gap: 0.5rem;
 }
+
 .infoIcon {
   color: #009688;
 }
+
 .infoValue {
   font-size: 1rem;
   color: #333;
 }
+
 .inlineInput {
   font-size: 1rem;
   padding: 0.5rem 0;
@@ -547,6 +637,7 @@
   border-bottom: 2px solid #009688;
   outline: none;
 }
+
 .action {
   display: flex;
   justify-content: flex-end;
@@ -555,6 +646,7 @@
   border-top: 1px solid #eee;
   padding-top: 1rem;
 }
+
 .btnCancel {
   padding: 0.6rem 1rem;
   border-radius: 6px;
@@ -563,6 +655,7 @@
   font-weight: 600;
   cursor: pointer;
 }
+
 .btnSave {
   padding: 0.6rem 1rem;
   border-radius: 6px;
@@ -591,6 +684,7 @@
   border: 1px solid #eee;
   border-radius: 8px;
 }
+
 .settingItem {
   display: flex;
   justify-content: space-between;
@@ -598,29 +692,36 @@
   padding: 1.5rem;
   border-bottom: 1px solid #eee;
 }
+
 .settingItem:last-child {
   border-bottom: none;
 }
+
 .settingInfo h4 {
   font-size: 1rem;
   margin: 0 0 0.25rem 0;
 }
+
 .settingInfo p {
   font-size: 0.9rem;
   color: #777;
   margin: 0;
 }
+
 .cardHeader h3 {
   margin: 0;
-  font-size: 1.1rem; /* THÊM 3 DÒNG NÀY */
+  font-size: 1.1rem;
+  /* THÊM 3 DÒNG NÀY */
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Tạo khoảng cách nhỏ giữa icon và chữ */
+  gap: 0.5rem;
+  /* Tạo khoảng cách nhỏ giữa icon và chữ */
 }
 
 .cardHeader .cardHeaderIcon {
   color: #00796b;
 }
+
 /* Toggle Switch */
 .switch {
   position: relative;
@@ -628,11 +729,13 @@
   width: 50px;
   height: 28px;
 }
+
 .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
+
 .slider {
   position: absolute;
   cursor: pointer;
@@ -644,6 +747,7 @@
   transition: 0.4s;
   border-radius: 34px;
 }
+
 .slider:before {
   position: absolute;
   content: "";
@@ -655,10 +759,12 @@
   transition: 0.4s;
   border-radius: 50%;
 }
-.switch input:checked + .slider {
+
+.switch input:checked+.slider {
   background-color: #009688;
 }
-.switch input:checked + .slider:before {
+
+.switch input:checked+.slider:before {
   transform: translateX(22px);
 }
 
@@ -717,11 +823,13 @@
 /* Thêm vào cuối file Form.module.css */
 
 @keyframes fadeInAndOut {
+
   /* (0s -> 0.3s) Fade In */
   0% {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   20% {
     opacity: 1;
     transform: translateY(0);
