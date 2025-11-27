@@ -110,23 +110,34 @@ class WoundAnalysisService:
         return guide
 
     @staticmethod
+    def _extract_source_string(source_data: Optional[Any]) -> Optional[str]:
+        """Extract source string from JSONB object or return string as-is"""
+        if not source_data:
+            return None
+        if isinstance(source_data, str):
+            return source_data
+        if isinstance(source_data, dict):
+            return source_data.get("source")
+        return None
+
+    @staticmethod
     def extract_snapshot(guide: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         """Tạo snapshot của first aid guide"""
         if not guide:
             return {
                 "title": "Không có hướng dẫn sơ cứu",
-                "description": "Không tìm thấy hướng dẫn phù hợp",
+                "source": None,
                 "steps": [],
-                "warnings": [],
                 "dos": [],
-                "donts": []
+                "donts": [],
+                "supplies_needed": [],
+                "estimated_healing_time": None
             }
 
         return {
             "title": guide.get("title", ""),
-            "description": guide.get("description"),
+            "source": WoundAnalysisService._extract_source_string(guide.get("source")),
             "steps": guide.get("steps", []),
-            "warnings": guide.get("warnings", []),
             "dos": guide.get("dos", []),
             "donts": guide.get("donts", []),
             "supplies_needed": guide.get("supplies_needed", []),
@@ -266,9 +277,8 @@ class WoundAnalysisService:
             if guide:
                 guide_dict = {
                     "title": guide.title,
-                    "description": guide.description,
+                    "source": guide.source,
                     "steps": guide.steps,
-                    "warnings": guide.warnings,
                     "dos": guide.dos,
                     "donts": guide.donts,
                     "supplies_needed": guide.supplies_needed,

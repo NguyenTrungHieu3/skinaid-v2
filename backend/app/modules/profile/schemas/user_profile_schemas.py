@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import date, datetime
 import uuid
@@ -10,6 +10,50 @@ class UserProfileBase(BaseModel):
     gender: Optional[str] = Field(None, max_length=50, description="Giới tính (male, female, other)")
     address: Optional[str] = Field(None, description="Địa chỉ")
     avatar_url: Optional[str] = Field(None, max_length=500, description="URL avatar (S3)")
+
+    @field_validator('phone')
+    def validate_phone(cls, v):
+        if v is None or v == '':
+            return v
+        
+        phone_clean = v.replace(' ', '').replace('-', '')
+        
+        if not phone_clean.isdigit():
+            raise ValueError('Số điện thoại chỉ được chứa số')
+        
+        if len(phone_clean) < 10 or len(phone_clean) > 11:
+            raise ValueError('Số điện thoại phải có 10-11 chữ số')
+        
+        if not phone_clean.startswith('0'):
+            raise ValueError('Số điện thoại phải bắt đầu bằng số 0')
+        
+        return phone_clean
+    
+    @field_validator('gender')
+    def validate_gender(cls, v):
+        if v is None or v == '':
+            return v
+        
+        valid_genders = ['male', 'female', 'other']
+        if v.lower() not in valid_genders:
+            raise ValueError(f'Giới tính phải là một trong: {', '.join(valid_genders)}')
+        
+        return v.lower()
+
+    @field_validator('date_of_birth')
+    def validate_date_of_birth(cls, v):
+        if v is None:
+            return v
+        
+        today = date.today()
+        if v > today:
+            raise ValueError('Ngày sinh không được lớn hơn ngày hiện tại')
+        
+        age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+        if age < 14:
+            raise ValueError('Người dùng phải từ 14 tuổi trở lên')
+        
+        return v
 
 class UserProfileUpdate(UserProfileBase):
     pass

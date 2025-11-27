@@ -359,6 +359,10 @@ class FirstAidService:
             dos_jsonb = {"items": guide_data.get("dos", [])} if guide_data.get("dos") else None
             donts_jsonb = {"items": guide_data.get("donts", [])} if guide_data.get("donts") else None
             supplies_jsonb = {"items": guide_data.get("supplies_needed", [])} if guide_data.get("supplies_needed") else None
+            
+            # Convert source string to JSONB format
+            source_value = guide_data.get("source")
+            source_jsonb = {"source": source_value} if source_value else None
 
             guide = FirstAidGuide.create_guide(
                 wound_type=guide_data["wound_type"],
@@ -369,7 +373,7 @@ class FirstAidService:
                 dos=dos_jsonb,
                 donts=donts_jsonb,
                 supplies_needed=supplies_jsonb,
-                source=guide_data.get("source"),
+                source=source_jsonb,
                 estimated_healing_time=guide_data.get("estimated_healing_time"),
                 created_by=str(created_by) if created_by else None
             )
@@ -480,7 +484,9 @@ class FirstAidService:
             
             if "source" in update_data and "source" in allowed_fields:
                 update_fields.append("source = :source")
-                params["source"] = update_data["source"]
+                # Convert source string to JSONB format
+                source_value = update_data["source"]
+                params["source"] = json.dumps({"source": source_value}) if source_value else None
             
             if "estimated_healing_time" in update_data and "estimated_healing_time" in allowed_fields:
                 update_fields.append("estimated_healing_time = :estimated_healing_time")
@@ -584,6 +590,14 @@ class FirstAidService:
 
     def _model_to_dict(self, guide: FirstAidGuide) -> Dict[str, Any]:
         """Convert SQLModel to dict."""
+        # Extract source string from JSONB
+        source_value = None
+        if guide.source:
+            if isinstance(guide.source, dict):
+                source_value = guide.source.get("source")
+            elif isinstance(guide.source, str):
+                source_value = guide.source
+        
         return {
             "firstaidguide_id": str(guide.firstaidguide_id),
             "wound_type": guide.wound_type,
@@ -594,7 +608,7 @@ class FirstAidService:
             "dos": FirstAidGuide.extract_list(guide.dos),
             "donts": FirstAidGuide.extract_list(guide.donts),
             "supplies_needed": FirstAidGuide.extract_list(guide.supplies_needed),
-            "source": guide.source,
+            "source": source_value,
             "estimated_healing_time": guide.estimated_healing_time,
             "is_active": guide.is_active,
             "version": guide.version,

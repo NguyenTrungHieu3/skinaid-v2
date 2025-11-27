@@ -33,6 +33,17 @@ class FirstAidController:
             return len(data.get("items", []))
         return 0
 
+    def _extract_source_string(self, source_data: Optional[Union[str, Dict]]) -> Optional[str]:
+        """Extract source string from JSONB object or return string as-is"""
+        if not source_data:
+            return None
+        if isinstance(source_data, str):
+            return source_data
+        if isinstance(source_data, dict):
+            # JSONB format: {"source": "...", "reference": "..."}
+            return source_data.get("source")
+        return None
+
     def _create_guide_response(self, guide: Dict[str, Any], expected_wound_type: str, expected_severity: str) -> FirstAidGuideResponse:
         """Create FirstAidGuideResponse from guide data"""
         return FirstAidGuideResponse(
@@ -47,7 +58,7 @@ class FirstAidController:
             donts=guide.get("donts"),
             supplies_needed=guide.get("supplies_needed"),
             estimated_healing_time=guide.get("estimated_healing_time"),
-            source=guide.get("source"),
+            source=self._extract_source_string(guide.get("source")),
             is_active=guide.get("is_active", True),
             version=guide.get("version", 1),
             created_by=uuid.UUID(guide["created_by"]) if guide.get("created_by") else None,
