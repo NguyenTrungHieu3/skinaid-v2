@@ -222,14 +222,12 @@ const AnalysisResultPage = () => {
       for (let i = 0; i < pages.length; i++) {
         const pageElement = pages[i] as HTMLElement;
         const canvas = await html2canvas(pageElement, {
-          scale: 2, // Removed as it is not a valid property
+          scale: 2,
           useCORS: true,
           logging: false,
           allowTaint: true,
-          backgroundColor: "#ffffff",
-          windowWidth: pageElement.scrollWidth,
-          windowHeight: pageElement.scrollHeight,
-        });
+          background: "#ffffff",
+        } as any);
 
         const imgData = canvas.toDataURL("image/png");
         const imgWidth = canvas.width;
