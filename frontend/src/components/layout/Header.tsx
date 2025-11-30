@@ -6,6 +6,7 @@ import Logo from "../../assets/images/general/logo.png";
 import { FaBars, FaChevronDown } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import CountryFlag from "react-country-flag";
+import LanguageSwitcher from "../common/LanguageSwitcher";
 
 interface HeaderProps {
   menuOpen: boolean;
@@ -22,29 +23,8 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
     setMenuOpen(false);
   };
 
-  const { t, i18n } = useTranslation();
-  // --- 2. TẠO COMPONENT CHUYỂN NGÔN NGỮ ---
-  const LanguageSwitcher = () => (
-    <div className={styles.languageSwitcher}>
-      <button
-        onClick={() => i18n.changeLanguage("en")}
-        className={`${styles.flagButton} ${i18n.language === "en" ? styles.activeFlag : ""
-          }`}
-        aria-label="Switch to English"
-      >
-        <CountryFlag countryCode="US" svg />
-      </button>
-      <span className={styles.divider}>|</span>
-      <button
-        onClick={() => i18n.changeLanguage("vi")}
-        className={`${styles.flagButton} ${i18n.language === "vi" ? styles.activeFlag : ""
-          }`}
-        aria-label="Switch to Vietnamese"
-      >
-        <CountryFlag countryCode="VN" svg />
-      </button>
-    </div>
-  );
+  const { t } = useTranslation();
+
   return (
     <header className={`${styles.header} ${isMapPage ? styles.mapHeader : ""}`}>
       {/* 1. NÚT HAMBURGER (BÊN TRÁI - CHỈ HIỆN TRÊN MOBILE) */}
@@ -73,8 +53,9 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
 
       {/* 3. CONTAINER CHO MENU VÀ AUTH (MENU SLIDE TRÊN MOBILE - HIỆN RA TRÊN DESKTOP) */}
       <div
-        className={`${styles.navContainer} ${menuOpen ? styles.mobileMenuOpen : ""
-          }`}
+        className={`${styles.navContainer} ${
+          menuOpen ? styles.mobileMenuOpen : ""
+        }`}
       >
         {/* Lớp phủ (overlay) để bấm vào là tắt menu trên mobile */}
         {menuOpen && <div className={styles.overlay} onClick={closeMenu}></div>}
@@ -108,8 +89,6 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
               {t("header.map")}
             </NavLink>
 
-
-
             {isAuthenticated && (
               <NavLink
                 to="/history"
@@ -121,19 +100,34 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
             )}
 
             {/* Dropdown for Sections */}
-            <div className={`${styles.dropdown} ${mobileSubmenuOpen ? styles.mobileSubmenuOpen : ""}`}>
+            <div
+              className={`${styles.dropdown} ${
+                mobileSubmenuOpen ? styles.mobileSubmenuOpen : ""
+              }`}
+            >
               <button
                 className={styles.dropdownBtn}
                 onClick={() => setMobileSubmenuOpen(!mobileSubmenuOpen)}
               >
-                {t("header.explore")} <FaChevronDown className={styles.chevron} />
+                {t("header.explore")}
+                <FaChevronDown className={styles.chevron} />
               </button>
               <div className={styles.dropdownContent}>
-                <a href="/#how-it-works" onClick={closeMenu}>{t("header.how_it_works")}</a>
-                <a href="/#why-skinaid" onClick={closeMenu}>{t("header.why_skinaid")}</a>
-                <a href="/#features" onClick={closeMenu}>{t("header.features")}</a>
-                <a href="/#trust-safety" onClick={closeMenu}>{t("header.trust_safety")}</a>
-                <a href="/#medical-disclaimer" onClick={closeMenu}>{t("header.medical_disclaimer")}</a>
+                <a href="/#how-it-works" onClick={closeMenu}>
+                  {t("header.how_it_works")}
+                </a>
+                <a href="/#why-skinaid" onClick={closeMenu}>
+                  {t("header.why_skinaid")}
+                </a>
+                <a href="/#features" onClick={closeMenu}>
+                  {t("header.features")}
+                </a>
+                <a href="/#trust-safety" onClick={closeMenu}>
+                  {t("header.trust_safety")}
+                </a>
+                <a href="/#medical-disclaimer" onClick={closeMenu}>
+                  {t("header.medical_disclaimer")}
+                </a>
               </div>
             </div>
 

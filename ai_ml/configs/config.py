@@ -13,7 +13,7 @@ class AISettings(BaseSettings):
     # ================== YOLO Detection Model ==================
     YOLO_MODEL_NAME: str = "yolov11"
     YOLO_MODEL_PATH: str = "models/detection/weights/model_2_class_v1.pt"
-    YOLO_CONF_THRESHOLD: float = 0.25
+    YOLO_CONF_THRESHOLD: float = 0.55
     YOLO_IMG_SIZE: int = 640
     
     # ================== EfficientNet Classification Model ==================

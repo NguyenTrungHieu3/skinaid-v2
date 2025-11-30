@@ -4,7 +4,7 @@ import RegisterForm from "../../components/auth/RegisterForm"; // <-- Dùng Regi
 
 const RegisterPage = () => {
   return (
-    <AuthLayout>
+    <AuthLayout align="center">
       <AuthTabs active="register" />
       <RegisterForm />
     </AuthLayout>

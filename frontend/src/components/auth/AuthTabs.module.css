@@ -12,7 +12,6 @@
   cursor: pointer;
   color: #90a4ae;
   border-radius: 20px;
-  font-family: "Times New Roman", Times, serif;
 }
 .activeTab {
   background-color: #009688;

@@ -8,6 +8,7 @@ import {
 } from "react-icons/io";
 import { LuShieldPlus } from "react-icons/lu";
 import { TiWarningOutline } from "react-icons/ti";
+import { useTranslation } from "react-i18next";
 
 // 1. Định nghĩa Type cho 'firstaid_snapshot'
 // (Dựa trên logic trong file .jsx của bạn)
@@ -22,6 +23,8 @@ interface TreatmentSectionProps {
 }
 
 const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
+  const { t } = useTranslation();
+
   // 2. State và logic được chuyển vào bên trong component này
   const [openSection, setOpenSection] = useState("immediateCare");
 
@@ -34,36 +37,42 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
     {
       key: "immediateCare",
       num: 1,
-      label: snapshot.title || "Các bước sơ cứu",
-      subLabel: `Các bước cần làm ngay - ${snapshot.steps.length} bước`,
+      label: snapshot.title || t("analysis.treatment_immediate_label"),
+      subLabel: t("analysis.treatment_immediate_sub_label", {
+        step_length: snapshot.steps.length,
+      }),
       color: "#F0FDF4", // Green
       colorBorder: "rgba(0, 201, 81, 0.5)",
       steps:
         snapshot.steps.length > 0
           ? snapshot.steps
-          : ["Không có hướng dẫn cụ thể."],
+          : [t("analysis.treatment_not_step")],
     },
     {
       key: "ongoingCare",
       num: 2,
-      label: "Ongoing Care (Daily Care)",
-      subLabel: `Những điều nên làm - ${snapshot.dos.length} mục`,
+      label: t("analysis.treatment_ongoing_label"),
+      subLabel: t("analysis.treatment_ongoing_sub_label", {
+        item_length: snapshot.dos.length,
+      }),
       color: "#F0F6FE", // Blue
       colorBorder: "rgba(35, 70, 221, 0.5)",
       steps:
-        snapshot.dos.length > 0 ? snapshot.dos : ["Không có hướng dẫn cụ thể."],
+        snapshot.dos.length > 0
+          ? snapshot.dos
+          : [t("analysis.treatment_not_step")],
     },
     {
       key: "notRecommended",
       num: 3,
-      label: "Not recommended",
+      label: t("analysis.treatment_not_recommended_label"),
       subLabel: `Những điều cần tránh - ${snapshot.donts.length} mục`,
       color: "#FAE3E2", // Red
       colorBorder: "rgba(182, 30, 27, 0.5)",
       steps:
         snapshot.donts.length > 0
           ? snapshot.donts
-          : ["Không có hướng dẫn cụ thể."],
+          : [t("analysis.treatment_not_step")],
     },
   ];
 
@@ -71,11 +80,9 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
     <div className={styles.recommendations}>
       <div className={styles.sectionTitle}>
         <LuShieldPlus className={styles.titleIcon} />
-        <h3>Treatment Recommendations</h3>
+        <h3>{t("analysis.treatment_title")}</h3>
       </div>
-      <p className={styles.titleSub}>
-        Follow these evidence-based care guidelines for optimal healing
-      </p>
+      <p className={styles.titleSub}>{t("analysis.treatment_desc")}</p>
 
       {/* 4. Map qua 'careSections' để render accordions */}
       {careSections.map((section) => (

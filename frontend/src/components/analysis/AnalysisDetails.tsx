@@ -1,21 +1,28 @@
 import styles from "./AnalysisDetails.module.css";
 import { FaCheck } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 interface DetailsProps {
   likelihood: number;
   woundType: string;
+  subType?: string | null; // <-- 1. Thêm prop này (có thể null hoặc undefined)
   severity: string;
   healingTime: string;
   supportItems: string[];
 }
 
+const capitalize = (str: string) =>
+  str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
 const AnalysisDetails = ({
   likelihood,
   woundType,
+  subType,
   severity,
   healingTime,
   supportItems,
 }: DetailsProps) => {
+  const { t } = useTranslation();
   // Tính toán góc xoay cho vòng gauge
   // (likelihood / 100) * 180 độ
   const gaugeRotation = (likelihood / 100) * 180;
@@ -34,7 +41,7 @@ const AnalysisDetails = ({
   return (
     <div className={styles.detailsCard}>
       {/* 1. Tiêu đề Likelihood */}
-      <h3 className={styles.panelTitle}>WOUND DETECTION LIKELIHOOD</h3>
+      <h3 className={styles.panelTitle}>{t("analysis.detail_title")}</h3>
 
       {/* 2. Vòng Gauge */}
       <div className={styles.gaugeContainer}>
@@ -55,28 +62,31 @@ const AnalysisDetails = ({
       {/* 3. Grid chi tiết */}
       <div className={styles.detailsGrid}>
         <div className={styles.detailItem}>
-          <label>Wound Type</label>
-          <div className={styles.detailValue}>{woundType}</div>
+          <label>{t("analysis.detail_wound")}</label>
+          <div className={styles.detailValue}>
+            {t(`analysis.wound_type_uppercase.${capitalize(woundType)}`)}
+            {subType && <span> - {t(`analysis.wound_sub.${subType}`)}</span>}
+          </div>
         </div>
         <div className={styles.detailItem}>
-          <label>Severity</label>
+          <label>{t("analysis.detail_severity")}</label>
           <div
             className={`${styles.detailValue} ${
               styles[severity.toLowerCase()]
             }`}
           >
-            {severity}
+            {t(`analysis.severity.${capitalize(severity)}`)}
           </div>
         </div>
         <div className={styles.detailItem}>
-          <label>Est. Healing Time</label>
+          <label>{t("analysis.detail_healing_time")}</label>
           <div className={styles.detailValue}>{healingTime}</div>
         </div>
       </div>
 
       {/* 4. Support Items */}
       <div className={styles.supportItems}>
-        <h4 className={styles.supportTitle}>Support Items Identified</h4>
+        <h4 className={styles.supportTitle}>{t("analysis.detail_items")}</h4>
         <ul className={styles.supportList}>
           {supportItems.map((item) => (
             <li key={item}>

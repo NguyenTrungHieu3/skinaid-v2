@@ -7,7 +7,15 @@ import Logo from "../assets/images/home-page/skin-hero-home.png";
 import DetectedImage from "../assets/images/home-page/anhDaNhanDien.png";
 import WoundImage from "../assets/images/home-page/anhVetTray.png";
 import DashboardHero from "../assets/images/home-page/dashboard-hero.png";
-import { FaCamera, FaFirstAid, FaHistory, FaCheck, FaBrain, FaUserMd, FaHandHoldingHeart } from "react-icons/fa";
+import {
+  FaCamera,
+  FaFirstAid,
+  FaHistory,
+  FaCheck,
+  FaBrain,
+  FaUserMd,
+  FaHandHoldingHeart,
+} from "react-icons/fa";
 import { FaChartLine, FaListAlt, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import ScrollAnimation from "../components/common/ScrollAnimation";
@@ -32,10 +40,15 @@ const HomePage = () => {
 
   return (
     <div className={styles.homePage}>
+      <title>{t("title.home_page")}</title>
+      <meta name="description" content={t("home_page.hero_desc")} />
       {/* 1. Hero Section */}
       <section className={styles.hero} id="hero">
         <div className={styles.heroContainer}>
-          <ScrollAnimation animation="fade-right" className={styles.heroContent}>
+          <ScrollAnimation
+            animation="fade-right"
+            className={styles.heroContent}
+          >
             <h1 className={styles.heroTitle}>
               {/* 2. Giữ lại chữ SkinAid */}
               <span>SkinAid</span>
@@ -74,7 +87,11 @@ const HomePage = () => {
 
         <div className={styles.stepsGrid}>
           {/* --- Step 1 --- */}
-          <ScrollAnimation animation="fade-right" delay={0.1} className={styles.step}>
+          <ScrollAnimation
+            animation="fade-right"
+            delay={0.1}
+            className={styles.step}
+          >
             <div className={styles.stepNumber}>
               <span>1</span>
               <span className={`${styles.stepBadge} ${styles.badgeCamera}`}>
@@ -95,7 +112,11 @@ const HomePage = () => {
           </ScrollAnimation>
 
           {/* --- Step 2 --- */}
-          <ScrollAnimation animation="fade-up" delay={0.2} className={styles.step}>
+          <ScrollAnimation
+            animation="fade-up"
+            delay={0.2}
+            className={styles.step}
+          >
             <div className={styles.stepNumber}>
               <span>2</span>
               <span className={`${styles.stepBadge} ${styles.badgeChart}`}>
@@ -126,7 +147,11 @@ const HomePage = () => {
           </ScrollAnimation>
 
           {/* --- Step 3 --- */}
-          <ScrollAnimation animation="fade-left" delay={0.3} className={styles.step}>
+          <ScrollAnimation
+            animation="fade-left"
+            delay={0.3}
+            className={styles.step}
+          >
             <div className={styles.stepNumber}>
               <span>3</span>
               <span className={`${styles.stepBadge} ${styles.badgeList}`}>
@@ -164,23 +189,47 @@ const HomePage = () => {
           <h2>{t("home_page.why_skinaid_title")}</h2>
         </ScrollAnimation>
         <div className={styles.whyGrid}>
-          <ScrollAnimation animation="zoom-in" delay={0.1} className={styles.whyCard}>
-            <div className={styles.whyIcon}><FaBrain /></div>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.1}
+            className={styles.whyCard}
+          >
+            <div className={styles.whyIcon}>
+              <FaBrain />
+            </div>
             <h4>{t("home_page.why_skinaid_item1_title")}</h4>
             <p>{t("home_page.why_skinaid_item1_desc")}</p>
           </ScrollAnimation>
-          <ScrollAnimation animation="zoom-in" delay={0.2} className={styles.whyCard}>
-            <div className={styles.whyIcon}><FaUserMd /></div>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.2}
+            className={styles.whyCard}
+          >
+            <div className={styles.whyIcon}>
+              <FaUserMd />
+            </div>
             <h4>{t("home_page.why_skinaid_item2_title")}</h4>
             <p>{t("home_page.why_skinaid_item2_desc")}</p>
           </ScrollAnimation>
-          <ScrollAnimation animation="zoom-in" delay={0.3} className={styles.whyCard}>
-            <div className={styles.whyIcon}><FaHandHoldingHeart /></div>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.3}
+            className={styles.whyCard}
+          >
+            <div className={styles.whyIcon}>
+              <FaHandHoldingHeart />
+            </div>
             <h4>{t("home_page.why_skinaid_item3_title")}</h4>
             <p>{t("home_page.why_skinaid_item3_desc")}</p>
           </ScrollAnimation>
-          <ScrollAnimation animation="zoom-in" delay={0.4} className={styles.whyCard}>
-            <div className={styles.whyIcon}><FaHistory /></div>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.4}
+            className={styles.whyCard}
+          >
+            <div className={styles.whyIcon}>
+              <FaHistory />
+            </div>
             <h4>{t("home_page.why_skinaid_item4_title")}</h4>
             <p>{t("home_page.why_skinaid_item4_desc")}</p>
           </ScrollAnimation>
@@ -198,7 +247,11 @@ const HomePage = () => {
 
         <div className={styles.featureGrid}>
           {/* --- THẺ 1 --- */}
-          <ScrollAnimation animation="zoom-in" delay={0.1} className={`${styles.featureCard} ${styles.cardGreen}`}>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.1}
+            className={`${styles.featureCard} ${styles.cardGreen}`}
+          >
             <div className={`${styles.featureIconWrapper} ${styles.iconGreen}`}>
               <FaCamera />
             </div>
@@ -221,7 +274,11 @@ const HomePage = () => {
           </ScrollAnimation>
 
           {/* --- THẺ 2 --- */}
-          <ScrollAnimation animation="zoom-in" delay={0.2} className={`${styles.featureCard} ${styles.cardGreen}`}>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.2}
+            className={`${styles.featureCard} ${styles.cardGreen}`}
+          >
             <div className={`${styles.featureIconWrapper} ${styles.iconGreen}`}>
               <FaFirstAid />
             </div>
@@ -244,7 +301,11 @@ const HomePage = () => {
           </ScrollAnimation>
 
           {/* --- THẺ 3 --- */}
-          <ScrollAnimation animation="zoom-in" delay={0.3} className={`${styles.featureCard} ${styles.cardOrange}`}>
+          <ScrollAnimation
+            animation="zoom-in"
+            delay={0.3}
+            className={`${styles.featureCard} ${styles.cardOrange}`}
+          >
             <div
               className={`${styles.featureIconWrapper} ${styles.iconOrange}`}
             >

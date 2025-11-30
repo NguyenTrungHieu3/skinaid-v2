@@ -1,37 +1,115 @@
 .mainHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: center; /* Căn giữa theo chiều dọc */
   width: 100%;
   margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap; /* Cho phép Header xuống dòng nếu quá chật */
+}
+
+/* --- TITLE & DROPDOWN --- */
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  flex-grow: 1; /* Title chiếm phần còn dư */
+  min-width: 200px;
 }
 
 .pageTitle {
-  font-size: 2rem; /* Cỡ chữ to */
+  font-size: 2rem;
   font-weight: 700;
-  /* color: #d95a00; Màu cam đậm */
   margin: 0;
+  white-space: nowrap;
 }
 
-/* --- THÊM CÁC CLASS MÀU MỚI NÀY --- */
-/* (Dùng màu giống như file AnalysisSidebar.module.css) */
+/* Style cho Dropdown giả lập Title */
+.selectContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
 
+  /* Tạo hiệu ứng hover nền nhẹ để người dùng biết click được */
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.selectContainer:hover {
+  background-color: rgba(0, 0, 0, 0.04); /* Nền xám rất nhạt khi hover */
+}
+
+.woundSelect {
+  /* Xóa style mặc định của browser */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: transparent;
+  border: none;
+  font-size: 2rem; /* Kích thước chữ to, đậm như Header */
+  font-weight: 700;
+  color: inherit; /* Kế thừa màu từ class severity */
+  font-family: inherit;
+
+  /* Layout */
+  padding: 0.25rem 2.5rem 0.25rem 0.5rem; /* Padding phải chừa chỗ cho Icon */
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+
+  /* Xử lý text dài */
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.woundSelect:hover {
+  border-bottom-color: #ddd; /* Hover hiện gạch chân */
+}
+
+/* Style cho Icon mũi tên */
+.selectIcon {
+  position: absolute;
+  right: 0.5rem; /* Căn phải */
+  font-size: 1.2rem;
+  pointer-events: none; /* Click xuyên qua icon */
+  opacity: 0.7;
+}
+
+/* Style cho các Option bên trong (Trình duyệt hỗ trợ hạn chế, chỉ chỉnh được font/color cơ bản) */
+.woundSelect option {
+  font-size: 1rem;
+  color: #333;
+  background-color: #fff;
+  padding: 10px;
+  font-weight: 500;
+}
+
+/* --- COLORS --- */
 .titleDefault {
-  color: #333; /* Màu cam (mặc định) */
+  color: #333;
 }
 .titleMild {
-  color: #009688; /* Xanh lá */
+  color: #009688;
 }
 .titleModerate {
-  color: #f39c12; /* Vàng/Cam */
+  color: #f39c12;
 }
 .titleSevere {
-  color: #c0392b; /* Đỏ */
+  color: #c0392b;
 }
 
+/* --- ACTIONS BUTTONS --- */
 .mainActions {
   display: flex;
   gap: 0.75rem;
+
+  /* Requirement 1: Tự động xuống hàng nếu hết chỗ */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end; /* Căn phải mặc định */
 }
 
 .actionBtn {
@@ -45,8 +123,12 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   transition: all 0.2s;
+
+  /* Đảm bảo nút không bị co quá bé */
+  white-space: nowrap;
 }
 
 .actionBtn:hover {
@@ -54,17 +136,72 @@
   border-color: #ccc;
 }
 
-/* Nút trái tim */
 .btnIcon {
-  /* Xóa nền và viền */
   background-color: transparent;
   border: none;
   padding: 0.6rem 0.8rem;
-  color: #d9534f; /* Màu đỏ */
+  color: #d9534f;
   font-size: 1rem;
-} /* THAY THẾ KHỐI NÀY: */
+}
 .btnIcon:hover {
-  /* Khi hover, chỉ làm nền hơi đỏ */
   background-color: #fde8e8;
-  color: #c0392b; /* Đậm hơn 1 chút */
+}
+
+/* Nút Upload nổi bật */
+.uploadBtnPrimary {
+  background-color: #e0f2f1;
+  color: #009688;
+  border-color: #b2dfdb;
+}
+.uploadBtnPrimary:hover {
+  background-color: #b2dfdb;
+}
+
+/* --- RESPONSIVE MOBILE --- */
+@media (max-width: 768px) {
+  .mainHeader {
+    flex-direction: column; /* Header xếp dọc: Title trên, Buttons dưới */
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .titleWrapper {
+    width: 100%;
+  }
+
+  /* Dropdown full width trên mobile cho dễ bấm */
+  .selectContainer {
+    width: 100%;
+    /* Trên mobile có thể thêm border dưới nhẹ để tách biệt */
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  .selectContainer:hover {
+    background-color: transparent; /* Mobile ko cần hover effect nền */
+  }
+  .woundSelect {
+    font-size: 1.6rem; /* Giảm cỡ chữ chút cho cân đối mobile */
+    padding-left: 0; /* Sát lề trái hơn */
+  }
+
+  .mainActions {
+    width: 100%;
+    justify-content: flex-start; /* Căn trái */
+  }
+
+  .actionBtn {
+    /* Requirement 1: Nút tự co giãn lấp đầy hàng */
+    flex: 1 0 auto;
+    padding: 0.75rem;
+  }
+
+  /* Requirement 2: HIỆN CHỮ TRÊN MOBILE */
+  .btnText {
+    display: inline-block; /* Luôn hiện chữ */
+  }
+
+  /* Nút tim nhỏ hơn, ko cần giãn */
+  .btnIcon {
+    flex: 0 0 auto;
+  }
 }

@@ -1,4 +1,75 @@
 {
+  "title": {
+    "home_page": "Home page - SkinAid",
+    "upload_page": "Upload page - SkinAid",
+    "map_page": "Medical facility map - SkinAid",
+    "about_page": "About - SkinAid",
+    "login_page": "Login",
+    "register_page": "Register",
+    "forgot_password_page": "Forgot Password",
+    "reset_password_page": "Reset Password",
+    "analysis_result": "Analyzed Result - SkinAid"
+  },
+  "auth_page": {
+    "left_title": "Welcome to SkinAid",
+    "left_desc": "Smart Wound Detection & Classification Support System",
+
+    "login_tab": "LOGIN",
+    "register_tab": "REGISTER",
+
+    "username": "Username",
+    "username_placeholder": "Enter your username",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot Password?",
+    "email": "Email",
+    "confirm_password": "Confirm Password",
+    "confirm_password_placeholder": "Re-enter your password",
+    "male": "Male",
+    "female": "Female",
+    "term": "I agree to the Terms and Conditions",
+    "login_button": "Login",
+    "register_button": "Register",
+
+    "forgot_password_title": "Forgot Your Password?",
+    "forgot_password_subtitle": "No worries! Enter your email address and we'll send you a link to reset your password.",
+    "forgot_password_email": "Email Address",
+    "forgot_password_button": "Send Reset Link",
+    "forgot_password_back_to_login": "Back to Login",
+    "forgot_password_tip": "Tip: ",
+    "forgot_password_tip_desc": "Make sure to use the email address associated with your account.",
+
+    "reset_password_title": "Reset Your Password",
+    "reset_password_subtitle": "Please enter your new password below.",
+    "reset_password_new": "New Password",
+    "reset_password_confirm": "Confirm New Password",
+    "reset_new_password_placeholder": "Enter new password",
+    "reset_confirm_password_placeholder": "Confirm new password",
+    "reset_password_button": "Reset Password",
+    "reset_password_button_sub": "Update!",
+    "reset_password_back_to_login": "Back to Login"
+  },
+  "validation": {
+    "error_username_required": "Username is required.",
+    "error_username_less_than_3": "Username must be at least 3 characters.",
+    "error_username_more_than_50": "Username cannot exceed 50 characters.",
+    "error_username_format": "Username can only contain letters, numbers, underscores (_), and hyphens (-). No spaces or diacritics allowed.",
+
+    "error_password_required": "Password is required.",
+    "error_password_less_than_8": "Password must be at least 8 characters.",
+    "error_password_uppercase": "Password must contain at least one uppercase letter.",
+    "error_password_one_number": "Password must contain at least one number.",
+    "error_password__special_character": "Password must contain at least one special character (!@#$%^&*).",
+
+    "error_confirm_password_required": "Please confirm your password.",
+    "error_confirm_passwords_not_match": "Passwords do not match.",
+
+    "error_email_required": "Email is required.",
+    "error_email_invalid": "Please enter a valid email address.",
+
+    "error_terms_required": "You must agree to the Terms and Conditions."
+  },
   "header": {
     "home": "Home",
     "upload_image": "Upload Image",
@@ -33,6 +104,7 @@
     "bottom_bar": "© 2025 SkinAid. All rights reserved."
   },
   "home_page": {
+    "title": "Home page",
     "hero_desc": "SkinAid supports everyday users by combining wound detection, tailored first aid guidance, and easy-to-use wound history tracking into a user-friendly web application, designed to make healthcare more accessible and practical in everyday life.",
     "hero_analysis_button": "Start Analysis",
     "hero_demo_button": "Watch Demo",
@@ -102,12 +174,128 @@
       "file_too_large": "File is too large. Maximum file size is {{size}}MB per image.",
       "invalid_type": "Invalid file type. Please upload JPEG, PNG, JPG",
       "dimensions": "Image dimensions must be between {{minW}}x{{minH}}px and {{maxW}}x{{maxH}}px.",
-      "corrupted": "Could not read image file. It might be corrupted."
+      "corrupted": "Could not read image file. It might be corrupted.",
+      "resize_needed": "Image adjustment needed for better results."
+    }
+  },
+  "upload": {
+    "issue": {
+      "blur": "Image is blurry",
+      "dark": "Image is too dark",
+      "bright": "Overexposure detected"
+    },
+    "warning": {
+      "resize": "Resize required",
+      "quality": "Quality Issues Detected"
+    },
+    "label": {
+      "zoom": "Zoom"
+    },
+    "btn": {
+      "confirm_crop": "Confirm Crop",
+      "retake": "Retake",
+      "ignore": "Ignore & Continue",
+      "enhance": "Auto-Enhance",
+      "enhancing": "Enhancing...",
+      "analyze": "Start Analysis"
+    },
+    "status": {
+      "ready": "Image looks good!",
+      "scanning": "Please wait..."
+    },
+    "note": {
+      "enhance_tip": "We can try to fix this automatically.",
+      "ready_tip": "Ready to send to AI for wound analysis."
     }
   },
   "analysis": {
-    "no_wounds_found": "No wounds found for this category."
+    "sidebar_complete": "Analysis Complete",
+    "sidebar_complete_desc": "Analysis Complete",
+    "sidebar_summary": "Summary",
+    "sidebar_summary_desc": "Detect the total number of wounds in your image",
+    "sidebar_wound_count_one": "{{count}} wound",
+    "sidebar_wound_count_other": "{{count}} wounds",
+    "sidebar_summary_total": "Total Wounds",
+    "sidebar_summary_burn": "Burns",
+    "sidebar_summary_abrasion": "Abrasions",
+    "sidebar_summary_bruise": "Bruise",
+    "sidebar_details": "Details",
+    "sidebar_details_desc": "List of each type of wound",
+    "sidebar_no_wounds_found": "No wounds found for this category.",
+
+    "header_upload_button": "Upload image",
+    "header_save_button": "Save",
+    "header_download_button": "Download",
+
+    "medical_title": "Important Medical Information Notice",
+    "medical_desc": "AI analysis is for informational purposes only and is not a substitute for professional medical advice. The purpose of this analysis is to help people gain a more accurate view of the wound condition, but it cannot replace actual clinical assessment. Always consult a doctor or medical professional for safe and appropriate diagnosis and treatment.",
+
+    "image_title": "Analyzed Image",
+
+    "detail_title": "WOUND DETECTION LIKELIHOOD",
+    "detail_wound": "Wound",
+    "detail_severity": "Severity",
+    "detail_healing_time": "Est. Healing Time",
+    "detail_items": "Support Items Identified",
+
+    "treatment_title": "Treatment Recommendations",
+    "treatment_desc": "Follow these evidence-based care guidelines for optimal healing",
+    "treatment_immediate_label": "First aid steps",
+    "treatment_immediate_sub_label": "Steps to take now - {{step_length}} steps",
+
+    "treatment_ongoing_label": "Ongoing Care (Daily Care)",
+    "treatment_ongoing_sub_label": "Things you should do - {{item_length}} items",
+
+    "treatment_not_recommended_label": "Not recommended",
+    "treatment_not_recommended_sub_label": "Things to avoid - {{item_length}} items",
+
+    "treatment_not_step": "There are no specific instructions.",
+
+    "wound_type": {
+      "abrasion": "Abrasion",
+      "burn": "Burn",
+      "bruise": "Bruise"
+    },
+
+    "wound_type_uppercase": {
+      "Abrasion": "Abrasion",
+      "Burn": "Burn",
+      "Bruise": "Bruise"
+    },
+
+    "wound_sub": {
+      "blister": "Blister",
+      "scratch": "Scratch"
+    },
+
+    "severity": {
+      "Mild": "Mild",
+      "Moderate": "Moderate",
+      "Severe": "Severe"
+    }
   },
+
+  "download": {
+    "title": "Download Report",
+    "subtitle": "Select the format you want to export:",
+
+    "format_pdf_title": "PDF Document",
+    "format_pdf_desc": "Best for sharing and printing.",
+
+    "format_csv_title": "CSV File",
+    "format_csv_desc": "Useful for spreadsheets and data analysis.",
+
+    "select_wounds": "Select wounds to include:",
+    "full_report": "Full report will be generated.",
+    "custom_report": "Custom report with selected wounds.",
+
+    "button_cancel": "Cancel",
+    "button_download": "Download ",
+
+    "severity_label": "Severity",
+    "confidence": "Confidence"
+  },
+
   "profile": {
     "banner_date": "Member since"
   },
@@ -167,5 +355,51 @@
     "old_password": "Enter your current password",
     "new_password": "Enter new password (min. 8 chars)",
     "confirmNew_password": "Confirm your new password"
+  },
+  "about": {
+    "hero_title": "Welcome to <strong>SkinAid</strong>",
+    "hero_subtitle": "Your intelligent companion for wound care, powered by artificial intelligence to provide instant detection, accurate assessment, and personalized guidance.",
+    "hero_button": "Get Started",
+
+    "what_is_title": "What is SkinAid?",
+    "what_is_p1": "SkinAid is a revolutionary AI-powered platform designed to make professional-grade wound care accessible to everyone. Using advanced machine learning technology, we help you detect, monitor, and manage wounds with confidence.",
+    "what_is_p2": "Whether you're dealing with a minor cut, burn, or chronic wound, SkinAid provides instant analysis and evidence-based treatment recommendations—anytime, anywhere.",
+    "what_is_p3": "Founded in 2024, we've already helped thousands of users better understand and care for their wounds, bridging the gap between everyday injuries and professional medical care.",
+
+    "how_title": "How SkinAid Works",
+    "how_subtitle": "Get professional wound assessment in three simple steps",
+
+    "step_1_label": "Step 1",
+    "step_1_title": "Upload Photo",
+    "step_1_desc": "Take a clear photo of the wound using your smartphone or camera and upload it to SkinAid.",
+
+    "step_2_label": "Step 2",
+    "step_2_title": "AI Analysis",
+    "step_2_desc": "Our advanced AI instantly analyzes the image to detect wound type, size, and severity.",
+
+    "step_3_label": "Step 3",
+    "step_3_title": "Get Guidance",
+    "step_3_desc": "Receive personalized care recommendations and track healing progress over time.",
+
+    "features_title": "Why Choose SkinAid?",
+    "features_subtitle": "Combining cutting-edge technology with medical expertise to deliver exceptional wound care support",
+
+    "f_ai_title": "AI-Powered Accuracy",
+    "f_ai_desc": "94% accuracy rate with AI trained on thousands of medical images and validated by healthcare professionals.",
+
+    "f_instant_title": "Instant Results",
+    "f_instant_desc": "Get comprehensive wound analysis in seconds, available 24/7 whenever you need it.",
+
+    "f_security_title": "HIPAA Compliant",
+    "f_security_desc": "Your health data is protected with enterprise-grade security and end-to-end encryption.",
+
+    "f_evidence_title": "Evidence-Based Care",
+    "f_evidence_desc": "Treatment recommendations based on the latest medical research and clinical guidelines.",
+
+    "f_mobile_title": "Mobile Friendly",
+    "f_mobile_desc": "Access SkinAid anywhere, anytime on your smartphone, tablet, or computer with our responsive design.",
+
+    "f_easy_title": "Easy to Use",
+    "f_easy_desc": "Simple, intuitive interface designed for everyone—no medical knowledge required."
   }
 }

@@ -6,7 +6,7 @@
   min-height: 100vh;
   /* Đổi từ height sang min-height để cho phép mở rộng */
   /* Bỏ overflow: hidden để cho phép scroll */
-  padding-top: 80px;
+  padding-top: 60px;
 }
 
 .mainContent {

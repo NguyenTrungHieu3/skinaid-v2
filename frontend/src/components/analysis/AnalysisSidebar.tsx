@@ -1,11 +1,17 @@
-import styles from "./AnalysisSidebar.module.css"; // File CSS mới
-import { FaCheckCircle, FaUpload } from "react-icons/fa";
-import { useRef, type ChangeEvent } from "react"; // <-- 1. IMPORT THÊM
+import { useState, useRef, type ChangeEvent } from "react";
+import styles from "./AnalysisSidebar.module.css";
+import {
+  FaCheckCircle,
+  FaUpload,
+  FaChevronDown,
+  FaChevronUp,
+  FaListAlt,
+} from "react-icons/fa"; // Thêm icon
 import { Link, useNavigate } from "react-router-dom";
-import Logo from "../../assets/images/general/logo.png"; // Giả sử bạn có logo ở đây
+import Logo from "../../assets/images/general/logo.png";
 import { useTranslation } from "react-i18next";
 
-// --- Định nghĩa Types (Kiểu dữ liệu) cho props ---
+// ... (Giữ nguyên các interface SummaryCounts, Tab, Props cũ) ...
 interface SummaryCounts {
   total: number;
   abrasion: number;
@@ -60,7 +66,16 @@ const getSeverityWeight = (severity: Severity) => {
   }
 };
 
-// --- Component ---
+// NEW — Split title → type + number
+const parseWoundTitle = (title: string) => {
+  const parts = title.split(/[-\s]+/);
+  return {
+    type: parts[0], // Abrasion
+    number: parts[1] || "", // 1
+    sub_type: parts.slice(2).join(" ") || "", // Superficial
+  };
+};
+
 const AnalysisSidebar = ({
   summaryCounts,
   tabData,
@@ -69,172 +84,169 @@ const AnalysisSidebar = ({
   activeMainTab,
   onMainTabClick,
 }: AnalysisSidebarProps) => {
-  const { t } = useTranslation(); // <-- 2. KHỞI TẠO HOOK DỊCH
-  // 3. Lọc và SẮP XẾP các tab con (theo yêu cầu 2)
+  const { t } = useTranslation();
+
+  // --- STATE MỚI: Quản lý đóng mở trên Mobile ---
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+
+  // ... (Giữ nguyên logic sắp xếp Tab, handleFileChange) ...
   const abrasionTabs = tabData
     .filter((tab) => tab.type === "abrasion")
     .sort(
       (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
     );
-
   const burnTabs = tabData
     .filter((tab) => tab.type === "burn")
     .sort(
       (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
     );
-
   const bruiseTabs = tabData
     .filter((tab) => tab.type === "bruise")
     .sort(
       (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
     );
 
-  // 4. SẮP XẾP các nút tab chính (theo yêu cầu 3)
-  const allTabs: { type: WoundType; tabs: Tab[]; label: string }[] = [
-    { type: "abrasion", tabs: abrasionTabs, label: "Abrasion" },
-    { type: "burn", tabs: burnTabs, label: "Burn" },
-    { type: "bruise", tabs: bruiseTabs, label: "Bruise" },
+  const allTabs = [
+    { type: "abrasion" as WoundType, tabs: abrasionTabs, label: "Abrasion" },
+    { type: "burn" as WoundType, tabs: burnTabs, label: "Burn" },
+    { type: "bruise" as WoundType, tabs: bruiseTabs, label: "Bruise" },
   ];
 
-  // Đưa các tab có nội dung (length > 0) lên trước
   const sortedMainTabs = [
     ...allTabs.filter((t) => t.tabs.length > 0),
     ...allTabs.filter((t) => t.tabs.length === 0),
   ];
 
-  // --- 3. LOGIC MỚI: CHỌN DANH SÁCH TAB ĐỂ HIỂN THỊ ---
   let tabsToDisplay: Tab[] = [];
-  if (activeMainTab === "abrasion") {
-    tabsToDisplay = abrasionTabs;
-  } else if (activeMainTab === "burn") {
-    tabsToDisplay = burnTabs;
-  } else if (activeMainTab === "bruise") {
-    tabsToDisplay = bruiseTabs;
-  }
+  if (activeMainTab === "abrasion") tabsToDisplay = abrasionTabs;
+  else if (activeMainTab === "burn") tabsToDisplay = burnTabs;
+  else if (activeMainTab === "bruise") tabsToDisplay = bruiseTabs;
 
-  // --- 3. THÊM LOGIC UPLOAD (COPY TỪ OVERVIEW) ---
-  const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      console.log("File selected from Sidebar, navigating to /upload...");
-      navigate("/upload", { state: { fileToUpload: file } });
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    fileInputRef.current?.click();
-  };
   return (
-    <aside className={styles.sidebar}>
-      {/* 1. Logo */}
-      <Link to="/" className={styles.logoContainer}>
-        <img src={Logo} alt="SkinAid Logo" className={styles.logo} />
-        <span className={styles.logoText}>SkinAid</span>
-      </Link>
+    <aside
+      className={`${styles.sidebar} ${
+        isMobileExpanded ? styles.mobileExpanded : ""
+      }`}
+    >
+      {/* Header Mobile: Logo + Toggle Button */}
+      <div className={styles.mobileHeaderGroup}>
+        <Link to="/" className={styles.logoContainer}>
+          <img src={Logo} alt="SkinAid Logo" className={styles.logo} />
+          <span className={styles.logoText}>SkinAid</span>
+        </Link>
+      </div>
+
       <div className={styles.scrollableContent}>
-        {/* 2. Analysis Complete */}
-        <div className={styles.completeHeader}>
+        {/* 2. Analysis Complete (Chỉ hiện trên Desktop - xem CSS class desktopOnlyBlock) */}
+        <div className={`${styles.completeHeader} ${styles.desktopOnlyBlock}`}>
           <FaCheckCircle />
-          <h4>Analysis Complete</h4>
-          <p>Your wound has been successfully analyzed</p>
+          <h4>{t("analysis.sidebar_complete")}</h4>
         </div>
-        {/* 3. Summary */}
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryCardHeader}>
-            <h5>Summary</h5>
-            <p>Detect the total number of wounds in your image</p>
+
+        {/* 3. MOBILE SUMMARY BLOCK (Mới) */}
+        {/* Chỉ hiện trên Mobile. Chứa Icon + Summary + Count */}
+        <div
+          className={styles.mobileSummaryBlock}
+          onClick={() => setIsMobileExpanded(!isMobileExpanded)}
+        >
+          <div className={styles.summaryBlockLeft}>
+            <FaListAlt className={styles.summaryIcon} />
+            <span className={styles.summaryLabel}>
+              {t("analysis.sidebar_summary")}
+            </span>
+            {/* Hiển thị số lượng vết thương */}
+            <span className={styles.woundCountBadge}>
+              {t("analysis.sidebar_wound_count", {
+                count: summaryCounts.total,
+              })}
+            </span>
           </div>
-          <div className={styles.totalWound}>
-            <strong>{summaryCounts.total}</strong>
-            <span>Total Wound</span>
-          </div>
-          <div className={styles.breakdown}>
-            <div className={styles.breakdownItem}>
-              <strong>{summaryCounts.abrasion}</strong>
-              <span>Abrasion</span>
-            </div>
-            <div className={styles.breakdownItem}>
-              <strong>{summaryCounts.burn}</strong>
-              <span>Burn</span>
-            </div>
-            <div className={styles.breakdownItem}>
-              <strong>{summaryCounts.bruise}</strong>
-              <span>Bruise</span>
-            </div>
+          <div className={styles.summaryBlockRight}>
+            {isMobileExpanded ? <FaChevronUp /> : <FaChevronDown />}
           </div>
         </div>
 
-        {/* 4. Details (Tabs) - CẬP NHẬT PHẦN NÀY */}
-        <div className={styles.detailsTabs}>
-          <div className={styles.detailsHeader}>
-            <h5>Details</h5>
-            <p>List of each type of wound</p>
-          </div>
-
-          {/* --- Nav (các nút tab) --- */}
-          <nav className={styles.tabNav}>
-            {sortedMainTabs.map((mainTab) => (
-              <button
-                key={mainTab.type}
-                className={`${styles.tabNavBtn} ${
-                  activeMainTab === mainTab.type ? styles.activeNavBtn : ""
-                }`}
-                onClick={() => onMainTabClick(mainTab.type)}
-                // Vô hiệu hóa nút nếu không có tab con
-                // disabled={mainTab.tabs.length === 0}
-              >
-                {mainTab.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* --- Nội dung tab --- */}
-          <div className={styles.tabListContainer}>
-            {/* Kiểm tra xem có tab để hiển thị không */} 
-            {tabsToDisplay.length > 0 ? (
-              // Nếu có, dùng map để render
-              tabsToDisplay.map((tab) => (
-                <button
-                  key={tab.id}
-                  className={`${styles.tabItem} ${
-                    activeTab === tab.id ? styles.activeTab : ""
-                  } ${getBorderColorClass(tab.severity)}`}
-                  onClick={() => onTabClick(tab.id)}
-                >
-                  {tab.title}           
-                  <span className={styles[tab.severity.toLowerCase()]}>
-                    {tab.severity}           
-                  </span>
-                </button>
-              ))
-            ) : (
-              // Nếu không, hiển thị thông báo
-              <div className={styles.noDataMessage}>
-                {t("analysis.no_wounds_found")}
+        {/* PHẦN NÀY SẼ BỊ ẨN TRÊN MOBILE KHI THU GỌN */}
+        <div className={styles.collapsibleContent}>
+          <div className={styles.summaryCard}>
+            {/* ... Nội dung Summary giữ nguyên ... */}
+            <div className={styles.summaryCardHeader}>
+              <h5>{t("analysis.sidebar_summary")}</h5>
+              <p>{t("analysis.sidebar_summary_desc")}</p>
+            </div>
+            <div className={styles.totalWound}>
+              <strong>{summaryCounts.total}</strong>
+              <span>{t("analysis.sidebar_summary_total")}</span>
+            </div>
+            <div className={styles.breakdown}>
+              <div className={styles.breakdownItem}>
+                <strong>{summaryCounts.abrasion}</strong>
+                <span>{t("analysis.sidebar_summary_abrasion")}</span>
               </div>
-            )}
+              <div className={styles.breakdownItem}>
+                <strong>{summaryCounts.burn}</strong>
+                <span>{t("analysis.sidebar_summary_burn")}</span>
+              </div>
+              <div className={styles.breakdownItem}>
+                <strong>{summaryCounts.bruise}</strong>
+                <span>{t("analysis.sidebar_summary_bruise")}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.detailsTabs}>
+            <div className={styles.detailsHeader}>
+              <h5>{t("analysis.sidebar_details")}</h5>
+              <p>{t("analysis.sidebar_details_desc")}</p>
+            </div>
+
+            <nav className={styles.tabNav}>
+              {sortedMainTabs.map((mainTab) => (
+                <button
+                  key={mainTab.type}
+                  className={`${styles.tabNavBtn} ${
+                    activeMainTab === mainTab.type ? styles.activeNavBtn : ""
+                  }`}
+                  onClick={() => onMainTabClick(mainTab.type)}
+                >
+                  {t(`analysis.wound_type.${mainTab.type}`)}
+                </button>
+              ))}
+            </nav>
+
+            <div className={styles.tabListContainer}>
+              {tabsToDisplay.length > 0 ? (
+                tabsToDisplay.map((tab) => {
+                  const { type, number, sub_type } = parseWoundTitle(tab.title);
+
+                  return (
+                    <button
+                      key={tab.id}
+                      className={`${styles.tabItem} ${
+                        activeTab === tab.id ? styles.activeTab : ""
+                      } ${getBorderColorClass(tab.severity)}`}
+                      onClick={() => {
+                        onTabClick(tab.id);
+                        setIsMobileExpanded(false);
+                      }}
+                    >
+                      {t(`analysis.wound_type_uppercase.${type}`)} {number}
+                      {sub_type && t(`analysis.wound_sub.${sub_type}`)}
+                      <span className={styles[tab.severity.toLowerCase()]}>
+                        {t(`analysis.severity.${tab.severity}`)}
+                      </span>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className={styles.noDataMessage}>
+                  {t("analysis.sidebar_no_wounds_found")}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-      {/* 5. Upload Button (Luôn ở dưới cùng) */}
-      {/* --- 4. CẬP NHẬT NÚT UPLOAD --- */}
-      {/* Thêm input ẩn */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        style={{ display: "none" }}
-        accept="image/png, image/jpeg, image/jpg"
-      />
-      <button onClick={handleUploadClick} className={styles.uploadButton}>
-        <FaUpload /> Upload Image
-      </button>
     </aside>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import styles from "./AnalyzedImage.module.css";
 import { FaCamera } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 // 1. ĐỊNH NGHĨA TYPE CHO PROPS (NHẬN TỪ TRANG CHA)
 interface BoundingBox {
@@ -22,6 +23,7 @@ const AnalyzedImage = ({
   boundingBox,
   label,
 }: AnalyzedImageProps) => {
+  const { t } = useTranslation();
   const [dimensions, setDimensions] = useState<{
     naturalWidth: number;
     naturalHeight: number;
@@ -86,7 +88,7 @@ const AnalyzedImage = ({
   return (
     <div className={styles.imageCard}>
       <h3 className={styles.panelTitle}>
-        <FaCamera /> Analyzed Image    
+        <FaCamera /> {t("analysis.image_title")}    
       </h3>
       <div className={styles.imageWrapper}>
         <img

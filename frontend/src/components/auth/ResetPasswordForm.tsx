@@ -3,9 +3,11 @@
 import styles from "./Form.module.css";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { confirmPasswordReset } from "../../services/authService";
 import { isAxiosError } from "axios";
+import { useTranslation } from "react-i18next";
+import { FaArrowLeft } from "react-icons/fa";
 
 //Export type
 export type ResetPasswordFormData = {
@@ -18,32 +20,33 @@ export type ResetPasswordFormData = {
 const validateField = (
   name: string,
   value: any,
-  allValues: ResetPasswordFormData
+  allValues: ResetPasswordFormData,
+  t: (key: string) => string
 ): string => {
   switch (name) {
     case "password":
       if (value.trim() === "") {
-        return "Password is required";
+        return t("validation.error_password_required");
       }
       if (value.length < 8) {
-        return "Password must be at least 8 characters.";
+        return t("validation.error_password_less_than_8");
       }
       if (!/[A-Z]/.test(value)) {
-        return "Password must contain at least one uppercase letter.";
+        return t("validation.error_password_uppercase");
       }
       if (!/[0-9]/.test(value)) {
-        return "Password must contain at least one number.";
+        return t("validation.error_password_one_number");
       }
       if (!/[!@#$%^&*]/.test(value)) {
-        return "Password must contain at least one special character (!@#$%^&*).";
+        return t("validation.error_password_special_character");
       }
       return "";
     case "confirmPassword":
       if (value.trim() === "") {
-        return "Confirm Password is required.";
+        return t("validation.error_confirm_password_required");
       }
       if (value !== allValues.password) {
-        return "Passwords do not match.";
+        return t("validation.error_confirm_password_not_match");
       }
       return "";
     default:
@@ -52,6 +55,8 @@ const validateField = (
 };
 
 const ResetPasswordForm = () => {
+  const { t } = useTranslation();
+
   // Lấy token từ url
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -94,14 +99,15 @@ const ResetPasswordForm = () => {
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     const currentFormData = { ...formData, [name]: value };
-    const errorMessage = validateField(name, value, currentFormData);
+    const errorMessage = validateField(name, value, currentFormData, t);
     setErrors((prev) => ({ ...prev, [name]: errorMessage }));
 
     if (name === "password" && formData.confirmPassword) {
       const confirmError = validateField(
         "confirmPassword",
         formData.confirmPassword,
-        currentFormData
+        currentFormData,
+        t
       );
       setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
     }
@@ -125,12 +131,14 @@ const ResetPasswordForm = () => {
     const passwordError = validateField(
       "password",
       formData.password,
-      formData
+      formData,
+      t
     );
     const confirmPasswordError = validateField(
       "confirmPassword",
       formData.confirmPassword,
-      formData
+      formData,
+      t
     );
 
     if (passwordError || confirmPasswordError) {
@@ -163,8 +171,13 @@ const ResetPasswordForm = () => {
 
   return (
     <form className={styles.form} onSubmit={handleSubmit} noValidate>
-      <h2 className={styles.formTitle}>Reset Password</h2>
-      <p className={styles.formSubtitle}>Please enter your new password.</p>
+      <title>{t("title.reset_password_page")}</title>
+      <h2 className={styles.formTitle}>
+        {t("auth_page.reset_password_title")}
+      </h2>
+      <p className={styles.formSubtitle}>
+        {t("auth_page.reset_password_subtitle")}
+      </p>
 
       {apiError && <div className={styles.apiErrorMessage}>{apiError}</div>}
       {apiSuccess && (
@@ -173,13 +186,13 @@ const ResetPasswordForm = () => {
 
       {/* Password */}
       <div className={styles.formGroup}>
-        <label>New password</label>
+        <label>{t("auth_page.reset_password_new")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
             type={showPassword ? "text" : "password"}
             name="password"
-            placeholder="Enter new password"
+            placeholder={t("auth_page.reset_new_password_placeholder")}
             value={formData.password}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -199,13 +212,13 @@ const ResetPasswordForm = () => {
 
       {/* Confirm Password */}
       <div className={styles.formGroup}>
-        <label>Confirm password</label>
+        <label>{t("auth_page.reset_password_confirm")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
             type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
-            placeholder="Confirm new password"
+            placeholder={t("auth_page.reset_confirm_password_placeholder")}
             value={formData.confirmPassword}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -228,8 +241,18 @@ const ResetPasswordForm = () => {
         className={styles.submitButton}
         disabled={!!apiSuccess}
       >
-        {apiSuccess ? "Updated!" : "Update Password"}
+        {apiSuccess
+          ? t("auth_page.reset_password_button_sub")
+          : t("auth_page.reset_password_button")}
       </button>
+
+      {/* Back to Login Link */}
+      <div className={styles.backLinkWrapper}>
+        <Link to="/login" className={styles.backLink}>
+          <FaArrowLeft />
+          <span>{t("auth_page.forgot_password_back_to_login")}</span>
+        </Link>
+      </div>
     </form>
   );
 };

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/authService";
 import { isAxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 
 export type RegisterFormData = {
   username: string;
@@ -20,61 +21,62 @@ export type RegisterFormData = {
 const validateField = (
   name: string,
   value: any,
-  allValues: RegisterFormData
+  allValues: RegisterFormData,
+  t: (key: string) => string
 ): string => {
   switch (name) {
     case "username":
       if (value.trim() === "") {
-        return "Username is required.";
+        return t("validation.error_username_required");
       }
       if (value.length < 3) {
-        return "Username must be at least 3 characters.";
+        return t("validation.error_username_less_than_3");
       }
       if (value.length > 50) {
-        return "Username cannot exceed 50 characters.";
+        return t("validation.error_username_more_than_50");
       }
       if (/[^a-zA-Z0-9_-]/.test(value)) {
-        return "Username can only contain letters, numbers, underscores (_), and hyphens (-). No spaces or diacritics allowed.";
+        return t("validation.error_username_format");
       }
       return "";
     case "password":
       if (value.trim() === "") {
-        return "Password is required";
+        return t("validation.error_password_required");
       }
       if (value.length < 8) {
-        return "Password must be at least 8 characters.";
+        return t("validation.error_password_less_than_8");
       }
       if (!/[A-Z]/.test(value)) {
-        return "Password must contain at least one uppercase letter.";
+        return t("validation.error_password_uppercase");
       }
       if (!/[0-9]/.test(value)) {
-        return "Password must contain at least one number.";
+        return t("validation.error_password_one_number");
       }
       if (!/[!@#$%^&*]/.test(value)) {
-        return "Password must contain at least one special character (!@#$%^&*).";
+        return t("validation.error_password_special_character");
       }
       return "";
     case "confirmPassword":
       if (value.trim() === "") {
-        return "Confirm Password is required.";
+        return t("validation.error_confirm_password_required");
       }
       if (value !== allValues.password) {
-        return "Passwords do not match.";
+        return t("validation.error_confirm_password_not_match");
       }
       return "";
     case "email":
       if (value.trim() === "") {
-        return "Email is required.";
+        return t("validation.error_email_required");
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-        return "Invalid email format.";
+        return t("validation.error_email_invalid");
       }
       return "";
 
     case "agree":
       if (!value) {
         // 'value' ở đây sẽ là 'true' hoặc 'false'
-        return "You must agree to the terms and conditions.";
+        return t("validation.error_terms_required");
       }
       return "";
     default:
@@ -83,6 +85,8 @@ const validateField = (
 };
 
 const RegisterForm = () => {
+  const { t } = useTranslation();
+
   // Tạo state cho tất cả dữ liệu form
   const [formData, setFormData] = useState<RegisterFormData>({
     username: "",
@@ -144,7 +148,7 @@ const RegisterForm = () => {
 
     // Cập nhật formData trước khi validate (vì state có thể chưa kịp upload)
     const currentFormData = { ...formData, [name]: value };
-    const errorMessage = validateField(name, value, currentFormData);
+    const errorMessage = validateField(name, value, currentFormData, t);
 
     setErrors((prevErrors) => ({
       ...prevErrors,
@@ -156,7 +160,8 @@ const RegisterForm = () => {
       const confirmPasswordError = validateField(
         "confirmPassword",
         formData.confirmPassword,
-        currentFormData
+        currentFormData,
+        t
       );
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -173,20 +178,23 @@ const RegisterForm = () => {
     const usernameError = validateField(
       "username",
       formData.username,
-      formData
+      formData,
+      t
     );
     const passwordError = validateField(
       "password",
       formData.password,
-      formData
+      formData,
+      t
     );
     const confirmPasswordError = validateField(
       "confirmPassword",
       formData.confirmPassword,
-      formData
+      formData,
+      t
     );
-    const emailError = validateField("email", formData.email, formData);
-    const agreeError = validateField("agree", formData.agree, formData);
+    const emailError = validateField("email", formData.email, formData, t);
+    const agreeError = validateField("agree", formData.agree, formData, t);
     // let agreeError = "";
     // if (!formData.agree) {
     //   agreeError = "You must agree to the terms and conditions.";
@@ -238,15 +246,16 @@ const RegisterForm = () => {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      <title>{t("title.register_page")}</title>
       <div className={styles.formGroup}>
-        <label>Username</label>
+        <label>{t("auth_page.username")}</label>
 
         <div className={styles.inputWrapper}>
           <FaRegUser className={styles.icon} />
           <input
             type="text"
             name="username"
-            placeholder="Enter username"
+            placeholder={t("auth_page.username_placeholder")}
             value={formData.username}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -260,13 +269,13 @@ const RegisterForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label>Password</label>
+        <label>{t("auth_page.password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
             type={showPassword ? "text" : "password"}
             name="password"
-            placeholder="Enter password"
+            placeholder={t("auth_page.password_placeholder")}
             value={formData.password}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -284,13 +293,13 @@ const RegisterForm = () => {
         )}
       </div>
       <div className={styles.formGroup}>
-        <label>Confirm Password</label>
+        <label>{t("auth_page.confirm_password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
             type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
-            placeholder="Enter confirm password"
+            placeholder={t("auth_page.confirm_password_placeholder")}
             value={formData.confirmPassword}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -308,7 +317,7 @@ const RegisterForm = () => {
         )}
       </div>
       <div className={styles.formGroup}>
-        <label>Email</label>
+        <label>{t("auth_page.email")}</label>
         <div className={styles.inputWrapper}>
           <MdOutlineEmail className={styles.icon} />
           <input
@@ -334,7 +343,7 @@ const RegisterForm = () => {
             checked={formData.gender === "male"}
             onChange={handleChange}
           />
-          <label htmlFor="male">Male</label>
+          <label htmlFor="male">{t("auth_page.male")}</label>
           <input
             type="radio"
             id="female"
@@ -343,7 +352,7 @@ const RegisterForm = () => {
             checked={formData.gender === "female"}
             onChange={handleChange}
           />
-          <label htmlFor="female">Female</label>
+          <label htmlFor="female">{t("auth_page.female")}</label>
         </div>
       </div>
 
@@ -360,11 +369,11 @@ const RegisterForm = () => {
           onChange={handleChange}
         />
 
-        <label htmlFor="agree">I agree to the terms and conditions</label>
+        <label htmlFor="agree">{t("auth_page.term")}</label>
       </div>
       {errors.agree && <p className={styles.errorMessage}>{errors.agree}</p>}
       <button type="submit" className={styles.submitButton}>
-        Register
+        {t("auth_page.register_button")}
       </button>
       {apiError && <div className={styles.apiErrorMessage}>{apiError}</div>}
     </form>

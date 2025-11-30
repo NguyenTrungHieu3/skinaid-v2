@@ -3,6 +3,9 @@
   width: 100%;
   /* Removed fixed height and scroll-snap for natural scrolling */
   min-height: 100vh;
+  /* --- THÊM DÒNG NÀY --- */
+  box-sizing: border-box; /* Đảm bảo padding không làm vỡ width */
+  overflow-x: hidden; /* Ngăn chặn cuộn ngang nếu có phần tử con bị tràn */
 }
 
 /* Tiện ích chung */
@@ -62,16 +65,13 @@
 .hero {
   background: linear-gradient(180deg, #d1eae5 0%, #ffffff 100%);
 
-  /* --- THÊM 2 DÒNG SAU --- */
-  min-height: calc(100vh - 60px);
-  /* Đặt chiều cao bằng container cha */
   min-height: calc(100vh - 60px);
   /* Đặt chiều cao bằng container cha */
 
   padding: 1rem 0;
   display: flex;
   align-items: center;
-  scroll-margin-top: 80px;
+  scroll-margin-top: 60px;
 }
 
 /* 2. THÊM CLASS .heroContainer MỚI */
@@ -112,13 +112,13 @@
 }
 
 .heroTitle span {
-  background: linear-gradient(90deg,
-      black 0%,
-      black 45%,
-      /* giữ đen tới gần hết "Skin" */
-      #1e9378 67%,
-      /* chuyển qua xanh ngay từ chữ "A" */
-      #1e9378 100%);
+  background: linear-gradient(
+    90deg,
+    black 0%,
+    black 45%,
+    /* giữ đen tới gần hết "Skin" */ #1e9378 67%,
+    /* chuyển qua xanh ngay từ chữ "A" */ #1e9378 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -141,7 +141,7 @@
   margin-bottom: 1rem;
 } */
 .heroContent p {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-style: italic;
   color: #555;
   line-height: 1.6;
@@ -315,11 +315,12 @@
 .stats {
   /* 2. Đặt ảnh nền và lớp phủ */
   background-image:
-    /* Lớp 1: Lớp phủ đen mờ (0.5 = 50% mờ) */
-    linear-gradient(rgba(0, 0, 0, 0.5),
-      rgba(0, 0, 0, 0.5)),
+    /* Lớp 1: Lớp phủ đen mờ (0.5 = 50% mờ) */ linear-gradient(
+      rgba(0, 0, 0, 0.5),
+      rgba(0, 0, 0, 0.5)
+    ),
     /* Lớp 2: Ảnh của bạn (hãy thay đổi URL này) */
-    url("../assets/images/home-page/anh-stats.png");
+      url("../assets/images/home-page/anh-stats.png");
 
   /* 3. Cài đặt cho ảnh nền */
   background-size: cover;
@@ -785,7 +786,6 @@
 
 /* === BẮT ĐẦU PHẦN RESPONSIVE === */
 @media (max-width: 768px) {
-
   /* 1. Ẩn cột hình ảnh bên phải */
   .heroImage {
     display: none;

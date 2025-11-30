@@ -7,11 +7,14 @@ import { MdOutlineEmail } from "react-icons/md";
 import { useState } from "react";
 import { requestPasswordReset } from "../../services/authService";
 import { isAxiosError } from "axios";
+import { useTranslation } from "react-i18next";
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [messageSent, setMessageSent] = useState(false);
+
+  const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent) => {
     event?.preventDefault();
@@ -19,7 +22,7 @@ const ForgotPasswordForm = () => {
 
     // Validate email đơn gian
     if (email.trim() === "" || !/\S+@\S+\.\S+/.test(email)) {
-      setError("Vui lòng nhập địa chỉ email hợp lệ");
+      setError(t("error_email_invalid"));
       return;
     }
 
@@ -59,15 +62,17 @@ const ForgotPasswordForm = () => {
 
   return (
     <form className={styles.form} onSubmit={handleSubmit} noValidate>
-      <h2 className={styles.formTitle}>Forgot Your Password?</h2>
+      <title>{t("title.forgot_password_page")}</title>
+      <h2 className={styles.formTitle}>
+        {t("auth_page.forgot_password_title")}
+      </h2>
       <p className={styles.formSubtitle}>
-        No worries! Enter your email address and we'll send you a link to reset
-        your password.
+        {t("auth_page.forgot_password_subtitle")}
       </p>
 
       {/* Email Input */}
       <div className={styles.formGroup}>
-        <label htmlFor="email">Email Address</label>
+        <label htmlFor="email">{t("auth_page.forgot_password_email")}</label>
         <div className={styles.inputWrapper}>
           <MdOutlineEmail className={styles.icon} />
           <input
@@ -85,14 +90,14 @@ const ForgotPasswordForm = () => {
 
       {/* Submit Button */}
       <button type="submit" className={styles.submitButton}>
-        Send Reset Link
+        {t("auth_page.forgot_password_button")}
       </button>
 
       {/* Back to Login Link */}
       <div className={styles.backLinkWrapper}>
         <Link to="/login" className={styles.backLink}>
           <FaArrowLeft />
-          <span>Back to Login</span>
+          <span>{t("auth_page.forgot_password_back_to_login")}</span>
         </Link>
       </div>
 
@@ -100,8 +105,8 @@ const ForgotPasswordForm = () => {
       <div className={styles.tipBox}>
         <FaInfoCircle className={styles.tipIcon} />
         <p>
-          <strong>Tip:</strong> Make sure to use the email address associated
-          with your account.
+          <strong>{t("auth_page.forgot_password_tip")}</strong>
+          {t("auth_page.forgot_password_tip_desc")}
         </p>
       </div>
     </form>

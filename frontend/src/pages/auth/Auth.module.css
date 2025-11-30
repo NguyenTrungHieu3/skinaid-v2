@@ -102,6 +102,7 @@
   display: flex;
   flex-direction: column;
   /* (Mặc định nó sẽ tự căn lên trên) */
+  /* position: relative; */
 }
 
 /* 2. Thêm class mới để căn lề */
@@ -113,7 +114,34 @@
   justify-content: center; /* Căn vào giữa! */
 }
 
+/* --- THÊM CLASS MỚI CHO NÚT BACK --- */
+.mobileBackButton {
+  display: none; /* Mặc định ẩn trên Desktop */
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  font-size: 1.2rem;
+  color: #00796b; /* Màu xanh của theme */
+  z-index: 10;
+  transition: color 0.2s;
+}
+
+.mobileBackButton:hover {
+  color: #004d40;
+}
+
 /* Thêm vào cuối file Auth.module.css */
+.languageWrapper {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+
+  /* Tùy chọn: Thêm nền trắng mờ để dễ nhìn hơn nếu muốn */
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 20px;
+  z-index: 10; /* Đảm bảo nổi lên trên */
+}
 
 @media (max-width: 900px) {
   .container {
@@ -140,5 +168,18 @@
     padding: 2rem;
     box-sizing: border-box;
     min-height: 100vh; /* Cho form chiếm toàn bộ chiều cao */
+    /* position: relative; */
+  }
+
+  /* --- THÊM DÒNG NÀY ĐỂ HIỆN NÚT BACK TRÊN MOBILE --- */
+  .mobileBackButton {
+    display: block; /* Hiện lên khi màn hình nhỏ */
+    top: 1.5rem; /* Căn chỉnh vị trí cho đẹp trên mobile */
+    left: 1.5rem;
+  }
+  
+  .languageWrapper {
+    top: 1rem;
+    right: 1rem;
   }
 }

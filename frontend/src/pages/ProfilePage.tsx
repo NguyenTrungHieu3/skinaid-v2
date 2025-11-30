@@ -8,9 +8,11 @@ import TabBar from "../components/profile/TabBar"; // <-- IMPORT COMPONENT MỚI
 import Overview from "../components/profile/Overview";
 import PersonalInfo from "../components/profile/PersonalInfo";
 import Settings from "../components/profile/Settings";
+import { useAuth } from "../contexts/AuthContext";
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState("overview"); // State vẫn giữ ở trang cha
+  const { user } = useAuth();
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -27,6 +29,9 @@ const ProfilePage = () => {
 
   return (
     <div className={styles.profileContainer}>
+      <title>
+        {user?.full_name || user?.user_name || "Profile"}
+      </title>
       {/* 1. Banner Header (Dùng chung) */}
       <BannerHeader />
       {/* 2. KHỐI NỘI DUNG CHÍNH (Wrapper mới) */}

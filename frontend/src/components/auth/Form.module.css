@@ -21,7 +21,7 @@
   padding: 0.8rem 2.5rem 0.8rem 2.5rem; /* Space for icon */
   border: 1px solid #cfd8dc;
   border-radius: 8px;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   box-sizing: border-box;
 }
 
@@ -86,12 +86,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 .radioGroup {
   display: flex;
   gap: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .inputErrorGroup {
@@ -148,7 +148,6 @@
   border-radius: 25px;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(0, 150, 136, 0.4);
-  font-family: "Times New Roman", Times, serif;
   margin: 0.6rem 0;
 }
 

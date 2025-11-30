@@ -2,97 +2,100 @@
 
 /* --- CÁC BIẾN VÀ STYLES CHUNG --- */
 :root {
-    --primary-color: #009688;
-    --primary-color-dark: #00796b;
+  --primary-color: #009688;
+  --primary-color-dark: #00796b;
 }
 
 /* --- DESKTOP FIRST STYLES (MẶC ĐỊNH) --- */
 .header {
-    display: flex;
-    align-items: center;
-    /* Căn giữa các item theo chiều dọc */
-    padding: 0.5rem 2rem;
-    height: 80px;
-    border-bottom: 1px solid #eee;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  /* Căn giữa các item theo chiều dọc */
+  padding: 0.5rem 2rem;
+  height: 60px;
+  border-bottom: 1px solid #eee;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box; /* QUAN TRỌNG: Giúp width 100% bao gồm cả padding */
+  /* Đảm bảo không có margin mặc định gây hở trắng ở trên cùng */
+  margin: 0;
 }
 
 .logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #333;
-    /* (Xóa margin-right) */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  /* (Xóa margin-right) */
 }
 
 .logo img {
-    height: 45px;
+  height: 45px;
 }
 
 .logoAid {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* Mặc định, ẩn nút hamburger */
 .hamburgerButton {
-    display: none;
+  display: none;
 }
 
 /* --- (LOGIC MỚI CHO DESKTOP) --- */
 
 /* 1. Xóa container 'navContainer' không cần thiết trên desktop */
 .navContainer {
-    /* Chúng ta sẽ dùng .menuContent trực tiếp */
-    flex-grow: 1;
-    /* Cho phép co giãn */
+  /* Chúng ta sẽ dùng .menuContent trực tiếp */
+  flex-grow: 1;
+  /* Cho phép co giãn */
 }
 
 /* 2. Sửa .menuContent */
 .menuContent {
-    display: flex;
-    flex-direction: row;
-    /* Xếp ngang */
-    align-items: center;
-    /* Căn giữa */
-    width: 100%;
-    align-items: baseline;
+  display: flex;
+  flex-direction: row;
+  /* Xếp ngang */
+  align-items: center;
+  /* Căn giữa */
+  width: 100%;
+  align-items: baseline;
 }
 
 /* 3. Sửa .nav */
 .nav {
-    display: flex;
-    flex-direction: row;
-    /* Xếp ngang */
-    gap: 2rem;
-    margin-left: 2.5rem;
-    /* Khoảng cách từ logo đến nav */
+  display: flex;
+  flex-direction: row;
+  /* Xếp ngang */
+  gap: 2rem;
+  margin-left: 2.5rem;
+  /* Khoảng cách từ logo đến nav */
 }
 
 /* 4. Sửa .authButtons (Đây là mấu chốt) */
 .authButtons {
-    display: flex;
-    flex-direction: row;
-    /* Xếp ngang */
-    align-items: center;
-    gap: 1rem;
-    margin-left: auto;
-    /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
-    border: none;
-    padding: 0;
+  display: flex;
+  flex-direction: row;
+  /* Xếp ngang */
+  align-items: center;
+  gap: 1rem;
+  margin-left: auto;
+  /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
+  border: none;
+  padding: 0;
 }
 
 /* Mặc định, không có overlay */
 .overlay {
-    display: none;
+  display: none;
 }
 
 /* --- STYLES CHUNG (Dùng cho cả 2 màn hình) --- */
@@ -100,462 +103,312 @@
 
 .nav a,
 .secondaryNav a {
-    text-decoration: none;
-    color: #555;
-    font-weight: 600;
-    font-size: 1.1rem;
-    padding-bottom: 0;
-    border-bottom: 2px solid transparent;
-    transition: color 0.2s, border-color 0.2s;
+  text-decoration: none;
+  color: #555;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding-bottom: 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .nav a:hover,
 .nav a.active,
 .secondaryNav a:hover,
 .secondaryNav a.active {
-    color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* Xóa hoặc thay thế class .welcome cũ */
 .welcomeLink {
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #333;
-    white-space: nowrap;
-    text-decoration: none;
-    /* <-- Thêm: Xóa gạch chân */
-    transition: color 0.2s;
-    /* <-- Thêm: Hiệu ứng hover */
-    /* THÊM 4 DÒNG NÀY ĐỂ GIỚI HẠN VÀ THÊM DẤU "..." */
-    display: block;
-    /* Cần thiết để max-width hoạt động */
-    max-width: 150px;
-    /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: nowrap;
+  text-decoration: none;
+  /* <-- Thêm: Xóa gạch chân */
+  transition: color 0.2s;
+  /* <-- Thêm: Hiệu ứng hover */
+  /* THÊM 4 DÒNG NÀY ĐỂ GIỚI HẠN VÀ THÊM DẤU "..." */
+  display: block;
+  /* Cần thiết để max-width hoạt động */
+  max-width: 150px;
+  /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .welcomeLink:hover {
-    color: var(--primary-color);
-    /* <-- Thêm: Đổi màu khi di chuột */
+  color: var(--primary-color);
+  /* <-- Thêm: Đổi màu khi di chuột */
 }
 
 .authBtn {
-    text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 1.1rem;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
-    background-color: #fff;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
 }
 
 .authBtn:hover {
-    background-color: #f0f9f8;
+  background-color: #f0f9f8;
 }
 
 .signUp {
-    background-color: var(--primary-color);
-    color: #fff;
+  background-color: var(--primary-color);
+  color: #fff;
 }
 
 .signUp:hover {
-    background-color: var(--primary-color-dark);
+  background-color: var(--primary-color-dark);
 }
 
 .languageSwitcher {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 1rem;
-    /* Tạo khoảng cách với các nút khác */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  /* Tạo khoảng cách với các nút khác */
 }
 
 .flagButton {
-    background: none;
-    border: none;
-    cursor: pointer;
-    opacity: 0.5;
-    /* Mặc định làm mờ cờ không được chọn */
-    transition: opacity 0.2s ease-in-out;
-    padding: 0;
-    display: flex;
-    /* Giúp căn chỉnh cờ tốt hơn */
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  /* Mặc định làm mờ cờ không được chọn */
+  transition: opacity 0.2s ease-in-out;
+  padding: 0;
+  display: flex;
+  /* Giúp căn chỉnh cờ tốt hơn */
 }
 
 .flagButton:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 .flagButton img {
-    width: 1.4rem !important;
-    /* Ghi đè kích thước cờ */
-    height: auto !important;
-    border-radius: 3px;
-    /* Bo góc cờ một chút */
-    object-fit: cover;
+  width: 1.4rem !important;
+  /* Ghi đè kích thước cờ */
+  height: auto !important;
+  border-radius: 3px;
+  /* Bo góc cờ một chút */
+  object-fit: cover;
 }
 
 .activeFlag {
-    opacity: 1;
-    /* Cờ được chọn sẽ rõ nét */
+  opacity: 1;
+  /* Cờ được chọn sẽ rõ nét */
 }
 
 .divider {
-    color: var(--color-gray-light, #ccc);
-    /* Màu của dấu gạch đứng */
-    font-size: 1.2rem;
+  color: var(--color-gray-light, #ccc);
+  /* Màu của dấu gạch đứng */
+  font-size: 1.2rem;
 }
 
 .navContainer {
-    flex-grow: 1;
+  flex-grow: 1;
 }
 
 /* SỬA CLASS NÀY */
 .menuContent {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    /* Căn giữa theo chiều dọc */
-    width: 100%;
-    /* XÓA: align-items: baseline; */
-    justify-content: space-between;
-    /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* Căn giữa theo chiều dọc */
+  width: 100%;
+  /* XÓA: align-items: baseline; */
+  justify-content: space-between;
+  /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
 }
 
 .nav {
-    display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    margin-left: 2.5rem;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-left: 2.5rem;
 }
 
 /* THÊM CLASS MỚI NÀY */
 .rightWrapper {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    /* Increased gap for better separation */
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  /* Increased gap for better separation */
 }
 
 .secondaryNav {
-    display: flex;
-    gap: 1.5rem;
-    margin-right: 1rem;
-    padding-right: 1.5rem;
-    border-right: 1px solid #eee;
-    /* Separator between info and auth */
+  display: flex;
+  gap: 1.5rem;
+  margin-right: 1rem;
+  padding-right: 1.5rem;
+  border-right: 1px solid #eee;
+  /* Separator between info and auth */
 }
 
 /* SỬA CLASS NÀY */
 .authButtons {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    margin-left: 0;
-    /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
-    border: none;
-    padding: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  margin-left: 0;
+  /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
+  border: none;
+  padding: 0;
 }
 
 /* --- DROPDOWN STYLES --- */
 .dropdown {
-    position: relative;
-    display: inline-block;
-    margin-left: 8px;
+  position: relative;
+  display: inline-block;
+  /* margin-left: 8px; -> Xóa cái này để khoảng cách đều nhau như gap: 2rem của .nav */
+  height: 100%; /* Giúp căn chỉnh full chiều cao nếu cần */
+  display: flex;
+  align-items: center;
 }
 
 .dropdownBtn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #555;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  /* --- ĐỒNG BỘ VỚI .nav a --- */
+  font-family: inherit; /* Quan trọng: để button nhận font của web */
+  color: #555;
+  font-weight: 600;
+  font-size: 0.9rem; /* Sửa từ 1.1rem xuống 0.9rem cho bằng các link khác */
+  padding: 0;
+  padding-bottom: 0;
+
+  /* Tạo border trong suốt để tránh giật layout khi hover giống thẻ a */
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+
+  /* Flex để căn icon mũi tên */
+  display: flex;
+  align-items: center;
+  gap: 0.3rem; /* Khoảng cách giữa chữ và mũi tên */
 }
 
-.dropdownBtn:hover {
-    color: var(--primary-color);
+/* Hiệu ứng Hover và khi Dropdown đang mở */
+.dropdownBtn:hover,
+.dropdown:hover .dropdownBtn {
+  color: var(--primary-color);
+  /* Nếu bạn muốn gạch chân khi hover giống các link kia thì bỏ comment dòng dưới: */
+  /* border-bottom: 2px solid var(--primary-color); */
 }
 
 .chevron {
-    font-size: 0.8rem;
-    transition: transform 0.2s;
+  font-size: 0.75rem; /* Giảm nhỏ icon mũi tên một chút cho tinh tế */
+  transition: transform 0.2s;
+  margin-top: 1px; /* Căn chỉnh vi mô cho cân đối với chữ */
 }
 
 .dropdown:hover .chevron {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .dropdownContent {
-    display: none;
-    position: absolute;
-    background-color: #fff;
-    min-width: 220px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    z-index: 1002;
-    border-radius: 8px;
-    padding: 0.5rem 0;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 1px solid #eee;
-    margin-top: 0.5rem;
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  min-width: 200px; /* Chỉnh lại độ rộng vừa phải */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Shadow mềm hơn */
+  z-index: 1002;
+  border-radius: 8px;
+  padding: 0.5rem 0;
+
+  /* Căn giữa menu con so với nút mẹ */
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  border: 1px solid #f0f0f0;
+  margin-top: 10px; /* Tăng khoảng cách một chút */
 }
 
-/* Add a small invisible bridge so hover doesn't break */
+/* Cầu nối tàng hình để không bị mất hover */
 .dropdownContent::before {
-    content: "";
-    position: absolute;
-    top: -10px;
-    left: 0;
-    width: 100%;
-    height: 10px;
-    background: transparent;
+  content: "";
+  position: absolute;
+  top: -15px; /* Phủ kín khoảng hở */
+  left: 0;
+  width: 100%;
+  height: 15px;
+  background: transparent;
 }
 
 .dropdown:hover .dropdownContent {
-    display: block;
+  display: block;
+  animation: fadeIn 0.2s ease-in-out; /* Thêm hiệu ứng hiện nhẹ nhàng */
 }
 
+/* Style cho các link con bên trong */
 .dropdownContent a {
-    color: #333;
-    padding: 0.8rem 1.5rem;
-    text-decoration: none;
-    display: block;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-    border: none;
+  color: #555; /* Màu chữ nhẹ hơn */
+  padding: 0.7rem 1.2rem;
+  text-decoration: none;
+  display: block;
+  font-size: 0.9rem; /* Font size nhỏ gọn */
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: none;
+  text-align: left; /* Đảm bảo chữ căn trái */
 }
 
 .dropdownContent a:hover {
-    background-color: #f0f9f8;
-    color: var(--primary-color);
+  background-color: #f0f9f8;
+  color: var(--primary-color);
+  padding-left: 1.5rem; /* Hiệu ứng đẩy chữ sang phải nhẹ khi hover */
+}
+
+/* Thêm keyframes cho mượt */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* --- MOBILE STYLES (MEDIA QUERY) --- */
 @media (max-width: 899px) {
-    .header {
-        justify-content: center;
-        padding: 0.75rem 1rem;
-    }
+  .header {
+    justify-content: center;
+    padding: 0.75rem 1rem;
+  }
 
-    .hamburgerButton {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: none;
-        border: none;
-        font-size: 1.3rem;
-        color: #555;
-        cursor: pointer;
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1001;
-    }
-
-    /* (Quan trọng) Reset lại các style desktop bên trong mobile */
-    .navContainer {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        visibility: hidden;
-        z-index: 1000;
-        transition: visibility 0.3s ease;
-        margin-left: 0;
-        /* Reset margin-left */
-    }
-
-    .overlay {
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .menuContent {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 300px;
-        height: 100%;
-        background-color: #fff;
-        padding: 5rem 1.5rem 2rem;
-        flex-direction: column;
-        /* gap: 2rem; */
-        align-items: flex-start;
-        justify-content: flex-start;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        overflow-y: auto;
-        /* Allow scrolling if menu is long */
-    }
-
-    .mobileMenuOpen {
-        visibility: visible;
-    }
-
-    .mobileMenuOpen .overlay {
-        opacity: 1;
-    }
-
-    .mobileMenuOpen .menuContent {
-        transform: translateX(0);
-    }
-
-    .nav {
-        flex-direction: column;
-        gap: 1rem;
-        margin-left: 0;
-        /* Reset margin-left */
-        width: 100%;
-        /* Đảm bảo nav links chiếm đủ rộng */
-        order: 1;
-        /* 1. Nav links (nằm trên) */
-    }
-
-    /* SỬA CLASS NÀY */
-    .rightWrapper {
-        /* Cho wrapper xếp dọc trên mobile */
-        flex-direction: column;
-        width: 100%;
-        align-items: stretch;
-        /* Dãn các nút auth ra */
-        gap: 1.5rem;
-        order: 2;
-        /* 2. Khối Auth + Cờ (nằm dưới) */
-        margin-top: auto;
-        /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
-        padding-top: 1.5rem;
-        border-top: 1px solid #eee;
-    }
-
-    /* DROPDOWN MOBILE ADJUSTMENTS */
-    .dropdown {
-        width: 100%;
-    }
-
-    .dropdownBtn {
-        display: flex;
-        width: 100%;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem;
-        background: none;
-        border: none;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #555;
-        cursor: pointer;
-    }
-
-    .dropdownContent {
-        display: none;
-        flex-direction: column;
-        position: static;
-        box-shadow: none;
-        border: none;
-        transform: none;
-        padding: 0;
-        background: transparent;
-        width: 100%;
-        gap: 0.8rem;
-        margin-top: 0.5rem;
-        padding-left: 1.5rem;
-        border-left: 2px solid #eee;
-    }
-
-    .mobileSubmenuOpen .dropdownContent {
-        display: flex;
-    }
-
-    .mobileSubmenuOpen .chevron {
-        transform: rotate(180deg);
-    }
-
-    .dropdownContent::before {
-        display: none;
-    }
-
-    .dropdownContent a {
-        padding: 0;
-        font-size: 1rem;
-        font-weight: 500;
-        color: #666;
-    }
-
-    /* SỬA CLASS NÀY */
-    .languageSwitcher {
-        order: 2;
-        /* Cờ nằm dưới nút auth */
-        justify-content: center;
-        /* Căn giữa cờ */
-        padding: 0;
-        /* Xóa padding ngang */
-    }
-
-    .authButtons {
-        flex-direction: column;
-        gap: 1rem;
-        /* border-top: 1px solid #eee;
-    padding-top: 1.5rem; */
-        align-items: stretch;
-        margin-left: 0;
-        /* Reset margin-left */
-        order: 1;
-    }
-
-    .nav a {
-        font-size: 1.1rem;
-        padding: 0.5rem;
-        border-bottom: none;
-    }
-
-    .nav a.active {
-        background-color: #f0f9f8;
-        border-radius: 6px;
-    }
-}
-
-/* --- MAP PAGE SPECIFIC STYLES (Force Mobile Layout) --- */
-.mapHeader {
-    height: 0;
-    padding: 0;
+  .hamburgerButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
     border: none;
-    overflow: visible;
-    /* Allow drawer to be seen */
+    font-size: 1.3rem;
+    color: #555;
+    cursor: pointer;
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1001;
+  }
 
-    background: transparent;
-    box-shadow: none;
-}
-
-/* Hide everything in header except navContainer (drawer) */
-.mapHeader .logo,
-.mapHeader .hamburgerButton {
-    display: none;
-}
-
-/* Ensure navContainer (drawer) works */
-.mapHeader .navContainer {
+  /* (Quan trọng) Reset lại các style desktop bên trong mobile */
+  .navContainer {
     position: fixed;
     top: 0;
     left: 0;
@@ -565,10 +418,10 @@
     z-index: 1000;
     transition: visibility 0.3s ease;
     margin-left: 0;
-}
+    /* Reset margin-left */
+  }
 
-/* Base styles for overlay on map page */
-.mapHeader .overlay {
+  .overlay {
     display: block;
     position: absolute;
     top: 0;
@@ -578,10 +431,9 @@
     background-color: rgba(0, 0, 0, 0.5);
     opacity: 0;
     transition: opacity 0.3s ease;
-}
+  }
 
-/* Base styles for menuContent on map page */
-.mapHeader .menuContent {
+  .menuContent {
     position: absolute;
     top: 0;
     left: 0;
@@ -589,84 +441,293 @@
     height: 100%;
     background-color: #fff;
     padding: 5rem 1.5rem 2rem;
-    display: flex;
     flex-direction: column;
+    /* gap: 2rem; */
     align-items: flex-start;
     justify-content: flex-start;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
+    overflow-y: auto;
+    /* Allow scrolling if menu is long */
+  }
+
+  .mobileMenuOpen {
+    visibility: visible;
+  }
+
+  .mobileMenuOpen .overlay {
+    opacity: 1;
+  }
+
+  .mobileMenuOpen .menuContent {
+    transform: translateX(0);
+  }
+
+  .nav {
+    flex-direction: column;
+    gap: 1rem;
+    margin-left: 0;
+    /* Reset margin-left */
+    width: 100%;
+    /* Đảm bảo nav links chiếm đủ rộng */
+    order: 1;
+    /* 1. Nav links (nằm trên) */
+  }
+
+  /* SỬA CLASS NÀY */
+  .rightWrapper {
+    /* Cho wrapper xếp dọc trên mobile */
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    /* Dãn các nút auth ra */
+    gap: 1.5rem;
+    order: 2;
+    /* 2. Khối Auth + Cờ (nằm dưới) */
+    margin-top: auto;
+    /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+  }
+
+  /* ... bên trong @media (max-width: 899px) ... */
+
+  /* DROPDOWN MOBILE ADJUSTMENTS */
+  .dropdown {
+    width: 100%;
+    display: block; /* Trả về block cho mobile */
+    height: auto;
+    margin: 0;
+  }
+
+  .dropdownBtn {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+
+    /* Đồng bộ với style mobile của .nav a */
+    padding: 0.5rem;
+    font-size: 1.1rem; /* Mobile cần chữ to hơn desktop */
+    font-weight: 600;
+    color: #555;
+    background: none;
+    border: none;
+    border-bottom: none; /* Mobile không cần gạch chân */
+  }
+
+  .dropdownBtn:hover {
+    color: var(--primary-color);
+    background-color: #f0f9f8; /* Hiệu ứng nền khi chạm vào trên mobile */
+    border-radius: 6px;
+  }
+
+  .dropdownContent {
+    display: none; /* Mặc định ẩn */
+    position: static; /* Không dùng absolute trên mobile */
+    transform: none; /* Bỏ căn giữa */
+    box-shadow: none;
+    border: none;
+    width: 100%;
+    margin-top: 0;
+    padding: 0;
+    padding-left: 1rem; /* Thụt đầu dòng cho menu con */
+    border-left: 2px solid #eee; /* Đường kẻ chỉ dẫn dọc bên trái */
+    margin-left: 0.5rem;
+    background-color: transparent;
+    min-width: auto;
+  }
+
+  /* Loại bỏ animation desktop và mũi tên giả */
+  .dropdown:hover .dropdownContent {
+    display: none; /* Trên mobile chỉ mở khi click (dùng logic JS toggle class) */
+    animation: none;
+  }
+  .dropdownContent::before {
+    display: none;
+  }
+
+  /* Logic hiển thị khi có class mobileSubmenuOpen */
+  .mobileSubmenuOpen .dropdownContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* Reset gap */
+  }
+
+  .dropdownContent a {
+    padding: 0.8rem 0.5rem;
+    font-size: 1rem;
+    color: #666;
+  }
+
+  .dropdownContent a:hover {
+    padding-left: 0.5rem; /* Reset hiệu ứng desktop */
+    background: none;
+    color: var(--primary-color);
+  }
+  
+  /* SỬA CLASS NÀY */
+  .languageSwitcher {
+    order: 2;
+    /* Cờ nằm dưới nút auth */
+    justify-content: center;
+    /* Căn giữa cờ */
+    padding: 0;
+    /* Xóa padding ngang */
+  }
+
+  .authButtons {
+    flex-direction: column;
+    gap: 1rem;
+    /* border-top: 1px solid #eee;
+    padding-top: 1.5rem; */
+    align-items: stretch;
+    margin-left: 0;
+    /* Reset margin-left */
+    order: 1;
+  }
+
+  .nav a {
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    border-bottom: none;
+  }
+
+  .nav a.active {
+    background-color: #f0f9f8;
+    border-radius: 6px;
+  }
+}
+
+/* --- MAP PAGE SPECIFIC STYLES (Force Mobile Layout) --- */
+.mapHeader {
+  height: 0;
+  padding: 0;
+  border: none;
+  overflow: visible;
+  /* Allow drawer to be seen */
+
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Hide everything in header except navContainer (drawer) */
+.mapHeader .logo,
+.mapHeader .hamburgerButton {
+  display: none;
+}
+
+/* Ensure navContainer (drawer) works */
+.mapHeader .navContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  visibility: hidden;
+  z-index: 1000;
+  transition: visibility 0.3s ease;
+  margin-left: 0;
+}
+
+/* Base styles for overlay on map page */
+.mapHeader .overlay {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Base styles for menuContent on map page */
+.mapHeader .menuContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 100%;
+  background-color: #fff;
+  padding: 5rem 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
 }
 
 /* When drawer is open, show content */
 .mapHeader .mobileMenuOpen {
-    visibility: visible;
+  visibility: visible;
 }
 
 .mapHeader .mobileMenuOpen .overlay {
-    opacity: 1;
+  opacity: 1;
 }
 
 .mapHeader .mobileMenuOpen .menuContent {
-    transform: translateX(0);
+  transform: translateX(0);
 }
-
-
 
 /* Specific styles for drawer content when open */
 .mapHeader .menuContent .nav {
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-left: 0;
-    width: 100%;
-    order: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-left: 0;
+  width: 100%;
+  order: 1;
 }
 
 .mapHeader .menuContent .rightWrapper {
-    flex-direction: column;
-    width: 100%;
-    align-items: stretch;
-    gap: 1.5rem;
-    order: 2;
-    margin-top: auto;
-    padding-top: 1.5rem;
-    border-top: 1px solid #eee;
-    display: flex !important;
+  flex-direction: column;
+  width: 100%;
+  align-items: stretch;
+  gap: 1.5rem;
+  order: 2;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+  display: flex !important;
 }
 
 .mapHeader .secondaryNav {
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    gap: 1.5rem;
-    margin-right: 0;
-    padding-right: 0;
-    border-right: none;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 1.5rem;
-    order: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 1.5rem;
+  margin-right: 0;
+  padding-right: 0;
+  border-right: none;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 1.5rem;
+  order: 1;
 }
 
 .mapHeader .languageSwitcher {
-    order: 2;
-    justify-content: center;
-    padding: 0;
+  order: 2;
+  justify-content: center;
+  padding: 0;
 }
 
 .mapHeader .authButtons {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-    margin-left: 0;
-    order: 1;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: stretch;
+  margin-left: 0;
+  order: 1;
 }
 
 .mapHeader .nav a {
-    font-size: 1.1rem;
-    padding: 0.5rem;
-    border-bottom: none;
+  font-size: 1.1rem;
+  padding: 0.5rem;
+  border-bottom: none;
 }
 
 .mapHeader .nav a.active {
-    background-color: #f0f9f8;
-    border-radius: 6px;
+  background-color: #f0f9f8;
+  border-radius: 6px;
 }

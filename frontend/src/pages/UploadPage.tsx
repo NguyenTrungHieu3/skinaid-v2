@@ -1,347 +1,498 @@
 // src/pages/UploadPage.tsx
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { DragEvent, ChangeEvent } from "react";
-import styles from "./UploadPage.module.css"; // Dùng CSS Modules
+import styles from "./UploadPage.module.css";
 import {
   FaUpload,
   FaImage,
-  FaTimes, // Icon để đóng lỗi
+  FaTimes,
+  FaCheck,
+  FaMagic,
+  FaExclamationTriangle,
+  FaArrowRight,
+  FaCropAlt,
+  FaRedo,
+  FaSearchPlus,
+  FaSearchMinus,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { analyzeImage } from "../services/aiService";
-import { isAxiosError } from "axios";
+import Cropper from "react-easy-crop";
+import { getCroppedImg } from "../utils/canvasUtils";
+import {
+  analyzeImageQuality,
+  autoEnhanceImage,
+} from "../utils/imageProcessingUtils";
 import { useGuestSession } from "../hooks/useGuestSession";
 
-// Định nghĩa các hằng số
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+// Cấu hình
+const MIN_SIZE_PX = 512;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 
-const MAX_DIMENSION_WIDTH = 4096;
-const MAX_DIMENSION_HEIGHT = 4096;
+type ProcessStep =
+  | "IDLE"
+  | "CHECKING_TECH"
+  | "CROP_NEEDED"
+  | "CHECKING_QUALITY"
+  | "REVIEW"
+  | "READY"
+  | "UPLOADING";
 
-const MIN_DIMENSION_WIDTH = 100;
-const MIN_DIMENSION_HEIGHT = 100;
+interface LocationState {
+  fileToUpload?: File;
+}
 
 const UploadPage = () => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // --- 1. THÊM STATE MỚI ---
-  const [isLoading, setIsLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const timerIdRef = useRef<number | null>(null); // Thêm ref để lưu ID của timeout
-
-  // Ref này để đánh dấu xem chúng ta đã bắt đầu xử lý file từ state chưa
-  const hasProcessedRef = useRef(false);
-
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const { t } = useTranslation();
-
-  // Initialize guest session for unauthenticated users
+  const navigate = useNavigate();
+  const location = useLocation();
   useGuestSession();
 
-  // useEffect(() => {
-  //   // Tác dụng 1: Reset state khi location thay đổi
-  //   // (Tức là khi user click link "Upload Image" trên header)
-  //   console.log("Location changed, resetting UploadPage state.");
-  //   setErrorMessage("");
-  //   setPreviewImage(null);
-  //   setIsLoading(false);
+  // --- STATE ---
+  const [step, setStep] = useState<ProcessStep>("IDLE");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  //   // Tác dụng 2: Dọn dẹp (cleanup) khi rời trang
-  //   return () => {
-  //     // Dọn dẹp URL và Timeout khi component unmount
-  //     if (previewImage) {
-  //       URL.revokeObjectURL(previewImage);
-  //       console.log("Revoked old preview URL:", previewImage);
-  //     }
-  //     if (timerIdRef.current) {
-  //       clearTimeout(timerIdRef.current);
-  //       console.log("Cancelled active API simulation.");
-  //     }
-  //   };
-  // }, [location]);
+  // File & Preview
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const getImageDimensions = (
-    file: File
-  ): Promise<{ width: number; height: number }> => {
-    return new Promise((resolve, reject) => {
-      // Tạo một URL tạm thời cho file
-      const objectUrl = URL.createObjectURL(file);
-      const img = new Image();
+  // Crop State
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-      // Hàm này sẽ chạy khi ảnh được tải xong
-      img.onload = () => {
-        resolve({ width: img.width, height: img.height });
-        // Dọn dẹp URL tạm thời
-        URL.revokeObjectURL(objectUrl);
-      };
+  // Quality State
+  const [qualityIssues, setQualityIssues] = useState<string[]>([]);
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
-      // Hàm này chạy nếu file không phải là ảnh
-      img.onerror = () => {
-        reject(new Error("Could not read image file."));
-        URL.revokeObjectURL(objectUrl);
-      };
+  // Ref để tránh xử lý 2 lần
+  const hasProcessedRef = useRef(false);
 
-      // Bắt đầu tải ảnh
-      img.src = objectUrl;
-    });
-  };
+  // --- LOGIC FUNCTIONS ---
 
-  // --- 2. CẬP NHẬT HÀM XỬ LÝ FILE ---
-  const processFile = useCallback(
-    async (file: File) => {
-      // Ngăn upload khi đang xử lý
-      // if (isLoading) return;
+  // 1. Check Quality
+  const validateQuality = useCallback(
+    async (url: string) => {
+      setStep("CHECKING_QUALITY");
+      try {
+        const result = await analyzeImageQuality(url);
+        const issues: string[] = [];
 
-      // Xóa lỗi cũ ngay khi bắt đầu xử lý file mới
-      setErrorMessage("");
+        if (result.isBlurry) issues.push(t("upload.issue.blur"));
+        if (result.brightness === "dark") issues.push(t("upload.issue.dark"));
+        if (result.brightness === "bright")
+          issues.push(t("upload.issue.bright"));
 
-      // 1. Kiểm tra kích thước
-      if (file.size > MAX_FILE_SIZE) {
-        setErrorMessage(t("upload_page.error.file_too_large", { size: 5 }));
-        return;
+        setTimeout(() => {
+          if (issues.length > 0) {
+            setQualityIssues(issues);
+            setStep("REVIEW");
+          } else {
+            setQualityIssues([]);
+            setStep("READY");
+          }
+        }, 1200);
+      } catch (e) {
+        console.error(e);
+        setStep("READY");
       }
-      // 2. Kiểm tra loại file
+    },
+    [t]
+  );
+
+  // 2. Check Technical
+  const validateTechnical = useCallback(
+    (file: File, url: string) => {
+      const img = new Image();
+      img.src = url;
+      img.onload = () => {
+        let issues = [];
+        // Sử dụng biến replacement {{size}} cho thông báo lỗi
+        if (file.size > MAX_FILE_SIZE)
+          issues.push(t("upload_page.error.file_too_large", { size: 10 }));
+
+        const ratio = img.width / img.height;
+        if (ratio < 0.5 || ratio > 2) issues.push("Bad aspect ratio");
+
+        setTimeout(() => {
+          if (issues.length > 0) {
+            setErrorMessage(t("upload_page.error.resize_needed"));
+            setStep("CROP_NEEDED");
+          } else {
+            validateQuality(url);
+          }
+        }, 800);
+      };
+    },
+    [t, validateQuality]
+  );
+
+  // 3. Handle File Select
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      setErrorMessage("");
+      // Basic validate
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
         setErrorMessage(t("upload_page.error.invalid_type"));
         return;
       }
 
-      // 3. THÊM BƯỚC KIỂM TRA KÍCH THƯỚC ẢNH (Dimensions)
-      try {
-        const dimensions = await getImageDimensions(file);
-        if (
-          dimensions.width > MAX_DIMENSION_WIDTH ||
-          dimensions.height > MAX_DIMENSION_HEIGHT ||
-          dimensions.width < MIN_DIMENSION_WIDTH || // Thêm check min width
-          dimensions.height < MIN_DIMENSION_HEIGHT // Thêm check min height
-        ) {
-          // CẬP NHẬT LẠI THÔNG BÁO LỖI:
-          setErrorMessage(
-            t("upload_page.error.dimensions", {
-              minW: MIN_DIMENSION_WIDTH,
-              minH: MIN_DIMENSION_HEIGHT,
-              maxW: MAX_DIMENSION_WIDTH,
-              maxH: MAX_DIMENSION_HEIGHT,
-            })
-          );
-          return;
-        }
-      } catch (error) {
-        // Bắt lỗi nếu file bị hỏng hoặc không phải ảnh
-        setErrorMessage(t("upload_page.error.corrupted"));
-        return;
-      }
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setCurrentFile(file);
 
-      // Nếu tất cả đều ổn
-      setIsLoading(true);
-
-      // Tạo URL xem trước cho ảnh
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewImage(imageUrl);
-
-      // --- 3. GIẢ LẬP GỌI API UPLOAD ---
-      // (TODO: Thay thế 'setTimeout' bằng lệnh gọi API thật của bạn)
-      // Ví dụ: uploadFileToApi(file).then(...)
-      console.log("File is valid, simulating upload:", file.name);
-
-      // ... (setTimeout) ...
-      // const timerId = setTimeout(() => {
-      //   console.log("API call finished.");
-      //   setIsLoading(false);
-
-      //   // (Xóa dòng 'revoke' ở đây)
-
-      //   timerIdRef.current = null; // Xóa ID khi đã chạy xong
-      // }, 3000);
-
-      // Giả lập API
-      // const timerId = setTimeout(() => {
-      //   console.log("API call finished.");
-      //   setIsLoading(false);
-      //   timerIdRef.current = null;
-      // }, 3000);
-
-      try {
-        const formData = new FormData();
-        formData.append("file", file); // Key là "file" (từ curl)
-
-        console.log("File is valid, calling POST /ai/analyze...");
-        const response = await analyzeImage(formData); // Gọi API // 5. CHUYỂN TRANG
-
-        if (response.data.success) {
-          const analysisId = response.data.data.analysis_id;
-          console.log("Analysis successful, navigating to ID:", analysisId); // Chuyển người dùng đến trang kết quả với ID
-          navigate(`/analysis-result/${analysisId}`);
-        } else {
-          setErrorMessage(response.data.message || "Analysis failed.");
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error("Analysis API error:", err);
-        if (isAxiosError(err)) {
-          setErrorMessage(
-            err.response?.data?.message || "Analysis service error."
-          );
-        } else {
-          setErrorMessage("An unknown error occurred.");
-        }
-        setIsLoading(false); // Dừng loading khi có lỗi
-      }
-
-      // Lưu ID của timeout vào ref
-      // timerIdRef.current = timerId as unknown as number; // Hack nhỏ cho TypeScript
+      // Bắt đầu Flow
+      setStep("CHECKING_TECH");
+      validateTechnical(file, url);
     },
-    [t, navigate]
+    [t, validateTechnical]
   );
 
-  // --- THAY THẾ TOÀN BỘ useEffect CŨ BẰNG 2 useEffect NÀY ---
-
-  // Effect 1: Xử lý file từ navigation HOẶC reset trang
+  // --- USE EFFECT: NHẬN FILE TỪ HEADER ---
   useEffect(() => {
-    const fileFromState = location.state?.fileToUpload as File;
+    const state = location.state as LocationState;
+    const fileFromState = state?.fileToUpload;
 
     if (fileFromState && !hasProcessedRef.current) {
-      // 1. Nếu CÓ file VÀ chưa xử lý:
-      // Đánh dấu là đã xử lý
+      console.log("🚀 Receiving file from Header:", fileFromState.name);
       hasProcessedRef.current = true;
-
-      console.log("Received file, processing...");
-      processFile(fileFromState);
-
-      // Xóa state đi
-      navigate(location.pathname, { replace: true, state: {} });
-    } else if (!fileFromState && !hasProcessedRef.current) {
-      // 2. Nếu KHÔNG có file VÀ chưa xử lý:
-      // Đây là trường hợp user tự vào trang, reset state
-      console.log("No file, not processing, resetting page.");
-      setErrorMessage("");
-      setPreviewImage(null);
-      setIsLoading(false);
+      handleFileSelect(fileFromState);
+      window.history.replaceState({}, document.title);
     }
-    // 3. Nếu KHÔNG có file NHƯNG ĐÃ xử lý (hasProcessedRef.current = true):
-    // Đây là lần chạy thứ 2 (do navigate), KHÔNG LÀM GÌ CẢ.
-    // Việc này ngăn logic 'else' chạy và reset state.
-  }, [location, navigate, processFile]); // Bỏ 'previewImage'
+  }, [location, handleFileSelect]);
 
-  // Effect 2: Dọn dẹp (cleanup)
-  useEffect(() => {
-    // Tác dụng duy nhất của effect này là "đăng ký" 1 hàm dọn dẹp
-    // Hàm này sẽ chạy khi component unmount (rời trang)
-    return () => {
-      if (previewImage) {
-        URL.revokeObjectURL(previewImage);
-        console.log("Revoked old preview URL:", previewImage);
-      }
-      if (timerIdRef.current) {
-        clearTimeout(timerIdRef.current);
-        console.log("Cancelled active API simulation.");
-      }
-    };
-  }, [previewImage]); // <-- Effect này CHỈ phụ thuộc vào 'previewImage'
+  // --- CÁC HÀM XỬ LÝ KHÁC ---
 
-  // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
-
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleCropConfirm = async () => {
+    if (!previewUrl || !croppedAreaPixels) return;
+    try {
+      const croppedFile = await getCroppedImg(previewUrl, croppedAreaPixels);
+      const newUrl = URL.createObjectURL(croppedFile);
+      setPreviewUrl(newUrl);
+      setCurrentFile(croppedFile);
+      validateQuality(newUrl);
+    } catch (e) {
+      console.error(e);
+      setErrorMessage(t("upload_page.error.corrupted")); // Hoặc thông báo lỗi chung
+    }
   };
 
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+  const handleEnhance = async () => {
+    if (!previewUrl) return;
+    setIsEnhancing(true);
+    try {
+      const enhancedUrl = await autoEnhanceImage(previewUrl);
+      const res = await fetch(enhancedUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "enhanced.jpg", { type: "image/jpeg" });
+
+      setPreviewUrl(enhancedUrl);
+      setCurrentFile(file);
+      setQualityIssues([]);
+      setStep("READY");
+    } catch (e) {
+      setErrorMessage(t("upload_page.error.corrupted"));
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!currentFile) return;
+    setStep("UPLOADING");
+    const formData = new FormData();
+    formData.append("file", currentFile);
+
+    try {
+      const response = await analyzeImage(formData);
+      if (response.data.success) {
+        navigate(`/analysis-result/${response.data.data.analysis_id}`);
+      } else {
+        setErrorMessage(response.data.message);
+        setStep("READY");
+      }
+    } catch (error) {
+      setErrorMessage(t("upload_page.error.corrupted")); // Fallback error
+      setStep("READY");
+    }
+  };
+
+  const handleReset = () => {
+    setStep("IDLE");
+    setPreviewUrl(null);
+    setCurrentFile(null);
+    setErrorMessage("");
+    setQualityIssues([]);
+    hasProcessedRef.current = false;
+  };
+
+  // Zoom handlers
+  const MIN_ZOOM = 1;
+  const MAX_ZOOM = 3;
+  const ZOOM_STEP = 0.1;
+  const zoomPercentage = ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100;
+
+  const handleZoomIn = () =>
+    setZoom((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+  const handleZoomOut = () =>
+    setZoom((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+
+  // Drag handlers
+  const [isDragging, setIsDragging] = useState(false);
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
   };
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
-  };
+  const isScanning =
+    step === "CHECKING_TECH" ||
+    step === "CHECKING_QUALITY" ||
+    step === "UPLOADING";
 
   return (
     <div
-      className={styles.uploadPage}
+      className={styles.pageContainer}
       onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setIsDragging(false);
+      }}
     >
-      <div className={styles.uploadForm}>
-        {errorMessage && (
-          <div className={styles.errorBanner}>
-            <span>{errorMessage}</span>
-            <button onClick={() => setErrorMessage("")}>
-              <FaTimes />
-            </button>
-          </div>
-        )}
+      <title>{t("title.upload_page")}</title>
 
-        {/* --- 4. CẬP NHẬT JSX (THAY ĐỔI LỚN) --- */}
+      {errorMessage && (
+        <div className={styles.topErrorBanner}>
+          <span className={styles.errorContent}>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage("")}
+            className={styles.errorExit}
+          >
+            <FaTimes />
+          </button>
+        </div>
+      )}
+
+      {/* CASE 1: IDLE */}
+      {step === "IDLE" && (
         <div
           className={`${styles.uploadBox} ${isDragging ? styles.dragging : ""}`}
         >
-          {/* Nếu KHÔNG có ảnh xem trước, hiển thị ô upload */}
-          {!previewImage ? (
-            <label className={styles.uploadDropzone}>
-              <div className={styles.uploadIcon}>
-                <FaUpload />
-                <div className={styles.subIcon}>
-                  <FaImage />
+          <label className={styles.uploadDropzone}>
+            <div className={styles.uploadIcon}>
+              <FaUpload />
+              <div className={styles.subIcon}>
+                <FaImage />
+              </div>
+            </div>
+            <h3 className={styles.uploadTitle}>{t("upload_page.title")}</h3>
+            <p className={styles.uploadSubTitle}>{t("upload_page.desc")}</p>
+            <div className={styles.fileTypes}>
+              <span>JPEG</span>
+              <span>PNG</span>
+              <span>JPG</span>
+            </div>
+            <p className={styles.uploadCondition}>
+              {t("upload_page.condition")}
+            </p>
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={(e) =>
+                e.target.files?.[0] && handleFileSelect(e.target.files[0])
+              }
+            />
+          </label>
+        </div>
+      )}
+
+      {/* CASE 2: WORKSPACE */}
+      {step !== "IDLE" && (
+        <div className={styles.workspace}>
+          {/* LEFT: VIEWER */}
+          <div className={styles.viewerPanel}>
+            {step === "CROP_NEEDED" && previewUrl ? (
+              <div className={styles.cropperWrapper}>
+                <Cropper
+                  image={previewUrl}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={3 / 4}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
+                />
+              </div>
+            ) : (
+              <div className={styles.imagePreviewWrapper}>
+                <img
+                  src={previewUrl!}
+                  alt="Preview"
+                  className={styles.mainImage}
+                />
+                {isScanning && (
+                  <div className={styles.scanningOverlay}>
+                    <div className={styles.scanLine}></div>
+                    <div className={styles.scanMessage}>
+                      {t("upload.status.scanning")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: CONTROLS */}
+          <div className={styles.controlsPanel}>
+            <div className={styles.controlHeader}>
+              <h4>{t("upload_page.loading").replace("...", "")}</h4>
+              {/* Dùng tạm key loading để làm tiêu đề "Analyzing/Phân tích" */}
+              <button
+                onClick={handleReset}
+                className={styles.btnIcon}
+                title={t("upload.btn.retake")}
+              >
+                <FaRedo />
+              </button>
+            </div>
+
+            <div className={styles.controlBody}>
+              {/* CROP CONTROLS */}
+              {step === "CROP_NEEDED" && (
+                <div className={styles.panelContent}>
+                  <div className={styles.statusBoxWarning}>
+                    <FaCropAlt />
+                    <span>{t("upload.warning.resize")}</span>
+                  </div>
+                  <div className={styles.sliderGroup}>
+                    <label className={styles.zoomLabel}>
+                      {t("upload.label.zoom")}
+                    </label>
+                    <div className={styles.sliderWrapper}>
+                      <button
+                        onClick={handleZoomOut}
+                        className={styles.sliderIconBtn}
+                      >
+                        <FaSearchMinus />
+                      </button>
+                      <input
+                        type="range"
+                        min={MIN_ZOOM}
+                        max={MAX_ZOOM}
+                        step={ZOOM_STEP}
+                        value={zoom}
+                        onChange={(e) => setZoom(Number(e.target.value))}
+                        className={styles.zoomBar}
+                        style={{
+                          background: `linear-gradient(to right, #0d9488 ${zoomPercentage}%, #cbd5e1 ${zoomPercentage}%)`,
+                        }}
+                      />
+                      <button
+                        onClick={handleZoomIn}
+                        className={styles.sliderIconBtn}
+                      >
+                        <FaSearchPlus />
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.actionGroup}>
+                    <button
+                      onClick={handleCropConfirm}
+                      className={styles.btnPrimary}
+                    >
+                      {t("upload.btn.confirm_crop")}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <h3>{t("upload_page.title")}</h3>
-              <p>{t("upload_page.desc")}</p>
-              <div className={styles.fileTypes}>
-                <span>JPEG</span>
-                <span>PNG</span>
-                <span>JPG</span>
-              </div>
-              <p className={styles.fileNote}>{t("upload_page.condition")}</p>
-              <input
-                type="file"
-                hidden
-                accept=".jpg,.jpeg,.png"
-                ref={fileInputRef}
-                onChange={handleInputChange}
-                disabled={isLoading} // Thêm disabled
-              />
-            </label>
-          ) : (
-            /* Nếu CÓ ảnh xem trước, hiển thị nó */
-            <div className={styles.previewContainer}>
-              <img
-                src={previewImage}
-                alt="Wound preview"
-                className={styles.previewImage}
-              />
-              {/* Nếu đang loading, hiển thị lớp phủ */}
-              {isLoading && (
-                <div className={styles.loadingOverlay}>
-                  <div className={styles.loader}></div>
-                  <p>{t("upload_page.loading")}</p>
+              )}
+
+              {/* REVIEW CONTROLS */}
+              {step === "REVIEW" && (
+                <div className={styles.panelContent}>
+                  <div className={styles.statusBoxDanger}>
+                    <FaExclamationTriangle />
+                    <span>{t("upload.warning.quality")}</span>
+                  </div>
+                  <ul className={styles.issueList}>
+                    {qualityIssues.map((issue, idx) => (
+                      <li key={idx}>{issue}</li>
+                    ))}
+                  </ul>
+                  <div className={styles.suggestionBox}>
+                    <p className={styles.suggestionBoxTip}>
+                      {t("upload.note.enhance_tip")}
+                    </p>
+                    <button
+                      onClick={handleEnhance}
+                      disabled={isEnhancing}
+                      className={styles.btnMagic}
+                    >
+                      <FaMagic />{" "}
+                      {isEnhancing
+                        ? t("upload.btn.enhancing")
+                        : t("upload.btn.enhance")}
+                    </button>
+                  </div>
+                  <div className={styles.divider}>OR</div>
+                  <div className={styles.actionGroup}>
+                    <button
+                      onClick={handleReset}
+                      className={styles.btnSecondary}
+                    >
+                      {t("upload.btn.retake")}
+                    </button>
+                    <button
+                      onClick={() => setStep("READY")}
+                      className={styles.btnLink}
+                    >
+                      {t("upload.btn.ignore")}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* READY CONTROLS */}
+              {step === "READY" && (
+                <div className={styles.panelContent}>
+                  <div className={styles.statusBoxSuccess}>
+                    <FaCheck />
+                    <span>{t("upload.status.ready")}</span>
+                  </div>
+                  <p className={styles.note}>{t("upload.note.ready_tip")}</p>
+                  <div className={styles.actionGroup}>
+                    <button
+                      onClick={handleSubmit}
+                      className={styles.btnPrimaryLarge}
+                    >
+                      {t("upload.btn.analyze")} <FaArrowRight />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* SCANNING LOADING */}
+              {isScanning && (
+                <div className={styles.panelContent}>
+                  <div className={styles.loaderSpinner}></div>
+                  <p className={styles.centerText}>
+                    {t("upload.status.scanning")}
+                  </p>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {isDragging && (
-        <div className={styles.pageDragOverlay}>
-          <FaUpload />
-          <h3>{t("upload_page.drop")}</h3>
+        <div className={styles.dragOverlay}>
+          <FaUpload /> {t("upload_page.drop")}
         </div>
       )}
     </div>

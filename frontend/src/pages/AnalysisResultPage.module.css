@@ -1,53 +1,94 @@
-/* src/pages/AnalysisResultPage.module.css */
+/* AnalysisResultPage.module.css */
 
 .analysisPage {
   display: grid;
-  /* Sidebar cố định 320px, nội dung chính chiếm phần còn lại */
   grid-template-columns: 320px 1fr;
-  height: 100vh; /* Cao 100% viewport */
-  overflow: hidden; /* Ngăn cuộn ở cấp độ trang */
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f4f7f6;
 }
 
-/* Nội dung chính (bên phải) */
 .mainContent {
   padding: 2rem;
-  overflow-y: auto; /* Cho phép CHỈ nội dung chính cuộn */
+  overflow-y: auto;
   height: 100vh;
   box-sizing: border-box;
-  background-color: #f4f7f6; /* Nền xám nhạt */
 }
 
-.contentGrid {
-  display: flex; /* XÓA DÒNG NÀY: align-items: flex-start; */
+/* Default Desktop: Tách rời, layout 2 cột trong contentGrid cũ */
+/* Tuy nhiên, ở code .tsx mới, tôi đã đổi thành .visualGroup */
+/* Trên Desktop, visualGroup sẽ hoạt động như Flex row */
+
+.visualGroup {
+  display: flex;
   gap: 2rem;
-  margin-bottom: 1rem;
-}
-.imageColumn {
-  /* SỬA: Giảm chiều rộng cố định (ví dụ 350px) để khung ảnh nhỏ lại */
-  flex: 0 0 350px;
-  min-width: 0;
-}
-.detailsColumn {
-  flex: 1 1 auto;
-  min-width: 0;
+  margin-bottom: 2rem;
+  align-items: flex-start;
 }
 
-@media (max-width: 1024px) {
+.imageArea {
+  flex: 0 0 350px;
+  /* Giữ style card của component con */
+}
+
+.detailsArea {
+  flex: 1;
+  /* Giữ style card của component con */
+}
+
+/* --- MOBILE & TABLET (max-width: 768px) --- */
+@media (max-width: 768px) {
   .analysisPage {
-    grid-template-columns: 1fr;
-  }
-  .sidebar {
-    position: static;
-    height: auto;
-    overflow-y: visible;
-  }
-  .mainContent {
-    height: auto;
-  }
-  .contentGrid {
+    display: flex;
     flex-direction: column;
+    height: auto;
+    overflow: visible;
   }
-  .imageColumn {
-    flex-basis: auto;
+
+  /* SIDEBAR: Order 1 (Mặc định) */
+  /* Sidebar style đã được xử lý trong file css của sidebar */
+
+  .mainContent {
+    /* HEADER: Order 2 */
+    /* VISUAL GROUP: Order 3 */
+    /* TREATMENT: Order 4 */
+    padding: 1rem;
+    height: auto;
+    overflow: visible;
+  }
+
+  /* --- LOGIC GỘP KHỐI TRẮNG --- */
+  .visualGroup {
+    flex-direction: column;
+    gap: 0; /* Xóa gap để chúng dính liền */
+    background-color: #fff; /* Tạo nền trắng chung */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    padding: 0;
+  }
+
+  .imageArea,
+  .detailsArea {
+    width: 100%;
+    flex: none;
+  }
+
+  /* QUAN TRỌNG: Reset style của component con bên trong để hòa vào khối chung */
+  /* Chúng ta dùng :global để can thiệp vào class module của con nếu cần, 
+     hoặc dựa vào cấu trúc DOM div > div */
+
+  .imageArea > div,
+  .detailsArea > div {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    height: auto !important;
+  }
+
+  /* Thêm đường kẻ giữa ảnh và details */
+  .detailsArea {
+    border-top: 1px solid #eee;
   }
 }

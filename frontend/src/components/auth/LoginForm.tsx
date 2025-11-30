@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { loginUser } from "../../services/authService";
 import { isAxiosError } from "axios";
 import { useAuth } from "../../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 export type LoginFormData = {
   username: string;
@@ -13,16 +14,20 @@ export type LoginFormData = {
 };
 
 // 1. Tách logic validation ra 1 hàm riêng để tái sử dụng (nếu cần)
-const validateField = (name: string, value: string): string => {
+const validateField = (
+  name: string,
+  value: string,
+  t: (key: string) => string
+): string => {
   switch (name) {
     case "username":
       if (value.trim() === "") {
-        return "Username is required";
+        return t("validation.error_username_required");
       }
       return "";
     case "password":
       if (value.trim() === "") {
-        return "Password is required";
+        return t("validation.error_password_required");
       }
       return "";
     default:
@@ -31,6 +36,8 @@ const validateField = (name: string, value: string): string => {
 };
 
 const LoginForm = () => {
+  const { t } = useTranslation();
+
   // Gộp state của form lại cho dễ quản lí
   const [formData, setFormData] = useState<LoginFormData>({
     username: "",
@@ -84,7 +91,7 @@ const LoginForm = () => {
   const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     //Chạy validation cho riêng trường đó
-    const errorMessage = validateField(name, value);
+    const errorMessage = validateField(name, value, t);
     //Cập nhật lỗi (nếu có)
     setErrors((prevErrors) => ({
       ...prevErrors,
@@ -97,8 +104,8 @@ const LoginForm = () => {
     event.preventDefault();
 
     // Chay validation cho tất cả các trường 1 lần cuối
-    const usernameError = validateField("username", formData.username);
-    const passwordError = validateField("password", formData.password);
+    const usernameError = validateField("username", formData.username, t);
+    const passwordError = validateField("password", formData.password, t);
 
     // Nếu có bất kì lỗi nào , hiển thị ra và dừng lại
     if (usernameError || passwordError) {
@@ -115,15 +122,15 @@ const LoginForm = () => {
     loginUser(formData)
       .then((response) => {
         // Debug: Log toàn bộ response
-        console.log('🔍 Full login response:', response.data);
-        
+        console.log("🔍 Full login response:", response.data);
+
         // Đăng nhập thành công , API trả vè token
         const token = response.data.data.access_token;
         const userObject = response.data.data.user;
 
         // Debug: Kiểm tra user object
-        console.log('🔍 User object:', userObject);
-        console.log('🔍 User roles:', userObject.roles);
+        console.log("🔍 User object:", userObject);
+        console.log("🔍 User roles:", userObject.roles);
 
         // --- THAY ĐỔI LỚN ---
         // Thay vì tự lưu token, hãy gọi hàm login từ context
@@ -135,23 +142,23 @@ const LoginForm = () => {
 
         // Redirect based on user role
         const userRoles = userObject.roles || [];
-        console.log('🔍 Checking roles:', userRoles);
-        
+        console.log("🔍 Checking roles:", userRoles);
+
         const isAdmin = userRoles.some((role: string) => {
-          const isAdminRole = role.toLowerCase() === 'admin';
+          const isAdminRole = role.toLowerCase() === "admin";
           console.log(`🔍 Checking role "${role}": ${isAdminRole}`);
           return isAdminRole;
         });
-        
-        console.log('🔍 Is admin?', isAdmin);
-        
+
+        console.log("🔍 Is admin?", isAdmin);
+
         // Chuyển hướng dựa trên role
         if (isAdmin) {
-          console.log('✅ Admin user detected, redirecting to /admin');
-          navigate('/admin', { replace: true });
+          console.log("✅ Admin user detected, redirecting to /admin");
+          navigate("/admin", { replace: true });
         } else {
-          console.log('✅ Regular user detected, redirecting to /');
-          navigate('/', { replace: true });
+          console.log("✅ Regular user detected, redirecting to /");
+          navigate("/", { replace: true });
         }
       })
       .catch((error) => {
@@ -174,17 +181,20 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      <title>{t("title.login_page")}</title>
+      {/* <meta name="description" content={t("home_page.hero_desc")} /> */}
+
       <div className={styles.formGroup}>
         {/* Hiển thị lỗi API ngay trên dưới form */}
         {apiError && <div className={styles.apiErrorMessage}>{apiError}</div>}
-        <label>Username</label>
+        <label>{t("auth_page.username")}</label>
 
         <div className={styles.inputWrapper}>
           <FaRegUser className={styles.icon} />
           <input
             type="text"
             name="username" // Quan trọng : Thêm name
-            placeholder="Enter username"
+            placeholder={t("auth_page.username_placeholder")}
             value={formData.username}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -198,13 +208,13 @@ const LoginForm = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label>Password</label>
+        <label>{t("auth_page.password")}</label>
         <div className={styles.inputWrapper}>
           <FiLock className={styles.icon} />
           <input
             type={showPassword ? "text" : "password"}
             name="password" // Quan trọng : Thêm name
-            placeholder="Enter password"
+            placeholder={t("auth_page.password_placeholder")}
             value={formData.password}
             onChange={handleChange}
             onBlur={handleBlur}
@@ -236,14 +246,14 @@ const LoginForm = () => {
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
-          <label htmlFor="remember">Remember me</label>
+          <label htmlFor="remember">{t("auth_page.remember_me")}</label>
         </div>
         <Link to="/forgot-password" className={styles.forgotLink}>
-          Forgot password?
+          {t("auth_page.forgot_password")}
         </Link>
       </div>
       <button type="submit" className={styles.submitButton}>
-        Login
+        {t("auth_page.login_button")}
       </button>
     </form>
   );

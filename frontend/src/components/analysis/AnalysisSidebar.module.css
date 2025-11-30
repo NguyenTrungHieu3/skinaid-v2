@@ -3,7 +3,7 @@
   background-color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  /* gap: 1.5rem; */
   padding: 1.5rem 1rem;
   border-right: 1px solid #eee;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
@@ -101,6 +101,7 @@
   position: relative;
   flex-shrink: 0;
   min-width: 0;
+  margin-bottom: 5px;
 }
 
 .summaryCardHeader {
@@ -423,26 +424,149 @@
   color: #c0392b;
 }
 
-/* 5. Upload Button */
-.uploadButton {
-  background-color: #fff;
-  color: #333;
-  border: 2px solid #ddd;
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  text-decoration: none;
-  margin-top: auto;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+/* Mặc định ẩn mobileSummaryBlock trên Desktop */
+.mobileSummaryBlock {
+  display: none;
 }
 
-.uploadButton:hover {
-  background-color: #f9f9f9;
-  border-color: #ccc;
+/* Mặc định hiện completeHeader trên Desktop */
+.desktopOnlyBlock {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    padding: 0;
+    border-bottom: 1px solid #eee;
+    background: #fff;
+  }
+
+  /* --- QUAN TRỌNG: KHI SIDEBAR MỞ RỘNG (EXPANDED) --- */
+  .sidebar.mobileExpanded {
+    position: fixed; /* Cố định sidebar đè lên toàn bộ trang */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh !important; /* Chiếm 100% chiều cao màn hình */
+    z-index: 9999; /* Z-index cao nhất để nằm trên MainHeader */
+    overflow: hidden; /* Ngăn bản thân sidebar scroll, để con scroll */
+    padding-bottom: 0;
+  }
+
+  .mobileHeaderGroup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    /* Có thể thêm border-bottom nếu muốn tách logo với khối summary */
+  }
+
+  .logoContainer {
+    border-bottom: none;
+    padding: 0;
+  }
+
+  /* Ẩn khối xanh 'Analysis Complete' trên Mobile */
+  .desktopOnlyBlock {
+    display: none;
+  }
+
+  /* --- STYLE KHỐI SUMMARY MỚI --- */
+  .mobileSummaryBlock {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background-color: #f8f9fa; /* Màu nền nhẹ */
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .mobileSummaryBlock:active {
+    background-color: #eee;
+  }
+
+  .summaryBlockLeft {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .summaryIcon {
+    color: #009688;
+    font-size: 1.1rem;
+  }
+
+  .summaryLabel {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  .woundCountBadge {
+    background-color: #009688;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .summaryBlockRight {
+    color: #777;
+    font-size: 0.9rem;
+  }
+
+  /* Ẩn nội dung chi tiết mặc định */
+  .collapsibleContent {
+    display: none;
+    padding: 1rem;
+    background: #fff;
+    border-top: 1px solid #eee;
+  }
+
+  /* KHI MỞ RỘNG: Nội dung bên trong sẽ scroll được */
+  .mobileExpanded .collapsibleContent {
+    display: block;
+    animation: fadeIn 0.3s ease;
+
+    /* Thiết lập scroll nội bộ */
+    flex-grow: 1;
+    overflow-y: auto;
+    height: 100%; /* Chiếm phần còn lại của sidebar */
+    padding-bottom: 2rem;
+
+    /* QUAN TRỌNG: Ngăn scroll lan ra body */
+    overscroll-behavior: contain;
+  }
+
+  /* Đảm bảo scrollableContent cũng giãn ra */
+  .mobileExpanded .scrollableContent {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* Để collapsibleContent lo việc scroll */
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
