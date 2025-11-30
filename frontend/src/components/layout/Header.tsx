@@ -5,7 +5,6 @@ import styles from "./Header.module.css";
 import Logo from "../../assets/images/general/logo.png";
 import { FaBars, FaChevronDown } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-import CountryFlag from "react-country-flag";
 import LanguageSwitcher from "../common/LanguageSwitcher";
 
 interface HeaderProps {

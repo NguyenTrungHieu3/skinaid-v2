@@ -26,6 +26,7 @@ const HistoryPage = () => {
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
 
   const [timelineEvents, setTimelineEvents] = useState<HistoryEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<HistoryEvent[]>([]);
   const [selectedEventData, setSelectedEventData] =
     useState<CombinedEventDetail | null>(null);
 
@@ -60,6 +61,7 @@ const HistoryPage = () => {
         );
 
         setTimelineEvents(transformedEvents);
+        setFilteredEvents(transformedEvents); // Initialize filtered events
       } catch (err: any) {
         setError(err.message || "Không thể tải lịch sử.");
       } finally {
@@ -116,7 +118,12 @@ const HistoryPage = () => {
         );
       }
     }
-    return <HistorySidebar />;
+    return (
+      <HistorySidebar
+        events={timelineEvents}
+        onSearchFilter={setFilteredEvents}
+      />
+    );
   };
 
   return (
@@ -126,11 +133,11 @@ const HistoryPage = () => {
         <div className={styles.timelineSection}>
           {isLoadingList ? (
             <p>Đang tải timeline...</p>
-          ) : error && timelineEvents.length === 0 ? (
+          ) : error && filteredEvents.length === 0 ? (
             <p>Lỗi: {error}</p>
           ) : (
             <Timeline
-              events={timelineEvents}
+              events={filteredEvents}
               activeEventId={activeEventId}
               onSelectEvent={setActiveEventId}
             />

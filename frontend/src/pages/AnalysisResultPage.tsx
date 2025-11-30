@@ -43,6 +43,7 @@ interface SummaryCounts {
 
 // --- Helpers ---
 const transformApiData = (apiData: AnalysisGetResponse) => {
+  // ... (Giữ nguyên logic cũ của bạn)
   const counts: SummaryCounts = { total: 0, abrasion: 0, burn: 0, bruise: 0 };
   const tabs: Tab[] = [];
   const typeIndices: { [key in WoundType]: number } = {
@@ -114,13 +115,11 @@ const AnalysisResultPage = () => {
       setIsLoading(false);
       return;
     }
-
     const fetchResult = async () => {
       try {
         setIsLoading(true);
         // 1. Fetch Analysis Result
         const response = await getAnalysisResult(analysis_id);
-
         if (response.data.success) {
           const apiData = response.data.data;
           setAnalysisData(apiData);
@@ -291,6 +290,7 @@ const AnalysisResultPage = () => {
           onMainTabClick={handleMainTabClick}
         />
         <main className={styles.mainContent}>
+          {/* Không truyền onDownload -> MainHeader sẽ tự ẩn nút */}
           <MainHeader title="No Wounds Detected" />
           <MedicalDisclaimer />
         </main>

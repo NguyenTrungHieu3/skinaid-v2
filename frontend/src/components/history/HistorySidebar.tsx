@@ -1,29 +1,97 @@
 import { useState } from "react";
 import styles from "./HistorySidebar.module.css";
-// Thêm icon 'SlidersHorizontal' cho thanh trượt
-import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import LogoPlaceholder from "../../assets/images/general/logo_placeholder.png";
+import type { HistoryEvent } from "./Timeline";
 
-const HistorySidebar = () => {
+// Define props interface
+interface HistorySidebarProps {
+  events: HistoryEvent[];
+  onSearchFilter: (filteredEvents: HistoryEvent[]) => void;
+}
+
+const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter }) => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("7 ngày");
-  // State mới cho thanh trượt, ví dụ mặc định là 80%
-  const [accuracy, setAccuracy] = useState(80);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isAccuracyOpen, setIsAccuracyOpen] = useState(false);
 
-  const filters = ["7 ngày", "2 tuần", "1 tháng", "3 tháng"];
+  const filters = [
+    "1 ngày",
+    "3 ngày",
+    "7 ngày",
+    "1 tháng",
+    "3 tháng",
+    "6 tháng",
+    "1 năm",
+  ];
+
+  // Filter events based on search query and date filter
+  const filterEvents = (query: string, dateFilter: string) => {
+    let filtered = events;
+
+    // Filter by date range
+    const now = new Date();
+    const daysToSubtract: { [key: string]: number } = {
+      "1 ngày": 1,
+      "3 ngày": 3,
+      "7 ngày": 7,
+      "1 tháng": 30,
+      "3 tháng": 90,
+      "6 tháng": 180,
+      "1 năm": 365,
+    };
+
+    const days = daysToSubtract[dateFilter] || 7;
+    const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    filtered = filtered.filter((event) => {
+      const eventDate = new Date(event.date);
+      return eventDate >= startDate;
+    });
+
+    // Filter by search query
+    if (query.trim()) {
+      filtered = filtered.filter((event) =>
+        event.title.toLowerCase().includes(query.toLowerCase()) ||
+        event.status.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    const filtered = filterEvents(query, activeFilter);
+    onSearchFilter(filtered);
+  };
+
+  // Handle date filter change
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    const filtered = filterEvents(searchQuery, filter);
+    onSearchFilter(filtered);
+    setIsFilterOpen(false);
+  };
 
   return (
     <div className={styles.sidebarContainer}>
       <div className={styles.topControlsWrapper}>
-        {/* 1. Thanh tìm kiếm (Không đổi) */}
+        {/* 1. Thanh tìm kiếm */}
         <div className={styles.searchBar}>
-          <input type="text" placeholder="Tìm kiếm" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm sự kiện..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
           <Search size={20} className={styles.searchIcon} />
         </div>
 
-        {/* 2. Bộ lọc (Không đổi) */}
+        {/* 2. Bộ lọc theo ngày */}
         <div className={styles.filterSection}>
           <div className={styles.filterHeader}>
             <span>Lọc</span>
@@ -42,36 +110,11 @@ const HistorySidebar = () => {
                   className={`${styles.filterButton} ${
                     activeFilter === filter ? styles.activeFilter : ""
                   }`}
-                  onClick={() => setActiveFilter(filter)}
+                  onClick={() => handleFilterChange(filter)}
                 >
                   {filter}
                 </button>
               ))}
-            </div>
-          )}
-        </div>
-
-        {/* 3. KHỐI MỚI: Thanh trượt độ chính xác */}
-        <div className={styles.accuracySection}>
-          <div className={styles.accuracyHeader}>
-            <span>Độ chính xác</span>
-            <SlidersHorizontal
-              size={15}
-              className={styles.accuracyIcon}
-              onClick={() => setIsAccuracyOpen((prev) => !prev)}
-            />
-          </div>
-          {isAccuracyOpen && (
-            <div className={styles.accuracyBody}>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={accuracy}
-                className={styles.accuracySlider}
-                onChange={(e) => setAccuracy(Number(e.target.value))}
-              />
-              <div className={styles.accuracyValue}>Trên {accuracy}%</div>
             </div>
           )}
         </div>
