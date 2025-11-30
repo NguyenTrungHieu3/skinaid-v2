@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../contexts/AuthContext";
 
 type Severity = "Mild" | "Moderate" | "Severe" | string;
 type WoundType = "abrasion" | "burn" | "bruise";
@@ -76,6 +77,9 @@ const MainHeader = ({
   onDownload,
 }: MainHeaderProps) => {
   const { t } = useTranslation();
+
+  // 2. LẤY TRẠNG THÁI ĐĂNG NHẬP
+  const { isAuthenticated } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -149,12 +153,15 @@ const MainHeader = ({
           </span>
         </button>
 
-        <button className={styles.actionBtn}>
-          <FaSave />
-          <span className={styles.btnText}>
-            {t("analysis.header_save_button")}
-          </span>
-        </button>
+        {/* 3. CHỈ HIỂN THỊ NÚT SAVE KHI CHƯA ĐĂNG NHẬP (!isAuthenticated) */}
+        {!isAuthenticated && (
+          <button className={styles.actionBtn}>
+            <FaSave />
+            <span className={styles.btnText}>
+              {t("analysis.header_save_button")}
+            </span>
+          </button>
+        )}
 
         {onDownload && (
           <button className={styles.actionBtn} onClick={onDownload}>

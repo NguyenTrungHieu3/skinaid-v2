@@ -3,13 +3,12 @@ import styles from "./HistoryPage.module.css";
 import Timeline, { type HistoryEvent } from "../components/history/Timeline";
 import HistorySidebar from "../components/history/HistorySidebar";
 import HistoryDetail from "../components/history/HistoryDetail";
+import { useTranslation } from "react-i18next";
 
-// Import kiểu frontend
-import {
-  type CombinedEventDetail,
-} from "../DUMMY_DATA"; // Hoặc từ src/types/appTypes.ts
+// Kiểu
+import { type CombinedEventDetail } from "../DUMMY_DATA";
 
-// Import service
+// Service
 import {
   getHistory,
   getAnalysisDetail,
@@ -17,14 +16,14 @@ import {
   transformApiDetailToCombinedEvent,
 } from "../services/historyService";
 
-// Import 'useAuth' để kiểm tra đăng nhập
 import { useAuth } from "../contexts/AuthContext";
 
 const HistoryPage = () => {
-  const { isAuthenticated } = useAuth(); // Lấy trạng thái đăng nhập
+  const { t } = useTranslation();
+
+  const { user, isAuthenticated } = useAuth();
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
-
   const [timelineEvents, setTimelineEvents] = useState<HistoryEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<HistoryEvent[]>([]);
   const [selectedEventData, setSelectedEventData] =
@@ -34,12 +33,11 @@ const HistoryPage = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // EFFECT 1: Tải danh sách Timeline
+  // Fetch timeline
   useEffect(() => {
-    // Chỉ fetch nếu đã đăng nhập
     if (!isAuthenticated) {
       setIsLoadingList(false);
-      setTimelineEvents([]); // Đảm bảo danh sách trống
+      setTimelineEvents([]);
       return;
     }
 
@@ -49,30 +47,23 @@ const HistoryPage = () => {
         setError(null);
 
         const apiHistoryData = await getHistory(20, 0);
-
-        // --- 🔥 ĐÂY LÀ PHẦN SỬA LỖI 🔥 ---
-        // Thêm '|| []' để đảm bảo 'eventsList' luôn là một mảng
-        // ngay cả khi 'apiHistoryData.events' là 'undefined'.
         const eventsList = apiHistoryData.events || [];
-        // --- (Kết thúc sửa lỗi) ---
 
-        const transformedEvents = transformApiHistoryToTimeline(
-          eventsList // Truyền biến 'eventsList' an toàn
-        );
+        const transformed = transformApiHistoryToTimeline(eventsList);
 
-        setTimelineEvents(transformedEvents);
-        setFilteredEvents(transformedEvents); // Initialize filtered events
+        setTimelineEvents(transformed);
+        setFilteredEvents(transformed);
       } catch (err: any) {
-        setError(err.message || "Không thể tải lịch sử.");
+        setError(t("history.error.load"));
       } finally {
         setIsLoadingList(false);
       }
     };
 
     fetchHistory();
-  }, [isAuthenticated]); // Thêm 'isAuthenticated' vào dependencies
+  }, [isAuthenticated, t]);
 
-  // EFFECT 2: Tải chi tiết
+  // Fetch detail
   useEffect(() => {
     if (!activeEventId || !isAuthenticated) {
       setSelectedEventData(null);
@@ -84,69 +75,71 @@ const HistoryPage = () => {
         setIsLoadingDetail(true);
         setError(null);
 
-        const apiDetailData = await getAnalysisDetail(activeEventId);
-        const transformedDetail =
-          transformApiDetailToCombinedEvent(apiDetailData);
+        const apiDetail = await getAnalysisDetail(activeEventId);
+        const transform = transformApiDetailToCombinedEvent(apiDetail);
 
-        setSelectedEventData(transformedDetail);
+        setSelectedEventData(transform);
       } catch (err: any) {
-        setError(err.message || "Không thể tải chi tiết.");
+        setError(t("history.error.load"));
       } finally {
         setIsLoadingDetail(false);
       }
     };
 
     fetchDetail();
-  }, [activeEventId, isAuthenticated]);
-
-  const handleCloseDetail = () => {
-    setActiveEventId(null);
-  };
-
-  // Hàm render cho cột bên phải (Aside)
-  const renderSidebarContent = () => {
-    if (activeEventId) {
-      if (isLoadingDetail) {
-        return <p>Đang tải chi tiết...</p>;
-      }
-      if (selectedEventData) {
-        return (
-          <HistoryDetail
-            event={selectedEventData}
-            onClose={handleCloseDetail}
-          />
-        );
-      }
-    }
-    return (
-      <HistorySidebar
-        events={timelineEvents}
-        onSearchFilter={setFilteredEvents}
-      />
-    );
-  };
+  }, [activeEventId, isAuthenticated, t]);
 
   return (
     <div className={styles.historyPage}>
-      <main className={styles.historyContent}>
-        {/* CỘT 1: PHẦN TIMELINE (Đã cập nhật) */}
-        <div className={styles.timelineSection}>
-          {isLoadingList ? (
-            <p>Đang tải timeline...</p>
-          ) : error && filteredEvents.length === 0 ? (
-            <p>Lỗi: {error}</p>
-          ) : (
-            <Timeline
-              events={filteredEvents}
-              activeEventId={activeEventId}
-              onSelectEvent={setActiveEventId}
-            />
-          )}
-        </div>
+      <title>
+        {t("history.title", {
+          fullname: user?.full_name || user?.user_name || "",
+        })}
+      </title>
 
-        {/* CỘT 2: KHỐI NỘI DUNG (Đã cập nhật) */}
-        <aside className={styles.asideSection}>{renderSidebarContent()}</aside>
-      </main>
+      {!isAuthenticated ? (
+        <p className={styles.centerMsg}>{t("history.auth.not_logged_in")}</p>
+      ) : (
+        <main className={styles.historyContent}>
+          {/* TIMELINE */}
+          <div className={styles.timelineSection}>
+            {isLoadingList ? (
+              <p>{t("history.loading.timeline")}</p>
+            ) : error ? (
+              <p>{t("history.error.load")}</p>
+            ) : filteredEvents.length === 0 ? (
+              <p>{t("history.empty.history")}</p>
+            ) : (
+              <Timeline
+                events={filteredEvents}
+                activeEventId={activeEventId}
+                onSelectEvent={setActiveEventId}
+              />
+            )}
+          </div>
+
+          {/* SIDEBAR / DETAILS */}
+          <aside className={styles.asideSection}>
+            {activeEventId ? (
+              isLoadingDetail ? (
+                <p>{t("history.loading.detail")}</p>
+              ) : selectedEventData ? (
+                <HistoryDetail
+                  event={selectedEventData}
+                  onClose={() => setActiveEventId(null)}
+                />
+              ) : (
+                <p>{t("history.empty.detail")}</p>
+              )
+            ) : (
+              <HistorySidebar
+                events={timelineEvents}
+                onSearchFilter={setFilteredEvents}
+              />
+            )}
+          </aside>
+        </main>
+      )}
     </div>
   );
 };

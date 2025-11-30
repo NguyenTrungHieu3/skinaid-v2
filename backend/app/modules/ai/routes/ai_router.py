@@ -10,7 +10,6 @@ from app.modules.audit.services.audit_service import AuditService
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.guest.services.guest_service import GuestService
 
-
 router = APIRouter(prefix="/ai")
 
 async def get_session_id(

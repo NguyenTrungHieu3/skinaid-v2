@@ -189,7 +189,6 @@ class AIController:
                 error_details={"max_files": max_files, "provided": len(files)},
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-
         
         if error := self._validate_identifiers(user_id, session_id):
             return error

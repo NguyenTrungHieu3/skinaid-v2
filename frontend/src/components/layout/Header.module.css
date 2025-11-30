@@ -10,7 +10,6 @@
 .header {
   display: flex;
   align-items: center;
-  /* Căn giữa các item theo chiều dọc */
   padding: 0.5rem 2rem;
   height: 60px;
   border-bottom: 1px solid #eee;
@@ -21,8 +20,7 @@
   z-index: 1000;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  box-sizing: border-box; /* QUAN TRỌNG: Giúp width 100% bao gồm cả padding */
-  /* Đảm bảo không có margin mặc định gây hở trắng ở trên cùng */
+  box-sizing: border-box;
   margin: 0;
 }
 
@@ -34,7 +32,6 @@
   font-size: 1.5rem;
   font-weight: 700;
   color: #333;
-  /* (Xóa margin-right) */
 }
 
 .logo img {
@@ -45,62 +42,59 @@
   color: var(--primary-color);
 }
 
-/* Mặc định, ẩn nút hamburger */
 .hamburgerButton {
   display: none;
 }
 
-/* --- (LOGIC MỚI CHO DESKTOP) --- */
-
-/* 1. Xóa container 'navContainer' không cần thiết trên desktop */
+/* --- LOGIC DESKTOP --- */
 .navContainer {
-  /* Chúng ta sẽ dùng .menuContent trực tiếp */
   flex-grow: 1;
-  /* Cho phép co giãn */
 }
 
-/* 2. Sửa .menuContent */
 .menuContent {
   display: flex;
   flex-direction: row;
-  /* Xếp ngang */
   align-items: center;
-  /* Căn giữa */
   width: 100%;
-  align-items: baseline;
+  justify-content: space-between;
 }
 
-/* 3. Sửa .nav */
 .nav {
   display: flex;
   flex-direction: row;
-  /* Xếp ngang */
   gap: 2rem;
   margin-left: 2.5rem;
-  /* Khoảng cách từ logo đến nav */
 }
 
-/* 4. Sửa .authButtons (Đây là mấu chốt) */
+.rightWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.secondaryNav {
+  display: flex;
+  gap: 1.5rem;
+  margin-right: 1rem;
+  padding-right: 1.5rem;
+  border-right: 1px solid #eee;
+}
+
 .authButtons {
   display: flex;
   flex-direction: row;
-  /* Xếp ngang */
   align-items: center;
   gap: 1rem;
-  margin-left: auto;
-  /* <-- DÒNG NÀY SẼ ĐẨY AUTH RA XA BÊN PHẢI */
+  margin-left: 0;
   border: none;
   padding: 0;
 }
 
-/* Mặc định, không có overlay */
 .overlay {
   display: none;
 }
 
-/* --- STYLES CHUNG (Dùng cho cả 2 màn hình) --- */
-/* (Phần này giữ nguyên, không cần sửa) */
-
+/* --- LINK STYLES --- */
 .nav a,
 .secondaryNav a {
   text-decoration: none;
@@ -119,28 +113,21 @@
   color: var(--primary-color);
 }
 
-/* Xóa hoặc thay thế class .welcome cũ */
 .welcomeLink {
   font-weight: 600;
   font-size: 0.9rem;
   color: #333;
   white-space: nowrap;
   text-decoration: none;
-  /* <-- Thêm: Xóa gạch chân */
   transition: color 0.2s;
-  /* <-- Thêm: Hiệu ứng hover */
-  /* THÊM 4 DÒNG NÀY ĐỂ GIỚI HẠN VÀ THÊM DẤU "..." */
   display: block;
-  /* Cần thiết để max-width hoạt động */
   max-width: 150px;
-  /* Giới hạn độ rộng (bạn có thể chỉnh 150px, 200px, v.v.) */
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .welcomeLink:hover {
   color: var(--primary-color);
-  /* <-- Thêm: Đổi màu khi di chuột */
 }
 
 .authBtn {
@@ -175,7 +162,6 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0 1rem;
-  /* Tạo khoảng cách với các nút khác */
 }
 
 .flagButton {
@@ -183,11 +169,9 @@
   border: none;
   cursor: pointer;
   opacity: 0.5;
-  /* Mặc định làm mờ cờ không được chọn */
   transition: opacity 0.2s ease-in-out;
   padding: 0;
   display: flex;
-  /* Giúp căn chỉnh cờ tốt hơn */
 }
 
 .flagButton:hover {
@@ -196,183 +180,115 @@
 
 .flagButton img {
   width: 1.4rem !important;
-  /* Ghi đè kích thước cờ */
   height: auto !important;
   border-radius: 3px;
-  /* Bo góc cờ một chút */
   object-fit: cover;
 }
 
 .activeFlag {
   opacity: 1;
-  /* Cờ được chọn sẽ rõ nét */
 }
 
 .divider {
-  color: var(--color-gray-light, #ccc);
-  /* Màu của dấu gạch đứng */
+  color: #ccc;
   font-size: 1.2rem;
 }
 
-.navContainer {
-  flex-grow: 1;
-}
-
-/* SỬA CLASS NÀY */
-.menuContent {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  /* Căn giữa theo chiều dọc */
-  width: 100%;
-  /* XÓA: align-items: baseline; */
-  justify-content: space-between;
-  /* <-- QUAN TRỌNG: Đẩy 2 khối ra xa nhau */
-}
-
-.nav {
-  display: flex;
-  flex-direction: row;
-  gap: 2rem;
-  margin-left: 2.5rem;
-}
-
-/* THÊM CLASS MỚI NÀY */
-.rightWrapper {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  /* Increased gap for better separation */
-}
-
-.secondaryNav {
-  display: flex;
-  gap: 1.5rem;
-  margin-right: 1rem;
-  padding-right: 1.5rem;
-  border-right: 1px solid #eee;
-  /* Separator between info and auth */
-}
-
-/* SỬA CLASS NÀY */
-.authButtons {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-  margin-left: 0;
-  /* <-- XÓA 'auto' VÀ ĐẶT LÀ 0 */
-  border: none;
-  padding: 0;
-}
-
-/* --- DROPDOWN STYLES --- */
+/* --- DROPDOWN STYLES (BASE) --- */
 .dropdown {
   position: relative;
-  display: inline-block;
-  /* margin-left: 8px; -> Xóa cái này để khoảng cách đều nhau như gap: 2rem của .nav */
-  height: 100%; /* Giúp căn chỉnh full chiều cao nếu cần */
   display: flex;
   align-items: center;
+  height: 100%;
 }
 
 .dropdownBtn {
   background: none;
   border: none;
   cursor: pointer;
-
-  /* --- ĐỒNG BỘ VỚI .nav a --- */
-  font-family: inherit; /* Quan trọng: để button nhận font của web */
+  font-family: inherit;
   color: #555;
   font-weight: 600;
-  font-size: 0.9rem; /* Sửa từ 1.1rem xuống 0.9rem cho bằng các link khác */
+  font-size: 0.9rem;
   padding: 0;
-  padding-bottom: 0;
-
-  /* Tạo border trong suốt để tránh giật layout khi hover giống thẻ a */
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-
-  /* Flex để căn icon mũi tên */
   display: flex;
   align-items: center;
-  gap: 0.3rem; /* Khoảng cách giữa chữ và mũi tên */
-}
-
-/* Hiệu ứng Hover và khi Dropdown đang mở */
-.dropdownBtn:hover,
-.dropdown:hover .dropdownBtn {
-  color: var(--primary-color);
-  /* Nếu bạn muốn gạch chân khi hover giống các link kia thì bỏ comment dòng dưới: */
-  /* border-bottom: 2px solid var(--primary-color); */
+  gap: 0.3rem;
+  transition: color 0.2s;
 }
 
 .chevron {
-  font-size: 0.75rem; /* Giảm nhỏ icon mũi tên một chút cho tinh tế */
+  font-size: 0.75rem;
   transition: transform 0.2s;
-  margin-top: 1px; /* Căn chỉnh vi mô cho cân đối với chữ */
+  margin-top: 1px;
 }
 
-.dropdown:hover .chevron {
-  transform: rotate(180deg);
-}
-
+/* Mặc định ẩn dropdown content */
 .dropdownContent {
   display: none;
   position: absolute;
   background-color: #fff;
-  min-width: 200px; /* Chỉnh lại độ rộng vừa phải */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Shadow mềm hơn */
+  min-width: 200px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   z-index: 1002;
   border-radius: 8px;
   padding: 0.5rem 0;
-
-  /* Căn giữa menu con so với nút mẹ */
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-
   border: 1px solid #f0f0f0;
-  margin-top: 10px; /* Tăng khoảng cách một chút */
+  margin-top: 10px;
 }
 
-/* Cầu nối tàng hình để không bị mất hover */
-.dropdownContent::before {
-  content: "";
-  position: absolute;
-  top: -15px; /* Phủ kín khoảng hở */
-  left: 0;
-  width: 100%;
-  height: 15px;
-  background: transparent;
-}
-
-.dropdown:hover .dropdownContent {
-  display: block;
-  animation: fadeIn 0.2s ease-in-out; /* Thêm hiệu ứng hiện nhẹ nhàng */
-}
-
-/* Style cho các link con bên trong */
 .dropdownContent a {
-  color: #555; /* Màu chữ nhẹ hơn */
+  color: #555;
   padding: 0.7rem 1.2rem;
   text-decoration: none;
   display: block;
-  font-size: 0.9rem; /* Font size nhỏ gọn */
+  font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s;
   white-space: nowrap;
   border: none;
-  text-align: left; /* Đảm bảo chữ căn trái */
+  text-align: left;
 }
 
 .dropdownContent a:hover {
   background-color: #f0f9f8;
   color: var(--primary-color);
-  padding-left: 1.5rem; /* Hiệu ứng đẩy chữ sang phải nhẹ khi hover */
+  padding-left: 1.5rem;
 }
 
-/* Thêm keyframes cho mượt */
+/* --- LOGIC HOVER CHỈ DÀNH CHO DESKTOP (>= 900px) --- */
+@media (min-width: 900px) {
+  /* Di chuột vào là hiện menu */
+  .dropdown:hover .dropdownContent {
+    display: block;
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  /* Di chuột vào là xoay mũi tên */
+  .dropdown:hover .chevron {
+    transform: rotate(180deg);
+  }
+
+  .dropdownBtn:hover,
+  .dropdown:hover .dropdownBtn {
+    color: var(--primary-color);
+  }
+
+  /* Cầu nối tàng hình để không bị mất hover */
+  .dropdownContent::before {
+    content: "";
+    position: absolute;
+    top: -15px;
+    left: 0;
+    width: 100%;
+    height: 15px;
+    background: transparent;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -407,7 +323,6 @@
     z-index: 1001;
   }
 
-  /* (Quan trọng) Reset lại các style desktop bên trong mobile */
   .navContainer {
     position: fixed;
     top: 0;
@@ -418,7 +333,6 @@
     z-index: 1000;
     transition: visibility 0.3s ease;
     margin-left: 0;
-    /* Reset margin-left */
   }
 
   .overlay {
@@ -442,13 +356,11 @@
     background-color: #fff;
     padding: 5rem 1.5rem 2rem;
     flex-direction: column;
-    /* gap: 2rem; */
     align-items: flex-start;
     justify-content: flex-start;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
-    /* Allow scrolling if menu is long */
   }
 
   .mobileMenuOpen {
@@ -467,35 +379,25 @@
     flex-direction: column;
     gap: 1rem;
     margin-left: 0;
-    /* Reset margin-left */
     width: 100%;
-    /* Đảm bảo nav links chiếm đủ rộng */
     order: 1;
-    /* 1. Nav links (nằm trên) */
   }
 
-  /* SỬA CLASS NÀY */
   .rightWrapper {
-    /* Cho wrapper xếp dọc trên mobile */
     flex-direction: column;
     width: 100%;
     align-items: stretch;
-    /* Dãn các nút auth ra */
     gap: 1.5rem;
     order: 2;
-    /* 2. Khối Auth + Cờ (nằm dưới) */
     margin-top: auto;
-    /* <-- ĐẨY KHỐI NÀY XUỐNG ĐÁY MENU */
     padding-top: 1.5rem;
     border-top: 1px solid #eee;
   }
 
-  /* ... bên trong @media (max-width: 899px) ... */
-
-  /* DROPDOWN MOBILE ADJUSTMENTS */
+  /* --- DROPDOWN MOBILE ADJUSTMENTS (NO HOVER) --- */
   .dropdown {
     width: 100%;
-    display: block; /* Trả về block cho mobile */
+    display: block;
     height: auto;
     margin: 0;
   }
@@ -505,53 +407,43 @@
     width: 100%;
     justify-content: space-between;
     align-items: center;
-
-    /* Đồng bộ với style mobile của .nav a */
     padding: 0.5rem;
-    font-size: 1.1rem; /* Mobile cần chữ to hơn desktop */
+    font-size: 1.1rem;
     font-weight: 600;
     color: #555;
     background: none;
     border: none;
-    border-bottom: none; /* Mobile không cần gạch chân */
-  }
-
-  .dropdownBtn:hover {
-    color: var(--primary-color);
-    background-color: #f0f9f8; /* Hiệu ứng nền khi chạm vào trên mobile */
-    border-radius: 6px;
   }
 
   .dropdownContent {
     display: none; /* Mặc định ẩn */
-    position: static; /* Không dùng absolute trên mobile */
-    transform: none; /* Bỏ căn giữa */
+    position: static; /* Không absolute, để đẩy nội dung dưới */
+    transform: none;
     box-shadow: none;
     border: none;
     width: 100%;
     margin-top: 0;
     padding: 0;
-    padding-left: 1rem; /* Thụt đầu dòng cho menu con */
-    border-left: 2px solid #eee; /* Đường kẻ chỉ dẫn dọc bên trái */
+    padding-left: 1rem;
+    border-left: 2px solid #eee;
     margin-left: 0.5rem;
     background-color: transparent;
-    min-width: auto;
   }
 
-  /* Loại bỏ animation desktop và mũi tên giả */
-  .dropdown:hover .dropdownContent {
-    display: none; /* Trên mobile chỉ mở khi click (dùng logic JS toggle class) */
-    animation: none;
-  }
-  .dropdownContent::before {
-    display: none;
-  }
-
-  /* Logic hiển thị khi có class mobileSubmenuOpen */
+  /* Logic mở menu dựa trên CLASS (Click), KHÔNG dùng Hover */
   .mobileSubmenuOpen .dropdownContent {
     display: flex;
     flex-direction: column;
-    gap: 0; /* Reset gap */
+    gap: 0;
+    animation: slideDown 0.3s ease;
+  }
+
+  .mobileSubmenuOpen .dropdownBtn {
+    color: var(--primary-color);
+  }
+
+  .mobileSubmenuOpen .chevron {
+    transform: rotate(180deg);
   }
 
   .dropdownContent a {
@@ -560,30 +452,35 @@
     color: #666;
   }
 
+  /* Tắt hiệu ứng hover desktop trên mobile */
   .dropdownContent a:hover {
-    padding-left: 0.5rem; /* Reset hiệu ứng desktop */
+    padding-left: 0.5rem;
     background: none;
     color: var(--primary-color);
   }
-  
-  /* SỬA CLASS NÀY */
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .languageSwitcher {
     order: 2;
-    /* Cờ nằm dưới nút auth */
     justify-content: center;
-    /* Căn giữa cờ */
     padding: 0;
-    /* Xóa padding ngang */
   }
 
   .authButtons {
     flex-direction: column;
     gap: 1rem;
-    /* border-top: 1px solid #eee;
-    padding-top: 1.5rem; */
     align-items: stretch;
     margin-left: 0;
-    /* Reset margin-left */
     order: 1;
   }
 
@@ -599,25 +496,21 @@
   }
 }
 
-/* --- MAP PAGE SPECIFIC STYLES (Force Mobile Layout) --- */
+/* --- MAP PAGE SPECIFIC STYLES --- */
 .mapHeader {
   height: 0;
   padding: 0;
   border: none;
   overflow: visible;
-  /* Allow drawer to be seen */
-
   background: transparent;
   box-shadow: none;
 }
 
-/* Hide everything in header except navContainer (drawer) */
 .mapHeader .logo,
 .mapHeader .hamburgerButton {
   display: none;
 }
 
-/* Ensure navContainer (drawer) works */
 .mapHeader .navContainer {
   position: fixed;
   top: 0;
@@ -630,7 +523,6 @@
   margin-left: 0;
 }
 
-/* Base styles for overlay on map page */
 .mapHeader .overlay {
   display: block;
   position: absolute;
@@ -643,7 +535,6 @@
   transition: opacity 0.3s ease;
 }
 
-/* Base styles for menuContent on map page */
 .mapHeader .menuContent {
   position: absolute;
   top: 0;
@@ -660,7 +551,6 @@
   transition: transform 0.3s ease;
 }
 
-/* When drawer is open, show content */
 .mapHeader .mobileMenuOpen {
   visibility: visible;
 }
@@ -673,7 +563,6 @@
   transform: translateX(0);
 }
 
-/* Specific styles for drawer content when open */
 .mapHeader .menuContent .nav {
   flex-direction: column;
   gap: 1.5rem;

@@ -165,7 +165,7 @@
       "file_too_large": "File quá lớn. Kích thước file tối đa là {{size}}MB mỗi ảnh.",
       "invalid_type": "Loại file không hợp lệ. Vui lòng tải lên file JPEG, PNG, JPG",
       "dimensions": "Kích thước ảnh phải trong khoảng từ {{minW}}x{{minH}}px đến {{maxW}}x{{maxH}}px.",
-      "corrupted": "Không thể đọc file ảnh. File có thể đã bị hỏng.",
+      "corrupted": "Không thể đọc file ảnh (File có thể đã bị hỏng)",
       "resize_needed": "Cần điều chỉnh ảnh để có kết quả tốt hơn."
     }
   },
@@ -285,6 +285,53 @@
 
     "severity_label": "Mức độ",
     "confidence": "Độ tin cậy"
+  },
+
+  "history": {
+    "title": "Lịch sử - {{fullname}}",
+
+    "loading": {
+      "timeline": "Đang tải timeline...",
+      "detail": "Đang tải chi tiết..."
+    },
+
+    "error": {
+      "load": "Không thể tải dữ liệu."
+    },
+
+    "empty": {
+      "history": "Không có lịch sử phân tích.",
+      "detail": "Không có dữ liệu chi tiết."
+    },
+
+    "auth": {
+      "not_logged_in": "Bạn cần đăng nhập để xem lịch sử."
+    },
+
+    "sidebar": {
+      "search_placeholder": "Tìm kiếm lịch sử..."
+    },
+
+    "timeline": {
+      "title": "Dòng thời gian phân tích"
+    },
+
+    "detail": {
+      "title": "Chi tiết phân tích"
+    },
+
+    "search_placeholder": "Tìm kiếm sự kiện...",
+    "filter_label": "Lọc",
+    "date_filters": {
+      "1_day": "1 ngày",
+      "3_days": "3 ngày",
+      "7_days": "7 ngày",
+      "1_month": "1 tháng",
+      "3_months": "3 tháng",
+      "6_months": "6 tháng",
+      "1_year": "1 năm"
+    },
+    "no_logo_fallback": "Logo"
   },
 
   "profile": {

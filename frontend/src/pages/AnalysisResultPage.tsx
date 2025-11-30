@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import styles from "./AnalysisResultPage.module.css";
 import AnalysisSidebar from "../components/analysis/AnalysisSidebar";
 import MainHeader from "../components/analysis/MainHeader";
@@ -222,7 +222,7 @@ const AnalysisResultPage = () => {
       for (let i = 0; i < pages.length; i++) {
         const pageElement = pages[i] as HTMLElement;
         const canvas = await html2canvas(pageElement, {
-          scale: 2,
+          scale: 2, // Removed as it is not a valid property
           useCORS: true,
           logging: false,
           allowTaint: true,

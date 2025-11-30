@@ -3,45 +3,52 @@ import styles from "./HistorySidebar.module.css";
 import { Search, Filter } from "lucide-react";
 import LogoPlaceholder from "../../assets/images/general/logo_placeholder.png";
 import type { HistoryEvent } from "./Timeline";
+import { useTranslation } from "react-i18next";
 
-// Define props interface
+// Props
 interface HistorySidebarProps {
   events: HistoryEvent[];
   onSearchFilter: (filteredEvents: HistoryEvent[]) => void;
 }
 
-const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("7 ngày");
+const HistorySidebar: React.FC<HistorySidebarProps> = ({
+  events,
+  onSearchFilter,
+}) => {
+  const { t } = useTranslation();
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("7d");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // Filter options (dùng key → dịch bằng i18n)
   const filters = [
-    "1 ngày",
-    "3 ngày",
-    "7 ngày",
-    "1 tháng",
-    "3 tháng",
-    "6 tháng",
-    "1 năm",
+    "1_day",
+    "3_days",
+    "7_days",
+    "1_month",
+    "3_months",
+    "6_months",
+    "1_year",
   ];
 
-  // Filter events based on search query and date filter
+  // Map số ngày tương ứng
+  const daysToSubtract: Record<string, number> = {
+    "1_day": 1,
+    "3_days": 3,
+    "7_days": 7,
+    "1_month": 30,
+    "3_months": 90,
+    "6_months": 180,
+    "1_year": 365,
+  };
+
+  // Filtering logic
   const filterEvents = (query: string, dateFilter: string) => {
     let filtered = events;
 
-    // Filter by date range
+    // Date filter
     const now = new Date();
-    const daysToSubtract: { [key: string]: number } = {
-      "1 ngày": 1,
-      "3 ngày": 3,
-      "7 ngày": 7,
-      "1 tháng": 30,
-      "3 tháng": 90,
-      "6 tháng": 180,
-      "1 năm": 365,
-    };
-
     const days = daysToSubtract[dateFilter] || 7;
     const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
@@ -50,18 +57,19 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
       return eventDate >= startDate;
     });
 
-    // Filter by search query
+    // Search filter
     if (query.trim()) {
-      filtered = filtered.filter((event) =>
-        event.title.toLowerCase().includes(query.toLowerCase()) ||
-        event.status.toLowerCase().includes(query.toLowerCase())
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(query.toLowerCase()) ||
+          event.status.toLowerCase().includes(query.toLowerCase())
       );
     }
 
     return filtered;
   };
 
-  // Handle search input change
+  // Handle search
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
@@ -69,7 +77,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
     onSearchFilter(filtered);
   };
 
-  // Handle date filter change
+  // Handle filter change
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
     const filtered = filterEvents(searchQuery, filter);
@@ -80,21 +88,21 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
   return (
     <div className={styles.sidebarContainer}>
       <div className={styles.topControlsWrapper}>
-        {/* 1. Thanh tìm kiếm */}
+        {/* Search bar */}
         <div className={styles.searchBar}>
           <input
             type="text"
-            placeholder="Tìm kiếm sự kiện..."
+            placeholder={t("history.search_placeholder")}
             value={searchQuery}
             onChange={handleSearchChange}
           />
           <Search size={20} className={styles.searchIcon} />
         </div>
 
-        {/* 2. Bộ lọc theo ngày */}
+        {/* Filters */}
         <div className={styles.filterSection}>
           <div className={styles.filterHeader}>
-            <span>Lọc</span>
+            <span>{t("history.filter_label")}</span>
             <Filter
               size={15}
               className={styles.filterIcon}
@@ -104,15 +112,15 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
 
           {isFilterOpen && (
             <div className={styles.filterOptions}>
-              {filters.map((filter) => (
+              {filters.map((filterKey) => (
                 <button
-                  key={filter}
+                  key={filterKey}
                   className={`${styles.filterButton} ${
-                    activeFilter === filter ? styles.activeFilter : ""
+                    activeFilter === filterKey ? styles.activeFilter : ""
                   }`}
-                  onClick={() => handleFilterChange(filter)}
+                  onClick={() => handleFilterChange(filterKey)}
                 >
-                  {filter}
+                  {t(`history.date_filters.${filterKey}`)}
                 </button>
               ))}
             </div>
@@ -120,17 +128,13 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
         </div>
       </div>
 
-      {/* KHỐI MỚI: Logo Placeholder */}
+      {/* Logo */}
       <div className={styles.logoWrapper}>
-        {/* THAY THẾ BẰNG ẢNH THẬT CỦA BẠN */}
         <img
-          // Bạn có thể đặt ảnh trong folder /public
-          // và gọi nó như '/logo-skinaid.png'
-          src={LogoPlaceholder} // <-- THAY BẰNG LINK ẢNH CỦA BẠN
+          src={LogoPlaceholder}
           alt="SkinAid Logo"
           className={styles.realLogo}
           onError={(e) => {
-            // Dự phòng nếu ảnh của bạn bị lỗi
             (e.target as HTMLImageElement).src =
               "https://placehold.co/150x150/f0f0f0/b0bec5?text=Logo";
           }}

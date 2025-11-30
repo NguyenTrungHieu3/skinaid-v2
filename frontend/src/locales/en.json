@@ -8,7 +8,8 @@
     "register_page": "Register",
     "forgot_password_page": "Forgot Password",
     "reset_password_page": "Reset Password",
-    "analysis_result": "Analyzed Result - SkinAid"
+    "analysis_result": "Analyzed Result - SkinAid",
+    "history": "History - {{fullname}}"
   },
   "auth_page": {
     "left_title": "Welcome to SkinAid",
@@ -174,7 +175,7 @@
       "file_too_large": "File is too large. Maximum file size is {{size}}MB per image.",
       "invalid_type": "Invalid file type. Please upload JPEG, PNG, JPG",
       "dimensions": "Image dimensions must be between {{minW}}x{{minH}}px and {{maxW}}x{{maxH}}px.",
-      "corrupted": "Could not read image file. It might be corrupted.",
+      "corrupted": "Could not read image file (It might be corrupted).",
       "resize_needed": "Image adjustment needed for better results."
     }
   },
@@ -296,9 +297,57 @@
     "confidence": "Confidence"
   },
 
+  "history": {
+    "title": "History - {{fullname}}",
+
+    "loading": {
+      "timeline": "Loading timeline...",
+      "detail": "Loading details..."
+    },
+
+    "error": {
+      "load": "Unable to load data."
+    },
+
+    "empty": {
+      "history": "No analysis history available.",
+      "detail": "No detail available."
+    },
+
+    "auth": {
+      "not_logged_in": "You must log in to view history."
+    },
+
+    "sidebar": {
+      "search_placeholder": "Search history..."
+    },
+
+    "timeline": {
+      "title": "Analysis Timeline"
+    },
+
+    "detail": {
+      "title": "Analysis Details"
+    },
+    
+    "search_placeholder": "Search events...",
+    "filter_label": "Filter",
+    "date_filters": {
+      "1_day": "1 day",
+      "3_days": "3 days",
+      "7_days": "7 days",
+      "1_month": "1 month",
+      "3_months": "3 months",
+      "6_months": "6 months",
+      "1_year": "1 year"
+    },
+    "no_logo_fallback": "Logo"
+  },
+
   "profile": {
     "banner_date": "Member since"
   },
+
   "settings": {
     "title": "Settings",
     "notifications": "Notifications",
