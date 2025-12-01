@@ -92,6 +92,49 @@
     "why_skinaid_item4_desc": "Save wound history for easy progress monitoring.",
     "medical_disclaimer": "SkinAid is a first aid support tool and does not replace diagnosis and treatment by a specialist. In case of emergency, please visit a medical facility immediately."
   },
+  "map": {
+    "title": "Nearby Medical Facility",
+    "subtitle": "Find hospitals, clinics near you",
+    "list_view": "List",
+    "map_view": "Map",
+    "search_placeholder": "Search hospitals, clinics, pharmacies...",
+    "filter": "Filters",
+    "filter_all": "All",
+    "filter_hospital": "Hospitals",
+    "filter_clinic": "Clinics",
+    "filter_pharmacy": "Pharmacies",
+    "radius_label": "Search radius",
+    "min": "MIN",
+    "current": "CURRENT",
+    "max": "MAX",
+    "results": "Results",
+    "facilities": "facilities",
+    "loading": "Loading...",
+    "no_results": "No matching medical facilities found",
+    "call": "Call",
+    "directions": "Directions",
+    "website": "Website",
+    "share": "Share",
+    "your_location": "Your location",
+    "start_point": "Choose starting point",
+    "end_point": "Choose destination",
+    "mode_drive": "Drive",
+    "mode_bike": "Motorbike/Bike",
+    "mode_walk": "Walk",
+    "fastest_route": "Fastest route available",
+    "route_details": "Route details",
+    "start_at": "Start at:",
+    "arrive_at": "Arrive at:",
+    "tooltip_directions": "Directions",
+    "tooltip_call": "Call",
+    "tooltip_website": "Website",
+    "tooltip_share": "Share",
+    "alert_route_error": "Cannot find route",
+    "alert_location_required": "Please allow location access to use directions",
+    "alert_copied": "Information copied to clipboard",
+    "share_text": "Medical facility: {{name}}\\n{{address}}",
+    "back_to_list": "Back to list"
+  },
   "upload_page": {
     "title": "Upload Skin Wound Image",
     "desc": "Drag and drop your medical images here, or click to browse your device",
@@ -436,7 +479,12 @@
         "supplies": "Supplies Needed",
         "supply_placeholder": "Supply item",
         "source": "Source",
-        "source_placeholder": "e.g., WHO, Red Cross, Mayo Clinic"
+        "source_name": "Source Name",
+        "source_url": "Source URL",
+        "source_name_placeholder": "e.g., WHO, Ministry of Health",
+        "source_url_placeholder": "e.g., https://www.who.int/...",
+        "estimated_healing_time": "Estimated Healing Time",
+        "healing_time_placeholder": "e.g., 7-10 days"
       },
       "buttons": {
         "add_step": "Add Step",
@@ -476,5 +524,18 @@
       },
       "close": "Close"
     }
+  },
+  "severity_alert": {
+    "title": "Wound Severity Warning",
+    "moderate_message": "Your wound has been assessed as MODERATE severity. We recommend visiting the nearest medical facility for proper examination and treatment.",
+    "severe_message": "Your wound has been assessed as SEVERE. Please visit the nearest medical facility IMMEDIATELY for professional medical care.",
+    "find_facility": "Find nearby medical facility"
+  },
+  "map_modal": {
+    "title": "Medical Facilities Near You",
+    "subtitle": "Find the nearest hospital or clinic for wound treatment",
+    "nearby_facilities": "Nearby Facilities",
+    "loading_location": "Getting your location...",
+    "location_error": "Unable to determine your location. Please allow location access or try again."
   }
 }

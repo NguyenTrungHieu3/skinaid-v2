@@ -1,6 +1,6 @@
-import React from "react";
 import { ArrowLeft, Car, Footprints, Bike } from "lucide-react";
 import { FaMapMarkerAlt } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 import "./DirectionsPanel.css";
 
 interface DirectionsPanelProps {
@@ -24,6 +24,8 @@ const DirectionsPanel = ({
     onBack,
     onModeChange,
 }: DirectionsPanelProps) => {
+    const { t } = useTranslation();
+
     return (
         <div className="directions-panel">
             <div className="directions-header">
@@ -41,7 +43,7 @@ const DirectionsPanel = ({
                                 value={startAddress}
                                 readOnly
                                 className="route-input"
-                                placeholder="Chọn điểm đi"
+                                placeholder={t('map.start_point')}
                             />
                         </div>
                         <div className="connector-line">
@@ -60,7 +62,7 @@ const DirectionsPanel = ({
                                 value={endAddress}
                                 readOnly
                                 className="route-input"
-                                placeholder="Chọn điểm đến"
+                                placeholder={t('map.end_point')}
                             />
                         </div>
                     </div>
@@ -73,21 +75,21 @@ const DirectionsPanel = ({
                     onClick={() => onModeChange("drive")}
                 >
                     <Car className="h-6 w-6" />
-                    <span>Lái xe</span>
+                    <span>{t('map.mode_drive')}</span>
                 </button>
                 <button
                     className={`mode-btn ${mode === "bike" ? "active" : ""}`}
                     onClick={() => onModeChange("bike")}
                 >
                     <Bike className="h-6 w-6" />
-                    <span>Xe máy/Đạp</span>
+                    <span>{t('map.mode_bike')}</span>
                 </button>
                 <button
                     className={`mode-btn ${mode === "walk" ? "active" : ""}`}
                     onClick={() => onModeChange("walk")}
                 >
                     <Footprints className="h-6 w-6" />
-                    <span>Đi bộ</span>
+                    <span>{t('map.mode_walk')}</span>
                 </button>
             </div>
 
@@ -96,11 +98,11 @@ const DirectionsPanel = ({
                     <span className="duration">{duration}</span>
                     <span className="distance">({distance})</span>
                 </div>
-                <p className="route-via">Tuyến đường nhanh nhất hiện tại</p>
+                <p className="route-via">{t('map.fastest_route')}</p>
             </div>
 
             <div className="route-steps">
-                <h3>Chi tiết đường đi</h3>
+                <h3>{t('map.route_details')}</h3>
                 <div className="steps-list">
                     {/* Starting location */}
                     <div className="step-item">
@@ -108,7 +110,7 @@ const DirectionsPanel = ({
                             <div className="step-circle-icon" />
                         </div>
                         <div className="step-content">
-                            <p className="step-instruction">Bắt đầu tại: {startAddress}</p>
+                            <p className="step-instruction">{t('map.start_at')} {startAddress}</p>
                         </div>
                     </div>
 
@@ -133,7 +135,7 @@ const DirectionsPanel = ({
                             <FaMapMarkerAlt className="destination-marker" />
                         </div>
                         <div className="step-content">
-                            <p className="step-instruction">Đến nơi: {endAddress}</p>
+                            <p className="step-instruction">{t('map.arrive_at')} {endAddress}</p>
                         </div>
                     </div>
                 </div>

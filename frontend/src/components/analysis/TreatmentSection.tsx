@@ -18,7 +18,10 @@ interface FirstAidSnapshot {
   donts: string[];
   supplies_needed?: string[];
   estimated_healing_time?: string;
-  source?: string;
+  source?: {
+    name: string;
+    url?: string;
+  } | string; // Support both old string and new object format
 }
 interface TreatmentSectionProps {
   snapshot: FirstAidSnapshot; // Nhận 'snapshot' làm prop
@@ -156,7 +159,27 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
           fontSize: '0.875rem',
           color: '#6c757d'
         }}>
-          <strong>Nguồn:</strong> {snapshot.source}
+          <strong>Nguồn:</strong>{" "}
+          {typeof snapshot.source === 'string' ? (
+            snapshot.source
+          ) : (
+            <>
+              <span style={{ fontWeight: 500 }}>{snapshot.source.name}</span>
+              {snapshot.source.url && (
+                <>
+                  {' - '}
+                  <a
+                    href={snapshot.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#2563eb', textDecoration: 'underline' }}
+                  >
+                    {snapshot.source.url}
+                  </a>
+                </>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

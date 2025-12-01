@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical, Edit2, RotateCw, Trash2 } from 'lucide-react';
+import { useAuth } from '../../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import styles from './UserTable.module.css';
 
 interface User {
   user_id: string;
   email: string;
+  user_name: string;
   display_name: string;
   roles: string[];
   is_active: boolean;
@@ -39,6 +42,8 @@ const UserTable: React.FC<UserTableProps> = ({
   isTogglingStatus
 }) => {
   const { t } = useTranslation();
+  const { user: currentUser } = useAuth();
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   // Function to translate role
   const translateRole = (role: string) => {
@@ -49,12 +54,16 @@ const UserTable: React.FC<UserTableProps> = ({
   // Close action menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (actionMenuOpen && !(event.target as Element).closest(`.${styles.actionsMenu}`)) {
+      const target = event.target as Element;
+      if (
+        actionMenuOpen &&
+        !target.closest(`.${styles.actionsMenu}`) &&
+        !target.closest('.user-actions-dropdown-portal')
+      ) {
         setActionMenuOpen(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
     if (actionMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
@@ -150,47 +159,68 @@ const UserTable: React.FC<UserTableProps> = ({
                 <td>{formatDate(user.created_at)}</td>
                 <td>
                   <div className={styles.actionsMenu}>
-                    <button
-                      className={styles.actionsTrigger}
-                      onClick={() => setActionMenuOpen(actionMenuOpen === user.user_id ? null : user.user_id)}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
+                    {currentUser?.user_id !== user.user_id && (
+                      <>
+                        <button
+                          className={styles.actionsTrigger}
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setMenuPosition({
+                              top: rect.top,
+                              right: window.innerWidth - rect.left + 8
+                            });
+                            setActionMenuOpen(actionMenuOpen === user.user_id ? null : user.user_id);
+                          }}
+                        >
+                          <MoreVertical size={18} />
+                        </button>
 
-                    {actionMenuOpen === user.user_id && (
-                      <div className={styles.actionsDropdown}>
-                        <button
-                          className={styles.actionItem}
-                          onClick={() => onEdit(user)}
-                          disabled={isSubmitting || !!isDeletingUser || !!isTogglingStatus}
-                        >
-                          <Edit2 size={16} /> {t('admin.user_management.table.actions.edit')}
-                        </button>
-                        <button
-                          className={styles.actionItem}
-                          onClick={() => {
-                            onToggleStatus(user.user_id, user.is_active);
-                            setActionMenuOpen(null);
-                          }}
-                          disabled={isTogglingStatus === user.user_id || !!isDeletingUser}
-                        >
-                          <RotateCw size={16} />
-                          {isTogglingStatus === user.user_id
-                            ? t('admin.user_management.table.actions.processing')
-                            : user.is_active ? t('admin.user_management.table.actions.deactivate') : t('admin.user_management.table.actions.activate')}
-                        </button>
-                        <button
-                          className={`${styles.actionItem} ${styles.actionItemDanger}`}
-                          onClick={() => {
-                            onDelete(user.user_id, user.display_name || user.email);
-                            setActionMenuOpen(null);
-                          }}
-                          disabled={isDeletingUser === user.user_id || !!isTogglingStatus}
-                        >
-                          <Trash2 size={16} />
-                          {isDeletingUser === user.user_id ? t('admin.user_management.table.actions.deleting') : t('admin.user_management.table.actions.delete')}
-                        </button>
-                      </div>
+                        {actionMenuOpen === user.user_id && createPortal(
+                          <div
+                            className={`${styles.actionsDropdown} user-actions-dropdown-portal`}
+                            style={{
+                              position: 'fixed',
+                              top: menuPosition?.top,
+                              right: menuPosition?.right,
+                              left: 'auto',
+                              margin: 0
+                            }}
+                          >
+                            <button
+                              className={styles.actionItem}
+                              onClick={() => onEdit(user)}
+                              disabled={isSubmitting || !!isDeletingUser || !!isTogglingStatus}
+                            >
+                              <Edit2 size={16} /> {t('admin.user_management.table.actions.edit')}
+                            </button>
+                            <button
+                              className={styles.actionItem}
+                              onClick={() => {
+                                onToggleStatus(user.user_id, user.is_active);
+                                setActionMenuOpen(null);
+                              }}
+                              disabled={isTogglingStatus === user.user_id || !!isDeletingUser}
+                            >
+                              <RotateCw size={16} />
+                              {isTogglingStatus === user.user_id
+                                ? t('admin.user_management.table.actions.processing')
+                                : user.is_active ? t('admin.user_management.table.actions.deactivate') : t('admin.user_management.table.actions.activate')}
+                            </button>
+                            <button
+                              className={`${styles.actionItem} ${styles.actionItemDanger}`}
+                              onClick={() => {
+                                onDelete(user.user_id, user.display_name || user.email);
+                                setActionMenuOpen(null);
+                              }}
+                              disabled={isDeletingUser === user.user_id || !!isTogglingStatus}
+                            >
+                              <Trash2 size={16} />
+                              {isDeletingUser === user.user_id ? t('admin.user_management.table.actions.deleting') : t('admin.user_management.table.actions.delete')}
+                            </button>
+                          </div>,
+                          document.body
+                        )}
+                      </>
                     )}
                   </div>
                 </td>

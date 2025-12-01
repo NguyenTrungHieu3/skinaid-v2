@@ -1,64 +1,103 @@
 // src/components/profile/Overview.tsx
-import { useRef, type ChangeEvent } from "react"; // <-- THÊM useRef, ChangeEvent
-import { useNavigate } from "react-router-dom"; // <-- THÊM useNavigate
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import styles from "../../pages/ProfilePage.module.css";
 import { FaHistory, FaUpload, FaFileExport } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
-// TODO: Sau này bạn sẽ định nghĩa kiểu dữ liệu này ở file riêng
-// (ví dụ: src/types/analysis.ts)
+import { getHistory } from "../../services/historyService";
+import { useAuth } from "../../contexts/AuthContext";
+
+// Type for analysis from API
 type Analysis = {
   id: string;
   type: string;
   location: string;
-  severity: "mild" | "medium" | "severe"; // Chỉ chấp nhận 3 giá trị này
+  severity: "mild" | "moderate" | "severe";
   timestamp: string;
 };
 
-// TODO: Dữ liệu này sẽ được lấy từ API hoặc truyền qua props
-const mockAnalyses: Analysis[] = [
-  {
-    id: "1",
-    type: "Abrasion (Vết trầy)",
-    location: "Left Knee",
-    severity: "severe",
-    timestamp: "Today, 2:30 PM",
-  },
-  {
-    id: "2",
-    type: "Burn (Vết bỏng)",
-    location: "Right Hand",
-    severity: "medium",
-    timestamp: "Yesterday, 10:15 AM",
-  },
-  {
-    id: "3",
-    type: "Cut (Vết cắt)",
-    location: "Forearm",
-    severity: "mild",
-    timestamp: "Nov 4, 2025",
-  },
-];
+// Map severity for display
+const mapSeverity = (severity: string): "mild" | "moderate" | "severe" => {
+  const s = severity.toLowerCase();
+  if (s === "mild") return "mild";
+  if (s === "moderate" || s === "medium") return "moderate";
+  if (s === "severe") return "severe";
+  return "moderate";
+};
 
-// --- HÀM HỖ TRỢ CHỌN MÀU SẮC ---
-// Hàm này nhận vào severity và trả về class CSS tương ứng
-const getSeverityClass = (severity: "mild" | "medium" | "severe") => {
+// Get severity class for styling
+const getSeverityClass = (severity: "mild" | "moderate" | "severe") => {
   switch (severity) {
     case "mild":
       return styles.mild;
-    case "medium":
+    case "moderate":
       return styles.medium;
     case "severe":
       return styles.severe;
     default:
-      return ""; // Mặc định
+      return "";
+  }
+};
+
+// Format date for display
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    return `Today, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  } else if (diffDays === 1) {
+    return `Yesterday, ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  } else {
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   }
 };
 
 const Overview = () => {
-  const navigate = useNavigate(); // <-- Khởi tạo hook navigate
-  const fileInputRef = useRef<HTMLInputElement>(null); // <-- Ref cho input ẩn
-
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch recent analyses from API
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchAnalyses = async () => {
+      try {
+        setLoading(true);
+        const historyData = await getHistory(3, 0); // Get 3 most recent
+        
+        const events = historyData.events || [];
+        const transformed: Analysis[] = events.map((event) => ({
+          id: event.analysis_id,
+          type: event.wound_types.length > 0 
+            ? event.wound_types[0].charAt(0).toUpperCase() + event.wound_types[0].slice(1)
+            : "Unknown",
+          location: "-", // API doesn't provide location
+          severity: mapSeverity(event.severity_summary || "moderate"),
+          timestamp: formatDate(event.analyzed_at),
+        }));
+        
+        setAnalyses(transformed);
+      } catch (err) {
+        setError(t("overview.no_data"));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyses();
+  }, [isAuthenticated, t]);
 
   /**
    * Xử lý khi người dùng đã chọn file.
@@ -68,9 +107,6 @@ const Overview = () => {
     const file = e.target.files?.[0];
 
     if (file) {
-      // Chuyển hướng đến trang /upload
-      // và truyền file qua 'state' của navigation
-      console.log("File selected, navigating to /upload with file state...");
       navigate("/upload", { state: { fileToUpload: file } });
     }
   };
@@ -95,41 +131,40 @@ const Overview = () => {
             <FaHistory className={styles.sectionHeaderIcon} />{" "}
             {t("overview.recent_analyses")}
           </h2>
-          <a href="#">{t("overview.view_all")}</a>
+          <Link to="/history">{t("overview.view_all")}</Link>
         </div>
         {/* --- DANH SÁCH RENDER ĐỘNG --- */}
         <div className={styles.analysesList}>
-          {/* Kiểm tra nếu không có dữ liệu */}
-          {mockAnalyses.length === 0 ? (
+          {loading ? (
+            <p>{t("map.loading")}</p>
+          ) : error ? (
+            <p>{error}</p>
+          ) : analyses.length === 0 ? (
             <p>{t("overview.no_data")}</p>
           ) : (
-            // Dùng .map() để lặp qua mảng dữ liệu
-            mockAnalyses.map((analysis) => (
+            analyses.map((analysis) => (
               <div key={analysis.id} className={styles.analysisItem}>
                 <div className={styles.itemInfo}>
                   <h4>{analysis.type}</h4>
                   <p>{analysis.location}</p>
                 </div>
                 <div className={styles.itemStatus}>
-                  {/* Sử dụng hàm getSeverityClass để lấy class động */}
                   <span
                     className={`${styles.statusTag} ${getSeverityClass(
                       analysis.severity
                     )}`}
                   >
-                    {/* Hiển thị chữ: "mild" -> "Mild" */}
                     {analysis.severity.charAt(0).toUpperCase() +
                       analysis.severity.slice(1)}
                   </span>
                   <span className={styles.time}>{analysis.timestamp}</span>
                 </div>
-                {/* TODO: Cập nhật link này với ID của analysis */}
-                <a
-                  href={`/analysis/${analysis.id}`}
+                <Link
+                  to={`/analysis-result/${analysis.id}`}
                   className={styles.viewLink}
                 >
                   {t("overview.view")}
-                </a>
+                </Link>
               </div>
             ))
           )}

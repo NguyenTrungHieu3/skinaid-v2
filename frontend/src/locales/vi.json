@@ -94,6 +94,49 @@
     "map_title": "Tìm kiếm Bệnh viện & Nhà thuốc",
     "map_desc": "Nhanh chóng tìm thấy các cơ sở y tế gần nhất dựa trên vị trí hiện tại của bạn."
   },
+  "map": {
+    "title": "Cơ sở Y tế Gần đây",
+    "subtitle": "Tìm kiếm bệnh viện, phòng khám gần bạn",
+    "list_view": "Danh sách",
+    "map_view": "Bản đồ",
+    "search_placeholder": "Tìm kiếm bệnh viện, phòng khám, nhà thuốc...",
+    "filter": "Bộ lọc",
+    "filter_all": "Tất cả",
+    "filter_hospital": "Bệnh viện",
+    "filter_clinic": "Phòng khám",
+    "filter_pharmacy": "Nhà thuốc",
+    "radius_label": "Bán kính tìm kiếm",
+    "min": "MIN",
+    "current": "HIỆN TẠI",
+    "max": "MAX",
+    "results": "Kết quả",
+    "facilities": "cơ sở",
+    "loading": "Đang tải...",
+    "no_results": "Không tìm thấy cơ sở y tế phù hợp",
+    "call": "Gọi",
+    "directions": "Chỉ đường",
+    "website": "Website",
+    "share": "Chia sẻ",
+    "your_location": "Vị trí của bạn",
+    "start_point": "Chọn điểm đi",
+    "end_point": "Chọn điểm đến",
+    "mode_drive": "Lái xe",
+    "mode_bike": "Xe máy/Đạp",
+    "mode_walk": "Đi bộ",
+    "fastest_route": "Tuyến đường nhanh nhất hiện tại",
+    "route_details": "Chi tiết đường đi",
+    "start_at": "Bắt đầu tại:",
+    "arrive_at": "Đến nơi:",
+    "tooltip_directions": "Chỉ đường",
+    "tooltip_call": "Gọi điện",
+    "tooltip_website": "Website",
+    "tooltip_share": "Chia sẻ",
+    "alert_route_error": "Không thể tìm thấy đường đi",
+    "alert_location_required": "Vui lòng cho phép truy cập vị trí để sử dụng tính năng chỉ đường",
+    "alert_copied": "Đã sao chép thông tin vào clipboard",
+    "share_text": "Cơ sở y tế: {{name}}\\n{{address}}",
+    "back_to_list": "Quay lại danh sách"
+  },
   "upload_page": {
     "title": "Tải lên hình ảnh vết thương ngoài da",
     "desc": "Kéo và thả hình ảnh y tế của bạn vào đây hoặc nhấp để duyệt thiết bị của bạn",
@@ -438,7 +481,12 @@
         "supplies": "Dụng cụ cần thiết",
         "supply_placeholder": "Tên dụng cụ",
         "source": "Nguồn",
-        "source_placeholder": "ví dụ: WHO, Hội Chữ thập đỏ"
+        "source_name": "Tên nguồn",
+        "source_url": "Đường dẫn nguồn",
+        "source_name_placeholder": "ví dụ: WHO, Bộ Y tế Việt Nam",
+        "source_url_placeholder": "ví dụ: https://www.who.int/...",
+        "estimated_healing_time": "Thời gian phục hồi dự kiến",
+        "healing_time_placeholder": "ví dụ: 7-10 ngày"
       },
       "buttons": {
         "add_step": "Thêm bước",
@@ -478,5 +526,18 @@
       },
       "close": "Đóng"
     }
+  },
+  "severity_alert": {
+    "title": "Cảnh báo mức độ vết thương",
+    "moderate_message": "Vết thương của bạn được đánh giá ở mức TRUNG BÌNH. Khuyến nghị bạn nên đến cơ sở y tế gần nhất để được kiểm tra và xử lý kịp thời.",
+    "severe_message": "Vết thương của bạn được đánh giá ở mức NGHIÊM TRỌNG. Vui lòng đến cơ sở y tế gần nhất NGAY LẬP TỨC để được chăm sóc y tế chuyên nghiệp.",
+    "find_facility": "Tìm cơ sở y tế gần đây"
+  },
+  "map_modal": {
+    "title": "Cơ sở y tế gần bạn",
+    "subtitle": "Tìm bệnh viện, phòng khám gần nhất để xử lý vết thương",
+    "nearby_facilities": "Cơ sở y tế gần đây",
+    "loading_location": "Đang xác định vị trí của bạn...",
+    "location_error": "Không thể xác định vị trí. Vui lòng cho phép truy cập vị trí hoặc thử lại."
   }
 }

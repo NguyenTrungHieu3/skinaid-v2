@@ -95,6 +95,11 @@
     display: none;
 }
 
+/* Close button - hidden by default on desktop, only shown in mobile drawer */
+.closeButton {
+    display: none;
+}
+
 /* --- STYLES CHUNG (Dùng cho cả 2 màn hình) --- */
 /* (Phần này giữ nguyên, không cần sửa) */
 
@@ -198,6 +203,21 @@
     border-radius: 3px;
     /* Bo góc cờ một chút */
     object-fit: cover;
+}
+
+/* SVG flag styles (react-country-flag with svg prop) */
+.flagButton span {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.flagButton svg {
+    width: 1.6rem !important;
+    height: 1.2rem !important;
+    border-radius: 3px;
+    display: block;
 }
 
 .activeFlag {
@@ -366,6 +386,33 @@
         z-index: 1001;
     }
 
+    /* Close button for drawer menu */
+    .closeButton {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        font-size: 2.5rem;
+        color: #555;
+        cursor: pointer;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        z-index: 1002;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        transition: background-color 0.2s, color 0.2s;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .closeButton:hover {
+        background-color: rgba(0, 150, 136, 0.1);
+        color: var(--primary-color);
+    }
+
     /* (Quan trọng) Reset lại các style desktop bên trong mobile */
     .navContainer {
         position: fixed;
@@ -513,6 +560,26 @@
         /* Xóa padding ngang */
     }
 
+    /* Larger flag buttons for mobile touch targets */
+    .flagButton {
+        padding: 0.5rem;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .flagButton svg {
+        width: 2rem !important;
+        height: 1.5rem !important;
+    }
+
+    .divider {
+        font-size: 1rem;
+        padding: 0 0.25rem;
+    }
+
     .authButtons {
         flex-direction: column;
         gap: 1rem;
@@ -608,6 +675,33 @@
 
 .mapHeader .mobileMenuOpen .menuContent {
     transform: translateX(0);
+}
+
+/* Close button styles for map page drawer */
+.mapHeader .closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    font-size: 2.5rem;
+    color: #555;
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    z-index: 1002;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+    line-height: 1;
+    padding: 0;
+}
+
+.mapHeader .closeButton:hover {
+    background-color: rgba(0, 150, 136, 0.1);
+    color: var(--primary-color);
 }
 
 

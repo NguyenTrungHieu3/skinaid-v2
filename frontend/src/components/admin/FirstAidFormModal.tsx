@@ -13,7 +13,10 @@ interface FormData {
     donts: string[];
     supplies_needed: string[];
     estimated_healing_time: string;
-    source: string;
+    source: {
+        name: string;
+        url?: string;
+    };
     is_active: boolean;
 }
 
@@ -265,13 +268,44 @@ export default function FirstAidFormModal({
                         </div>
 
                         {/* Source */}
+                        <div className={styles.formRow} style={{ display: 'flex', gap: '1rem' }}>
+                            <div className={styles.formGroup} style={{ flex: 1 }}>
+                                <label>{t('admin.first_aid_form.labels.source_name')} *</label>
+                                <input
+                                    type="text"
+                                    value={formData.source?.name || ''}
+                                    onChange={(e) => onFormChange({
+                                        ...formData,
+                                        source: { ...formData.source, name: e.target.value }
+                                    })}
+                                    placeholder={t('admin.first_aid_form.labels.source_name_placeholder')}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            <div className={styles.formGroup} style={{ flex: 3 }}>
+                                <label>{t('admin.first_aid_form.labels.source_url')}</label>
+                                <input
+                                    type="url"
+                                    value={formData.source?.url || ''}
+                                    onChange={(e) => onFormChange({
+                                        ...formData,
+                                        source: { ...formData.source, url: e.target.value }
+                                    })}
+                                    placeholder={t('admin.first_aid_form.labels.source_url_placeholder')}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Estimated Healing Time */}
                         <div className={styles.formGroup}>
-                            <label>{t('admin.first_aid_form.labels.source')}</label>
+                            <label>{t('admin.first_aid_form.labels.estimated_healing_time')}</label>
                             <input
                                 type="text"
-                                value={formData.source}
-                                onChange={(e) => onFormChange({ ...formData, source: e.target.value })}
-                                placeholder={t('admin.first_aid_form.labels.source_placeholder')}
+                                value={formData.estimated_healing_time || ''}
+                                onChange={(e) => onFormChange({ ...formData, estimated_healing_time: e.target.value })}
+                                placeholder={t('admin.first_aid_form.labels.healing_time_placeholder')}
                                 disabled={isSubmitting}
                             />
                         </div>

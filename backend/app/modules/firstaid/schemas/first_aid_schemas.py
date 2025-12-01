@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
@@ -18,8 +18,19 @@ class CreateFirstAidGuideRequest(BaseModel):
     donts: Optional[List[str]] = Field(default=None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(default=None, description="Vật dụng cần thiết")
     
-    source: str = Field(..., min_length=1, max_length=500, description="Nguồn tham khảo (VD: WHO, Bộ Y tế Việt Nam, URL)")
+    source: Dict[str, Any] = Field(..., description="Nguồn tham khảo (JSON: {name: str, url?: str})")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
+    
+    @field_validator('source')
+    @classmethod
+    def validate_source(cls, v):
+        if not isinstance(v, dict):
+            raise ValueError('Source must be a JSON object')
+        if 'name' not in v or not v['name']:
+            raise ValueError('Source must have a non-empty "name" field')
+        if 'url' in v and v['url'] and not isinstance(v['url'], str):
+            raise ValueError('Source URL must be a string')
+        return v
     
     @field_validator('wound_type')
     def validate_wound_type(cls, v):
@@ -70,7 +81,7 @@ class UpdateFirstAidGuideRequest(BaseModel):
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
     
-    source: Optional[str] = Field(None, min_length=1, max_length=500, description="Nguồn tham khảo")
+    source: Optional[Dict[str, Any]] = Field(None, description="Nguồn tham khảo (JSON: {name: str, url?: str})")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     is_active: Optional[bool] = Field(None, description="Trạng thái hoạt động")
     sub_type: Optional[str] = Field(None, description="Loại phụ")
@@ -88,7 +99,7 @@ class FirstAidGuideResponse(BaseModel):
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
 
-    source: Optional[str] = Field(None, description="Nguồn tham khảo hoặc tác giả")
+    source: Optional[Dict[str, Any]] = Field(None, description="Nguồn tham khảo (JSON object)")
     estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
     version: int = Field(..., description="Phiên bản")

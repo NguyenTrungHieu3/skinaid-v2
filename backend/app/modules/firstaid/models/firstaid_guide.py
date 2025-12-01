@@ -29,7 +29,7 @@ class FirstAidGuide(SQLModel, table=True):
     supplies_needed: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
 
     estimated_healing_time: Optional[str] = None
-    source: Optional[str] = None
+    source: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     is_active: bool = Field(default=True, index=True)
     is_deleted: bool = Field(default=False, index=True)
     version: int = Field(default=1)
@@ -60,7 +60,7 @@ class FirstAidGuide(SQLModel, table=True):
         donts: Optional[Dict[str, Any]] = None,
         supplies_needed: Optional[Dict[str, Any]] = None,
         estimated_healing_time: Optional[str] = None,
-        source: Optional[str] = None,
+        source: Optional[Dict[str, Any]] = None,
         is_active: bool = True,
         created_by: Optional[uuid.UUID] = None
     ) -> "FirstAidGuide":

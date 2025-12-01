@@ -120,6 +120,7 @@ class UserManagementService:
             user_info = UserBasicInfo(
                 user_id=user.user_id,
                 email=user.email,
+                user_name=user.user_name,
                 display_name=display_name,
                 is_active=user.is_active,
                 is_verified=user.is_verified,
@@ -180,6 +181,7 @@ class UserManagementService:
         user_detail = UserDetailInfo(
             user_id=user.user_id,
             email=user.email,
+            user_name=user.user_name,
             display_name=display_name,
             is_active=user.is_active,
             is_verified=user.is_verified,
@@ -211,27 +213,59 @@ class UserManagementService:
             await self.db.rollback() 
             
             # Kiểm tra email đã tồn tại chưa
-            existing_user = await self._get_user_by_email(user_data.email)
-            if existing_user:
+            existing_user_by_email = await self._get_user_by_email(user_data.email)
+            if existing_user_by_email and not existing_user_by_email.is_deleted:
                 raise ValueError("Email already registered")
             
-            # Xác thực tên hiển thị
-            if not user_data.display_name or len(user_data.display_name.strip()) < 2:
-                raise ValueError("Display name must be at least 2 characters")
+            # Kiểm tra username đã tồn tại
+            existing_user_by_username = await self._get_user_by_username(user_data.user_name)
+            if existing_user_by_username and not existing_user_by_username.is_deleted:
+                raise ValueError(f"Username '{user_data.user_name}' already exists")
             
-            if len(user_data.display_name) > 100:
-                raise ValueError("Display name must not exceed 100 characters")
+            # Handle deleted users - rename them to free up the email/username
+            if existing_user_by_email and existing_user_by_email.is_deleted:
+                logger.info(f"Found deleted user with email {user_data.email}. Archiving old user data.")
+                
+                # Delete old verification tokens BEFORE renaming (using the current email)
+                delete_tokens_query = text("DELETE FROM verification_tokens WHERE email = :email")
+                await self.db.execute(delete_tokens_query, {"email": existing_user_by_email.email})
+                
+                # Now rename the user
+                timestamp = int(datetime.now().timestamp())
+                existing_user_by_email.email = f"{existing_user_by_email.email}.deleted.{timestamp}"
+                existing_user_by_email.user_name = f"{existing_user_by_email.user_name}.deleted.{timestamp}"
+                self.db.add(existing_user_by_email)
+                await self.db.flush()
+            
+            # Check if username conflict is from a different deleted user
+            if existing_user_by_username and existing_user_by_username.is_deleted:
+                # Only rename if it's not the same user we already renamed above
+                if not existing_user_by_email or existing_user_by_username.user_id != existing_user_by_email.user_id:
+                    logger.info(f"Found deleted user with username {user_data.user_name}. Archiving old user data.")
+                    
+                    # Delete verification tokens BEFORE renaming (using the current email)
+                    delete_tokens_query = text("DELETE FROM verification_tokens WHERE email = :email")
+                    await self.db.execute(delete_tokens_query, {"email": existing_user_by_username.email})
+                    
+                    # Now rename the user
+                    timestamp = int(datetime.now().timestamp())
+                    existing_user_by_username.email = f"{existing_user_by_username.email}.deleted.{timestamp}"
+                    existing_user_by_username.user_name = f"{existing_user_by_username.user_name}.deleted.{timestamp}"
+                    self.db.add(existing_user_by_username)
+                    await self.db.flush()
+            
+            # Xác thực tên hiển thị (nếu có) hoặc dùng username làm display name
+            display_name = user_data.display_name or user_data.user_name
+            
+            if len(display_name.strip()) < 2:
+                raise ValueError("Display name/Username must be at least 2 characters")
+            
+            if len(display_name) > 100:
+                raise ValueError("Display name/Username must not exceed 100 characters")
             
             # Xác thực mật khẩu
             if len(user_data.password) < 6:
                 raise ValueError("Password must be at least 6 characters")
-            
-            # Tạo username từ email (phần trước @)
-            user_name = user_data.email.split('@')[0]
-            # Kiểm tra username đã tồn tại, nếu có thì thêm hậu tố ngẫu nhiên
-            existing_username = await self._get_user_by_username(user_name)
-            if existing_username:
-                user_name = f"{user_name}_{uuid.uuid4().hex[:6]}"
             
             # Mã hóa mật khẩu
             hashed_password = hash_password(user_data.password)
@@ -240,7 +274,7 @@ class UserManagementService:
             new_user_id = uuid.uuid4()
             new_user = User(
                 user_id=new_user_id,
-                user_name=user_name,
+                user_name=user_data.user_name,
                 email=user_data.email,
                 hashed_password=hashed_password,
                 is_active=True,  # Admin-created users are active by default
@@ -253,7 +287,7 @@ class UserManagementService:
             # Tạo profile người dùng với display_name
             new_profile = UserProfile(
                 user_id=new_user_id,
-                full_name=user_data.display_name.strip()
+                full_name=display_name.strip()
             )
             self.db.add(new_profile)
             await self.db.flush()
@@ -324,6 +358,14 @@ class UserManagementService:
             return None
         
         try:
+            # Cập nhật username nếu được cung cấp
+            if user_data.user_name is not None and user_data.user_name != user.user_name:
+                # Kiểm tra username mới có tồn tại chưa
+                existing_username = await self._get_user_by_username(user_data.user_name)
+                if existing_username and existing_username.user_id != user_id:
+                    raise ValueError(f"Username '{user_data.user_name}' already exists")
+                user.user_name = user_data.user_name
+
             # Xác thực và cập nhật display_name (full_name trong profile) nếu được cung cấp
             if user_data.display_name is not None:
                 if len(user_data.display_name.strip()) < 2:
@@ -343,16 +385,31 @@ class UserManagementService:
                     self.db.add(new_profile)
             
             # Xác thực và cập nhật email nếu được cung cấp
-            if user_data.email is not None:
+            if user_data.email is not None and user_data.email != user.email:
                 # Kiểm tra email mới đã được người dùng khác sử dụng chưa
                 existing = await self._get_user_by_email(user_data.email)
                 if existing and existing.user_id != user_id:
                     raise ValueError("Email already in use")
+                
+                # Xóa các token xác thực cũ để tránh lỗi khóa ngoại
+                delete_tokens_query = text("DELETE FROM verification_tokens WHERE email = :email")
+                await self.db.execute(delete_tokens_query, {"email": user.email})
+                
                 user.email = user_data.email
             
             # Cập nhật trạng thái hoạt động nếu được cung cấp
             if user_data.is_active is not None:
                 user.is_active = user_data.is_active
+            
+            # Cập nhật mật khẩu nếu được cung cấp
+            if user_data.password is not None and user_data.password.strip():
+                # Validate password
+                if len(user_data.password) < 6:
+                    raise ValueError("Password must be at least 6 characters")
+                # Hash and update password
+                from app.core.Security.password import hash_password
+                user.hashed_password = hash_password(user_data.password)
+                logger.info(f"Password updated for user: {user.email}")
             
             # Cập nhật vai trò nếu được chỉ định
             if user_data.role is not None:
@@ -402,6 +459,11 @@ class UserManagementService:
             user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             user.is_active = False
             user.is_deleted = True
+            
+            # Rename unique fields to allow re-registration
+            timestamp = int(datetime.now().timestamp())
+            user.email = f"{user.email}.deleted.{timestamp}"
+            user.user_name = f"{user.user_name}.deleted.{timestamp}"
             
             await self.db.commit()
             

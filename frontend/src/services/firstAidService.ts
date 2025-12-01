@@ -1,9 +1,49 @@
 import apiClient from './api';
 
-export const searchFirstAidGuides = async (params: any) => {
-  // Backend expects 'wound_type', 'severity', 'limit', 'offset' in params
-  // If 'searchTerm' is passed, we might need to map it to 'wound_type' or handle it differently
-  // For now, assuming params are correctly structured or just passing them through
+// Types for First Aid Guide
+export interface FirstAidGuideSource {
+  name: string;
+  url?: string;
+}
+
+export interface FirstAidGuideSearchParams {
+  wound_type?: string;
+  severity?: string;
+  is_active?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface FirstAidGuideCreateData {
+  wound_type: string;
+  severity: string;
+  sub_type?: string;
+  title: string;
+  description?: string;
+  steps: string[];
+  dos?: string[];
+  donts?: string[];
+  supplies_needed?: string[];
+  estimated_healing_time?: string;
+  source: FirstAidGuideSource;
+  is_active?: boolean;
+}
+
+export interface FirstAidGuideUpdateData {
+  title?: string;
+  description?: string;
+  steps?: string[];
+  dos?: string[];
+  donts?: string[];
+  supplies_needed?: string[];
+  estimated_healing_time?: string;
+  source?: FirstAidGuideSource;
+  is_active?: boolean;
+  sub_type?: string;
+}
+
+export const searchFirstAidGuides = async (params: FirstAidGuideSearchParams) => {
   const response = await apiClient.get('/first-aid/search', { params });
   return response.data;
 };
@@ -18,12 +58,12 @@ export const getFirstAidStatistics = async () => {
   return response.data;
 };
 
-export const createFirstAidGuide = async (data: any) => {
+export const createFirstAidGuide = async (data: FirstAidGuideCreateData) => {
   const response = await apiClient.post('/first-aid/guides', data);
   return response.data;
 };
 
-export const updateFirstAidGuide = async (id: string, data: any) => {
+export const updateFirstAidGuide = async (id: string, data: FirstAidGuideUpdateData) => {
   const response = await apiClient.put(`/first-aid/guides/${id}`, data);
   return response.data;
 };

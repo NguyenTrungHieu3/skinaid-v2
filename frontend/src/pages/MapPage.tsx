@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n";
 import SearchBar from "../components/map/SearchBar";
 import RadiusSlider from "../components/map/RadiusSlider";
 import FilterChips from "../components/map/FilterChips";
@@ -7,11 +9,12 @@ import FacilityCard, { type Facility } from "../components/map/FacilityCard";
 import MapView from "../components/map/MapView";
 import DirectionsPanel from "../components/map/DirectionsPanel";
 import mapService, { type RouteResponse } from "../services/mapService";
-import { FaBars } from "react-icons/fa";
+import { FaArrowLeft, FaBars, FaList, FaMap } from "react-icons/fa";
 import type { MainLayoutContextType } from "../components/layout/MainLayout";
 import "./MapPage.css";
 
 const MapPage = () => {
+    const { t } = useTranslation();
     const { setMenuOpen } = useOutletContext<MainLayoutContextType>();
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("all");
@@ -20,6 +23,9 @@ const MapPage = () => {
     const [facilities, setFacilities] = useState<Facility[]>([]);
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
     const [loading, setLoading] = useState(false);
+
+    // Mobile view toggle state
+    const [mobileView, setMobileView] = useState<"list" | "map">("list");
 
     // Directions state
     const [directionsMode, setDirectionsMode] = useState(false);
@@ -124,13 +130,13 @@ const MapPage = () => {
             setRouteData(route);
         } catch (error) {
             console.error("Error fetching route:", error);
-            alert("Không thể tìm thấy đường đi");
+            alert(t('map.alert_route_error'));
         }
     };
 
     const handleDirections = (facility: Facility) => {
         if (!userLocation) {
-            alert("Vui lòng cho phép truy cập vị trí để sử dụng tính năng chỉ đường");
+            alert(t('map.alert_location_required'));
             return;
         }
         setSelectedFacility(facility);
@@ -163,24 +169,24 @@ const MapPage = () => {
         if (navigator.share) {
             navigator.share({
                 title: facility.name,
-                text: `Cơ sở y tế: ${facility.name}\n${facility.address}`,
+                text: t('map.share_text', { name: facility.name, address: facility.address }),
                 url: window.location.href,
             });
         } else {
             // Fallback
             navigator.clipboard.writeText(`${facility.name}\n${facility.address}`);
-            alert("Đã sao chép thông tin vào clipboard");
+            alert(t('map.alert_copied'));
         }
     };
 
     return (
         <div className="map-page">
-            <div className="map-sidebar">
+            <div className={`map-sidebar ${mobileView === 'list' ? 'mobile-show' : 'mobile-hide'}`}>
                 {directionsMode && selectedFacility && routeData ? (
                     <DirectionsPanel
-                        startAddress="Vị trí của bạn"
+                        startAddress={t('map.your_location')}
                         endAddress={selectedFacility.name}
-                        duration={`${routeData.duration_minutes} phút`}
+                        duration={`${routeData.duration_minutes} ${i18n.language === 'en' ? 'min' : 'phút'}`}
                         distance={`${routeData.distance_km} km`}
                         mode={travelMode}
                         steps={routeData.steps}
@@ -198,9 +204,29 @@ const MapPage = () => {
                                 >
                                     <FaBars />
                                 </button>
-                                <h1 className="map-title">Nearby Medical Facility</h1>
+                                <h1 className="map-title">{t('map.title')}</h1>
                             </div>
-                            <p className="map-subtitle">Tìm kiếm bệnh viện, phòng khám gần bạn</p>
+                            <p className="map-subtitle">{t('map.subtitle')}</p>
+
+                            {/* Mobile View Toggle */}
+                            <div className="mobile-view-toggle">
+                                <button
+                                    className={`view-toggle-btn ${mobileView === 'list' ? 'active' : ''}`}
+                                    onClick={() => setMobileView('list')}
+                                    aria-label="List view"
+                                >
+                                    <FaList />
+                                    <span>{t('map.list_view')}</span>
+                                </button>
+                                <button
+                                    className={`view-toggle-btn ${mobileView === 'map' ? 'active' : ''}`}
+                                    onClick={() => setMobileView('map')}
+                                    aria-label="Map view"
+                                >
+                                    <FaMap />
+                                    <span>{t('map.map_view')}</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div className="map-sidebar-controls">
@@ -209,14 +235,14 @@ const MapPage = () => {
 
                         <div className="map-results-header">
                             <h2 className="font-semibold">
-                                Kết quả
-                                <span className="results-count">{filteredFacilities.length} cơ sở</span>
+                                {t('map.results')}
+                                <span className="results-count">{filteredFacilities.length} {t('map.facilities')}</span>
                             </h2>
                         </div>
 
                         <div className="map-results-list">
                             {loading ? (
-                                <div className="no-results">Đang tải...</div>
+                                <div className="no-results">{t('map.loading')}</div>
                             ) : filteredFacilities.length > 0 ? (
                                 filteredFacilities.map((facility) => (
                                     <FacilityCard
@@ -230,7 +256,7 @@ const MapPage = () => {
                                 ))
                             ) : (
                                 <div className="no-results">
-                                    <p>Không tìm thấy cơ sở y tế phù hợp</p>
+                                    <p>{t('map.no_results')}</p>
                                 </div>
                             )}
                         </div>
@@ -238,7 +264,24 @@ const MapPage = () => {
                 )}
             </div>
 
-            <div className="map-view-wrapper">
+            <div className={`map-view-wrapper ${mobileView === 'map' ? 'mobile-show' : 'mobile-hide'}`}>
+                {/* Floating back button for mobile map view */}
+                {mobileView === 'map' && (
+                    <button
+                        className="map-back-btn"
+                        onClick={() => {
+                            if (directionsMode) {
+                                // If in directions mode, first exit directions
+                                handleBackFromDirections();
+                            }
+                            setMobileView('list');
+                        }}
+                        aria-label={t('map.back_to_list')}
+                    >
+                        <FaArrowLeft />
+                        <span>{t('map.back_to_list')}</span>
+                    </button>
+                )}
                 {!directionsMode && (
                     <div className="map-overlay-container">
                         <div className="map-overlay-search">

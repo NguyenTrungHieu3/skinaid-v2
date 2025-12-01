@@ -145,38 +145,15 @@ const UploadPage = () => {
       const imageUrl = URL.createObjectURL(file);
       setPreviewImage(imageUrl);
 
-      // --- 3. GIẢ LẬP GỌI API UPLOAD ---
-      // (TODO: Thay thế 'setTimeout' bằng lệnh gọi API thật của bạn)
-      // Ví dụ: uploadFileToApi(file).then(...)
-      console.log("File is valid, simulating upload:", file.name);
-
-      // ... (setTimeout) ...
-      // const timerId = setTimeout(() => {
-      //   console.log("API call finished.");
-      //   setIsLoading(false);
-
-      //   // (Xóa dòng 'revoke' ở đây)
-
-      //   timerIdRef.current = null; // Xóa ID khi đã chạy xong
-      // }, 3000);
-
-      // Giả lập API
-      // const timerId = setTimeout(() => {
-      //   console.log("API call finished.");
-      //   setIsLoading(false);
-      //   timerIdRef.current = null;
-      // }, 3000);
-
+      // Gọi API phân tích ảnh
       try {
         const formData = new FormData();
-        formData.append("file", file); // Key là "file" (từ curl)
+        formData.append("file", file);
 
-        console.log("File is valid, calling POST /ai/analyze...");
-        const response = await analyzeImage(formData); // Gọi API // 5. CHUYỂN TRANG
+        const response = await analyzeImage(formData);
 
         if (response.data.success) {
           const analysisId = response.data.data.analysis_id;
-          console.log("Analysis successful, navigating to ID:", analysisId); // Chuyển người dùng đến trang kết quả với ID
           navigate(`/analysis-result/${analysisId}`);
         } else {
           setErrorMessage(response.data.message || "Analysis failed.");
@@ -208,18 +185,11 @@ const UploadPage = () => {
 
     if (fileFromState && !hasProcessedRef.current) {
       // 1. Nếu CÓ file VÀ chưa xử lý:
-      // Đánh dấu là đã xử lý
       hasProcessedRef.current = true;
-
-      console.log("Received file, processing...");
       processFile(fileFromState);
-
-      // Xóa state đi
       navigate(location.pathname, { replace: true, state: {} });
     } else if (!fileFromState && !hasProcessedRef.current) {
       // 2. Nếu KHÔNG có file VÀ chưa xử lý:
-      // Đây là trường hợp user tự vào trang, reset state
-      console.log("No file, not processing, resetting page.");
       setErrorMessage("");
       setPreviewImage(null);
       setIsLoading(false);
@@ -236,11 +206,9 @@ const UploadPage = () => {
     return () => {
       if (previewImage) {
         URL.revokeObjectURL(previewImage);
-        console.log("Revoked old preview URL:", previewImage);
       }
       if (timerIdRef.current) {
         clearTimeout(timerIdRef.current);
-        console.log("Cancelled active API simulation.");
       }
     };
   }, [previewImage]); // <-- Effect này CHỈ phụ thuộc vào 'previewImage'

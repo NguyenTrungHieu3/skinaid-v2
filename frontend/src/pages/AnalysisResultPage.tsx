@@ -6,6 +6,8 @@ import MedicalDisclaimer from "../components/analysis/MedicalDisclaimer";
 import AnalyzedImage from "../components/analysis/AnalyzedImage";
 import AnalysisDetails from "../components/analysis/AnalysisDetails";
 import TreatmentSection from "../components/analysis/TreatmentSection";
+import SeverityAlert from "../components/analysis/SeverityAlert";
+import MapModal from "../components/analysis/MapModal";
 import { isAxiosError } from "axios";
 
 import {
@@ -147,6 +149,25 @@ interface SummaryCounts {
   bruise: number;
 }
 
+// --- Helper function to check if wound severity requires medical attention ---
+const shouldShowMedicalFacility = (wounds: SignificantWound[]): boolean => {
+  const severityLevels = ["moderate", "severe"];
+  return wounds.some((wound) =>
+    severityLevels.includes(wound.severity.toLowerCase())
+  );
+};
+
+// Get the highest severity level from wounds
+const getHighestSeverity = (wounds: SignificantWound[]): string => {
+  if (wounds.some((w) => w.severity.toLowerCase() === "severe")) {
+    return "severe";
+  }
+  if (wounds.some((w) => w.severity.toLowerCase() === "moderate")) {
+    return "moderate";
+  }
+  return "mild";
+};
+
 // --- HÀM HELPER: Chuyển dữ liệu API sang cho Sidebar ---
 const transformApiData = (apiData: AnalysisGetResponse) => {
   const counts: SummaryCounts = { total: 0, abrasion: 0, burn: 0, bruise: 0 };
@@ -220,6 +241,9 @@ const AnalysisResultPage = () => {
 
   const [activeTab, setActiveTab] = useState<string>("");
   const [activeMainTab, setActiveMainTab] = useState<WoundType>("abrasion");
+
+  // State for MapModal
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   // 4. Fetch dữ liệu khi component mount
   useEffect(() => {
@@ -384,7 +408,21 @@ const AnalysisResultPage = () => {
         ) : (
           <div>No treatment data available.</div>
         )}
+
+        {/* Severity Alert - Shows when wound is moderate or severe */}
+        {shouldShowMedicalFacility(analysisData.significant_wounds) && (
+          <SeverityAlert
+            severity={getHighestSeverity(analysisData.significant_wounds)}
+            onFindFacility={() => setIsMapModalOpen(true)}
+          />
+        )}
       </main>
+
+      {/* Map Modal for finding nearby medical facilities */}
+      <MapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+      />
     </div>
   );
 };

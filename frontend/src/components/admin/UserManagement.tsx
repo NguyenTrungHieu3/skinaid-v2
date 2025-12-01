@@ -12,6 +12,7 @@ import styles from './UserManagement.module.css';
 interface User {
   user_id: string;
   email: string;
+  user_name: string;
   display_name: string;
   roles: string[];
   is_active: boolean;
@@ -21,7 +22,7 @@ interface User {
 
 interface UserFormData {
   email: string;
-  display_name: string;
+  user_name: string;
   password?: string;
   role: string;
 }
@@ -159,8 +160,17 @@ const UserManagement: FC = () => {
 
     try {
       setIsSubmitting(true);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...updateData } = data;
+
+      // Only include password if it was provided (not empty)
+      const updateData: Partial<UserFormData> = {
+        ...data
+      };
+
+      // If password is empty, remove it from the update data
+      if (!data.password || data.password.trim() === '') {
+        delete updateData.password;
+      }
+
       const response = await updateUser(selectedUser.user_id, updateData);
       if (response.success) {
         setShowEditModal(false);
@@ -334,7 +344,7 @@ const UserManagement: FC = () => {
         onSubmit={handleEditUser}
         initialData={selectedUser ? {
           email: selectedUser.email,
-          display_name: selectedUser.display_name,
+          user_name: selectedUser.user_name,
           roles: selectedUser.roles
         } : null}
         isEdit={true}

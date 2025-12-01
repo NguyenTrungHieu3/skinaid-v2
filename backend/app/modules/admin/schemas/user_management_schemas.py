@@ -5,7 +5,8 @@ from uuid import UUID
 
 class CreateUserRequest(BaseModel):
     email: EmailStr 
-    display_name: str
+    user_name: str
+    display_name: Optional[str] = None
     password: str
     role: str
     
@@ -18,8 +19,10 @@ class CreateUserRequest(BaseModel):
         return v.lower()
 
 class UpdateUserRequest(BaseModel):
+    user_name: Optional[str] = None
     display_name: Optional[str] = None
     email: Optional[EmailStr] = None
+    password: Optional[str] = None
     role: Optional[str] = None
     is_active: Optional[bool] = None
     
@@ -46,6 +49,7 @@ class UserRoleInfo(BaseModel):
 class UserBasicInfo(BaseModel):
     user_id: UUID
     email: str
+    user_name: str
     display_name: Optional[str]
     is_active: bool
     is_verified: bool
@@ -60,6 +64,7 @@ class UserBasicInfo(BaseModel):
 class UserDetailInfo(BaseModel):
     user_id: UUID
     email: str
+    user_name: str
     display_name: Optional[str]
     is_active: bool
     is_verified: bool

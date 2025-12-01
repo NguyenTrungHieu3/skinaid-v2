@@ -40,9 +40,13 @@ interface Guide {
   dos: string[];
   donts: string[];
   estimated_healing_time?: string;
-  source?: string;
+  source?: {
+    name: string;
+    url?: string;
+  } | string; // Support both old string and new object format
   is_active: boolean;
   version: number;
+  created_by?: string;
   created_at: string;
   updated_at: string;
 }
@@ -69,7 +73,10 @@ interface FormData {
   donts: string[];
   supplies_needed: string[];
   estimated_healing_time: string;
-  source: string;
+  source: {
+    name: string;
+    url?: string;
+  };
   is_active: boolean;
 }
 
@@ -132,7 +139,7 @@ export default function FirstAidManagement() {
     donts: [''],
     supplies_needed: [''],
     estimated_healing_time: '',
-    source: '',
+    source: { name: '', url: '' },
     is_active: true
   });
 
@@ -243,7 +250,9 @@ export default function FirstAidManagement() {
       donts: guide.donts || [''],
       supplies_needed: guide.supplies_needed || [''],
       estimated_healing_time: guide.estimated_healing_time || '',
-      source: guide.source || '',
+      source: typeof guide.source === 'string'
+        ? { name: guide.source, url: '' }
+        : (guide.source || { name: '', url: '' }),
       is_active: guide.is_active !== undefined ? guide.is_active : true
     });
     setShowEditModal(true);
@@ -262,7 +271,7 @@ export default function FirstAidManagement() {
       donts: [''],
       supplies_needed: [''],
       estimated_healing_time: '',
-      source: '',
+      source: { name: '', url: '' },
       is_active: true
     });
   };
@@ -345,8 +354,13 @@ export default function FirstAidManagement() {
         cleanedData.estimated_healing_time = formData.estimated_healing_time.trim();
       }
 
-      if (formData.source && formData.source.trim()) {
-        cleanedData.source = formData.source.trim();
+      // Source validation and cleanup
+      if (formData.source && formData.source.name && formData.source.name.trim()) {
+        const sourceObj: any = { name: formData.source.name.trim() };
+        if (formData.source.url && formData.source.url.trim()) {
+          sourceObj.url = formData.source.url.trim();
+        }
+        cleanedData.source = sourceObj;
       }
 
       if (cleanedDos.length > 0) cleanedData.dos = cleanedDos;
@@ -415,7 +429,12 @@ export default function FirstAidManagement() {
         donts: cleanedDonts,
         supplies_needed: cleanedSupplies.length > 0 ? cleanedSupplies : null,
         estimated_healing_time: formData.estimated_healing_time || null,
-        source: formData.source || null,
+        source: (formData.source && formData.source.name)
+          ? {
+            name: formData.source.name.trim(),
+            ...(formData.source.url && formData.source.url.trim() ? { url: formData.source.url.trim() } : {})
+          }
+          : null,
         is_active: formData.is_active,
         sub_type: formData.sub_type || null
       };

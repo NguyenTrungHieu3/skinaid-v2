@@ -221,6 +221,7 @@ class WoundAIService:
                     "num_detections": 0,
                     "detections": [],
                     "processing_time": processing_time,
+                    "processing_time_ms": max(1, processing_time_ms),  # Ensure >= 1 for DB constraint
                     "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
                     "message": "Không phát hiện vết thương nào - ảnh chứa da bình thường"
                 }
@@ -231,6 +232,7 @@ class WoundAIService:
                     "num_detections": 0,
                     "detections": [],
                     "processing_time": processing_time,
+                    "processing_time_ms": max(1, processing_time_ms),  # Ensure >= 1 for DB constraint
                     "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
                     "message": "Không phát hiện vết thương nào"
                 }
@@ -345,6 +347,7 @@ class WoundAIService:
                 "reliable_detections": len(reliable_detections),
                 "detections": final_detections,
                 "processing_time": processing_time,
+                "processing_time_ms": max(1, processing_time_ms),  # Ensure >= 1 for DB constraint
                 "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
                 "meets_accuracy_threshold": len(reliable_detections) > 0,
                 "average_confidence": (

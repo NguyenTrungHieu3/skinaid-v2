@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Eye, EyeOff } from 'lucide-react';
 import styles from './UserFormModal.module.css';
 
 interface UserFormData {
   email: string;
-  display_name: string;
+  user_name: string;
   password?: string;
   role: string;
 }
@@ -29,17 +30,18 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const { t } = useTranslation();
   const [formData, setFormData] = useState<UserFormData>({
     email: '',
-    display_name: '',
+    user_name: '',
     password: '',
     role: 'user'
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen && initialData) {
       setFormData({
         email: initialData.email || '',
-        display_name: initialData.display_name || '',
+        user_name: initialData.user_name || initialData.display_name || '',
         password: '', // Password always empty on edit
         role: initialData.roles ? initialData.roles[0] : 'user'
       });
@@ -48,7 +50,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       // Reset for add mode
       setFormData({
         email: '',
-        display_name: '',
+        user_name: '',
         password: '',
         role: 'user'
       });
@@ -75,18 +77,23 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       errors.email = t('admin.user_management.form.errors.email_invalid');
     }
 
-    if (!formData.display_name || !formData.display_name.trim()) {
-      errors.display_name = t('admin.user_management.form.errors.name_required');
-    } else if (formData.display_name.trim().length < 2) {
-      errors.display_name = t('admin.user_management.form.errors.name_min');
-    } else if (formData.display_name.trim().length > 50) {
-      errors.display_name = t('admin.user_management.form.errors.name_max');
+    if (!formData.user_name || !formData.user_name.trim()) {
+      errors.user_name = t('admin.user_management.form.errors.name_required');
+    } else if (formData.user_name.trim().length < 2) {
+      errors.user_name = t('admin.user_management.form.errors.name_min');
+    } else if (formData.user_name.trim().length > 50) {
+      errors.user_name = t('admin.user_management.form.errors.name_max');
     }
 
     if (!isEdit) {
       if (!formData.password || !formData.password.trim()) {
         errors.password = t('admin.user_management.form.errors.password_required');
       } else if (!validatePassword(formData.password)) {
+        errors.password = t('admin.user_management.form.errors.password_invalid');
+      }
+    } else {
+      // In edit mode, validate password only if provided
+      if (formData.password && formData.password.trim() && !validatePassword(formData.password)) {
         errors.password = t('admin.user_management.form.errors.password_invalid');
       }
     }
@@ -123,27 +130,32 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             <input
               type="text"
               required
-              value={formData.display_name}
+              disabled={isEdit}
+              value={formData.user_name}
               onChange={(e) => {
-                setFormData({ ...formData, display_name: e.target.value });
-                if (validationErrors.display_name) {
-                  setValidationErrors({ ...validationErrors, display_name: '' });
+                setFormData({ ...formData, user_name: e.target.value });
+                if (validationErrors.user_name) {
+                  setValidationErrors({ ...validationErrors, user_name: '' });
                 }
               }}
-              className={validationErrors.display_name ? styles.error : ''}
+              className={validationErrors.user_name ? styles.error : ''}
+              style={isEdit ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', color: '#94a3b8' } : {}}
             />
-            {validationErrors.display_name && (
-              <span className={styles.errorMessage}>{validationErrors.display_name}</span>
+            {validationErrors.user_name && (
+              <span className={styles.errorMessage}>{validationErrors.user_name}</span>
             )}
           </div>
 
-          {/* Password - only for new users */}
-          {!isEdit && (
-            <div className={styles.formGroup}>
-              <label>{t('admin.user_management.form.labels.password')} *</label>
+          {/* Password - required for new users, optional for edit */}
+          <div className={styles.formGroup}>
+            <label>
+              {t('admin.user_management.form.labels.password')}
+              {isEdit ? ' (Để trống nếu giữ nguyên)' : ' *'}
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                type="password"
-                required
+                type={showPassword ? "text" : "password"}
+                required={!isEdit}
                 minLength={8}
                 value={formData.password}
                 onChange={(e) => {
@@ -153,15 +165,37 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                   }
                 }}
                 className={validationErrors.password ? styles.error : ''}
+                style={{ paddingRight: '2.5rem' }}
               />
-              {validationErrors.password && (
-                <span className={styles.errorMessage}>{validationErrors.password}</span>
-              )}
-              <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
-                {t('admin.user_management.form.password_hint')}
-              </small>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#64748b'
+                }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-          )}
+            {validationErrors.password && (
+              <span className={styles.errorMessage}>{validationErrors.password}</span>
+            )}
+            <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>
+              {t('admin.user_management.form.password_hint')}
+            </small>
+          </div>
+
 
           {/* Email */}
           <div className={styles.formGroup}>
@@ -215,8 +249,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

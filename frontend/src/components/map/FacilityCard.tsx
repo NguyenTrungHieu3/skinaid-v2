@@ -1,4 +1,5 @@
 import { Phone, MapPin, Clock, Globe, Share2, Navigation } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "./MapComponents.css";
 
 export interface Facility {
@@ -23,6 +24,8 @@ interface FacilityCardProps {
 }
 
 const FacilityCard = ({ facility, onDirections, onCall, onWebsite, onShare }: FacilityCardProps) => {
+    const { t } = useTranslation();
+
     return (
         <div className="facility-card">
             <div className="facility-header">
@@ -65,7 +68,7 @@ const FacilityCard = ({ facility, onDirections, onCall, onWebsite, onShare }: Fa
                         onClick={() => onCall?.(facility.phone!)}
                     >
                         <Phone className="icon-btn" />
-                        Gọi
+                        {t('map.call')}
                     </button>
                 )}
                 <button
@@ -73,7 +76,7 @@ const FacilityCard = ({ facility, onDirections, onCall, onWebsite, onShare }: Fa
                     onClick={() => onDirections(facility)}
                 >
                     <Navigation className="icon-btn" />
-                    Chỉ đường
+                    {t('map.directions')}
                 </button>
                 {facility.website && (
                     <button
@@ -81,7 +84,7 @@ const FacilityCard = ({ facility, onDirections, onCall, onWebsite, onShare }: Fa
                         onClick={() => onWebsite?.(facility.website!)}
                     >
                         <Globe className="icon-btn" />
-                        Website
+                        {t('map.website')}
                     </button>
                 )}
                 <button
@@ -89,7 +92,7 @@ const FacilityCard = ({ facility, onDirections, onCall, onWebsite, onShare }: Fa
                     onClick={() => onShare?.(facility)}
                 >
                     <Share2 className="icon-btn" />
-                    Chia sẻ
+                    {t('map.share')}
                 </button>
             </div>
         </div>

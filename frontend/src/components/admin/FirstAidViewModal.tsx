@@ -15,7 +15,10 @@ interface Guide {
     dos: string[];
     donts: string[];
     estimated_healing_time?: string;
-    source?: string;
+    source?: {
+        name: string;
+        url?: string;
+    } | string;
     is_active: boolean;
     version: number;
     created_at: string;
@@ -74,6 +77,33 @@ export default function FirstAidViewModal({
                             <div className={styles.infoItem}>
                                 <label>{t('admin.first_aid_view.labels.healing_time')}</label>
                                 <p>{guide.estimated_healing_time}</p>
+                            </div>
+                        )}
+                        {guide.source && (
+                            <div className={styles.infoItem}>
+                                <label>{t('admin.first_aid_view.labels.source')}</label>
+                                <p>
+                                    {typeof guide.source === 'string' ? (
+                                        guide.source
+                                    ) : (
+                                        <>
+                                            <span style={{ fontWeight: 500 }}>{guide.source.name}</span>
+                                            {guide.source.url && (
+                                                <>
+                                                    {' - '}
+                                                    <a
+                                                        href={guide.source.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{ color: '#2563eb', textDecoration: 'underline' }}
+                                                    >
+                                                        {guide.source.url}
+                                                    </a>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </p>
                             </div>
                         )}
                     </div>
@@ -139,7 +169,6 @@ export default function FirstAidViewModal({
                     )}
 
                     <div className={styles.modalFooterInfo}>
-                        <p><strong>{t('admin.first_aid_view.labels.source')}:</strong> {guide.source || 'Based on WHO and Red Cross guidelines'}</p>
                         <p><strong>{t('admin.first_aid_view.labels.version')}:</strong> {guide.version}</p>
                         <p><strong>{t('admin.first_aid_view.labels.last_updated')}:</strong> {new Date(guide.updated_at).toLocaleDateString()}</p>
                     </div>

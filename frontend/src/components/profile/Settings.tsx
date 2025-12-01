@@ -1,5 +1,5 @@
 // src/components/profile/Settings.tsx
-import { useState } from "react"; // <-- Thêm useState
+import { useState, useEffect } from "react";
 
 import styles from "../../pages/ProfilePage.module.css";
 import {
@@ -10,7 +10,30 @@ import {
 import { useTranslation } from "react-i18next";
 import ChangePasswordModal from "../auth/ChangePasswordModal";
 
-// Component Toggle Switch (giữ nguyên)
+// LocalStorage key for settings
+const SETTINGS_STORAGE_KEY = "skinaid_user_settings";
+
+// Default settings
+const defaultSettings = {
+  email: true,
+  push: false,
+  darkMode: false,
+};
+
+// Load settings from localStorage
+const loadSettings = () => {
+  try {
+    const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (saved) {
+      return { ...defaultSettings, ...JSON.parse(saved) };
+    }
+  } catch {
+    // If parsing fails, return defaults
+  }
+  return defaultSettings;
+};
+
+// Component Toggle Switch
 const ToggleSwitch = ({
   id,
   checked,
@@ -32,24 +55,26 @@ const ToggleSwitch = ({
 );
 
 const Settings = () => {
-  // 1. Khởi tạo hook
   const { t } = useTranslation();
-
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Thêm state để quản lý các toggle
-  const [settings, setSettings] = useState({
-    email: true,
-    push: false,
-    darkMode: false,
-  });
+  // Initialize settings from localStorage
+  const [settings, setSettings] = useState(loadSettings);
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+      // Silently fail if localStorage is not available
+    }
+  }, [settings]);
 
   const handleToggle = (key: keyof typeof settings) => {
     setSettings((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
-    // TODO: Gọi API để lưu cài đặt này
   };
 
   return (

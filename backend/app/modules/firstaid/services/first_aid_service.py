@@ -391,6 +391,10 @@ class FirstAidService:
             raise e
         except Exception as e:
             await self.db.rollback()
+            error_str = str(e).lower()
+            if "chk_sub_type_valid" in error_str:
+                raise ValueError(f"Invalid sub_type '{guide_data.get('sub_type')}' for wound_type '{guide_data.get('wound_type')}'. Please check allowed sub-types.")
+            
             logger.error(f"Failed to create first aid guide: {e}", exc_info=True)
             raise
 
@@ -480,7 +484,8 @@ class FirstAidService:
             
             if "source" in update_data and "source" in allowed_fields:
                 update_fields.append("source = :source")
-                params["source"] = update_data["source"]
+                # Convert dict to JSON string for JSONB column
+                params["source"] = json.dumps(update_data["source"]) if update_data["source"] else None
             
             if "estimated_healing_time" in update_data and "estimated_healing_time" in allowed_fields:
                 update_fields.append("estimated_healing_time = :estimated_healing_time")

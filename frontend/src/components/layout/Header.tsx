@@ -81,6 +81,15 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
 
         {/* Nội dung menu (slide-in) */}
         <div className={styles.menuContent}>
+          {/* Close button for drawer */}
+          <button
+            className={styles.closeButton}
+            onClick={closeMenu}
+            aria-label="Close menu"
+          >
+            ×
+          </button>
+
           <nav className={styles.nav}>
             <NavLink
               to="/"

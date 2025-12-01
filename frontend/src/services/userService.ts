@@ -1,16 +1,39 @@
 import apiClient from './api';
 
-export const getUsers = async (params: any) => {
+// Types for User Management
+export interface UserSearchParams {
+  search?: string;
+  role?: string;
+  is_active?: boolean | string;
+  page?: number;
+  limit?: number;
+}
+
+export interface CreateUserData {
+  email: string;
+  user_name: string;
+  password: string;
+  role: string;
+}
+
+export interface UpdateUserData {
+  email?: string;
+  user_name?: string;
+  password?: string;
+  role?: string;
+}
+
+export const getUsers = async (params: UserSearchParams) => {
   const response = await apiClient.get('/admin/users', { params });
   return response.data;
 };
 
-export const createUser = async (data: any) => {
+export const createUser = async (data: CreateUserData) => {
   const response = await apiClient.post('/admin/users', data);
   return response.data;
 };
 
-export const updateUser = async (userId: string, data: any) => {
+export const updateUser = async (userId: string, data: UpdateUserData) => {
   const response = await apiClient.put(`/admin/users/${userId}`, data);
   return response.data;
 };
