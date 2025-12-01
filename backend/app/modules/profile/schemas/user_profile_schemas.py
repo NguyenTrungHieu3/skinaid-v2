@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional
 from datetime import date, datetime
 import uuid
@@ -74,3 +74,62 @@ class ProfileStatisticsResponse(BaseModel):
     average_completion: float = Field(..., description="Phần trăm hoàn thành trung bình")
     gender_distribution: dict = Field(..., description="Phân bố theo giới tính")
     age_distribution: dict = Field(..., description="Phân bố theo độ tuổi")
+
+class AvatarUploadResponse(BaseModel):
+    avatar_url: str = Field(..., description="URL avatar ")
+    file_name: str = Field(..., description="Tên file")
+    file_size: int = Field(..., description="Kích thước file", gt = 0)
+    uploaded_at: datetime = Field(..., description="Ngày upload")
+
+    @field_validator('file_size')
+    def validate_file_size(cls, v):
+        if v is None or v == '':
+            return v
+        
+        if v < 0:
+            raise ValueError('Kích thước file phải lớn hơn 0')
+        
+        return v
+
+    model_config = ConfigDict(
+        json_schema_extra = {
+            "example": {
+                "avatar_url": "https://example.com/20251125_abc123.jpg",
+                "file_name": "20251125_abc123.jpg",
+                "file_size": 524288,
+                "uploaded_at": "2025-11-25T07:30:00"
+            }
+        }
+    )
+
+
+class AvatarDeleteResponse(BaseModel): 
+    deleted: bool = Field(default=True, description="Trạng thái xóa")
+    message: str = Field(..., description="Thông báo kết quả")
+    deleted_at: datetime = Field(..., description="Thời điểm xóa")
+
+    model_config = ConfigDict(
+        json_schema_extra = {
+            "example": {
+                "deleted": True, 
+                "message": "Avatart đã được xóa thành công", 
+                "deleted_at": "2025-11-25T07:35:00"
+            }
+        }
+    )
+
+class PublicAvatarResponse(BaseModel): 
+    user_id: uuid.UUID = Field(..., description="ID của user")
+    avatar_url: Optional[str] = Field(default= None, description="URL của Avatar")
+    has_avatar: bool = Field(..., description="User đã có avatar chưa")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "user_id": "123e4567-e89b-12d3-a456-426614174000",
+                "avatar_url": "/uploads/avatars/20251125_abc123.jpg",
+                "has_avatar": True
+            }
+        }
+    )
+    

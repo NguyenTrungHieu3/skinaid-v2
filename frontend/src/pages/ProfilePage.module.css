@@ -91,6 +91,80 @@
   font-size: 0.9rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.cameraIcon:hover {
+  background-color: #009688;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Avatar image styles */
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Loading overlay */
+.avatarLoadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.5rem;
+  z-index: 5;
+}
+
+/* Spinner animation */
+.spinnerIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Delete icon styles */
+.deleteIcon {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background-color: #fff;
+  color: #dc2626;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.deleteIcon:hover {
+  background-color: #dc2626;
+  color: #fff;
+  transform: scale(1.1);
 }
 
 .profileRight {

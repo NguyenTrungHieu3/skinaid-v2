@@ -4,6 +4,8 @@ import {
   FaUser,
   FaCamera,
   FaRegClock,
+  FaSpinner,
+  FaTrash,
   // FaFileMedicalAlt,
   // FaCheckCircle,
   // FaCalendarAlt,
@@ -12,6 +14,9 @@ import {
 import { useAuth } from "../../contexts/AuthContext"; // <-- Import AuthContext
 import { FiCamera } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
+import { useRef, useState } from "react";
+import { uploadAvatar, deleteAvatar } from "../../services/profileService";
+import { useToast } from "../../contexts/ToastContext";
 
 const formatDate = (dateString: string | undefined, lang: string) => {
   if (!dateString) return "N/A";
@@ -30,8 +35,97 @@ const formatDate = (dateString: string | undefined, lang: string) => {
 };
 
 const BannerHeader = () => {
-  const { user } = useAuth(); // <-- Lấy thông tin user
+  const { user, updateUser } = useAuth(); // <-- Lấy thông tin user và updateUser
   const { t, i18n } = useTranslation();
+  const toast = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Helper function to get full avatar URL
+  const getAvatarUrl = (avatarPath: string | null | undefined): string | null => {
+    if (!avatarPath) return null;
+    // If already a full URL, return as is
+    if (avatarPath.startsWith('http://') || avatarPath.startsWith('https://')) {
+      return avatarPath;
+    }
+    // Convert relative path to absolute URL
+    return `http://localhost:8000${avatarPath}`;
+  };
+
+  // Handle camera icon click - trigger file input
+  const handleCameraClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Handle file selection and upload
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Vui lòng chọn file ảnh (JPEG, PNG, hoặc WEBP)");
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Kích thước file không được vượt quá 5MB");
+      return;
+    }
+
+    // Upload file
+    setIsUploading(true);
+    try {
+      const response = await uploadAvatar(file);
+      if (response.data.data) {
+        toast.success("Upload avatar thành công!");
+        // Update user data to reflect avatar change everywhere
+        updateUser({ avatar_url: response.data.data.avatar_url });
+      }
+    } catch (error: any) {
+      console.error("Upload avatar failed:", error);
+      const errorMessage = error?.response?.data?.message || "Có lỗi xảy ra khi upload avatar";
+      toast.error(errorMessage);
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle delete avatar
+  const handleDeleteAvatar = async () => {
+    console.log("[DELETE AVATAR] Function called");
+
+    // No confirmation needed - user can always re-upload
+    console.log("[DELETE AVATAR] Starting delete process");
+    setIsDeleting(true);
+    try {
+      console.log("[DELETE AVATAR] Calling API...");
+      const response = await deleteAvatar();
+      console.log("[DELETE AVATAR] API response:", response);
+
+      toast.success("Đã xóa avatar!");
+      // Update user data to remove avatar
+      updateUser({ avatar_url: null });
+      console.log("[DELETE AVATAR] User data updated");
+    } catch (error: any) {
+      console.error("[DELETE AVATAR] Error:", error);
+      const errorMessage = error?.response?.data?.message || "Có lỗi xảy ra khi xóa avatar";
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+      console.log("[DELETE AVATAR] Completed");
+    }
+  };
 
   return (
     <header className={styles.profileBanner}>
@@ -39,12 +133,54 @@ const BannerHeader = () => {
         {/* BÊN TRÁI - AVATAR */}
         <div className={styles.profileLeft}>
           <div className={styles.avatarWrapper}>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+
+            {/* Avatar display */}
             <div className={styles.avatarPlaceholder}>
-              <FaUser />
+              {user?.avatar_url ? (
+                <img
+                  src={getAvatarUrl(user.avatar_url) || ''}
+                  alt="User Avatar"
+                  className={styles.avatarImage}
+                />
+              ) : (
+                <FaUser />
+              )}
+
+              {/* Loading overlay */}
+              {(isUploading || isDeleting) && (
+                <div className={styles.avatarLoadingOverlay}>
+                  <FaSpinner className={styles.spinnerIcon} />
+                </div>
+              )}
             </div>
-            <div className={styles.cameraIcon}>
+
+            {/* Camera icon - clickable */}
+            <div
+              className={styles.cameraIcon}
+              onClick={handleCameraClick}
+              title={isUploading ? "Đang tải lên..." : "Thay đổi avatar"}
+            >
               <FaCamera />
             </div>
+
+            {/* Delete icon - only show when user has avatar */}
+            {user?.avatar_url && (
+              <div
+                className={styles.deleteIcon}
+                onClick={handleDeleteAvatar}
+                title={isDeleting ? "Đang xóa..." : "Xóa avatar"}
+              >
+                <FaTrash />
+              </div>
+            )}
           </div>
         </div>
 

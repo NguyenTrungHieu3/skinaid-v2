@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
 import logging
@@ -6,7 +6,8 @@ import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import (
-    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
+    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse,
+    AvatarUploadResponse, AvatarDeleteResponse, PublicAvatarResponse
 )
 from app.modules.profile.services.profile_service import ProfileService
 from app.utils.constants import error_codes as ErrorCode, messages as Message
@@ -156,3 +157,145 @@ class ProfileController:
         except Exception as e:
             logger.error(f"[COMPLETION] Error: {e}", exc_info=True)
             return self._internal_error(Message.PROFILE_COMPLETION_SUGGESTIONS_ERROR_MSG, ErrorCode.PROFILE_COMPLETION_SUGGESTIONS_ERROR, e)
+
+    async def upload_avatar(
+        self,
+        user_id: uuid.UUID,
+        file: UploadFile
+    ) -> Union[SuccessResponse, ErrorResponse]:
+        """
+        Controller method để xử lý upload avatar request.
+
+        Workflow:
+        1. Delegate logic sang ProfileService
+        2. Handle exceptions và convert thành ErrorResponse
+        3. Wrap result vào SuccessResponse
+        4. Log tất cả operations để audit
+        """
+        logger.info(
+            f"[CONTROLLER] Upload avatar request - "
+            f"user: {user_id}, file: {file.filename}"
+        )
+
+        try:
+            result = await self.profile_service.upload_avatar(
+                user_id=user_id,
+                file=file
+            )
+
+            logger.info(
+                f"[CONTROLLER] Upload avatar thành công - "
+                f"user: {user_id}, url: {result['avatar_url']}"
+            )
+
+            return SuccessResponse(
+                message=Message.FILE_UPLOAD_SUCCESS_MSG,
+                data=AvatarUploadResponse(**result),
+                status_code=status.HTTP_200_OK
+            )
+
+        except HTTPException as e:
+            logger.warning(
+                f"[CONTROLLER] Upload avatar failed (HTTPException) - "
+                f"user: {user_id}, error: {e.detail}"
+            )
+
+            return self._handle_http_exception(e, user_id)
+
+        except Exception as e:
+            logger.error(
+                f"[CONTROLLER] Upload avatar failed (Exception) - "
+                f"user: {user_id}",
+                exc_info=True
+            )
+
+            return self._internal_error(
+                message="Lỗi khi upload avatar",
+                error_code=ErrorCode.INTERNAL_ERROR,
+                error=e
+            )
+
+
+    async def delete_avatar(
+        self,
+        user_id: uuid.UUID
+    ) -> Union[SuccessResponse, ErrorResponse]:
+        """
+        Controller method để xử lý xóa avatar request.
+
+        Workflow:
+        1. Delegate logic sang ProfileService
+        2. Handle exceptions
+        3. Return SuccessResponse hoặc ErrorResponse
+        4. Log operations
+        """
+        logger.info(f"[CONTROLLER] Delete avatar request - user: {user_id}")
+
+        try:
+            result = await self.profile_service.delete_avatar(user_id)
+
+            logger.info(f"[CONTROLLER] Delete avatar thành công - user: {user_id}")
+
+            return SuccessResponse(
+                message=Message.FILE_DELETE_SUCCESS_MSG,
+                data=AvatarDeleteResponse(**result),
+                status_code=status.HTTP_200_OK
+            )
+
+        except HTTPException as e:
+            logger.warning(
+                f"[CONTROLLER] Delete avatar failed (HTTPException) - "
+                f"user: {user_id}, error: {e.detail}"
+            )
+            return self._handle_http_exception(e, user_id)
+
+        except Exception as e:
+            logger.error(
+                f"[CONTROLLER] Delete avatar failed (Exception) - user: {user_id}",
+                exc_info=True
+            )
+            return self._internal_error(
+                message="Lỗi khi xóa avatar",
+                error_code=ErrorCode.INTERNAL_ERROR,
+                error=e
+            )
+
+
+    async def get_public_avatar(
+        self,
+        user_id: uuid.UUID
+    ) -> Union[SuccessResponse, ErrorResponse]:
+        """
+        Controller method để lấy avatar (public endpoint)
+        """
+        logger.debug(f"[CONTROLLER] Get public avatar - user: {user_id}")
+
+        try:
+            result = await self.profile_service.get_public_avatar(user_id)
+
+            logger.debug(
+                f"[CONTROLLER] Get public avatar success - "
+                f"user: {user_id}, has_avatar: {result['has_avatar']}"
+            )
+
+            return SuccessResponse(
+                message="Lấy thông tin avatar thành công",
+                data=PublicAvatarResponse(**result),
+                status_code=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logger.error(
+                f"[CONTROLLER] Get public avatar failed - user: {user_id}",
+                exc_info=True
+            )
+
+            return SuccessResponse(
+                message="Không thể lấy thông tin avatar",
+                data=PublicAvatarResponse(
+                    user_id=user_id,
+                    avatar_url=None,
+                    has_avatar=False
+                ),
+                status_code=status.HTTP_200_OK
+            )

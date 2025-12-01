@@ -1,9 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import styles from "./Form.module.css";
 import { FaRegUser } from "react-icons/fa";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import React, { useState } from "react";
 import { loginUser } from "../../services/authService";
+import { claimAnalysis } from "../../services/guestService";
 import { isAxiosError } from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -52,6 +53,7 @@ const LoginForm = () => {
 
   // Tạo hook
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Lấy hàm login từ context
   const { login } = useAuth();
@@ -113,10 +115,10 @@ const LoginForm = () => {
     console.log("Form submitted", formData);
 
     loginUser(formData)
-      .then((response) => {
+      .then(async (response) => {
         // Debug: Log toàn bộ response
         console.log('🔍 Full login response:', response.data);
-        
+
         // Đăng nhập thành công , API trả vè token
         const token = response.data.data.access_token;
         const userObject = response.data.data.user;
@@ -133,18 +135,41 @@ const LoginForm = () => {
           rememberMe
         );
 
-        // Redirect based on user role
+        // Check for pending actions (e.g., claiming analysis)
+        const state = location.state as { claimAnalysisId?: string; from?: any } | null;
+
+        if (state?.claimAnalysisId) {
+          console.log("Found pending analysis claim:", state.claimAnalysisId);
+          try {
+            // Import claimAnalysis dynamically or at top level
+            // We'll assume it's imported at the top
+            await claimAnalysis(state.claimAnalysisId);
+            console.log("Analysis claimed successfully, redirecting to history");
+            navigate("/history", { replace: true });
+            return;
+          } catch (err) {
+            console.error("Failed to claim analysis after login:", err);
+            // Fall through to normal redirect but maybe show a toast?
+          }
+        }
+
+        // Redirect based on user role or previous location
+        if (state?.from) {
+          navigate(state.from, { replace: true });
+          return;
+        }
+
         const userRoles = userObject.roles || [];
         console.log('🔍 Checking roles:', userRoles);
-        
+
         const isAdmin = userRoles.some((role: string) => {
           const isAdminRole = role.toLowerCase() === 'admin';
           console.log(`🔍 Checking role "${role}": ${isAdminRole}`);
           return isAdminRole;
         });
-        
+
         console.log('🔍 Is admin?', isAdmin);
-        
+
         // Chuyển hướng dựa trên role
         if (isAdmin) {
           console.log('✅ Admin user detected, redirecting to /admin');

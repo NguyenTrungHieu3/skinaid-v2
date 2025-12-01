@@ -7,6 +7,7 @@ type Severity = "Mild" | "Moderate" | "Severe" | string;
 interface MainHeaderProps {
   title: string;
   severity?: Severity; // <-- 2. Thêm prop 'severity'
+  onSave?: () => void;
 }
 
 // 3. Hàm helper để lấy class màu dựa trên severity
@@ -24,14 +25,14 @@ const getSeverityClass = (severity: Severity = "") => {
   }
 };
 
-const MainHeader = ({ title, severity }: MainHeaderProps) => {
+const MainHeader = ({ title, severity, onSave }: MainHeaderProps) => {
   return (
     <div className={styles.mainHeader}>
       <h1 className={`${styles.pageTitle} ${getSeverityClass(severity)}`}>
         {title}
       </h1>
       <div className={styles.mainActions}>
-        <button className={styles.actionBtn}>
+        <button className={styles.actionBtn} onClick={onSave}>
           <FaSave /> Save
         </button>
         <button className={styles.actionBtn}>

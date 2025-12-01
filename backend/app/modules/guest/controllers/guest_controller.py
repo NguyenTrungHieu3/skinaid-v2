@@ -70,3 +70,32 @@ class GuestController:
             message="Lấy thống kê thành công",
             data=stats
         )
+
+    async def claim_analysis(
+        self,
+        analysis_id: uuid.UUID,
+        user_id: uuid.UUID
+    ) -> SuccessResponse:
+        """
+        User nhận quyền sở hữu analysis từ guest session
+        """
+        success = await self.guest_service.claim_analysis(analysis_id, user_id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=404, 
+                detail="Analysis không tồn tại hoặc đã thuộc về người dùng khác"
+            )
+            
+        await self.audit_service.log_event(
+            action="analysis_claimed",
+            resource_type="wound_analysis",
+            resource_id=str(analysis_id),
+            user_id=user_id,
+            success=True
+        )
+        
+        return SuccessResponse(
+            message="Lưu kết quả phân tích vào lịch sử thành công",
+            data={"analysis_id": analysis_id, "user_id": user_id}
+        )

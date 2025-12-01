@@ -35,3 +35,16 @@ export const getGuestSession = async (
   );
   return response.data.data;
 };
+
+/**
+ * Claim analysis result (save to history)
+ * Yêu cầu user phải đăng nhập (token sẽ được tự động gửi kèm bởi interceptor)
+ */
+export const claimAnalysis = async (
+  analysisId: string
+): Promise<{ analysis_id: string; user_id: string }> => {
+  const response = await apiClient.post<
+    SuccessResponse<{ analysis_id: string; user_id: string }>
+  >(`/guest/claim/${analysisId}`);
+  return response.data.data;
+};

@@ -7,129 +7,15 @@ import AnalyzedImage from "../components/analysis/AnalyzedImage";
 import AnalysisDetails from "../components/analysis/AnalysisDetails";
 import TreatmentSection from "../components/analysis/TreatmentSection";
 import { isAxiosError } from "axios";
+import { useAuth } from "../contexts/AuthContext";
+import { claimAnalysis } from "../services/guestService";
 
 import {
   getAnalysisResult,
   type AnalysisGetResponse,
   type SignificantWound,
 } from "../services/aiService";
-import { useParams } from "react-router-dom";
-
-// --- Dữ liệu giả (sẽ thay thế bằng API) ---
-// --- Dữ liệu giả (ĐÃ SỬA LỖI: Thêm các trường bị thiếu) ---
-// const analysisData = {
-//   abrasion1: {
-//     id: "abrasion1",
-//     title: "Abrasion 1",
-//     severity: "Mild",
-//     type: "abrasion",
-//     // --- DỮ LIỆU BỊ THIẾU ---
-//     likelihood: 90,
-//     healingTime: "6 days",
-//     supportItems: ["Bandages", "Antibiotic ointment", "Mild soap"],
-//     image: "/skinaid-sample-wound-1.jpg", // (Đảm bảo bạn có ảnh này)
-//     firstaid_snapshot: {
-//       title: "First Aid for Minor Abrasions",
-//       steps: [
-//         "Clean hands thoroughly with soap and water",
-//         "Gently rinse wound with clean water or saline solution",
-//         "Apply gentle pressure with clean cloth to stop bleeding",
-//         "Apply thin layer of antibiotic ointment",
-//         "Cover with sterile bandage",
-//       ],
-//       dos: ["Change bandage daily", "Watch for signs of infection"],
-//       donts: ["Do not use hydrogen peroxide", "Do not pick at scabs"],
-//     },
-//   },
-//   abrasion2: {
-//     id: "abrasion2",
-//     title: "Abrasion 2",
-//     severity: "Mild",
-//     type: "abrasion",
-//     // --- DỮ LIỆU BỊ THIẾU ---
-//     likelihood: 85,
-//     healingTime: "4 days",
-//     supportItems: ["Bandages", "Mild soap"],
-//     image: "/skinaid-sample-wound-2.jpg",
-//     firstaid_snapshot: {
-//       title: "First Aid for Minor Abrasions",
-//       steps: [
-//         "Clean hands thoroughly with soap and water",
-//         "Gently rinse wound with clean water or saline solution",
-//         "Apply gentle pressure with clean cloth to stop bleeding",
-//         "Apply thin layer of antibiotic ointment",
-//         "Cover with sterile bandage",
-//       ],
-//       dos: ["Change bandage daily", "Watch for signs of infection"],
-//       donts: ["Do not use hydrogen peroxide", "Do not pick at scabs"],
-//     },
-//   },
-//   burn1: {
-//     id: "burn1",
-//     title: "Burn 1",
-//     severity: "Moderate",
-//     type: "burn",
-//     // --- DỮ LIỆU BỊ THIẾU ---
-//     likelihood: 95,
-//     healingTime: "12 days",
-//     supportItems: ["Cool compress", "Antibiotic ointment"],
-//     image: "/skinaid-sample-wound-burn.jpg",
-//     firstaid_snapshot: {
-//       title: "First Aid for Minor Abrasions",
-//       steps: [
-//         "Clean hands thoroughly with soap and water",
-//         "Gently rinse wound with clean water or saline solution",
-//         "Apply gentle pressure with clean cloth to stop bleeding",
-//         "Apply thin layer of antibiotic ointment",
-//         "Cover with sterile bandage",
-//       ],
-//       dos: ["Change bandage daily", "Watch for signs of infection"],
-//       donts: ["Do not use hydrogen peroxide", "Do not pick at scabs"],
-//     },
-//   },
-//   bruise1: {
-//     id: "bruise1",
-//     title: "Bruise 1",
-//     severity: "Mild",
-//     type: "bruise",
-//     // --- DỮ LIỆU BỊ THIẾU ---
-//     likelihood: 70,
-//     healingTime: "3 days",
-//     supportItems: ["Ice pack", "Rest"],
-//     image: "/skinaid-sample-wound-bruise.jpg",
-//     firstaid_snapshot: {
-//       title: "First Aid for Minor Abrasions",
-//       steps: [
-//         "Clean hands thoroughly with soap and water",
-//         "Gently rinse wound with clean water or saline solution",
-//         "Apply gentle pressure with clean cloth to stop bleeding",
-//         "Apply thin layer of antibiotic ointment",
-//         "Cover with sterile bandage",
-//       ],
-//       dos: ["Change bandage daily", "Watch for signs of infection"],
-//       donts: ["Do not use hydrogen peroxide", "Do not pick at scabs"],
-//     },
-//   },
-// };
-
-// const tabData = [
-//   {
-//     id: "abrasion1",
-//     title: "Abrasion 1",
-//     severity: "Mild",
-//     type: "abrasion",
-//   },
-//   {
-//     id: "abrasion2",
-//     title: "Abrasion 2",
-//     severity: "Mild",
-//     type: "abrasion",
-//   },
-//   { id: "burn1", title: "Burn 1", severity: "Moderate", type: "burn" },
-//   { id: "bruise1", title: "Bruise 1", severity: "Mild", type: "bruise" }, // Thêm bruise
-// ] as const;
-
-// const summaryCounts = { total: 4, abrasion: 2, burn: 1, bruise: 1 }; // Cập nhật total
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 // --- Định nghĩa Types cho Sidebar (từ code cũ của bạn) ---
 type Severity = "Mild" | "Moderate" | "Severe" | string;
@@ -181,9 +67,8 @@ const transformApiData = (apiData: AnalysisGetResponse) => {
     // 2. Tạo tab item
     tabs.push({
       id: newId, // Tạo ID duy nhất, ví dụ: "abrasion_1"
-      title: `${
-        woundType.charAt(0).toUpperCase() + woundType.slice(1)
-      } ${currentIndex}`,
+      title: `${woundType.charAt(0).toUpperCase() + woundType.slice(1)
+        } ${currentIndex}`,
       severity:
         wound.severity.charAt(0).toUpperCase() + wound.severity.slice(1),
       type: woundType,
@@ -195,6 +80,9 @@ const transformApiData = (apiData: AnalysisGetResponse) => {
 const AnalysisResultPage = () => {
   // 3. Lấy analysis_id từ URL
   const { analysis_id } = useParams<{ analysis_id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   // State cho dữ liệu API
   const [analysisData, setAnalysisData] = useState<AnalysisGetResponse | null>(
@@ -211,12 +99,6 @@ const AnalysisResultPage = () => {
     bruise: 0,
   });
   const [tabData, setTabData] = useState<Tab[]>([]);
-
-  // State cho tab con (Abrasion 1, Burn 1, v.v.)
-  // const [activeTab, setActiveTab] = useState("abrasion1"); // --- THÊM STATE CHO TAB CHÍNH ---
-  // const [activeMainTab, setActiveMainTab] = useState<
-  //   "abrasion" | "burn" | "bruise"
-  // >("abrasion"); // Bắt đầu là 'abrasion'
 
   const [activeTab, setActiveTab] = useState<string>("");
   const [activeMainTab, setActiveMainTab] = useState<WoundType>("abrasion");
@@ -268,8 +150,6 @@ const AnalysisResultPage = () => {
     fetchResult();
   }, [analysis_id]); // Chạy lại khi ID thay đổi
 
-  // const currentData = analysisData[activeTab as keyof typeof analysisData]; // --- THÊM HÀM XỬ LÝ KHI BẤM TAB CHÍNH ---
-
   const handleMainTabClick = (type: WoundType) => {
     setActiveMainTab(type);
     const firstTabInGroup = tabData.find((tab) => tab.type === type);
@@ -278,10 +158,29 @@ const AnalysisResultPage = () => {
     }
   };
 
-  // Xử lý trường hợp data chưa kịp tải
-  // if (!currentData) {
-  //   return <div>Loading...</div>; // Hoặc một spinner
-  // }
+  const handleSaveToHistory = async () => {
+    if (!analysis_id) return;
+
+    if (!isAuthenticated) {
+      // Redirect to login with state to return and claim
+      navigate("/login", {
+        state: {
+          from: location,
+          claimAnalysisId: analysis_id
+        }
+      });
+      return;
+    }
+
+    try {
+      await claimAnalysis(analysis_id);
+      alert("Analysis saved to history successfully!");
+      navigate("/history");
+    } catch (error) {
+      console.error("Failed to save analysis:", error);
+      alert("Failed to save analysis. It may have already been claimed.");
+    }
+  };
 
   // --- LẤY DỮ LIỆU CHO NỘI DUNG CHÍNH ---
   // Tìm tab con (Abrasion 1) đang active
@@ -345,12 +244,11 @@ const AnalysisResultPage = () => {
       />
 
       {/* --- 2. Nội dung chính (Phải) --- */}
-      {/* (Theo yêu cầu, chỉ tập trung vào sidebar. 
-          Đây là placeholder cho nội dung chính) */}
       <main className={styles.mainContent}>
         <MainHeader
           title={currentTabData.title}
           severity={currentWoundData.severity}
+          onSave={handleSaveToHistory}
         />
         <MedicalDisclaimer />
 

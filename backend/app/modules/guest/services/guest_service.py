@@ -104,3 +104,34 @@ class GuestService:
             "converted_users": converted_users,
             "average_session_duration": round(avg_duration, 2)
         }
+
+    async def claim_analysis(self, analysis_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """
+        Chuyển quyền sở hữu analysis từ guest session sang user.
+        """
+        check_sql = text("""
+            SELECT analysis_id, session_id 
+            FROM wound_analyses 
+            WHERE analysis_id = :analysis_id AND session_id IS NOT NULL AND user_id IS NULL
+        """)
+        result = await self.db.execute(check_sql, {"analysis_id": analysis_id})
+        analysis = result.first()
+        
+        if not analysis:
+            return False
+
+        update_sql = text("""
+            UPDATE wound_analyses
+            SET user_id = :user_id, session_id = NULL, updated_at = :updated_at
+            WHERE analysis_id = :analysis_id
+        """)
+        
+        await self.db.execute(update_sql, {
+            "user_id": user_id,
+            "analysis_id": analysis_id,
+            "updated_at": datetime.now(timezone.utc).replace(tzinfo=None)
+        })
+        
+        
+        await self.db.commit()
+        return True

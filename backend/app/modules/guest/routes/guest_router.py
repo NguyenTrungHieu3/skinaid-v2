@@ -8,7 +8,7 @@ from app.modules.guest.schemas.guest_schemas import (
     GuestSessionResponse,
     GuestStatisticsResponse
 )
-from app.core.dependencies import get_db, require_admin
+from app.core.dependencies import get_db, require_admin, require_user
 from app.shared.schemas.response import SuccessResponse
 from app.modules.audit.services.audit_service import AuditService
 
@@ -77,3 +77,21 @@ async def get_guest_statistics(
     """
     controller = GuestController(db)
     return await controller.get_guest_statistics()
+
+@router.post("/claim/{analysis_id}", response_model=SuccessResponse)
+async def claim_analysis(
+    analysis_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_user)
+):
+    """
+    User nhận quyền sở hữu analysis từ guest session.
+    Yêu cầu user phải đăng nhập.
+    """
+    controller = GuestController(db)
+    try:
+        analysis_uuid = uuid.UUID(analysis_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Định dạng analysis ID không hợp lệ")
+        
+    return await controller.claim_analysis(analysis_uuid, current_user.user_id)

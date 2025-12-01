@@ -61,9 +61,34 @@ export const updateMyProfile = (data: UserProfileUpdate) => {
   );
 };
 
-// (Bạn có thể thêm hàm upload avatar ở đây sau)
-// export const updateAvatar = (formData: FormData) => {
-//   return apiClient.post("/profile/avatar-upload", formData, {
-//     headers: { "Content-Type": "multipart/form-data" },
-//   });
-// };
+// Avatar upload response type (matching backend AvatarUploadResponse)
+export interface AvatarUploadResponse {
+  avatar_url: string;
+  file_name: string;
+  file_size: number;
+  uploaded_at: string;
+}
+
+/**
+ * Upload avatar image for the current user
+ * @param file - Image file to upload (JPEG/PNG/WEBP, max 5MB)
+ */
+export const uploadAvatar = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return apiClient.post<SuccessResponse<AvatarUploadResponse>>(
+    "/profile/avatar",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+};
+
+/**
+ * Delete avatar for the current user
+ */
+export const deleteAvatar = () => {
+  return apiClient.delete<SuccessResponse<any>>("/profile/avatar");
+};
