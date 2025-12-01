@@ -5,6 +5,9 @@ from typing import Optional, Dict, Any, List
 import uuid
 import logging
 from datetime import datetime, timezone
+import shutil
+from pathlib import Path
+from fastapi import UploadFile, HTTPException, status
 
 from app.modules.profile.models.user_profile import UserProfile
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
@@ -355,3 +358,45 @@ class ProfileService:
         except Exception as e:
             logger.error(f"Không thể lấy gợi ý hoàn thiện cho {user_id}: {e}")
             return {"suggestions": [], "missing_fields": []}
+    
+    async def save_avatar_file(self, file: UploadFile) -> str:
+        """
+        Lưu file upload vào thư mục local và trả về URL truy cập.
+        """
+        try:
+            # 1. Định nghĩa thư mục lưu (Khớp với cấu hình trong main.py)
+            UPLOAD_DIR = Path("uploads/profile")
+            # UPLOAD_DIR.mkdir(exist_ok=True) # Đảm bảo thư mục tồn tại
+
+            # parents=True: Tự động tạo thư mục cha nếu chưa có (tạo uploads rồi tạo profile)
+            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+            # 2. Validate định dạng file (Chỉ cho phép ảnh)
+            if not file.content_type.startswith("image/"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, 
+                    detail="File không hợp lệ. Chỉ chấp nhận file ảnh."
+                )
+
+            # 3. Tạo tên file mới (UUID) để tránh trùng lặp
+            file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+            unique_filename = f"{uuid.uuid4()}.{file_ext}"
+            file_path = UPLOAD_DIR / unique_filename
+
+            # 4. Lưu file xuống ổ cứng
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            # 5.--- TRẢ VỀ URL ---
+            # Vì trong main.py ta mount "/uploads" trỏ tới thư mục "uploads"
+            # Nên URL /uploads/profile/abc.jpg sẽ trỏ tới folder uploads/profile/abc.jpg -> KHỚP
+            return f"/uploads/profile/{unique_filename}"
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Lỗi khi lưu avatar file: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                detail="Không thể lưu file ảnh."
+            )

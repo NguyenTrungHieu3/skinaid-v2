@@ -3,11 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
+from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse,AvatarUploadResponse
 from app.modules.profile.controllers.profile_controller import ProfileController
 from app.core.dependencies import get_db, get_current_active_user, require_admin
 from app.modules.auth.models.user import User
 from app.modules.audit.services.audit_service import AuditService
+from fastapi import File, UploadFile # Nhớ import File, UploadFile
 
 router = APIRouter(prefix="/profile", tags=["User Profile Management"])
 
@@ -46,6 +47,23 @@ async def update_profile(
     )
     
     return result
+
+@router.post(
+    "/avatar-upload",
+    response_model=Union[SuccessResponse[AvatarUploadResponse], ErrorResponse],
+    summary="Upload ảnh đại diện",
+    description="Upload file ảnh và nhận về đường dẫn URL để cập nhật profile"
+)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    controller: ProfileController = Depends(get_profile_controller),
+    current_user: User = Depends(get_current_active_user), # Yêu cầu đăng nhập mới được up
+):
+    """
+    Upload avatar (Multipart/form-data).
+    Trả về URL của ảnh.
+    """
+    return await controller.upload_avatar(file)
 
 @router.get(
     "/me",

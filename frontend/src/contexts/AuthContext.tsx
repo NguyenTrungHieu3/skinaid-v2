@@ -36,6 +36,7 @@ interface AuthContextType {
   login: (token: string, user: User, rememberMe: boolean) => void;
   logout: () => void;
   updateUser: (newUserData: Partial<User>) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,6 +105,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("❌ [fetchUser] Lỗi khi fetch user data:", error);
       logout();
+    }
+  };
+
+  // 2. THÊM HÀM refreshUser: Hàm này public ra ngoài để các component khác gọi
+  const refreshUser = async () => {
+    const token =
+      localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+    if (token) {
+      await fetchUser(token); // Tái sử dụng logic fetchUser ở trên
     }
   };
 
@@ -186,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     login,
     logout,
     updateUser,
+    refreshUser,
   };
 
   // Ngăn con render khi đang xác thực lúc reload

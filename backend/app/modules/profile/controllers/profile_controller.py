@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union, List, Dict, Any, Optional
 import logging
 import uuid
+from fastapi import UploadFile # Nhớ import thêm UploadFile
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
 from app.modules.profile.schemas.user_profile_schemas import (
-    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
+    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse,AvatarUploadResponse
 )
 from app.modules.profile.services.profile_service import ProfileService
 from app.utils.constants import error_codes as ErrorCode, messages as Message
@@ -156,3 +157,27 @@ class ProfileController:
         except Exception as e:
             logger.error(f"[COMPLETION] Error: {e}", exc_info=True)
             return self._internal_error(Message.PROFILE_COMPLETION_SUGGESTIONS_ERROR_MSG, ErrorCode.PROFILE_COMPLETION_SUGGESTIONS_ERROR, e)
+        
+    async def upload_avatar(self, file: UploadFile) -> Union[SuccessResponse[AvatarUploadResponse], ErrorResponse]:
+        """Upload avatar và trả về URL"""
+        try:
+            logger.info(f"[UPLOAD_AVATAR] Filename: {file.filename}")
+            
+            # Gọi service để lưu file
+            avatar_url = await self.profile_service.save_avatar_file(file)
+            
+            data = AvatarUploadResponse(url=avatar_url)
+            
+            logger.info(f"[UPLOAD_AVATAR] Success: {avatar_url}")
+            return SuccessResponse(
+                message="Upload ảnh thành công", 
+                data=data
+            )
+            
+        except HTTPException as e:
+            logger.error(f"[UPLOAD_AVATAR] HTTPException: {e.detail}")
+            # Tái sử dụng hàm handle lỗi có sẵn
+            return self._handle_http_exception(e)
+        except Exception as e:
+            logger.error(f"[UPLOAD_AVATAR] Error: {e}", exc_info=True)
+            return self._internal_error("Lỗi upload ảnh", ErrorCode.INTERNAL_ERROR, e)

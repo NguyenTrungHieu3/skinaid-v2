@@ -37,6 +37,10 @@ export interface UserProfileUpdate {
   // (Lưu ý: 'email' và các trường y tế KHÔNG có ở đây)
 }
 
+export interface AvatarUploadResponse {
+  url: string; // URL ảnh trả về từ BE
+}
+
 // --- HÀM GỌI API ---
 
 /**
@@ -61,9 +65,17 @@ export const updateMyProfile = (data: UserProfileUpdate) => {
   );
 };
 
-// (Bạn có thể thêm hàm upload avatar ở đây sau)
-// export const updateAvatar = (formData: FormData) => {
-//   return apiClient.post("/profile/avatar-upload", formData, {
-//     headers: { "Content-Type": "multipart/form-data" },
-//   });
-// };
+// --- THÊM HÀM UPLOAD AVATAR ---
+export const uploadAvatarFile = (file: File) => {
+  const formData = new FormData();
+  // Key "file" phải khớp với tham số trong FastAPI: upload_avatar(file: UploadFile...)
+  formData.append("file", file);
+
+  return apiClient.post<SuccessResponse<AvatarUploadResponse>>(
+    "/profile/avatar-upload",
+    formData,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+};

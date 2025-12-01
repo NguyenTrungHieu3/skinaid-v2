@@ -30,3 +30,6 @@ class ProfileStatisticsResponse(BaseModel):
     average_completion: float = Field(..., description="Phần trăm hoàn thành trung bình")
     gender_distribution: dict = Field(..., description="Phân bố theo giới tính")
     age_distribution: dict = Field(..., description="Phân bố theo độ tuổi")
+
+class AvatarUploadResponse(BaseModel):
+    url: str = Field(..., description="Đường dẫn URL của ảnh vừa upload")
