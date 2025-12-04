@@ -41,8 +41,8 @@
   height: 100%;
 
   flex: 1 1 auto;
-  max-width: 800px;
-  min-width: 0;
+  max-width: 550px;
+  min-width: 400px;
   /* overflow-y: auto; */
 
   /* 8. Cần thiết để component Timeline bên trong nhận 100% */
@@ -58,6 +58,7 @@
     - flex-basis: 400px (Kích thước cơ sở)
   */
   flex: 0 1 800px;
+  flex: 1;
   height: 100%;
 
   /* (CSS tạm thời để bạn thấy khối trống) */
@@ -68,84 +69,22 @@
   box-sizing: border-box;
   margin: 0.5rem 0;
 }
-
-/* ... Các class cũ giữ nguyên ... */
-
-/* --- EMPTY STATE STYLING (Giao diện khi không có dữ liệu) --- */
-.emptyContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%; /* Chiếm toàn bộ chiều cao của Timeline Section */
-  padding: 2rem;
-  text-align: center;
-  background-color: #fff; /* Hoặc để trong suốt nếu muốn nhìn thấy nền xám của trang */
-  border-radius: 12px;
-  border: 1px dashed #e5e7eb; /* Viền nét đứt tạo cảm giác "chờ dữ liệu" */
-  animation: fadeIn 0.5s ease-out;
-}
-
-.emptyIconWrapper {
-  width: 80px;
-  height: 80px;
-  background-color: #f3f4f6; /* Xám nhạt */
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-
-.emptyIcon {
-  width: 40px;
-  height: 40px;
-  color: #9ca3af; /* Xám đậm hơn cho icon */
-  stroke-width: 1.5;
-}
-
-.emptyTitle {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 0.5rem 0;
-}
-
-.emptyDescription {
-  font-size: 0.95rem;
-  color: #6b7280;
-  max-width: 300px;
-  line-height: 1.5;
-  margin-bottom: 1.5rem;
-}
-
-/* Nút hành động (Ví dụ: Tải ảnh ngay) */
-.emptyButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background-color: #00897b; /* Màu chủ đạo của app bạn */
-  color: white;
-  border-radius: 8px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-.emptyButton:hover {
-  background-color: #00695c;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+@media (max-width: 768px) {
+  .historyContent {
+    flex-direction: column;
+    align-items: center;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .timelineSection,
+  .asideSection {
+    padding-top: 4vh;
+    max-width: 100%;
+    min-width: auto;
+    flex: none;
+    width: 100%;
+  }
+
+  .asideSection {
+    margin: 0;
   }
 }

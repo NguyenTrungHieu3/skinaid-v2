@@ -77,7 +77,9 @@ export function transformApiHistoryToTimeline(
       "vi-VN"
     )}`,
     date: event.created_at,
-    status: `${event.total_detections} detection(s)`,
+    status: event.total_detections === 0
+      ? "Không có vết thương"
+      : `${event.total_detections} detection(s)`,
     imageUrl: `http://localhost:8000${event.image_url}`,
   }));
 }
@@ -99,13 +101,34 @@ export function transformApiDetailToCombinedEvent(
         .map((step: string, index: number) => `${index + 1}. ${step}`)
         .join(" ");
 
+      //Lấy sơ cứu Nên làm
+      const shouldDoString = (snapshot.dos || [])
+        .map((d: string, index: number) => `${index + 1}. ${d}`)
+        .join(" ");
+
+      //Lấy sơ cứu Không nên làm
+      const shouldNotDoString = (snapshot.donts || [])
+        .map((d: string, index: number) => `${index + 1}. ${d}`)
+        .join(" ");
+
+      const titleString = (snapshot.title || '')
+
+      const suppliesNeededString = (snapshot.supplies_needed || [])
+        .map((s: string, index: number) => `${index + 1}. ${s}`)
+        .join(" ");
+
       return {
         type: wound.wound_type,
         accuracy: wound.confidence_score * 100, // Chuyển 0.95 -> 95
         severity: wound.severity, // Lấy trực tiếp từ 'significant_wounds'
-        description: snapshot.description || "Không có mô tả.",
+        sub_type: wound.sub_type, // Lấy trực tiếp từ 'significant_wounds'
+        reliable_source: snapshot.source || {},
         healingTime: snapshot.estimated_healing_time || "Chưa có dữ liệu",
         firstAid: firstAidString || "Không có gợi ý sơ cứu.",
+        shouldDo: shouldDoString || "Không có thông tin.",
+        shouldNotDo: shouldNotDoString || "Không có thông tin.",
+        titleGuide: titleString || "Không có tiêu đề.",
+        suppliesNeeded: suppliesNeededString || "Không có thông tin.",
       };
     }
   );
@@ -116,7 +139,9 @@ export function transformApiDetailToCombinedEvent(
       "vi-VN"
     )}`,
     date: apiEvent.created_at,
-    status: `${apiEvent.total_detections} detection(s)`,
+    status: apiEvent.total_detections === 0
+      ? "Không có vết thương"
+      : `${apiEvent.total_detections} detection(s)`,
     imageUrl: `http://localhost:8000${apiEvent.image_url}`,
     detail: details,
   };

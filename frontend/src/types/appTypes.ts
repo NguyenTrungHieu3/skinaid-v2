@@ -18,9 +18,14 @@ export interface SingleWoundDetail {
   type: string;
   accuracy: number;
   severity: string;
-  description: string;
+  sub_type:string;
   healingTime: string;
   firstAid: string; // Đây là chuỗi đã được join (ví dụ: "1. ... 2. ...")
+  shouldDo: string; // Mô tả các bước nên làm
+  shouldNotDo: string; // Mô tả các bước không nên làm
+  titleGuide:string; // Tiêu đề hướng dẫn sơ cứu
+  suppliesNeeded: string; // Vật tư cần thiết
+  reliable_source: Record<string, any>; 
 }
 
 /**
