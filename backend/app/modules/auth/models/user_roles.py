@@ -40,7 +40,7 @@ class UserRole(SQLModel, table=True):
     
     expires_at: Optional[datetime] = Field(
         default=None,
-        description="Role expiry date. NULL = permanent"
+        description="Ngày hết hạn vai trò. NULL = vĩnh viễn"
     )
     user: "User" = Relationship(
         back_populates="user_roles",
@@ -51,7 +51,7 @@ class UserRole(SQLModel, table=True):
     
     @property
     def is_expired(self) -> bool:
-        """Check if temporary role has expired"""
+        """Kiểm tra xem vai trò tạm thời đã hết hạn chưa"""
         if self.expires_at is None:
             return False
         return datetime.now(timezone.utc).replace(tzinfo=None) > self.expires_at

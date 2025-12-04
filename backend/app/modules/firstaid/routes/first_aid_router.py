@@ -63,7 +63,7 @@ async def get_first_aid_statistics(
     current_user = Depends(allow_guest)
 ):
     """
-    Lấy thống kê về first aid knowledge base.
+    Lấy thống kê về cơ sở kiến thức sơ cứu.
     """
     controller = FirstAidController(db)
     return await controller.get_statistics()
@@ -130,8 +130,8 @@ async def delete_first_aid_guide(
 ):
     """
     Xóa hướng dẫn sơ cứu (Chỉ Admin).
-    - hard_delete=False: Soft delete (set is_active=false)
-    - hard_delete=True: Hard delete (xóa vĩnh viễn khỏi database)
+    - hard_delete=False: Xóa mềm (đặt is_active=false)
+    - hard_delete=True: Xóa cứng (xóa vĩnh viễn khỏi cơ sở dữ liệu)
     """
     controller = FirstAidController(db)
     return await controller.delete_first_aid_guide(guide_id)

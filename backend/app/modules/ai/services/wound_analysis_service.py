@@ -111,7 +111,7 @@ class WoundAnalysisService:
 
     @staticmethod
     def _extract_source_string(source_data: Optional[Any]) -> Optional[str]:
-        """Extract source string from JSONB object or return string as-is"""
+        """Trích xuất chuỗi nguồn từ đối tượng JSONB hoặc trả về chuỗi nguyên bản"""
         if not source_data:
             return None
         if isinstance(source_data, str):
@@ -157,7 +157,7 @@ class WoundAnalysisService:
         try:
             return uuid.UUID(str(guide_id)) if not isinstance(guide_id, uuid.UUID) else guide_id
         except (ValueError, AttributeError):
-            logger.warning(f"Invalid guide_id format: {guide_id}")
+            logger.warning(f"Định dạng guide_id không hợp lệ: {guide_id}")
             return None
 
 

@@ -142,7 +142,7 @@ class TokenFamilyService:
         await db.execute(update_query, {"jti": refresh_jti})
         await db.commit()
         
-        logger.info(f"Revoked token family: {len(jtis_to_revoke)} tokens")
+        logger.info(f"Đã thu hồi token family: {len(jtis_to_revoke)} tokens")
         return len(jtis_to_revoke)
     
     @staticmethod
@@ -177,8 +177,8 @@ class TokenFamilyService:
             total_revoked += revoked
         
         logger.warning(
-            f"BẢO MẬT: Revoked chain - {len(chain_jtis)} families, "
-            f"{total_revoked} tokens (reuse detected: {refresh_jti})"
+            f"BẢO MẬT: Đã thu hồi chuỗi - {len(chain_jtis)} families, "
+            f"{total_revoked} tokens (phát hiện tái sử dụng: {refresh_jti})"
         )
         
         return len(chain_jtis)

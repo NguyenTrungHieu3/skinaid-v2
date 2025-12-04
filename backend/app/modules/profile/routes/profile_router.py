@@ -117,12 +117,12 @@ async def get_completion_suggestions(
     "/avatar",
     response_model=SuccessResponse[AvatarUploadResponse],
     status_code=status.HTTP_200_OK,
-    summary="Upload avatar",
+    summary="Tải lên ảnh đại diện",
     description="Upload ảnh đại diện cho user đang đăng nhập",
     tags=["Profile - Avatar"]
 )
 async def upload_avatar(
-    file: Annotated[UploadFile, File(description="File ảnh avatar (JPEG/PNG/WEBP, max 5MB)")],
+    file: Annotated[UploadFile, File(description="File ảnh đại diện (JPEG/PNG/WEBP, tối đa 5MB)")],
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)]
 ) -> SuccessResponse[AvatarUploadResponse] | ErrorResponse:
@@ -142,7 +142,7 @@ async def upload_avatar(
     "/avatar",
     response_model=SuccessResponse[AvatarDeleteResponse],
     status_code=status.HTTP_200_OK,
-    summary="Xóa avatar",
+    summary="Xóa ảnh đại diện",
     description="Xóa ảnh đại diện của user đang đăng nhập",
     tags=["Profile - Avatar"]
 )
@@ -166,7 +166,7 @@ async def delete_avatar(
     "/avatar/{user_id}",
     response_model=SuccessResponse[PublicAvatarResponse],
     status_code=status.HTTP_200_OK,
-    summary="Lấy avatar (Public)",
+    summary="Lấy ảnh đại diện (Công khai)",
     description="Lấy ảnh đại diện của bất kỳ user nào (không cần authentication)",
     tags=["Profile - Avatar"]
 )

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class AdminAuditService:
-    """Service for managing admin audit logs"""
+    """Service để quản lý admin audit logs"""
     
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -44,28 +44,28 @@ class AdminAuditService:
         duration_ms: Optional[int] = None,
     ) -> Optional[AdminAuditLog]:
         """
-        Log an admin action to the audit trail.
+        Ghi lại hành động của admin vào audit trail.
         
         Args:
-            admin_user_id: UUID of the admin performing the action
-            admin_email: Email of the admin
-            admin_role: Role of the admin (admin, moderator, etc.)
-            action: Action being performed (CREATE_USER, UPDATE_GUIDE, etc.)
-            resource_type: Type of resource (user, first_aid_guide, etc.)
-            resource_id: ID of the affected resource  
-            description: Human-readable description
-            changes: Dict containing before/after state
-            metadata: Additional context (request_id, etc.)
-            http_method: HTTP method (POST, PUT, DELETE, etc.)
+            admin_user_id: UUID của admin thực hiện hành động
+            admin_email: Email của admin
+            admin_role: Vai trò của admin (admin, moderator, etc.)
+            action: Hành động được thực hiện (CREATE_USER, UPDATE_GUIDE, etc.)
+            resource_type: Loại tài nguyên (user, first_aid_guide, etc.)
+            resource_id: ID của tài nguyên bị ảnh hưởng
+            description: Mô tả dễ đọc
+            changes: Dict chứa trạng thái trước/sau
+            metadata: Context bổ sung (request_id, etc.)
+            http_method: Phương thức HTTP (POST, PUT, DELETE, etc.)
             endpoint: API endpoint
-            ip_address: Client IP
-            user_agent: Client user agent
-            status: success, failed, or partial
-            error_message: Error message if failed
-            duration_ms: Operation duration in milliseconds
+            ip_address: IP của client
+            user_agent: User agent của client
+            status: success, failed, hoặc partial
+            error_message: Thông báo lỗi nếu thất bại
+            duration_ms: Thời gian thực hiện tính bằng mili giây
         
         Returns:
-            Created audit log entry, or None if logging failed
+            Bản ghi audit log đã tạo, hoặc None nếu ghi log thất bại
         """
         try:
             # Serialize JSONB fields to JSON strings for AsyncPG
@@ -96,14 +96,14 @@ class AdminAuditService:
             await self.db.refresh(log_entry)
             
             logger.info(
-                f"Audit log created: action={action}, admin={admin_email}, "
+                f"Audit log đã được tạo: action={action}, admin={admin_email}, "
                 f"resource={resource_type}:{resource_id}, status={status}"
             )
             
             return log_entry
             
         except Exception as e:
-            logger.error(f"Failed to create audit log: {e}", exc_info=True)
+            logger.error(f"Thất bại khi tạo audit log: {e}", exc_info=True)
             # Don't raise - we don't want audit logging failures to break the main operation
             return None
     
@@ -118,19 +118,19 @@ class AdminAuditService:
         offset: int = 0,
     ) -> List[AdminAuditLog]:
         """
-        Retrieve audit logs with optional filters.
+        Lấy audit logs với các bộ lọc tùy chọn.
         
         Args:
-            admin_user_id: Filter by admin user
-            action: Filter by action type
-            resource_type: Filter by resource type
-            resource_id: Filter by resource ID
-            status: Filter by status
-            limit: Maximum number of results
-            offset: Number of results to skip
+            admin_user_id: Lọc theo admin user
+            action: Lọc theo loại hành động
+            resource_type: Lọc theo loại tài nguyên
+            resource_id: Lọc theo ID tài nguyên
+            status: Lọc theo trạng thái
+            limit: Số lượng kết quả tối đa
+            offset: Số lượng kết quả bỏ qua
         
         Returns:
-            List of audit log entries
+            Danh sách các bản ghi audit log
         """
         try:
             query = select(AdminAuditLog)
@@ -159,18 +159,18 @@ class AdminAuditService:
             return list(logs)
             
         except Exception as e:
-            logger.error(f"Failed to retrieve audit logs: {e}", exc_info=True)
+            logger.error(f"Thất bại khi lấy audit logs: {e}", exc_info=True)
             return []
     
     async def get_log_by_id(self, log_id: UUID) -> Optional[AdminAuditLog]:
-        """Get a specific audit log by ID"""
+        """Lấy một audit log cụ thể theo ID"""
         try:
             result = await self.db.execute(
                 select(AdminAuditLog).where(AdminAuditLog.log_id == log_id)
             )
             return result.scalar_one_or_none()
         except Exception as e:
-            logger.error(f"Failed to get audit log: {e}", exc_info=True)
+            logger.error(f"Thất bại khi lấy audit log: {e}", exc_info=True)
             return None
     
     async def get_resource_history(
@@ -180,15 +180,15 @@ class AdminAuditService:
         limit: int = 50
     ) -> List[AdminAuditLog]:
         """
-        Get the complete audit history for a specific resource.
+        Lấy toàn bộ lịch sử audit cho một tài nguyên cụ thể.
         
         Args:
-            resource_type: Type of resource (user, first_aid_guide, etc.)
-            resource_id: ID of the resource
-            limit: Maximum number of entries to return
+            resource_type: Loại tài nguyên (user, first_aid_guide, etc.)
+            resource_id: ID của tài nguyên
+            limit: Số lượng mục tối đa trả về
         
         Returns:
-            List of audit log entries for the resource
+            Danh sách các bản ghi audit log cho tài nguyên
         """
         return await self.get_logs(
             resource_type=resource_type,

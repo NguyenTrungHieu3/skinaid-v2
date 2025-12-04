@@ -25,12 +25,12 @@ class VerificationToken(SQLModel, table=True):
     
     @property
     def is_expired(self) -> bool:
-        """Check if the token has expired."""
+        """Kiểm tra xem token đã hết hạn chưa."""
         return datetime.now(timezone.utc).replace(tzinfo=None) > self.expires_at
 
     @property
     def is_valid(self) -> bool:
-        """Check if the token is valid (not expired and not used)."""
+        """Kiểm tra xem token có hợp lệ không (chưa hết hạn và chưa sử dụng)."""
         return not self.is_expired and not self.is_used
 
     @classmethod
@@ -40,7 +40,7 @@ class VerificationToken(SQLModel, table=True):
         token_type: str,
         expires_in_hours: int = 24
     ) -> "VerificationToken":
-        """Create a new verification token."""
+        """Tạo token xác thực mới."""
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
         return cls(
             email=email,
@@ -54,6 +54,6 @@ class VerificationToken(SQLModel, table=True):
 
     @staticmethod
     def _generate_token() -> str:
-        """Generate a secure random token."""
+        """Tạo token ngẫu nhiên an toàn."""
         import secrets
         return secrets.token_urlsafe(32)

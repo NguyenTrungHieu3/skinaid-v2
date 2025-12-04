@@ -14,7 +14,7 @@ class CreateUserRequest(BaseModel):
     def validate_role(cls, v: str) -> str:
         allowed_roles = ['user', 'admin']
         if v.lower() not in allowed_roles:
-            raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
+            raise ValueError(f"Vai trò phải là một trong: {', '.join(allowed_roles)}")
         return v.lower()
 
 class UpdateUserRequest(BaseModel):
@@ -29,7 +29,7 @@ class UpdateUserRequest(BaseModel):
         if v is not None:
             allowed_roles = ['user', 'admin']
             if v.lower() not in allowed_roles:
-                raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")
+                raise ValueError(f"Vai trò phải là một trong: {', '.join(allowed_roles)}")
             return v.lower()
         return v
 
@@ -74,14 +74,14 @@ class UserDetailInfo(BaseModel):
 
 
 class PaginationInfo(BaseModel):
-    total: int = Field(..., description="Total number of records")
-    page: int = Field(..., description="Current page number")
-    limit: int = Field(..., description="Records per page")
-    total_pages: int = Field(..., description="Total number of pages")
+    total: int = Field(..., description="Tổng số bản ghi")
+    page: int = Field(..., description="Số trang hiện tại")
+    limit: int = Field(..., description="Số bản ghi mỗi trang")
+    total_pages: int = Field(..., description="Tổng số trang")
 
 
 class UserListResponse(BaseModel):
-    """Response schema for user list"""
+    """Schema cho danh sách người dùng"""
     users: List[UserBasicInfo]
     pagination: PaginationInfo
     
@@ -111,7 +111,7 @@ class UserListResponse(BaseModel):
 
 
 class UserDetailResponse(BaseModel):
-    """Response schema for user detail"""
+    """Schema cho chi tiết người dùng"""
     user: UserDetailInfo
     
     class Config:
@@ -134,7 +134,7 @@ class UserDetailResponse(BaseModel):
 
 
 class UserStatsResponse(BaseModel):
-    """User statistics response"""
+    """Phản hồi thống kê người dùng"""
     total_users: int
     active_users: int
     verified_users: int

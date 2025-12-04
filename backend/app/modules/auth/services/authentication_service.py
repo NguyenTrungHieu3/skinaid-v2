@@ -146,7 +146,7 @@ class AuthenticationService:
                 return {
                     "success": False,
                     "user_id": str(user_id),
-                    "message": "Không tìm thấy user",
+                    "message": "Không tìm thấy người dùng",
                 }
 
             old_version = row[0]
@@ -163,12 +163,12 @@ class AuthenticationService:
                 "user_id": str(user_id),
                 "old_version": old_version,
                 "new_version": new_version,
-                "message": "Tất cả tokens đã bị thu hồi. User phải đăng nhập lại.",
+                "message": "Tất cả token đã bị thu hồi. Người dùng phải đăng nhập lại.",
             }
 
         except Exception as e:
             logger.error("Lỗi khi thu hồi tất cả tokens cho user %s: %s", user_id, str(e))
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Không thể thu hồi tokens"
+                detail="Không thể thu hồi token"
             )

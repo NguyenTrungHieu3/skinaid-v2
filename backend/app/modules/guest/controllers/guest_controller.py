@@ -84,7 +84,7 @@ class GuestController:
         if not success:
             raise HTTPException(
                 status_code=404, 
-                detail="Analysis không tồn tại hoặc đã thuộc về người dùng khác"
+                detail="Phân tích không tồn tại hoặc đã thuộc về người dùng khác"
             )
             
         await self.audit_service.log_event(

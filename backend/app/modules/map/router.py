@@ -22,11 +22,11 @@ router = APIRouter(prefix="/map")
     "/ip-location",
     response_model=LocationResponse,
     summary="Lấy vị trí từ IP",
-    description="Xác định vị trí người dùng dựa trên IP address (fallback khi GPS không khả dụng)"
+    description="Xác định vị trí người dùng dựa trên địa chỉ IP (dự phòng khi GPS không khả dụng)"
 )
 async def get_ip_location():
     """
-    Lấy vị trí người dùng từ IP address
+    Lấy vị trí người dùng từ địa chỉ IP
     """
     logger.info("[MAP_API] GET /ip-location")
     return await map_controller.get_user_location_from_ip()
@@ -36,11 +36,11 @@ async def get_ip_location():
     "/location",
     response_model=LocationResponse,
     summary="Lấy vị trí từ IP (alias)",
-    description="Alias endpoint for /ip-location for backward compatibility"
+    description="Endpoint alias cho /ip-location để tương thích ngược"
 )
 async def get_location():
     """
-    Alias for get_ip_location - backward compatibility
+    Alias cho get_ip_location - tương thích ngược
     """
     logger.info("[MAP_API] GET /location (alias for /ip-location)")
     return await map_controller.get_user_location_from_ip()
@@ -67,11 +67,11 @@ async def find_nearby_places(request: NearbyPlacesRequest):
     "/nearby",
     response_model=List[PlaceResponse],
     summary="Tìm địa điểm gần đây (alias)",
-    description="Alias endpoint for /nearby-places for backward compatibility"
+    description="Endpoint alias cho /nearby-places để tương thích ngược"
 )
 async def find_nearby(request: NearbyPlacesRequest):
     """
-    Alias for find_nearby_places - backward compatibility
+    Alias cho find_nearby_places - tương thích ngược
     """
     logger.info(
         f"[MAP_API] POST /nearby (alias): "
@@ -103,7 +103,7 @@ async def calculate_route(request: RouteRequest):
     "/geocode",
     response_model=GeocodeResponse,
     summary="Tìm tọa độ từ địa chỉ",
-    description="Search địa điểm theo tên hoặc địa chỉ (Geocoding)"
+    description="Tìm kiếm địa điểm theo tên hoặc địa chỉ (Geocoding)"
 )
 async def geocode_address(
     address: str = Query(

@@ -22,14 +22,14 @@ async def get_session_id(
         try:
             return UUID(session_str)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid session_id format")
+            raise HTTPException(status_code=400, detail="Định dạng session_id không hợp lệ")
 
     return None
 
 @router.post("/analyze")
 async def analyze_wound_image(
     request: Request,
-    file: UploadFile = File(..., description="Wound image (JPEG/PNG, max 5MB)"),
+    file: UploadFile = File(..., description="Ảnh vết thương (JPEG/PNG, tối đa 5MB)"),
     current_user: Optional[User] = Depends(allow_guest),
     session_id: Optional[UUID] = Depends(get_session_id),
     db: AsyncSession = Depends(get_db)
@@ -72,7 +72,7 @@ async def analyze_wound_image(
             action="upload_image",
             user_id=user_id,
             success=False,
-            error_message=result.message if isinstance(result, ErrorResponse) else "Upload failed",
+            error_message=result.message if isinstance(result, ErrorResponse) else "Upload thất bại",
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent"),
             is_guest=user_id is None,
@@ -96,7 +96,7 @@ async def get_analysis_history(
     if not user_id and not session_id:
         raise HTTPException(
             status_code=401,
-            detail="Authentication required or session_id must be provided"
+            detail="Yêu cầu xác thực hoặc session_id phải được cung cấp"
         )
 
     result = await controller.get_analysis_history(

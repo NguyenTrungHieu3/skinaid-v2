@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 async def run_token_cleanup():
     """
-    Scheduled task: Cleanup expired tokens
+    Tác vụ định kỳ: Dọn dẹp token đã hết hạn
     Chạy định kỳ (ví dụ: mỗi giờ)
     """
     logger.info("Bắt đầu scheduled token cleanup")

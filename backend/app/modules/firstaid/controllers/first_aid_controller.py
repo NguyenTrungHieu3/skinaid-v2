@@ -19,12 +19,12 @@ class FirstAidController:
         self._severity_map = {"mild": "Nhẹ", "moderate": "Trung bình", "severe": "Nặng"}
 
     def _format_message(self, base_msg: str, wound_type: str, severity: str, sub_type: Optional[str] = None) -> str:
-        """Format message with optional sub_type"""
+        """Định dạng tin nhắn với sub_type tùy chọn"""
         msg = base_msg.format(wound_type=wound_type, severity=severity)
         return f"{msg} với sub_type '{sub_type}'" if sub_type else msg
 
     def _count_items(self, data: Optional[Union[List, Dict]]) -> int:
-        """Count items in list or dict with 'items' key"""
+        """Đếm số lượng item trong list hoặc dict với key 'items'"""
         if not data:
             return 0
         if isinstance(data, list):
@@ -34,7 +34,7 @@ class FirstAidController:
         return 0
 
     def _extract_source_string(self, source_data: Optional[Union[str, Dict]]) -> Optional[str]:
-        """Extract source string from JSONB object or return string as-is"""
+        """Trích xuất chuỗi nguồn từ đối tượng JSONB hoặc trả về chuỗi nguyên bản"""
         if not source_data:
             return None
         if isinstance(source_data, str):
@@ -45,7 +45,7 @@ class FirstAidController:
         return None
 
     def _create_guide_response(self, guide: Dict[str, Any], expected_wound_type: str, expected_severity: str) -> FirstAidGuideResponse:
-        """Create FirstAidGuideResponse from guide data"""
+        """Tạo FirstAidGuideResponse từ dữ liệu hướng dẫn"""
         return FirstAidGuideResponse(
             firstaidguide_id=uuid.UUID(guide.get("firstaidguide_id", "00000000-0000-0000-0000-000000000000")),
             wound_type=guide.get("wound_type", expected_wound_type),
@@ -70,22 +70,22 @@ class FirstAidController:
         )
 
     async def _get_available_combinations(self) -> List[str]:
-        """Get available wound_type/severity combinations"""
+        """Lấy các kết hợp wound_type/severity có sẵn"""
         try:
             wound_types = await self.first_aid_service.get_available_wound_types()
             return [f"{wt['wound_type']}/{sev}" for wt in wound_types for sev in wt.get("severities", [])]
         except Exception as e:
-            logger.warning(f"[COMBINATIONS] Error: {e}")
+            logger.warning(f"[COMBINATIONS] Lỗi: {e}")
             return []
 
     async def get_first_aid_guide(self, wound_type: str, severity: str, sub_type: Optional[str] = None) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Get first aid guide for specific wound type and severity"""
+        """Lấy hướng dẫn sơ cứu cho loại và mức độ vết thương cụ thể"""
         try:
-            logger.info(f"[FIRSTAID_GUIDE] {wound_type}/{severity}, sub_type: {sub_type}")
+            logger.info(f"[FIRSTAID_GUIDE] {wound_type}/{severity}, loại phụ: {sub_type}")
             guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity, sub_type)
 
             if not guide:
-                logger.warning(f"[FIRSTAID_GUIDE] Not found: {wound_type}/{severity}")
+                logger.warning(f"[FIRSTAID_GUIDE] Không tìm thấy: {wound_type}/{severity}")
                 error_msg = Message.FIRSTAID_GUIDE_NOT_FOUND_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_NOT_FOUND_FOR_MSG
                 
                 return ErrorResponse(
@@ -99,14 +99,14 @@ class FirstAidController:
                 )
 
             guide_response = self._create_guide_response(guide, wound_type, severity)
-            logger.info(f"[FIRSTAID_GUIDE] Success: {guide.get('firstaidguide_id')}")
+            logger.info(f"[FIRSTAID_GUIDE] Thành công: {guide.get('firstaidguide_id')}")
             
             return SuccessResponse(
                 message=self._format_message(Message.FIRSTAID_GUIDE_FOUND_FOR_MSG, wound_type, severity, sub_type),
                 data=guide_response
             )
         except HTTPException as e:
-            logger.warning(f"[FIRSTAID_GUIDE] HTTPException: {e.detail}")
+            logger.warning(f"[FIRSTAID_GUIDE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -114,23 +114,23 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[FIRSTAID_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[FIRSTAID_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_GUIDE_ERROR_MSG, error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
                 error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     async def get_available_wound_types(self) -> Union[SuccessResponse[List[WoundTypeResponse]], ErrorResponse]:
-        """Get all available wound types"""
+        """Lấy tất cả các loại vết thương có sẵn"""
         try:
-            logger.info("[WOUND_TYPES] Fetching available wound types")
+            logger.info("[WOUND_TYPES] Đang lấy các loại vết thương có sẵn")
             wound_types = await self.first_aid_service.get_available_wound_types()
             wound_type_responses = [WoundTypeResponse(**wt) for wt in wound_types]
             
-            logger.info(f"[WOUND_TYPES] Success: {len(wound_type_responses)} types")
+            logger.info(f"[WOUND_TYPES] Thành công: {len(wound_type_responses)} loại")
             return SuccessResponse(message=Message.WOUND_TYPES_SUCCESS_MSG, data=wound_type_responses)
         except HTTPException as e:
-            logger.warning(f"[WOUND_TYPES] HTTPException: {e.detail}")
+            logger.warning(f"[WOUND_TYPES] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.WOUND_TYPES_ERROR,
@@ -138,7 +138,7 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[WOUND_TYPES] Error: {e}", exc_info=True)
+            logger.error(f"[WOUND_TYPES] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.WOUND_TYPES_ERROR_MSG, error_code=ErrorCode.WOUND_TYPES_ERROR,
                 error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -147,9 +147,9 @@ class FirstAidController:
     async def search_first_aid_guides(self, wound_type: Optional[str] = None, severity: Optional[str] = None,
                                      limit: int = 20, offset: int = 0, is_active: Optional[bool] = None, 
                                      search: Optional[str] = None) -> Union[SuccessResponse[List[FirstAidGuideResponse]], ErrorResponse]:
-        """Search first aid guides with filters"""
+        """Tìm kiếm hướng dẫn sơ cứu với bộ lọc"""
         try:
-            logger.info(f"[SEARCH_GUIDES] wound_type: {wound_type}, severity: {severity}, limit: {limit}, offset: {offset}, is_active: {is_active}, search: {search}")
+            logger.info(f"[SEARCH_GUIDES] loại vết thương: {wound_type}, mức độ: {severity}, giới hạn: {limit}, vị trí bắt đầu: {offset}, đang hoạt động: {is_active}, tìm kiếm: {search}")
             result = await self.first_aid_service.search_first_aid_guides(
                 wound_type, severity, limit, offset, is_active, search
             )
@@ -163,14 +163,14 @@ class FirstAidController:
                 for g in guides
             ]
             
-            logger.info(f"[SEARCH_GUIDES] Success: {len(guide_responses)} guides (Total: {total_count})")
+            logger.info(f"[SEARCH_GUIDES] Thành công: {len(guide_responses)} hướng dẫn (Tổng: {total_count})")
             return SuccessResponse(
                 message=Message.FIRSTAID_GUIDES_FOUND_COUNT_MSG.format(count=len(guide_responses)),
                 data=guide_responses,
                 total=total_count
             )
         except HTTPException as e:
-            logger.warning(f"[SEARCH_GUIDES] HTTPException: {e.detail}")
+            logger.warning(f"[SEARCH_GUIDES] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
@@ -178,22 +178,22 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[SEARCH_GUIDES] Error: {e}", exc_info=True)
+            logger.error(f"[SEARCH_GUIDES] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_SEARCH_ERROR_MSG, error_code=ErrorCode.FIRSTAID_SEARCH_ERROR,
                 error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     async def get_statistics(self) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Get statistics about first aid knowledge base"""
+        """Lấy thống kê về cơ sở kiến thức sơ cứu"""
         try:
-            logger.info("[STATISTICS] Fetching statistics")
+            logger.info("[STATISTICS] Đang lấy thống kê")
             stats = await self.first_aid_service.get_guide_statistics()
             
-            logger.info(f"[STATISTICS] Success - Total guides: {stats.get('total_guides', 0)}")
+            logger.info(f"[STATISTICS] Thành công - Tổng hướng dẫn: {stats.get('total_guides', 0)}")
             return SuccessResponse(message=Message.FIRSTAID_STATISTICS_SUCCESS_MSG, data=stats)
         except HTTPException as e:
-            logger.warning(f"[STATISTICS] HTTPException: {e.detail}")
+            logger.warning(f"[STATISTICS] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
@@ -201,7 +201,7 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[STATISTICS] Error: {e}", exc_info=True)
+            logger.error(f"[STATISTICS] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_STATISTICS_ERROR_MSG, error_code=ErrorCode.FIRSTAID_STATISTICS_ERROR,
                 error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -209,14 +209,14 @@ class FirstAidController:
 
     async def validate_guide_availability(self, wound_type: str, severity: str, 
                                          sub_type: Optional[str] = None) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Check availability of first aid guide"""
+        """Kiểm tra tính khả dụng của hướng dẫn sơ cứu"""
         try:
-            logger.info(f"[VALIDATE] {wound_type}/{severity}, sub_type: {sub_type}")
+            logger.info(f"[VALIDATE] {wound_type}/{severity}, loại phụ: {sub_type}")
             guide = await self.first_aid_service.get_first_aid_guide(wound_type, severity, sub_type)
 
             if guide:
                 success_msg = Message.FIRSTAID_GUIDE_AVAILABLE_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_AVAILABLE_FOR_MSG
-                logger.info(f"[VALIDATE] Available: {guide.get('firstaidguide_id')}")
+                logger.info(f"[VALIDATE] Có sẵn: {guide.get('firstaidguide_id')}")
                 
                 return SuccessResponse(
                     message=self._format_message(success_msg, wound_type, severity, sub_type),
@@ -239,7 +239,7 @@ class FirstAidController:
                 ]
                 
                 not_avail_msg = Message.FIRSTAID_GUIDE_NOT_AVAILABLE_WITH_SUBTYPE_MSG if sub_type else Message.FIRSTAID_GUIDE_NOT_AVAILABLE_FOR_MSG
-                logger.info(f"[VALIDATE] Not available, {len(alternatives)} alternatives")
+                logger.info(f"[VALIDATE] Không có sẵn, {len(alternatives)} lựa chọn thay thế")
                 
                 return SuccessResponse(
                     message=self._format_message(not_avail_msg, wound_type, severity, sub_type),
@@ -250,7 +250,7 @@ class FirstAidController:
                     }
                 )
         except HTTPException as e:
-            logger.warning(f"[VALIDATE] HTTPException: {e.detail}")
+            logger.warning(f"[VALIDATE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
@@ -258,35 +258,35 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[VALIDATE] Error: {e}", exc_info=True)
+            logger.error(f"[VALIDATE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message=Message.FIRSTAID_VALIDATION_ERROR_MSG, error_code=ErrorCode.FIRSTAID_VALIDATION_ERROR,
                 error_details={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     async def create_first_aid_guide(self, guide_data: Dict[str, Any], current_user_id: uuid.UUID) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Create new first aid guide (Admin only)"""
+        """Tạo hướng dẫn sơ cứu mới (Chỉ Admin)"""
         try:
-            logger.info(f"[CREATE_GUIDE] Creating guide for {guide_data.get('wound_type')}/{guide_data.get('severity')}")
+            logger.info(f"[CREATE_GUIDE] Đang tạo hướng dẫn cho {guide_data.get('wound_type')}/{guide_data.get('severity')}")
             
             guide = await self.first_aid_service.create_first_aid_guide(guide_data, current_user_id)
             
             if not guide:
                 return ErrorResponse(
-                    message="Failed to create first aid guide",
+                    message="Không thể tạo hướng dẫn sơ cứu",
                     error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
             guide_response = self._create_guide_response(guide, guide.get("wound_type", ""), guide.get("severity", ""))
-            logger.info(f"[CREATE_GUIDE] Success: {guide.get('firstaidguide_id')}")
+            logger.info(f"[CREATE_GUIDE] Thành công: {guide.get('firstaidguide_id')}")
             
             return SuccessResponse(
                 message="Tạo hướng dẫn sơ cứu thành công",
                 data=guide_response
             )
         except HTTPException as e:
-            logger.warning(f"[CREATE_GUIDE] HTTPException: {e.detail}")
+            logger.warning(f"[CREATE_GUIDE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -294,7 +294,7 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except ValueError as e:
-            logger.warning(f"[CREATE_GUIDE] Validation error: {e}")
+            logger.warning(f"[CREATE_GUIDE] Lỗi xác thực: {e}")
             error_msg = str(e)
             
             # Check if it's a duplicate error
@@ -302,9 +302,9 @@ class FirstAidController:
             
             # Enhance the error message for duplicates
             if is_duplicate:
-                message = f"Duplicate guide: {error_msg}"
+                message = f"Hướng dẫn bị trùng lặp: {error_msg}"
                 error_code = "FIRSTAID_GUIDE_DUPLICATE"
-                suggestion = "You can edit the existing guide or set 'is_active' to false to create an inactive version"
+                suggestion = "Bạn có thể chỉnh sửa hướng dẫn hiện có hoặc đặt 'is_active' thành false để tạo phiên bản không hoạt động"
             else:
                 message = error_msg
                 error_code = ErrorCode.FIRSTAID_GUIDE_ERROR
@@ -320,7 +320,7 @@ class FirstAidController:
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            logger.error(f"[CREATE_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[CREATE_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message="Lỗi khi tạo hướng dẫn sơ cứu",
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -329,9 +329,9 @@ class FirstAidController:
             )
 
     async def get_guide_by_id(self, guide_id: uuid.UUID) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Get first aid guide by ID"""
+        """Lấy hướng dẫn sơ cứu theo ID"""
         try:
-            logger.info(f"[GET_GUIDE] Getting guide {guide_id}")
+            logger.info(f"[GET_GUIDE] Đang lấy hướng dẫn {guide_id}")
             
             guide = await self.first_aid_service.get_guide_by_id(guide_id)
             
@@ -343,14 +343,14 @@ class FirstAidController:
                 )
             
             guide_response = self._create_guide_response(guide, guide.get("wound_type", ""), guide.get("severity", ""))
-            logger.info(f"[GET_GUIDE] Success: {guide_id}")
+            logger.info(f"[GET_GUIDE] Thành công: {guide_id}")
             
             return SuccessResponse(
                 message="Lấy hướng dẫn sơ cứu thành công",
                 data=guide_response
             )
         except HTTPException as e:
-            logger.warning(f"[GET_GUIDE] HTTPException: {e.detail}")
+            logger.warning(f"[GET_GUIDE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -358,7 +358,7 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[GET_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[GET_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message="Lỗi khi lấy hướng dẫn sơ cứu",
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -367,9 +367,9 @@ class FirstAidController:
             )
 
     async def update_first_aid_guide(self, guide_id: uuid.UUID, update_data: Dict[str, Any]) -> Union[SuccessResponse[FirstAidGuideResponse], ErrorResponse]:
-        """Update first aid guide (Admin only)"""
+        """Cập nhật hướng dẫn sơ cứu (Chỉ Admin)"""
         try:
-            logger.info(f"[UPDATE_GUIDE] Updating guide {guide_id}")
+            logger.info(f"[UPDATE_GUIDE] Đang cập nhật hướng dẫn {guide_id}")
             
             guide = await self.first_aid_service.update_first_aid_guide(guide_id, update_data)
             
@@ -381,14 +381,14 @@ class FirstAidController:
                 )
             
             guide_response = self._create_guide_response(guide, guide.get("wound_type", ""), guide.get("severity", ""))
-            logger.info(f"[UPDATE_GUIDE] Success: {guide_id}")
+            logger.info(f"[UPDATE_GUIDE] Thành công: {guide_id}")
             
             return SuccessResponse(
                 message="Cập nhật hướng dẫn sơ cứu thành công",
                 data=guide_response
             )
         except HTTPException as e:
-            logger.warning(f"[UPDATE_GUIDE] HTTPException: {e.detail}")
+            logger.warning(f"[UPDATE_GUIDE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -396,14 +396,14 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except ValueError as e:
-            logger.warning(f"[UPDATE_GUIDE] Validation error: {e}")
+            logger.warning(f"[UPDATE_GUIDE] Lỗi xác thực: {e}")
             return ErrorResponse(
                 message=str(e),
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            logger.error(f"[UPDATE_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[UPDATE_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message="Lỗi khi cập nhật hướng dẫn sơ cứu",
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -412,9 +412,9 @@ class FirstAidController:
             )
 
     async def delete_first_aid_guide(self, guide_id: uuid.UUID, hard_delete: bool = False) -> Union[SuccessResponse[Dict[str, Any]], ErrorResponse]:
-        """Delete first aid guide (Admin only)"""
+        """Xóa hướng dẫn sơ cứu (Chỉ Admin)"""
         try:
-            logger.info(f"[DELETE_GUIDE] Deleting guide {guide_id} (hard_delete={hard_delete})")
+            logger.info(f"[DELETE_GUIDE] Đang xóa hướng dẫn {guide_id} (xóa_vĩnh_viễn={hard_delete})")
             
             success = await self.first_aid_service.delete_first_aid_guide(guide_id, hard_delete)
             
@@ -426,14 +426,14 @@ class FirstAidController:
                 )
             
             delete_type = "vĩnh viễn" if hard_delete else "tạm thời"
-            logger.info(f"[DELETE_GUIDE] Success: {guide_id} ({delete_type})")
+            logger.info(f"[DELETE_GUIDE] Thành công: {guide_id} ({delete_type})")
             
             return SuccessResponse(
                 message=f"Xóa hướng dẫn sơ cứu {delete_type} thành công",
                 data={"guide_id": str(guide_id), "hard_delete": hard_delete}
             )
         except HTTPException as e:
-            logger.warning(f"[DELETE_GUIDE] HTTPException: {e.detail}")
+            logger.warning(f"[DELETE_GUIDE] Lỗi HTTP: {e.detail}")
             return ErrorResponse(
                 message=e.detail,
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,
@@ -441,7 +441,7 @@ class FirstAidController:
                 status_code=e.status_code
             )
         except Exception as e:
-            logger.error(f"[DELETE_GUIDE] Error: {e}", exc_info=True)
+            logger.error(f"[DELETE_GUIDE] Lỗi: {e}", exc_info=True)
             return ErrorResponse(
                 message="Lỗi khi xóa hướng dẫn sơ cứu",
                 error_code=ErrorCode.FIRSTAID_GUIDE_ERROR,

@@ -373,7 +373,7 @@ class WoundAIService:
             }
 
     async def check_model_health(self) -> Dict[str, Any]:
-        """Simple health check for AI service."""
+        """Kiểm tra sức khỏe đơn giản cho dịch vụ AI."""
         try:
             # Chuẩn bị headers với API key nếu có
             headers = {}
@@ -394,7 +394,7 @@ class WoundAIService:
             }
 
         except Exception as e:
-            logger.error(f"AI health check failed: {e}")
+            logger.error(f"Kiểm tra sức khỏe AI thất bại: {e}")
             return {
                 "overall_health": False,
                 "status": "unhealthy"

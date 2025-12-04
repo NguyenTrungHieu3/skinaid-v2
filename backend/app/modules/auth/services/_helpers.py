@@ -26,10 +26,10 @@ else:
 
 def get_current_utc_time() -> datetime:
     """
-    Lấy thời gian UTC hiện tại without tzinfo.
+    Lấy thời gian UTC hiện tại mà không có thông tin múi giờ.
     
     Returns:
-        datetime: Thời gian UTC hiện tạ không có timezone info
+        datetime: Thời gian UTC hiện tại không có thông tin múi giờ
     """
     return datetime.now(timezone.utc).replace(tzinfo=None)
 

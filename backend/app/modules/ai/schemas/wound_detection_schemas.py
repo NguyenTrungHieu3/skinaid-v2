@@ -45,7 +45,7 @@ class WoundDetectionResponse(WoundDetectionBase):
     @computed_field
     @property
     def severity_display(self) -> str:
-        """Get severity in Vietnamese."""
+        """Lấy mức độ nghiêm trọng bằng tiếng Việt."""
         severity_map = {
             "mild": "Nhẹ",
             "moderate": "Trung bình",

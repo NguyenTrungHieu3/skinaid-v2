@@ -9,7 +9,7 @@ class UserProfileBase(BaseModel):
     date_of_birth: Optional[date] = Field(None, description="Ngày sinh")
     gender: Optional[str] = Field(None, max_length=50, description="Giới tính (male, female, other)")
     address: Optional[str] = Field(None, description="Địa chỉ")
-    avatar_url: Optional[str] = Field(None, max_length=500, description="URL avatar (S3)")
+    avatar_url: Optional[str] = Field(None, max_length=500, description="Đường dẫn ảnh đại diện (S3)")
 
     @field_validator('phone')
     def validate_phone(cls, v):
@@ -76,7 +76,7 @@ class ProfileStatisticsResponse(BaseModel):
     age_distribution: dict = Field(..., description="Phân bố theo độ tuổi")
 
 class AvatarUploadResponse(BaseModel):
-    avatar_url: str = Field(..., description="URL avatar ")
+    avatar_url: str = Field(..., description="Đường dẫn ảnh đại diện")
     file_name: str = Field(..., description="Tên file")
     file_size: int = Field(..., description="Kích thước file", gt = 0)
     uploaded_at: datetime = Field(..., description="Ngày upload")
@@ -120,7 +120,7 @@ class AvatarDeleteResponse(BaseModel):
 
 class PublicAvatarResponse(BaseModel): 
     user_id: uuid.UUID = Field(..., description="ID của user")
-    avatar_url: Optional[str] = Field(default= None, description="URL của Avatar")
+    avatar_url: Optional[str] = Field(default= None, description="Đường dẫn ảnh đại diện")
     has_avatar: bool = Field(..., description="User đã có avatar chưa")
 
     model_config = ConfigDict(

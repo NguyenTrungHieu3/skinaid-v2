@@ -45,7 +45,7 @@ class ProfileService:
             return UserProfile.model_validate(dict(row))
 
         except Exception as e:
-            logger.error(f"Lỗi khi lấy profile theo user_id {user_id}: {str(e)}")
+            logger.error(f"Lỗi khi lấy hồ sơ theo user_id {user_id}: {str(e)}")
             return None
     
     async def update_profile(
@@ -87,7 +87,7 @@ class ProfileService:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy profile")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy hồ sơ")
             if existing_profile:
                 set_clauses = []
                 params = {"user_id": user_id, "updated_at": current_time}
@@ -156,13 +156,13 @@ class ProfileService:
                 await self.db.commit()
             row = result.mappings().first()
             if row is None:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật hồ sơ")
             return UserProfile.model_validate(dict(row))
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile do lỗi nội bộ")
+            logger.error(f"Lỗi khi cập nhật hồ sơ cho user {user_id}: {str(e)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật hồ sơ do lỗi nội bộ")
         
     async def create_profile_response(self, profile) -> UserProfileResponse:
         """
@@ -242,7 +242,7 @@ class ProfileService:
             )
 
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê profile: {e}")
+            logger.error(f"Không thể lấy thống kê hồ sơ: {e}")
             return ProfileStatisticsResponse(
                 total_users=0,
                 users_with_profile=0,
@@ -312,7 +312,7 @@ class ProfileService:
             return profiles
 
         except Exception as e:
-            logger.error(f"Không thể tìm kiếm profiles: {e}")
+            logger.error(f"Không thể tìm kiếm hồ sơ: {e}")
             return []
 
     async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -369,22 +369,22 @@ class ProfileService:
         Upload và lưu avatar cho user.
 
         Workflow:
-        1. Verify user tồn tại trong database
-        2. Validate file (type, size, extension)
-        3. Xóa avatar cũ nếu tồn tại (cleanup)
+        1. Xác minh user tồn tại trong database
+        2. Validate file (loại, kích thước, đuôi mở rộng)
+        3. Xóa avatar cũ nếu tồn tại (dọn dẹp)
         4. Lưu file mới vào storage
-        5. Update avatar_url trong UserProfile
-        6. Commit transaction và return response data
+        5. Cập nhật avatar_url trong UserProfile
+        6. Commit transaction và trả về dữ liệu response
         """
         logger.info(f"[UPLOAD_AVATAR] Bắt đầu upload avatar cho user: {user_id}")
-        print(f"\n[DEBUG] upload_avatar called for {user_id}")
+        print(f"\n[DEBUG] upload_avatar được gọi cho {user_id}")
 
         # [STEP 1] Kiểm tra user có tồn tại không
         profile = await self.get_profile_by_user_id(user_id)
         if profile:
-            print(f"[DEBUG] Profile found. avatar_url: {profile.avatar_url} (type: {type(profile.avatar_url)})")
+            print(f"[DEBUG] Tìm thấy hồ sơ. avatar_url: {profile.avatar_url} (type: {type(profile.avatar_url)})")
         else:
-            print("[DEBUG] Profile not found")
+            print("[DEBUG] Không tìm thấy hồ sơ")
 
         if not profile:
             logger.warning(f"[UPLOAD_AVATAR] User {user_id} không tồn tại")
@@ -402,7 +402,7 @@ class ProfileService:
 
         if not validation_result['valid']:
             logger.warning(
-                f"[UPLOAD_AVATAR] File validation failed for user {user_id}: "
+                f"[UPLOAD_AVATAR] Validate file thất bại cho user {user_id}: "
                 f"{validation_result['error']}"
             )
             raise HTTPException(
@@ -410,12 +410,12 @@ class ProfileService:
                 detail=validation_result['error']
             )
 
-        # Lấy file content và size từ validation result
+        # Lấy nội dung file và kích thước từ kết quả validation
         file_content = validation_result['content']
         file_size = validation_result['size']
 
         logger.debug(
-            f"[UPLOAD_AVATAR] File validation passed - "
+            f"[UPLOAD_AVATAR] Validate file thành công - "
             f"Type: {validation_result['mime_type']}, Size: {file_size} bytes"
         )
 
@@ -438,11 +438,11 @@ class ProfileService:
             )
 
             logger.debug(
-                f"[UPLOAD_AVATAR] File saved successfully - "
+                f"[UPLOAD_AVATAR] Lưu file thành công - "
                 f"URL: {file_result['file_url']}"
             )
 
-            # [STEP 5] Update avatar_url trong UserProfile
+            # [STEP 5] Cập nhật avatar_url trong UserProfile
             update_query = text("""
                 UPDATE user_profiles
                 SET avatar_url = :avatar_url,
@@ -498,12 +498,11 @@ class ProfileService:
         Xóa avatar của user.
 
         Workflow:
-        1. Verify user tồn tại
+        1. Xác minh user tồn tại
         2. Kiểm tra user có avatar hay không
         3. Xóa file từ storage
-        4. Update avatar_url = NULL trong database
-        5. Commit transaction và return confirmation
-
+        4. Cập nhật avatar_url = NULL trong database
+        5. Commit transaction và trả về xác nhận
         """
         logger.info(f"[DELETE_AVATAR] Bắt đầu xóa avatar cho user: {user_id}")
 
@@ -535,7 +534,7 @@ class ProfileService:
                 if not file_deleted:
                     logger.warning(
                         f"[DELETE_AVATAR] Không thể xóa file {file_path}, "
-                        f"nhưng vẫn tiếp tục update database"
+                        f"nhưng vẫn tiếp tục cập nhật database"
                     )
             else:
                 logger.warning(
@@ -543,7 +542,7 @@ class ProfileService:
                     f"chỉ update database"
                 )
 
-            # [STEP 4] Update avatar_url = NULL trong database
+            # [STEP 4] Cập nhật avatar_url = NULL trong database
             update_query = text("""
                 UPDATE user_profiles
                 SET avatar_url = NULL,
@@ -594,16 +593,16 @@ class ProfileService:
         Lấy avatar của user (public endpoint - không cần authentication).
 
         Workflow:
-        1. Query user profile từ database
-        2. Return avatar_url và has_avatar flag
-        3. Không raise exception nếu user không tồn tại, return has_avatar=False
+        1. Truy vấn user profile từ database
+        2. Trả về avatar_url và cờ has_avatar
+        3. Không raise exception nếu user không tồn tại, trả về has_avatar=False
         """
         logger.debug(f"[GET_PUBLIC_AVATAR] Lấy avatar cho user: {user_id}")
 
         # [STEP 1] Query user profile
         profile = await self.get_profile_by_user_id(user_id)
 
-        # [STEP 2] Build response
+        # [STEP 2] Xây dựng response
         if not profile:
             logger.debug(f"[GET_PUBLIC_AVATAR] User {user_id} không tồn tại")
             return {
@@ -626,14 +625,14 @@ class ProfileService:
 
     def _get_file_path_from_url_debug(self, file_url: str) -> Optional[str]:
         """
-        Convert file URL thành absolute file path
+        Chuyển đổi file URL thành đường dẫn file tuyệt đối
         """
         try:
             if not file_url:
                 return None
             
             if not isinstance(file_url, str):
-                logger.warning(f"[WARNING] file_url is not a string: {file_url} (type: {type(file_url)})")
+                logger.warning(f"[WARNING] file_url không phải là chuỗi: {file_url} (type: {type(file_url)})")
                 return None
 
             relative_path = file_url.lstrip("/").removeprefix("uploads/")
@@ -642,6 +641,6 @@ class ProfileService:
 
             return str(absolute_path)
         except Exception as e:
-            logger.error(f"[ERROR] Error in _get_file_path_from_url: {e}", exc_info=True)
-            # Re-raise with debug info to see it in test output
+            logger.error(f"[ERROR] Lỗi trong _get_file_path_from_url: {e}", exc_info=True)
+            # Re-raise với thông tin debug để thấy trong output test
             raise Exception(f"DEBUG_ERROR: file_url='{file_url}', type={type(file_url)}, error={e}")

@@ -23,7 +23,7 @@ async def get_cleanup_statistics(
     """
     stats = await get_cleanup_stats(db)
     return SuccessResponse(
-        message="Cleanup statistics retrieved successfully",
+        message="Lấy thống kê cleanup thành công",
         data=stats
     )
 
@@ -42,7 +42,7 @@ async def get_blacklist_statistics(
     """
     stats = await get_blacklist_stats(db)
     return SuccessResponse(
-        message="Blacklist statistics retrieved successfully",
+        message="Lấy thống kê blacklist thành công",
         data=stats
     )
 
@@ -50,7 +50,7 @@ async def get_blacklist_statistics(
 @router.post(
     "/run/tokens",
     response_model=SuccessResponse[dict],
-    summary="Cleanup expired blacklist tokens"
+    summary="Dọn dẹp các token blacklist đã hết hạn"
 )
 async def run_cleanup_tokens(
     _: None = Depends(require_admin),
@@ -69,7 +69,7 @@ async def run_cleanup_tokens(
 @router.post(
     "/run/verifications",
     response_model=SuccessResponse[dict],
-    summary="Cleanup verification tokens"
+    summary="Dọn dẹp các token xác thực"
 )
 async def run_cleanup_verifications(
     _: None = Depends(require_admin),
@@ -108,7 +108,7 @@ async def run_full_cleanup(
 @router.post(
     "/run/token-families",
     response_model=SuccessResponse[dict],
-    summary="Cleanup expired token families"
+    summary="Dọn dẹp các token family đã hết hạn"
 )
 async def run_cleanup_token_families(
     _: None = Depends(require_admin),
@@ -128,7 +128,7 @@ async def run_cleanup_token_families(
 @router.post(
     "/users/{user_id}/revoke-all-tokens",
     response_model=Union[SuccessResponse[dict], ErrorResponse],
-    summary="Admin force revoke all user tokens"
+    summary="Admin buộc thu hồi tất cả token của người dùng"
 )
 async def admin_revoke_user_tokens(
     user_id: str,

@@ -22,8 +22,8 @@ async def create_guest_session(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Tạo guest session mới cho anonymous users.
-    Session sẽ expire sau 1 giờ.
+    Tạo phiên khách mới cho người dùng ẩn danh.
+    Phiên sẽ hết hạn sau 1 giờ.
     """
     if not ip_address and request.client:
         ip_address = request.client.host
@@ -55,8 +55,8 @@ async def get_guest_session(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Lấy thông tin guest session theo ID.
-    Bao gồm upload/analysis counts và limits.
+    Lấy thông tin phiên khách theo ID.
+    Bao gồm số lượng tải lên/phân tích và giới hạn.
     """
     controller = GuestController(db)
     try:
@@ -72,8 +72,8 @@ async def get_guest_statistics(
     _: dict = Depends(require_admin)  # Admin-only access
 ):
     """
-    Lấy thống kê về guest activities.
-    Admin only endpoint.
+    Lấy thống kê về hoạt động của khách.
+    Chỉ dành cho Admin.
     """
     controller = GuestController(db)
     return await controller.get_guest_statistics()
@@ -85,8 +85,8 @@ async def claim_analysis(
     current_user: dict = Depends(require_user)
 ):
     """
-    User nhận quyền sở hữu analysis từ guest session.
-    Yêu cầu user phải đăng nhập.
+    Người dùng nhận quyền sở hữu phân tích từ phiên khách.
+    Yêu cầu người dùng phải đăng nhập.
     """
     controller = GuestController(db)
     try:

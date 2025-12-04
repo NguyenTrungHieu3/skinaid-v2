@@ -19,22 +19,22 @@ class UserCreate(UserBase):
         ...,
         min_length=3,
         max_length=50,
-        description="Username must be 3-50 characters",
+        description="Tên người dùng phải từ 3-50 ký tự",
     )
     email: EmailStr
     password: str = Field(
         ...,
         min_length=8,
-        description="Password with at least 8 characters",
+        description="Mật khẩu phải có ít nhất 8 ký tự",
     )
     confirm_password: str = Field(
         ...,
         min_length=8,
-        description="Confirm password must match password",
+        description="Mật khẩu xác nhận phải khớp với mật khẩu",
     )
     gender: Optional[str] = Field(
         None,
-        description="Gender: male, female, or other",
+        description="Giới tính: nam, nữ hoặc khác",
     )
 
     @model_validator(mode="before")
@@ -44,7 +44,7 @@ class UserCreate(UserBase):
             password = values.get("password")
             confirm_password = values.get("confirm_password")
             if password and confirm_password and password != confirm_password:
-                raise ValueError("Passwords do not match")
+                raise ValueError("Mật khẩu không khớp")
         return values
 
 
@@ -56,7 +56,7 @@ class UserResponse(BaseModel):
 
     is_active: bool = Field(
         default=True,
-        description="User account status",
+        description="Trạng thái tài khoản người dùng",
     )
     is_verified: bool
     is_deleted: bool = Field(
@@ -73,7 +73,7 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     roles: List[str] = Field(
         default_factory=list,
-        description="List of role names assigned to user",
+        description="Danh sách các vai trò được gán cho người dùng",
     )
 
     class Config:
@@ -104,12 +104,12 @@ class PasswordResetConfirm(BaseModel):
     new_password: str = Field(
         ...,
         min_length=8,
-        description="New password with at least 8 characters",
+        description="Mật khẩu mới phải có ít nhất 8 ký tự",
     )
     confirm_password: str = Field(
         ...,
         min_length=8,
-        description="Confirm new password must match new password",
+        description="Mật khẩu xác nhận phải khớp với mật khẩu mới",
     )
 
     @model_validator(mode="before")
@@ -123,7 +123,7 @@ class PasswordResetConfirm(BaseModel):
                 and confirm_password
                 and new_password != confirm_password
             ):
-                raise ValueError("Passwords do not match")
+                raise ValueError("Mật khẩu không khớp")
         return values
 
 

@@ -38,17 +38,17 @@ class UserManagementService:
         status: Optional[str] = None
     ) -> Tuple[List[UserBasicInfo], PaginationInfo]:
         """
-        Get paginated list of users with filters
+        Lấy danh sách người dùng có phân trang với các bộ lọc
         
         Args:
-            page: Page number (starts from 1)
-            limit: Number of records per page
-            search: Search term for email or display_name
-            role: Filter by role name
-            status: Filter by status (active/inactive)
+            page: Số trang (bắt đầu từ 1)
+            limit: Số lượng bản ghi mỗi trang
+            search: Từ khóa tìm kiếm cho email hoặc display_name
+            role: Lọc theo tên vai trò
+            status: Lọc theo trạng thái (active/inactive)
         
         Returns:
-            Tuple of (list of users, pagination info)
+            Tuple gồm (danh sách người dùng, thông tin phân trang)
         """
         # Xây dựng truy vấn cơ bản
         query = select(User).where(User.is_deleted == False)
@@ -141,13 +141,13 @@ class UserManagementService:
     
     async def get_user_detail(self, user_id: UUID) -> Optional[UserDetailInfo]:
         """
-        Get detailed information about a specific user
+        Lấy thông tin chi tiết về một người dùng cụ thể
         
         Args:
-            user_id: User UUID
+            user_id: UUID của người dùng
         
         Returns:
-            UserDetailInfo or None if not found
+            UserDetailInfo hoặc None nếu không tìm thấy
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
         query = query.options(
@@ -194,18 +194,18 @@ class UserManagementService:
     
     async def create_user(self, user_data: CreateUserRequest) -> UserDetailInfo:
         """
-        Create a new user with proper transaction handling
+        Tạo người dùng mới với xử lý giao dịch thích hợp
         
         Args:
-            user_data: User creation data
+            user_data: Dữ liệu tạo người dùng
         
         Returns:
-            UserDetailInfo of the created user
+            UserDetailInfo của người dùng đã tạo
             
         Raises:
-            ValueError: If email already exists or role not found or other validation errors
+            ValueError: Nếu email đã tồn tại hoặc vai trò không tìm thấy hoặc lỗi xác thực khác
         """
-        logger.info(f"Starting create_user for {user_data.email}")
+        logger.info(f"Bắt đầu tạo người dùng cho {user_data.email}")
         try:
             # Ensure clean session state
             await self.db.rollback() 
@@ -213,18 +213,18 @@ class UserManagementService:
             # Kiểm tra email đã tồn tại chưa
             existing_user = await self._get_user_by_email(user_data.email)
             if existing_user:
-                raise ValueError("Email already registered")
+                raise ValueError("Email đã được đăng ký")
             
             # Xác thực tên hiển thị
             if not user_data.display_name or len(user_data.display_name.strip()) < 2:
-                raise ValueError("Display name must be at least 2 characters")
+                raise ValueError("Tên hiển thị phải có ít nhất 2 ký tự")
             
             if len(user_data.display_name) > 100:
-                raise ValueError("Display name must not exceed 100 characters")
+                raise ValueError("Tên hiển thị không được vượt quá 100 ký tự")
             
             # Xác thực mật khẩu
             if len(user_data.password) < 6:
-                raise ValueError("Password must be at least 6 characters")
+                raise ValueError("Mật khẩu phải có ít nhất 6 ký tự")
             
             # Tạo username từ email (phần trước @)
             user_name = user_data.email.split('@')[0]
@@ -265,37 +265,37 @@ class UserManagementService:
             await self.db.commit()
             await self.db.refresh(new_user)
             
-            logger.info(f"User created successfully: {new_user.email} (ID: {new_user.user_id})")
+            logger.info(f"Người dùng đã được tạo thành công: {new_user.email} (ID: {new_user.user_id})")
             
             # Gửi email xác thực SAU khi commit (hoạt động không quan trọng)
             # Nếu email thất bại, người dùng vẫn được tạo thành công
             try:
                 await self._send_verification_email(new_user)
-                logger.info(f"Verification email sent to {new_user.email}")
+                logger.info(f"Email xác thực đã được gửi đến {new_user.email}")
             except Exception as email_error:
-                logger.warning(f"Failed to send verification email to {new_user.email}: {email_error}")
+                logger.warning(f"Thất bại khi gửi email xác thực đến {new_user.email}: {email_error}")
                 # Không raise - lỗi email không nên làm thất bại việc tạo người dùng
             
             # Trả về chi tiết người dùng
             user_detail = await self.get_user_detail(new_user.user_id)
             if not user_detail:
-                logger.error(f"Failed to retrieve created user detail: {new_user.user_id}")
-                raise ValueError("User created but failed to retrieve details")
+                logger.error(f"Thất bại khi lấy chi tiết người dùng đã tạo: {new_user.user_id}")
+                raise ValueError("Người dùng đã được tạo nhưng thất bại khi lấy chi tiết")
             
             return user_detail
             
         except ValueError as ve:
             # Raise lại lỗi xác thực
             await self.db.rollback()
-            logger.error(f"Validation error creating user {user_data.email}: {str(ve)}")
-            logger.error(f"User data: {user_data.model_dump()}")
+            logger.error(f"Lỗi xác thực khi tạo người dùng {user_data.email}: {str(ve)}")
+            logger.error(f"Dữ liệu người dùng: {user_data.model_dump()}")
             raise
         except Exception as e:
             # Rollback khi có lỗi để ngăn dữ liệu bị thiếu
             await self.db.rollback()
-            logger.error(f"Failed to create user {user_data.email}: {e}", exc_info=True)
-            logger.error(f"User data: {user_data.model_dump()}")
-            raise ValueError(f"Failed to create user: {str(e)}")
+            logger.error(f"Thất bại khi tạo người dùng {user_data.email}: {e}", exc_info=True)
+            logger.error(f"Dữ liệu người dùng: {user_data.model_dump()}")
+            raise ValueError(f"Thất bại khi tạo người dùng: {str(e)}")
     
     async def update_user(
         self,
@@ -303,17 +303,17 @@ class UserManagementService:
         user_data: UpdateUserRequest
     ) -> Optional[UserDetailInfo]:
         """
-        Update user information with proper transaction handling
+        Cập nhật thông tin người dùng với xử lý giao dịch thích hợp
         
         Args:
-            user_id: User UUID
-            user_data: Update data
+            user_id: UUID của người dùng
+            user_data: Dữ liệu cập nhật
         
         Returns:
-            Updated user detail or None if not found
+            Chi tiết người dùng đã cập nhật hoặc None nếu không tìm thấy
             
         Raises:
-            ValueError: If validation fails or email already in use
+            ValueError: Nếu xác thực thất bại hoặc email đã được sử dụng
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
         query = query.options(selectinload(User.profile))
@@ -327,9 +327,9 @@ class UserManagementService:
             # Xác thực và cập nhật display_name (full_name trong profile) nếu được cung cấp
             if user_data.display_name is not None:
                 if len(user_data.display_name.strip()) < 2:
-                    raise ValueError("Display name must be at least 2 characters")
+                    raise ValueError("Tên hiển thị phải có ít nhất 2 ký tự")
                 if len(user_data.display_name) > 100:
-                    raise ValueError("Display name must not exceed 100 characters")
+                    raise ValueError("Tên hiển thị không được vượt quá 100 ký tự")
                 
                 # Cập nhật hoặc tạo profile
                 if hasattr(user, 'profile') and user.profile:
@@ -347,7 +347,7 @@ class UserManagementService:
                 # Kiểm tra email mới đã được người dùng khác sử dụng chưa
                 existing = await self._get_user_by_email(user_data.email)
                 if existing and existing.user_id != user_id:
-                    raise ValueError("Email already in use")
+                    raise ValueError("Email đã được sử dụng")
                 user.email = user_data.email
             
             # Cập nhật trạng thái hoạt động nếu được cung cấp
@@ -365,7 +365,7 @@ class UserManagementService:
             await self.db.commit()
             await self.db.refresh(user)
             
-            logger.info(f"User updated successfully: {user.email} (ID: {user_id})")
+            logger.info(f"Cập nhật người dùng thành công: {user.email} (ID: {user_id})")
             
             return await self.get_user_detail(user_id)
             
@@ -376,18 +376,18 @@ class UserManagementService:
         except Exception as e:
             # Rollback khi có lỗi
             await self.db.rollback()
-            logger.error(f"Failed to update user {user_id}: {e}")
-            raise ValueError(f"Failed to update user: {str(e)}")
+            logger.error(f"Thất bại khi cập nhật người dùng {user_id}: {e}")
+            raise ValueError(f"Thất bại khi cập nhật người dùng: {str(e)}")
     
     async def delete_user(self, user_id: UUID) -> bool:
         """
-        Delete a user (soft delete by setting is_deleted = True)
+        Xóa người dùng (xóa mềm bằng cách đặt is_deleted = True)
         
         Args:
-            user_id: User UUID
+            user_id: UUID của người dùng
         
         Returns:
-            True if deleted, False if not found
+            True nếu đã xóa, False nếu không tìm thấy
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
         result = await self.db.execute(query)
@@ -405,24 +405,24 @@ class UserManagementService:
             
             await self.db.commit()
             
-            logger.info(f"User soft deleted: {user.email} (ID: {user_id})")
+            logger.info(f"Người dùng đã bị xóa mềm: {user.email} (ID: {user_id})")
             return True
             
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to delete user {user_id}: {e}")
-            raise ValueError(f"Failed to delete user: {str(e)}")
+            logger.error(f"Thất bại khi xóa người dùng {user_id}: {e}")
+            raise ValueError(f"Thất bại khi xóa người dùng: {str(e)}")
     
     async def update_user_status(self, user_id: UUID, is_active: bool) -> Optional[UserDetailInfo]:
         """
-        Update user active status with transaction handling
+        Cập nhật trạng thái hoạt động của người dùng với xử lý giao dịch
         
         Args:
-            user_id: User UUID
-            is_active: New status
+            user_id: UUID của người dùng
+            is_active: Trạng thái mới
         
         Returns:
-            Updated user detail or None if not found
+            Chi tiết người dùng đã cập nhật hoặc None nếu không tìm thấy
         """
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
         result = await self.db.execute(query)
@@ -436,22 +436,22 @@ class UserManagementService:
             await self.db.commit()
             await self.db.refresh(user)
             
-            status_text = "activated" if is_active else "deactivated"
-            logger.info(f"User {status_text}: {user.email} (ID: {user_id})")
+            status_text = "đã kích hoạt" if is_active else "đã vô hiệu hóa"
+            logger.info(f"Người dùng {status_text}: {user.email} (ID: {user_id})")
             
             return await self.get_user_detail(user_id)
             
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to update user status {user_id}: {e}")
-            raise ValueError(f"Failed to update user status: {str(e)}")
+            logger.error(f"Thất bại khi cập nhật trạng thái người dùng {user_id}: {e}")
+            raise ValueError(f"Thất bại khi cập nhật trạng thái người dùng: {str(e)}")
     
     async def get_user_stats(self) -> UserStatsResponse:
         """
-        Get overall user statistics
+        Lấy thống kê tổng quan về người dùng
         
         Returns:
-            User statistics
+            Thống kê người dùng
         """
         # Tổng số người dùng
         total_query = select(func.count(User.user_id)).where(User.is_deleted == False)
@@ -490,7 +490,7 @@ class UserManagementService:
     # ===================== HELPER METHODS =====================
     
     async def _get_user_roles(self, user_id: UUID) -> List[str]:
-        """Get list of role names for a user"""
+        """Lấy danh sách tên vai trò cho một người dùng"""
         query = text("""
             SELECT r.role_name
             FROM user_roles ur
@@ -502,7 +502,7 @@ class UserManagementService:
         return [row[0] for row in result]
     
     async def _get_user_upload_count(self, user_id: UUID) -> int:
-        """Get total upload count for a user from wound_analyses table"""
+        """Lấy tổng số lượng upload cho một người dùng từ bảng wound_analyses"""
         query = text("""
             SELECT COUNT(*) 
             FROM wound_analyses 
@@ -514,30 +514,30 @@ class UserManagementService:
             count = result.scalar()
             return count or 0
         except Exception as e:
-            logger.warning(f"Failed to get upload count for user {user_id}: {e}")
+            logger.warning(f"Thất bại khi lấy số lượng upload cho user {user_id}: {e}")
             return 0
     
     async def _get_user_by_email(self, email: str) -> Optional[User]:
-        """Get user by email"""
+        """Lấy người dùng theo email"""
         query = select(User).where(User.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
     async def _get_user_by_username(self, user_name: str) -> Optional[User]:
-        """Get user by username"""
+        """Lấy người dùng theo username"""
         query = select(User).where(User.user_name == user_name)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
     async def _assign_role_to_user(self, user_id: UUID, role_name: str):
-        """Assign a role to user"""
+        """Gán một vai trò cho người dùng"""
         # Get role by name
         role_query = select(Role).where(Role.role_name == role_name.lower())
         role_result = await self.db.execute(role_query)
         role = role_result.scalar_one_or_none()
         
         if not role:
-            raise ValueError(f"Role '{role_name}' not found")
+            raise ValueError(f"Vai trò '{role_name}' không tìm thấy")
         
         # Create user_role
         user_role = UserRole(
@@ -549,7 +549,7 @@ class UserManagementService:
         self.db.add(user_role)
 
     async def _send_verification_email(self, user: User) -> None:
-        """Generate verification token and send verification email."""
+        """Tạo token xác thực và gửi email xác thực."""
         import logging
         from datetime import datetime, timedelta, timezone
         import os
@@ -559,10 +559,10 @@ class UserManagementService:
         use_mock_email = os.getenv("TESTING") == "true" or os.getenv("USE_MOCK_EMAIL") == "true"
         if use_mock_email:
             from app.utils.mock_email_service import mock_email_service as email_service
-            logger.info("Using MOCK email service for admin-created user verification")
+            logger.info("Sử dụng dịch vụ email MOCK để xác thực người dùng do admin tạo")
         else:
             from app.utils.email_service import email_service
-            logger.info("Using REAL email service for admin-created user verification")
+            logger.info("Sử dụng dịch vụ email REAL để xác thực người dùng do admin tạo")
 
         verification_token = email_service.generate_verification_token()
 
@@ -595,24 +595,24 @@ class UserManagementService:
 
         try:
             await email_service.send_verification_email_async(user.email, verification_token)
-            logger.info("Verification email sent to %s", user.email)
+            logger.info("Email xác thực đã được gửi đến %s", user.email)
         except Exception as exc:  # pragma: no cover - external service call
-            logger.error("Failed to send verification email to %s: %s", user.email, exc)
+            logger.error("Thất bại khi gửi email xác thực đến %s: %s", user.email, exc)
     
     async def _remove_all_user_roles(self, user_id: UUID):
-        """Remove all roles from user"""
+        """Xóa tất cả vai trò của người dùng"""
         query = delete(UserRole).where(UserRole.user_id == user_id)
         await self.db.execute(query)
     
     async def resend_verification_email(self, user_id: UUID) -> bool:
         """
-        Resend verification email to unverified user with transaction handling
+        Gửi lại email xác thực cho người dùng chưa xác thực với xử lý giao dịch
         
         Args:
-            user_id: User UUID
+            user_id: UUID của người dùng
         
         Returns:
-            True if email sent successfully, False if user not found or already verified
+            True nếu email được gửi thành công, False nếu không tìm thấy người dùng hoặc đã xác thực
         """
         # Get user
         query = select(User).where(User.user_id == user_id, User.is_deleted == False)
@@ -624,7 +624,7 @@ class UserManagementService:
         
         # Check if already verified
         if user.is_verified:
-            logger.info(f"User {user.email} is already verified")
+            logger.info(f"Người dùng {user.email} đã được xác thực")
             return False
         
         # Import email service (same pattern as auth_service)
@@ -633,10 +633,10 @@ class UserManagementService:
         use_mock_email = os.getenv("TESTING") == "true" or os.getenv("USE_MOCK_EMAIL") == "true"
         if use_mock_email:
             from app.utils.mock_email_service import mock_email_service as email_service
-            logger.info("Using MOCK email service for verification resend")
+            logger.info("Sử dụng dịch vụ email MOCK để gửi lại xác thực")
         else:
             from app.utils.email_service import email_service
-            logger.info("Using REAL email service for verification resend")
+            logger.info("Sử dụng dịch vụ email REAL để gửi lại xác thực")
         
         try:
             # Generate new verification token
@@ -673,14 +673,14 @@ class UserManagementService:
             # Send verification email (after commit, non-critical)
             try:
                 await email_service.send_verification_email_async(user.email, verification_token)
-                logger.info(f"Verification email resent to {user.email}")
+                logger.info(f"Email xác thực đã được gửi lại đến {user.email}")
                 return True
             except Exception as email_error:
-                logger.error(f"Failed to send verification email to {user.email}: {str(email_error)}")
+                logger.error(f"Thất bại khi gửi email xác thực đến {user.email}: {str(email_error)}")
                 # Token is created but email failed - still return False
                 return False
                 
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Failed to create verification token for {user.email}: {str(e)}")
+            logger.error(f"Thất bại khi tạo token xác thực cho {user.email}: {str(e)}")
             return False
