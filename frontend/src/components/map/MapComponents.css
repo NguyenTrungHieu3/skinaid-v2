@@ -10,12 +10,19 @@
 }
 
 .facility-card {
-    padding: 1rem;
+    padding: 0.875rem;
     border: 1px solid rgba(0, 150, 136, 0.2);
     border-radius: var(--map-radius);
     background-color: var(--map-background);
     transition: all 0.2s;
-    margin-bottom: 1rem;
+    margin-bottom: 0.875rem;
+}
+
+@media (min-width: 480px) {
+    .facility-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
 }
 
 .facility-card:hover {
@@ -32,21 +39,40 @@
 
 .facility-name {
     font-weight: 600;
-    font-size: 1.125rem;
+    font-size: 1rem;
     color: var(--map-foreground);
     margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+@media (min-width: 480px) {
+    .facility-name {
+        font-size: 1.125rem;
+    }
 }
 
 .facility-type {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--map-muted);
+}
+
+@media (min-width: 480px) {
+    .facility-type {
+        font-size: 0.875rem;
+    }
 }
 
 .facility-distance {
     color: var(--map-primary);
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.9375rem;
     white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+    .facility-distance {
+        font-size: 1rem;
+    }
 }
 
 .facility-info {
@@ -60,8 +86,15 @@
     display: flex;
     align-items: flex-start;
     gap: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: var(--map-muted);
+    line-height: 1.4;
+}
+
+@media (min-width: 480px) {
+    .info-row {
+        font-size: 0.875rem;
+    }
 }
 
 .icon-sm {
@@ -87,20 +120,35 @@
     gap: 0.5rem;
 }
 
+@media (min-width: 375px) {
+    .facility-actions {
+        gap: 0.625rem;
+    }
+}
+
 .map-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: var(--map-radius);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    height: 2rem;
-    padding: 0 0.75rem;
+    height: 2.25rem;
+    min-height: 44px;
+    padding: 0 0.625rem;
     cursor: pointer;
     transition: background-color 0.2s;
     border: 1px solid var(--map-border);
     background-color: transparent;
     color: var(--map-foreground);
+}
+
+@media (min-width: 480px) {
+    .map-btn {
+        font-size: 0.875rem;
+        height: 2.5rem;
+        padding: 0 0.75rem;
+    }
 }
 
 .map-btn:hover {
@@ -128,14 +176,23 @@
     display: inline-flex;
     align-items: center;
     border-radius: 9999px;
-    padding: 0.25rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.375rem 0.875rem;
+    min-height: 36px;
+    font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
     border: 1px solid var(--map-border);
     background-color: transparent;
     color: var(--map-foreground);
     transition: all 0.2s;
+}
+
+@media (min-width: 480px) {
+    .chip {
+        padding: 0.5rem 1rem;
+        min-height: 40px;
+        font-size: 0.875rem;
+    }
 }
 
 .chip:hover {
@@ -204,12 +261,20 @@
 
 .search-input {
     width: 100%;
-    height: 3rem;
+    height: 2.75rem;
+    min-height: 44px;
     padding-left: 2.5rem;
     padding-right: 1rem;
     border: 1px solid var(--map-border);
     border-radius: var(--map-radius);
     font-size: 0.875rem;
+}
+
+@media (min-width: 480px) {
+    .search-input {
+        height: 3rem;
+        font-size: 0.9375rem;
+    }
 }
 
 .search-input:focus {
@@ -218,8 +283,10 @@
 }
 
 .filter-btn {
-    height: 3rem;
-    width: 3rem;
+    height: 2.75rem;
+    width: 2.75rem;
+    min-height: 44px;
+    min-width: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -227,6 +294,14 @@
     border-radius: var(--map-radius);
     background-color: transparent;
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+    .filter-btn {
+        height: 3rem;
+        width: 3rem;
+    }
 }
 
 .filter-btn:hover {

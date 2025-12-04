@@ -116,24 +116,14 @@ const LoginForm = () => {
       return;
     }
 
-    // Nếu không có lỗi, tiến hành submit form (gửi API, chuyển trang, etc)
-    console.log("Form submitted", formData);
-
+    // Nếu không có lỗi, tiến hành submit form
     loginUser(formData)
       .then((response) => {
-        // Debug: Log toàn bộ response
-        console.log("🔍 Full login response:", response.data);
-
-        // Đăng nhập thành công , API trả vè token
+        // Đăng nhập thành công, API trả về token
         const token = response.data.data.access_token;
         const userObject = response.data.data.user;
 
-        // Debug: Kiểm tra user object
-        console.log("🔍 User object:", userObject);
-        console.log("🔍 User roles:", userObject.roles);
-
-        // --- THAY ĐỔI LỚN ---
-        // Thay vì tự lưu token, hãy gọi hàm login từ context
+        // Gọi hàm login từ context
         login(
           token,
           { ...userObject, created_at: new Date().toISOString() },
@@ -142,23 +132,15 @@ const LoginForm = () => {
 
         // Redirect based on user role
         const userRoles = userObject.roles || [];
-        console.log("🔍 Checking roles:", userRoles);
-
-        const isAdmin = userRoles.some((role: string) => {
-          const isAdminRole = role.toLowerCase() === "admin";
-          console.log(`🔍 Checking role "${role}": ${isAdminRole}`);
-          return isAdminRole;
-        });
-
-        console.log("🔍 Is admin?", isAdmin);
-
+        const isAdmin = userRoles.some((role: string) => 
+          role.toLowerCase() === 'admin'
+        );
+        
         // Chuyển hướng dựa trên role
         if (isAdmin) {
-          console.log("✅ Admin user detected, redirecting to /admin");
-          navigate("/admin", { replace: true });
+          navigate('/admin', { replace: true });
         } else {
-          console.log("✅ Regular user detected, redirecting to /");
-          navigate("/", { replace: true });
+          navigate('/', { replace: true });
         }
       })
       .catch((error) => {

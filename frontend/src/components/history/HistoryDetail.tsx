@@ -114,11 +114,11 @@ const HistoryDetail = ({ event, onClose }: HistoryDetailProps) => {
                     </div>
                   </div>
 
-                  {/* Mô tả (Không đổi) */}
+                  {/* Mô tả (Không đổi)
                   <div className={styles.detailItem}>
                     <h5>Mô tả</h5>
                     <p>{currentWound.description}</p>
-                  </div>
+                  </div> */}
 
                   {/* Gợi ý sơ cứu (Dùng biến 'firstAidSteps' đã sửa) */}
                   <div className={styles.detailItem}>

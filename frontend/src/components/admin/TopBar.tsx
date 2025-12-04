@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import CountryFlag from "react-country-flag";
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './TopBar.module.css';
 
 export default function TopBar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { i18n, t } = useTranslation();
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
 
   // Close logout menu when clicking outside
@@ -25,7 +28,7 @@ export default function TopBar() {
 
   // Handle logout
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
+    if (window.confirm(t('admin.topbar.logout_confirm'))) {
       logout();
       navigate('/login');
     }
@@ -44,21 +47,44 @@ export default function TopBar() {
 
   const displayName = user?.full_name || user?.user_name || 'Admin User';
 
-  let role = 'User';
+  let role = t('admin.topbar.roles.user');
   if (user?.roles && user.roles.length > 0) {
     const userRole = user.roles[0].toLowerCase();
     const roleMap: Record<string, string> = {
-      'admin': 'Administrator',
-      'moderator': 'Moderator',
-      'user': 'User'
+      'admin': t('admin.topbar.roles.admin'),
+      'moderator': t('admin.topbar.roles.moderator'),
+      'user': t('admin.topbar.roles.user')
     };
     role = roleMap[userRole] || userRole.charAt(0).toUpperCase() + userRole.slice(1);
   }
+
+  const LanguageSwitcher = () => (
+    <div className={styles.languageSwitcher}>
+      <button
+        onClick={() => i18n.changeLanguage("en")}
+        className={`${styles.flagButton} ${i18n.language === "en" ? styles.activeFlag : ""}`}
+        aria-label="Switch to English"
+        title="English"
+      >
+        <CountryFlag countryCode="US" svg />
+      </button>
+      <span className={styles.divider}>|</span>
+      <button
+        onClick={() => i18n.changeLanguage("vi")}
+        className={`${styles.flagButton} ${i18n.language === "vi" ? styles.activeFlag : ""}`}
+        aria-label="Switch to Vietnamese"
+        title="Tiếng Việt"
+      >
+        <CountryFlag countryCode="VN" svg />
+      </button>
+    </div>
+  );
 
   return (
     <header className={styles.adminTopbar}>
       <div className={styles.adminTopbarContent}>
         <div className={styles.adminTopbarActions}>
+          <LanguageSwitcher />
           <div
             className={styles.adminUserInfo}
             title={user?.email}
@@ -82,7 +108,7 @@ export default function TopBar() {
                 <div className={styles.logoutMenuDivider}></div>
                 <button className={styles.logoutMenuButton} onClick={handleLogout}>
                   <LogOut size={16} />
-                  <span>Logout</span>
+                  <span>{t('admin.topbar.logout')}</span>
                 </button>
               </div>
             )}

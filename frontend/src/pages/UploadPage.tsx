@@ -12,12 +12,20 @@ import {
   FaArrowRight,
   FaCropAlt,
   FaRedo,
-  FaSearchPlus,
-  FaSearchMinus,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { analyzeImage } from "../services/aiService";
-import Cropper from "react-easy-crop";
+
+// --- THAY ĐỔI IMPORT Ở ĐÂY ---
+// Xóa import Cropper cũ, thêm ReactCrop
+import ReactCrop, {
+  type Crop,
+  type PixelCrop,
+  centerCrop,
+  makeAspectCrop,
+} from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css"; // Import CSS mặc định
+
 import { getCroppedImg } from "../utils/canvasUtils";
 import {
   analyzeImageQuality,
@@ -25,10 +33,29 @@ import {
 } from "../utils/imageProcessingUtils";
 import { useGuestSession } from "../hooks/useGuestSession";
 
-// Cấu hình
-const MIN_SIZE_PX = 512;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+
+// Hàm hỗ trợ để tạo khung crop mặc định ở giữa ảnh
+function centerAspectCrop(
+  mediaWidth: number,
+  mediaHeight: number,
+  aspect?: number
+) {
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: "%",
+        width: 80, // Mặc định chiếm 80% chiều rộng
+      },
+      aspect || 16 / 9, // Tỷ lệ khởi tạo (không bắt buộc khóa)
+      mediaWidth,
+      mediaHeight
+    ),
+    mediaWidth,
+    mediaHeight
+  );
+}
 
 type ProcessStep =
   | "IDLE"
@@ -53,32 +80,26 @@ const UploadPage = () => {
   const [step, setStep] = useState<ProcessStep>("IDLE");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // File & Preview
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Crop State
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  // --- CROP STATE MỚI (React-Image-Crop) ---
+  const [crop, setCrop] = useState<Crop>(); // State cho UI crop
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null); // State chứa pixel thực tế để cắt
+  const imgRef = useRef<HTMLImageElement>(null); // Ref tới thẻ img để lấy kích thước thật
 
-  // Quality State
   const [qualityIssues, setQualityIssues] = useState<string[]>([]);
   const [isEnhancing, setIsEnhancing] = useState(false);
-
-  // Ref để tránh xử lý 2 lần
   const hasProcessedRef = useRef(false);
 
   // --- LOGIC FUNCTIONS ---
 
-  // 1. Check Quality
   const validateQuality = useCallback(
     async (url: string) => {
       setStep("CHECKING_QUALITY");
       try {
         const result = await analyzeImageQuality(url);
         const issues: string[] = [];
-
         if (result.isBlurry) issues.push(t("upload.issue.blur"));
         if (result.brightness === "dark") issues.push(t("upload.issue.dark"));
         if (result.brightness === "bright")
@@ -101,18 +122,17 @@ const UploadPage = () => {
     [t]
   );
 
-  // 2. Check Technical
   const validateTechnical = useCallback(
     (file: File, url: string) => {
       const img = new Image();
       img.src = url;
       img.onload = () => {
         let issues = [];
-        // Sử dụng biến replacement {{size}} cho thông báo lỗi
         if (file.size > MAX_FILE_SIZE)
           issues.push(t("upload_page.error.file_too_large", { size: 10 }));
 
         const ratio = img.width / img.height;
+        // Logic cũ: nếu tỷ lệ xấu thì bắt crop
         if (ratio < 0.5 || ratio > 2) issues.push("Bad aspect ratio");
 
         setTimeout(() => {
@@ -128,53 +148,71 @@ const UploadPage = () => {
     [t, validateQuality]
   );
 
-  // 3. Handle File Select
   const handleFileSelect = useCallback(
     (file: File) => {
       setErrorMessage("");
-      // Basic validate
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
         setErrorMessage(t("upload_page.error.invalid_type"));
         return;
       }
-
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       setCurrentFile(file);
-
-      // Bắt đầu Flow
       setStep("CHECKING_TECH");
       validateTechnical(file, url);
     },
     [t, validateTechnical]
   );
 
-  // --- USE EFFECT: NHẬN FILE TỪ HEADER ---
   useEffect(() => {
     const state = location.state as LocationState;
     const fileFromState = state?.fileToUpload;
-
     if (fileFromState && !hasProcessedRef.current) {
-      console.log("🚀 Receiving file from Header:", fileFromState.name);
       hasProcessedRef.current = true;
       handleFileSelect(fileFromState);
       window.history.replaceState({}, document.title);
     }
   }, [location, handleFileSelect]);
 
-  // --- CÁC HÀM XỬ LÝ KHÁC ---
+  // --- XỬ LÝ ẢNH KHI LOAD ĐỂ TẠO KHUNG CROP MẶC ĐỊNH ---
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { width, height } = e.currentTarget;
+    // Tạo khung crop mặc định ở giữa, không khóa tỷ lệ
+    setCrop(centerAspectCrop(width, height, undefined));
+  }
 
+  // --- XÁC NHẬN CROP (Đã sửa để dùng completedCrop) ---
+  // --- XÁC NHẬN CROP (Đã sửa tỷ lệ Scale) ---
   const handleCropConfirm = async () => {
-    if (!previewUrl || !croppedAreaPixels) return;
+    // Cần cả URL, pixelCrop và Ref ảnh
+    if (!previewUrl || !completedCrop || !imgRef.current) return;
+
+    const image = imgRef.current; // Lấy thẻ img thực tế đang hiển thị
+
+    // 1. Tính tỷ lệ giữa kích thước gốc (natural) và kích thước hiển thị (client)
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
+    // 2. Quy đổi toạ độ crop từ màn hình sang toạ độ thực tế của ảnh gốc
+    const realPixelCrop = {
+      x: completedCrop.x * scaleX,
+      y: completedCrop.y * scaleY,
+      width: completedCrop.width * scaleX,
+      height: completedCrop.height * scaleY,
+      unit: "px", // Đảm bảo đơn vị là pixel
+    };
+
     try {
-      const croppedFile = await getCroppedImg(previewUrl, croppedAreaPixels);
+      // 3. Gửi toạ độ chuẩn xác đi cắt
+      const croppedFile = await getCroppedImg(previewUrl, realPixelCrop);
+
       const newUrl = URL.createObjectURL(croppedFile);
       setPreviewUrl(newUrl);
       setCurrentFile(croppedFile);
       validateQuality(newUrl);
     } catch (e) {
       console.error(e);
-      setErrorMessage(t("upload_page.error.corrupted")); // Hoặc thông báo lỗi chung
+      setErrorMessage(t("upload_page.error.corrupted"));
     }
   };
 
@@ -186,7 +224,6 @@ const UploadPage = () => {
       const res = await fetch(enhancedUrl);
       const blob = await res.blob();
       const file = new File([blob], "enhanced.jpg", { type: "image/jpeg" });
-
       setPreviewUrl(enhancedUrl);
       setCurrentFile(file);
       setQualityIssues([]);
@@ -203,7 +240,6 @@ const UploadPage = () => {
     setStep("UPLOADING");
     const formData = new FormData();
     formData.append("file", currentFile);
-
     try {
       const response = await analyzeImage(formData);
       if (response.data.success) {
@@ -213,7 +249,7 @@ const UploadPage = () => {
         setStep("READY");
       }
     } catch (error) {
-      setErrorMessage(t("upload_page.error.corrupted")); // Fallback error
+      setErrorMessage(t("upload_page.error.corrupted"));
       setStep("READY");
     }
   };
@@ -224,19 +260,13 @@ const UploadPage = () => {
     setCurrentFile(null);
     setErrorMessage("");
     setQualityIssues([]);
+    setCrop(undefined); // Reset crop
     hasProcessedRef.current = false;
   };
 
-  // Zoom handlers
-  const MIN_ZOOM = 1;
-  const MAX_ZOOM = 3;
-  const ZOOM_STEP = 0.1;
-  const zoomPercentage = ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100;
-
-  const handleZoomIn = () =>
-    setZoom((prev) => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
-  const handleZoomOut = () =>
-    setZoom((prev) => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+  const handleManualCrop = () => {
+    setStep("CROP_NEEDED");
+  };
 
   // Drag handlers
   const [isDragging, setIsDragging] = useState(false);
@@ -278,11 +308,11 @@ const UploadPage = () => {
         </div>
       )}
 
-      {/* CASE 1: IDLE */}
       {step === "IDLE" && (
         <div
           className={`${styles.uploadBox} ${isDragging ? styles.dragging : ""}`}
         >
+          {/* ... Giữ nguyên phần IDLE ... */}
           <label className={styles.uploadDropzone}>
             <div className={styles.uploadIcon}>
               <FaUpload />
@@ -312,22 +342,37 @@ const UploadPage = () => {
         </div>
       )}
 
-      {/* CASE 2: WORKSPACE */}
       {step !== "IDLE" && (
         <div className={styles.workspace}>
           {/* LEFT: VIEWER */}
           <div className={styles.viewerPanel}>
             {step === "CROP_NEEDED" && previewUrl ? (
               <div className={styles.cropperWrapper}>
-                <Cropper
-                  image={previewUrl}
+                {/* --- THAY THẾ CROPPER BẰNG REACTCROP --- */}
+                <ReactCrop
                   crop={crop}
-                  zoom={zoom}
-                  aspect={3 / 4}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={(_, pixels) => setCroppedAreaPixels(pixels)}
-                />
+                  // QUAN TRỌNG: Dùng tham số thứ nhất (c) là pixelCrop để khớp với minWidth/minHeight
+                  onChange={(c) => setCrop(c)}
+                  onComplete={(c) => setCompletedCrop(c)}
+                  // Cấu hình giới hạn
+                  minWidth={100} // Không cho thu nhỏ chiều rộng dưới 100px
+                  minHeight={100} // Không cho thu nhỏ chiều cao dưới 100px
+                  keepSelection={true} // Không cho phép xóa vùng chọn khi click ra ngoài
+                  ruleOfThirds={true} // (Tùy chọn) Hiện lưới quy tắc 1/3 để dễ căn chỉnh
+                  className={styles.reactCropCustom}
+                >
+                  <img
+                    ref={imgRef}
+                    src={previewUrl}
+                    alt="Crop me"
+                    onLoad={onImageLoad}
+                    style={{
+                      maxHeight: "75vh",
+                      maxWidth: "100%",
+                      objectFit: "contain",
+                    }} // Đảm bảo ảnh không tràn
+                  />
+                </ReactCrop>
               </div>
             ) : (
               <div className={styles.imagePreviewWrapper}>
@@ -352,55 +397,40 @@ const UploadPage = () => {
           <div className={styles.controlsPanel}>
             <div className={styles.controlHeader}>
               <h4>{t("upload_page.loading").replace("...", "")}</h4>
-              {/* Dùng tạm key loading để làm tiêu đề "Analyzing/Phân tích" */}
-              <button
-                onClick={handleReset}
-                className={styles.btnIcon}
-                title={t("upload.btn.retake")}
-              >
-                <FaRedo />
-              </button>
+              <div className={styles.headerBtnGroup}>
+                {step !== "CROP_NEEDED" && step !== "UPLOADING" && (
+                  <button
+                    onClick={handleManualCrop}
+                    className={styles.btnIcon}
+                    title={t("upload.btn.crop")}
+                  >
+                    <FaCropAlt />
+                  </button>
+                )}
+                <button
+                  onClick={handleReset}
+                  className={styles.btnIcon}
+                  title={t("upload.btn.retake")}
+                >
+                  <FaRedo />
+                </button>
+              </div>
             </div>
 
             <div className={styles.controlBody}>
-              {/* CROP CONTROLS */}
+              {/* CROP CONTROLS - ĐÃ BỎ ZOOM SLIDER */}
               {step === "CROP_NEEDED" && (
                 <div className={styles.panelContent}>
                   <div className={styles.statusBoxWarning}>
                     <FaCropAlt />
                     <span>{t("upload.warning.resize")}</span>
                   </div>
-                  <div className={styles.sliderGroup}>
-                    <label className={styles.zoomLabel}>
-                      {t("upload.label.zoom")}
-                    </label>
-                    <div className={styles.sliderWrapper}>
-                      <button
-                        onClick={handleZoomOut}
-                        className={styles.sliderIconBtn}
-                      >
-                        <FaSearchMinus />
-                      </button>
-                      <input
-                        type="range"
-                        min={MIN_ZOOM}
-                        max={MAX_ZOOM}
-                        step={ZOOM_STEP}
-                        value={zoom}
-                        onChange={(e) => setZoom(Number(e.target.value))}
-                        className={styles.zoomBar}
-                        style={{
-                          background: `linear-gradient(to right, #0d9488 ${zoomPercentage}%, #cbd5e1 ${zoomPercentage}%)`,
-                        }}
-                      />
-                      <button
-                        onClick={handleZoomIn}
-                        className={styles.sliderIconBtn}
-                      >
-                        <FaSearchPlus />
-                      </button>
-                    </div>
-                  </div>
+
+                  {/* Hướng dẫn ngắn gọn */}
+                  <p className={styles.note}>
+                    Kéo các góc khung hình để chọn vùng ảnh mong muốn.
+                  </p>
+
                   <div className={styles.actionGroup}>
                     <button
                       onClick={handleCropConfirm}
@@ -412,7 +442,7 @@ const UploadPage = () => {
                 </div>
               )}
 
-              {/* REVIEW CONTROLS */}
+              {/* ... CÁC PHẦN REVIEW VÀ READY GIỮ NGUYÊN ... */}
               {step === "REVIEW" && (
                 <div className={styles.panelContent}>
                   <div className={styles.statusBoxDanger}>
@@ -457,7 +487,6 @@ const UploadPage = () => {
                 </div>
               )}
 
-              {/* READY CONTROLS */}
               {step === "READY" && (
                 <div className={styles.panelContent}>
                   <div className={styles.statusBoxSuccess}>
@@ -476,7 +505,6 @@ const UploadPage = () => {
                 </div>
               )}
 
-              {/* SCANNING LOADING */}
               {isScanning && (
                 <div className={styles.panelContent}>
                   <div className={styles.loaderSpinner}></div>
@@ -489,7 +517,6 @@ const UploadPage = () => {
           </div>
         </div>
       )}
-
       {isDragging && (
         <div className={styles.dragOverlay}>
           <FaUpload /> {t("upload_page.drop")}

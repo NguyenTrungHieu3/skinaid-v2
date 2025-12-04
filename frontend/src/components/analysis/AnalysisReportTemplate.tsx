@@ -300,7 +300,7 @@ const AnalysisReportTemplate = ({
           </div>
 
           {/* Mô tả & Cảnh báo */}
-          <div className={styles.diagnosisDetails}>
+          {/* <div className={styles.diagnosisDetails}>
             <p className={styles.description}>
               <strong>Description:</strong> {firstaid_snapshot.description}
             </p>
@@ -318,7 +318,7 @@ const AnalysisReportTemplate = ({
                   </ul>
                 </div>
               )}
-          </div>
+          </div> */}
         </div>
 
         {/* --- SECTION 2: IMMEDIATE ACTION PLAN --- */}

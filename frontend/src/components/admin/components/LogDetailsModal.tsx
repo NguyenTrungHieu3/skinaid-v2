@@ -1,5 +1,5 @@
-import React from 'react';
 import { X, Clock, User, Shield, Activity, FileText, AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './LogDetailsModal.module.css';
 
 interface Log {
@@ -22,6 +22,7 @@ interface LogDetailsModalProps {
 }
 
 const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
+    const { t } = useTranslation();
     // Prevent click propagation to close modal when clicking inside content
     const handleContentClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -55,7 +56,7 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                 <div className={styles.modalHeader}>
                     <div className={styles.headerTitle}>
                         {getLogTypeIcon(log.type)}
-                        <h2>Log Details</h2>
+                        <h2>{t('admin.logs.details.title')}</h2>
                     </div>
                     <button className={styles.closeButton} onClick={onClose}>
                         <X size={24} />
@@ -65,11 +66,11 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                 <div className={styles.modalBody}>
                     {/* Summary Section */}
                     <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>Summary</h3>
+                        <h3 className={styles.sectionTitle}>{t('admin.logs.details.summary')}</h3>
                         <div className={styles.grid}>
                             <div className={styles.infoItem}>
                                 <Clock size={16} />
-                                <span className={styles.label}>Timestamp:</span>
+                                <span className={styles.label}>{t('admin.logs.details.timestamp')}</span>
                                 <span className={styles.value}>
                                     {new Date(log.timestamp).toLocaleString('en-US', {
                                         year: 'numeric',
@@ -84,19 +85,19 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                             </div>
                             <div className={styles.infoItem}>
                                 <Activity size={16} />
-                                <span className={styles.label}>Action:</span>
+                                <span className={styles.label}>{t('admin.logs.details.action')}</span>
                                 <span className={styles.value}>{log.action}</span>
                             </div>
                             <div className={styles.infoItem}>
                                 <Shield size={16} />
-                                <span className={styles.label}>Severity:</span>
+                                <span className={styles.label}>{t('admin.logs.details.severity')}</span>
                                 <span className={`${styles.badge} ${getSeverityClass(log.severity)}`}>
                                     {log.severity.toUpperCase()}
                                 </span>
                             </div>
                             <div className={styles.infoItem}>
                                 <User size={16} />
-                                <span className={styles.label}>User:</span>
+                                <span className={styles.label}>{t('admin.logs.details.user')}</span>
                                 <span className={styles.value}>
                                     {log.user}
                                     {log.email && <span style={{ fontSize: '0.8em', color: '#64748b', marginLeft: '4px' }}>({log.email})</span>}
@@ -110,7 +111,7 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                     <div className={styles.section}>
                         <h3 className={styles.sectionTitle}>
                             <FileText size={18} />
-                            Full Details
+                            {t('admin.logs.details.full_details')}
                         </h3>
                         <div className={styles.codeBlock}>
                             <pre>{formattedDetails}</pre>
@@ -120,7 +121,7 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
 
                 <div className={styles.modalFooter}>
                     <button className={styles.closeBtn} onClick={onClose}>
-                        Close
+                        {t('admin.logs.details.close')}
                     </button>
                 </div>
             </div>

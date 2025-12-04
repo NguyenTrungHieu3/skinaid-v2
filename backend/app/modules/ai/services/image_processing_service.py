@@ -92,6 +92,12 @@ class ImageProcessingService:
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             
+            # Ensure processing_time_ms is always >= 1 to satisfy DB constraint
+            processing_time_ms = ai_result.get('processing_time_ms')
+            if not processing_time_ms or processing_time_ms < 1:
+                # Fallback: convert processing_time (seconds) to ms, minimum 1
+                processing_time_ms = max(1, int(ai_result.get('processing_time', 0.001) * 1000))
+            
             analysis = WoundAnalysis.create_analysis(
                 user_id=user_id,
                 session_id=session_id,
@@ -99,7 +105,7 @@ class ImageProcessingService:
                 file_name=save_result['filename'],
                 file_size=validation['size'],
                 total_detections=len(ai_result.get('detections', [])),
-                processing_time_ms=ai_result.get('processing_time_ms', 0)
+                processing_time_ms=processing_time_ms
             )
             
             self.db.add(analysis)

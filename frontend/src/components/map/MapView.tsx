@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
+import { useTranslation } from "react-i18next";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Phone, MapPin, Globe, Share2, Navigation } from "lucide-react";
@@ -43,6 +44,40 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom: number }
     return null;
 }
 
+// Component to handle map resize when container visibility changes
+function MapResizeHandler() {
+    const map = useMap();
+    
+    useEffect(() => {
+        // Initial invalidateSize after mount
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+
+        // Also invalidateSize on window resize
+        const handleResize = () => {
+            map.invalidateSize();
+        };
+
+        window.addEventListener('resize', handleResize);
+        
+        // Use ResizeObserver to detect container size changes
+        const container = map.getContainer();
+        const resizeObserver = new ResizeObserver(() => {
+            map.invalidateSize();
+        });
+        resizeObserver.observe(container);
+
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
+        };
+    }, [map]);
+
+    return null;
+}
+
 const MapView = ({
     userLocation,
     facilities,
@@ -52,6 +87,7 @@ const MapView = ({
     onWebsite,
     onShare
 }: MapViewProps) => {
+    const { t } = useTranslation();
     const defaultCenter: [number, number] = [16.0474546, 108.1992956]; // Da Nang
     const center = userLocation ? [userLocation.lat, userLocation.lng] as [number, number] : defaultCenter;
 
@@ -59,13 +95,14 @@ const MapView = ({
         <div className="map-container">
             <MapContainer center={center} zoom={13} scrollWheelZoom={true}>
                 <ChangeView center={center} zoom={13} />
+                <MapResizeHandler />
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 {userLocation && (
                     <Marker position={[userLocation.lat, userLocation.lng]} icon={UserIcon}>
-                        <Popup>Vị trí của bạn</Popup>
+                        <Popup>{t('map.your_location')}</Popup>
                     </Marker>
                 )}
                 {facilities.map((facility, index) => (
@@ -90,7 +127,7 @@ const MapView = ({
                                     <button
                                         className="popup-btn primary"
                                         onClick={() => onDirections?.(facility)}
-                                        title="Chỉ đường"
+                                        title={t('map.tooltip_directions')}
                                     >
                                         <Navigation className="w-4 h-4" />
                                     </button>
@@ -99,7 +136,7 @@ const MapView = ({
                                         <button
                                             className="popup-btn"
                                             onClick={() => onCall?.(facility.phone!)}
-                                            title="Gọi điện"
+                                            title={t('map.tooltip_call')}
                                         >
                                             <Phone className="w-4 h-4" />
                                         </button>
@@ -109,7 +146,7 @@ const MapView = ({
                                         <button
                                             className="popup-btn"
                                             onClick={() => onWebsite?.(facility.website!)}
-                                            title="Website"
+                                            title={t('map.tooltip_website')}
                                         >
                                             <Globe className="w-4 h-4" />
                                         </button>
@@ -118,7 +155,7 @@ const MapView = ({
                                     <button
                                         className="popup-btn"
                                         onClick={() => onShare?.(facility)}
-                                        title="Chia sẻ"
+                                        title={t('map.tooltip_share')}
                                     >
                                         <Share2 className="w-4 h-4" />
                                     </button>

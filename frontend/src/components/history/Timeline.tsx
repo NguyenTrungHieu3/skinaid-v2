@@ -98,6 +98,7 @@ const Timeline = ({
   onSelectEvent,
 }: TimelineProps) => {
   const monthLabel = getMonthYearLabel(events);
+  const hasEvents = events.length > 0;
 
   // Tìm và nhóm các events theo tháng
   // (Phần này giữ nguyên, chỉ đảm bảo .eventList render đúng)
@@ -106,27 +107,58 @@ const Timeline = ({
     <div className={styles.timelineContainer}>
       {/* CỘT 1: Nhãn Tháng (bên trái) */}
       <div className={styles.monthLabelContainer}>
-        <div className={styles.monthLabel}>{monthLabel}</div>
+        {/* Chỉ hiện nhãn tháng nếu có sự kiện, nếu không thì để trống hoặc hiện text khác */}
+        <div className={styles.monthLabel}>{hasEvents ? monthLabel : ""}</div>
       </div>
 
-      {/* CỘT 2: Đường kẻ dọc */}
-      {/* (Phần này đã được chuyển vào .eventList::before trong CSS) */}
-
-      {/* CỘT 3: Danh sách các item (bên phải) */}
-      <div className={styles.eventList}>
-        <div className={styles.fadeWrapper}>
-          <div className={styles.scrollWrapper}>
-            {events.map((event) => (
-              <TimelineItem
-                key={event.id}
-                event={event}
-                isActive={activeEventId === event.id}
-                onSelect={() => onSelectEvent(event.id)}
-              />
-            ))}
+      {/* CỘT 2: Nội dung (Logic Rẽ Nhánh) */}
+      {hasEvents ? (
+        /* TRƯỜNG HỢP CÓ DỮ LIỆU -> Hiện danh sách và đường kẻ */
+        <div className={styles.eventList}>
+          <div className={styles.fadeWrapper}>
+            <div className={styles.scrollWrapper}>
+              {events.map((event) => (
+                <TimelineItem
+                  key={event.id}
+                  event={event}
+                  isActive={activeEventId === event.id}
+                  onSelect={() => onSelectEvent(event.id)}
+                />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* TRƯỜNG HỢP KHÔNG CÓ DỮ LIỆU -> Hiện Empty State */
+        <div className={styles.emptyStateContainer}>
+          <div className={styles.emptyIconWrapper}>
+            {/* Bạn có thể dùng thẻ <img /> hoặc Icon từ thư viện */}
+            {/* Ví dụ dùng SVG trực tiếp: */}
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={styles.emptyIcon}
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+              <line x1="10" y1="16" x2="14" y2="12"></line>
+              <line x1="10" y1="12" x2="14" y2="16"></line>
+            </svg>
+          </div>
+          <h3 className={styles.emptyTitle}>Chưa có lịch sử</h3>
+          <p className={styles.emptyDescription}>
+            Bạn chưa có sự kiện phân tích nào. Hãy tải ảnh lên để bắt đầu.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

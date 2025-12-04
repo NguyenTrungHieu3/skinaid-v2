@@ -79,7 +79,7 @@ class WoundAnalysis(SQLModel, table=True):
         session_id: Optional[uuid.UUID] = None,
         ai_model_version: str = "YOLOv11_EfficientNetV2_1.0",
         total_detections: int = 0,
-        processing_time_ms: int = 0,
+        processing_time_ms: int = 1,  # Must be >= 1 for DB constraint
         analyzed_at: Optional[datetime] = None
     ) -> "WoundAnalysis":
         

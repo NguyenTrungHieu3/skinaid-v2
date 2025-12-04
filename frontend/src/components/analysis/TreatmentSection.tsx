@@ -17,6 +17,12 @@ interface FirstAidSnapshot {
   steps: string[];
   dos: string[];
   donts: string[];
+  supplies_needed?: string[];
+  estimated_healing_time?: string;
+  source?: {
+    name: string;
+    url?: string;
+  } | string; // Support both old string and new object format
 }
 interface TreatmentSectionProps {
   snapshot: FirstAidSnapshot; // Nhận 'snapshot' làm prop
@@ -88,9 +94,8 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
       {careSections.map((section) => (
         <div
           key={section.key}
-          className={`${styles.careSection} ${
-            openSection === section.key ? styles.open : ""
-          }`}
+          className={`${styles.careSection} ${openSection === section.key ? styles.open : ""
+            }`}
           style={{ backgroundColor: `${section.color}22` }} // Nền nhạt
         >
           <div
@@ -100,9 +105,8 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
           >
             <div className={styles.headerLeft}>
               <span
-                className={`${styles.careNumber} ${
-                  styles[`num-${section.num}`]
-                }`}
+                className={`${styles.careNumber} ${styles[`num-${section.num}`]
+                  }`}
               >
                 {section.num}
               </span>
@@ -151,6 +155,40 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
           )}
         </div>
       ))}
+
+      {/* Source Information */}
+      {snapshot.source && (
+        <div className={styles.sourceInfo} style={{
+          marginTop: '1rem',
+          padding: '0.75rem 1rem',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '0.5rem',
+          fontSize: '0.875rem',
+          color: '#6c757d'
+        }}>
+          <strong>Nguồn:</strong>{" "}
+          {typeof snapshot.source === 'string' ? (
+            snapshot.source
+          ) : (
+            <>
+              <span style={{ fontWeight: 500 }}>{snapshot.source.name}</span>
+              {snapshot.source.url && (
+                <>
+                  {' - '}
+                  <a
+                    href={snapshot.source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#2563eb', textDecoration: 'underline' }}
+                  >
+                    {snapshot.source.url}
+                  </a>
+                </>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };

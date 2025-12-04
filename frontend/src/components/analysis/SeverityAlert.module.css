@@ -1,0 +1,147 @@
+.alertContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+  gap: 1rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Moderate severity - orange/amber */
+.moderate {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fb923c;
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.15);
+}
+
+.moderate .warningIcon {
+  color: #ea580c;
+}
+
+.moderate .alertTitle {
+  color: #c2410c;
+}
+
+.moderate .alertDescription {
+  color: #9a3412;
+}
+
+/* Severe severity - red */
+.severe {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #f87171;
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
+}
+
+.severe .warningIcon {
+  color: #dc2626;
+}
+
+.severe .alertTitle {
+  color: #b91c1c;
+}
+
+.severe .alertDescription {
+  color: #991b1b;
+}
+
+.alertContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+
+.warningIcon {
+  font-size: 1.5rem;
+}
+
+.textContent {
+  flex: 1;
+}
+
+.alertTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.alertDescription {
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.findButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+}
+
+.findButton:hover {
+  background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+}
+
+.findButton:active {
+  transform: translateY(0);
+}
+
+.buttonIcon {
+  font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .alertContainer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+  }
+
+  .alertContent {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .findButton {
+    justify-content: center;
+    width: 100%;
+  }
+}

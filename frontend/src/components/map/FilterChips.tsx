@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import "./MapComponents.css";
 
 interface FilterChipsProps {
@@ -5,14 +6,16 @@ interface FilterChipsProps {
     onChange: (value: string) => void;
 }
 
-const FACILITY_TYPES = [
-    { value: "all", label: "Tất cả" },
-    { value: "healthcare.hospital", label: "Bệnh viện" },
-    { value: "healthcare.clinic_or_praxis", label: "Phòng khám" },
-    { value: "healthcare.pharmacy", label: "Nhà thuốc" },
-];
-
 const FilterChips = ({ selected, onChange }: FilterChipsProps) => {
+    const { t } = useTranslation();
+
+    const FACILITY_TYPES = [
+        { value: "all", label: t('map.filter_all') },
+        { value: "healthcare.hospital", label: t('map.filter_hospital') },
+        { value: "healthcare.clinic_or_praxis", label: t('map.filter_clinic') },
+        { value: "healthcare.pharmacy", label: t('map.filter_pharmacy') },
+    ];
+
     return (
         <div className="filter-chips">
             {FACILITY_TYPES.map((type) => (

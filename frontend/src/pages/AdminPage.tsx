@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Users, FileText, Shield, LayoutGrid } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
 import FirstAidManagement from '../components/admin/FirstAidManagement';
@@ -9,13 +10,14 @@ import TopBar from '../components/admin/TopBar';
 import styles from './AdminPage.module.css';
 
 export default function AdminPage() {
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'firstaid', label: 'First Aid Guidance', icon: FileText },
-    { id: 'logs', label: 'Admin Logs', icon: Shield },
+    { id: 'dashboard', label: t('admin.sidebar.dashboard'), icon: LayoutGrid },
+    { id: 'users', label: t('admin.sidebar.user_management'), icon: Users },
+    { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
+    { id: 'logs', label: t('admin.sidebar.admin_logs'), icon: Shield },
   ];
 
   const renderPage = () => {

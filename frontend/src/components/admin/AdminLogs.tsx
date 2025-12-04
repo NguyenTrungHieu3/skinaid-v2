@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getAuditLogs } from '../../services/auditService';
 import LogFilters from './components/LogFilters';
 import LogTable from './components/LogTable';
@@ -20,6 +21,7 @@ interface Log {
 }
 
 export default function AdminLogs() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,8 +149,8 @@ export default function AdminLogs() {
       {/* Page Header */}
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>System Logs</h1>
-          <p>View and manage system logs</p>
+          <h1>{t('admin.logs.title')}</h1>
+          <p>{t('admin.logs.subtitle')}</p>
         </div>
       </div>
 
@@ -184,9 +186,9 @@ export default function AdminLogs() {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
           <div className={styles.alertText}>
-            <p className={styles.alertTitle}>Security Notice</p>
+            <p className={styles.alertTitle}>{t('admin.logs.security_notice')}</p>
             <p className={styles.alertDescription}>
-              This system is monitored. Unauthorized access or misuse will be logged and reported.
+              {t('admin.logs.security_desc')}
             </p>
           </div>
         </div>

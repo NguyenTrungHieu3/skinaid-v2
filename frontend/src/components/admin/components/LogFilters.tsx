@@ -1,5 +1,5 @@
-import React from 'react';
 import { Search, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import styles from './LogFilters.module.css';
 
 interface LogFiltersProps {
@@ -20,6 +20,7 @@ const LogFilters: React.FC<LogFiltersProps> = ({
   onRefresh,
   isRefreshing
 }) => {
+  const { t } = useTranslation();
   return (
     <div className={styles.filtersCard}>
       <div className={styles.filtersContainer}>
@@ -27,7 +28,7 @@ const LogFilters: React.FC<LogFiltersProps> = ({
           <Search className={styles.searchIcon} size={20} />
           <input
             type="text"
-            placeholder="Search logs..."
+            placeholder={t('admin.logs.filters.search_placeholder')}
             value={filters.search}
             onChange={(e) => onFilterChange('search', e.target.value)}
             className={styles.filterInput}
@@ -40,9 +41,9 @@ const LogFilters: React.FC<LogFiltersProps> = ({
             onChange={(e) => onFilterChange('type', e.target.value)}
             className={styles.filterSelect}
           >
-            <option value="all">All Types</option>
-            <option value="success">Success</option>
-            <option value="error">Error</option>
+            <option value="all">{t('admin.logs.filters.all_types')}</option>
+            <option value="success">{t('admin.logs.filters.success')}</option>
+            <option value="error">{t('admin.logs.filters.error')}</option>
           </select>
         </div>
 
@@ -52,9 +53,10 @@ const LogFilters: React.FC<LogFiltersProps> = ({
             onChange={(e) => onFilterChange('role', e.target.value)}
             className={styles.filterSelect}
           >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
+            <option value="all">{t('admin.logs.filters.all_roles')}</option>
+            <option value="admin">{t('admin.logs.filters.roles.admin')}</option>
+            <option value="user">{t('admin.logs.filters.roles.user')}</option>
+            <option value="guest">{t('admin.logs.filters.roles.guest')}</option>
           </select>
         </div>
 
@@ -64,10 +66,10 @@ const LogFilters: React.FC<LogFiltersProps> = ({
             onChange={(e) => onFilterChange('dateRange', e.target.value)}
             className={styles.filterSelect}
           >
-            <option value="Today">Today</option>
-            <option value="Last 7 Days">Last 7 Days</option>
-            <option value="Last 30 Days">Last 30 Days</option>
-            <option value="all">All Time</option>
+            <option value="Today">{t('admin.dashboard.periods.today')}</option>
+            <option value="Last 7 Days">{t('admin.dashboard.periods.last_7_days')}</option>
+            <option value="Last 30 Days">{t('admin.dashboard.periods.last_30_days')}</option>
+            <option value="all">{t('admin.dashboard.periods.all_time')}</option>
           </select>
         </div>
 
@@ -77,7 +79,7 @@ const LogFilters: React.FC<LogFiltersProps> = ({
           disabled={isRefreshing}
         >
           <RefreshCw size={18} className={isRefreshing ? styles.spinner : ''} />
-          Refresh
+          {t('admin.logs.filters.refresh')}
         </button>
       </div>
     </div>

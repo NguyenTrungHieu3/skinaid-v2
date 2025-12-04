@@ -21,9 +21,7 @@ export interface BoundingBox {
 
 export interface FirstAidSnapshot {
   title: string;
-  description: string;
   steps: string[];
-  warnings: string[];
   dos: string[];
   donts: string[];
   supplies_needed: string[];

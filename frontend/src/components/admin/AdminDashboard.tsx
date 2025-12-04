@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   getDashboardOverview,
   getWoundTypeDistribution,
@@ -17,6 +18,7 @@ import DashboardLogs from './components/DashboardLogs';
 import styles from './AdminDashboard.module.css';
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,12 +81,28 @@ export default function AdminDashboard() {
     fetchDashboardData(true);
   };
 
+  // Helper function to translate action names
+  const translateAction = (action: string) => {
+    const key = `admin.dashboard.logs.actions.${action}`;
+    const translated = t(key);
+    // If translation exists, return it; otherwise return original
+    return translated !== key ? translated : action;
+  };
+
+  // Helper function to translate resource types
+  const translateResource = (resource: string) => {
+    const key = `admin.dashboard.logs.resources.${resource}`;
+    const translated = t(key);
+    // If translation exists, return it; otherwise return original
+    return translated !== key ? translated : resource;
+  };
+
   // Helper to map audit logs to dashboard log format
   const mapAuditLogs = (logs: AuditLog[]) => {
     return logs.map(log => ({
       type: log.success ? 'success' : 'error' as 'error' | 'success' | 'info',
       severity: log.success ? 'low' : 'high' as 'low' | 'medium' | 'high',
-      message: `${log.action} - ${log.resource_type || 'System'}`,
+      message: `${translateAction(log.action)} - ${translateResource(log.resource_type || 'system')}`,
       time: new Date(log.timestamp + 'Z').toLocaleString('vi-VN', {
         year: 'numeric',
         month: '2-digit',
@@ -103,7 +121,7 @@ export default function AdminDashboard() {
       <div className={styles.adminDashboard}>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner}></div>
-          <p>Loading dashboard...</p>
+          <p>{t('admin.dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -116,7 +134,7 @@ export default function AdminDashboard() {
         <div className={styles.errorContainer}>
           <p className={styles.errorMessage}>{error}</p>
           <button onClick={() => fetchDashboardData()} className={styles.retryButton}>
-            Retry
+            {t('admin.dashboard.retry')}
           </button>
         </div>
       </div>
@@ -127,8 +145,8 @@ export default function AdminDashboard() {
     <div className={styles.adminDashboard}>
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>Admin Dashboard</h1>
-          <p>Overview of system performance and statistics</p>
+          <h1>{t('admin.dashboard.title')}</h1>
+          <p>{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className={styles.headerActions}>
           <select
@@ -137,18 +155,18 @@ export default function AdminDashboard() {
             className={styles.filterSelect}
             disabled={loading || refreshing}
           >
-            <option value="day">Today</option>
-            <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
-            <option value="year">Last Year</option>
-            <option value="all">All Time</option>
+            <option value="day">{t('admin.dashboard.periods.today')}</option>
+            <option value="week">{t('admin.dashboard.periods.last_7_days')}</option>
+            <option value="month">{t('admin.dashboard.periods.last_30_days')}</option>
+            <option value="year">{t('admin.dashboard.periods.last_year')}</option>
+            <option value="all">{t('admin.dashboard.periods.all_time')}</option>
           </select>
           <button
             onClick={handleRefresh}
             className={styles.adminBtnPrimary}
             disabled={refreshing}
           >
-            {refreshing ? 'Refresh...' : 'Refresh Data'}
+            {refreshing ? t('admin.dashboard.refreshing') : t('admin.dashboard.refresh')}
           </button>
         </div>
       </div>

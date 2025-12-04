@@ -1,27 +1,36 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 import uuid
 
-VALID_SUB_TYPES = {
-    'burn': ["blister", "skintear"]
-}
+# VALID_SUB_TYPES = {
+#     'burn': ["blister", "skintear"]
+# }
 
 class CreateFirstAidGuideRequest(BaseModel):
     wound_type: str = Field(..., description="Loại vết thương (abrasion, bruise, burn, cut)")
     severity: str = Field(..., description="Mức độ (mild, moderate, severe)")
     sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ cho burn: blister, skintear)")
     title: str = Field(..., min_length=5, max_length=200, description="Tiêu đề hướng dẫn")
-    description: Optional[str] = Field(None, max_length=1000, description="Mô tả chi tiết")
     
     steps: List[str] = Field(..., min_items=1, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(default=None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(default=None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(default=None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(default=None, description="Vật dụng cần thiết")
     
-    
+    source: Dict[str, Any] = Field(..., description="Nguồn tham khảo (JSON: {name: str, url?: str})")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
+    
+    @field_validator('source')
+    @classmethod
+    def validate_source(cls, v):
+        if not isinstance(v, dict):
+            raise ValueError('Source must be a JSON object')
+        if 'name' not in v or not v['name']:
+            raise ValueError('Source must have a non-empty "name" field')
+        if 'url' in v and v['url'] and not isinstance(v['url'], str):
+            raise ValueError('Source URL must be a string')
+        return v
     
     @field_validator('wound_type')
     def validate_wound_type(cls, v):
@@ -37,43 +46,42 @@ class CreateFirstAidGuideRequest(BaseModel):
             raise ValueError(f'severity phải là một trong {valid_severities}')
         return v.lower()
     
-    @model_validator(mode="before")
-    def validate_sub_type(cls, values):
-        """Validate sub_type dựa trên wound_type"""
-        wound_type = values.get('wound_type')
-        sub_type = values.get('sub_type')
+    # @model_validator(mode="before")
+    # def validate_sub_type(cls, values):
+    #     """Validate sub_type dựa trên wound_type"""
+    #     wound_type = values.get('wound_type')
+    #     sub_type = values.get('sub_type')
         
-        # Nếu không có sub_type → OK
-        if not sub_type:
-            return values
+    #     # Nếu không có sub_type → OK
+    #     if not sub_type:
+    #         return values
         
-        sub_type = sub_type.lower()
+    #     sub_type = sub_type.lower()
         
-        # Nếu wound_type không hỗ trợ sub_type → Error
-        if wound_type not in VALID_SUB_TYPES:
-            raise ValueError(f'{wound_type} không hỗ trợ sub_type')
+    #     # Nếu wound_type không hỗ trợ sub_type → Error
+    #     if wound_type not in VALID_SUB_TYPES:
+    #         raise ValueError(f'{wound_type} không hỗ trợ sub_type')
         
-        # Nếu sub_type không hợp lệ → Error
-        if sub_type not in VALID_SUB_TYPES[wound_type]:
-            raise ValueError(
-                f'sub_type "{sub_type}" không hợp lệ cho {wound_type}. '
-                f'Chỉ chấp nhận: {VALID_SUB_TYPES[wound_type]}'
-            )
+    #     # Nếu sub_type không hợp lệ → Error
+    #     if sub_type not in VALID_SUB_TYPES[wound_type]:
+    #         raise ValueError(
+    #             f'sub_type "{sub_type}" không hợp lệ cho {wound_type}. '
+    #             f'Chỉ chấp nhận: {VALID_SUB_TYPES[wound_type]}'
+    #         )
         
-        values['sub_type'] = sub_type
-        return values
+    #     values['sub_type'] = sub_type
+    #     return values
 
 
 class UpdateFirstAidGuideRequest(BaseModel):
     title: Optional[str] = Field(None, min_length=5, max_length=200, description="Tiêu đề")
-    description: Optional[str] = Field(None, max_length=1000, description="Mô tả")
     
     steps: Optional[List[str]] = Field(None, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
     
+    source: Optional[Dict[str, Any]] = Field(None, description="Nguồn tham khảo (JSON: {name: str, url?: str})")
     estimated_healing_time: Optional[str] = Field(None, max_length=100, description="Thời gian phục hồi")
     is_active: Optional[bool] = Field(None, description="Trạng thái hoạt động")
     sub_type: Optional[str] = Field(None, description="Loại phụ")
@@ -85,14 +93,13 @@ class FirstAidGuideResponse(BaseModel):
     sub_type: Optional[str] = Field(None, description="Loại phụ (chỉ dành cho burn)")
     severity_display: str = Field(..., description="Tên mức độ tiếng Việt")
     title: str = Field(..., description="Tiêu đề hướng dẫn")
-    description: Optional[str] = Field(None, description="Mô tả chi tiết")
 
     steps: Optional[List[str]] = Field(None, description="Các bước thực hiện")
-    warnings: Optional[List[str]] = Field(None, description="Cảnh báo")
     dos: Optional[List[str]] = Field(None, description="Những việc nên làm")
     donts: Optional[List[str]] = Field(None, description="Những việc không nên làm")
     supplies_needed: Optional[List[str]] = Field(None, description="Vật dụng cần thiết")
 
+    source: Optional[Dict[str, Any]] = Field(None, description="Nguồn tham khảo (JSON object)")
     estimated_healing_time: Optional[str] = Field(None, description="Thời gian phục hồi dự kiến")
     is_active: bool = Field(..., description="Hướng dẫn còn hiệu lực")
     version: int = Field(..., description="Phiên bản")

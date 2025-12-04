@@ -533,12 +533,80 @@ class StatisticsService:
 
     async def get_system_logs(self, limit: int = 10) -> Dict[str, Any]:
         """
-        Get recent system logs and alerts
+        Get recent system logs and alerts from admin_audit_logs and audit_logs
         """
         try:
             logs = []
 
-            # Get recent failed uploads
+            # 1. Get recent admin actions from admin_audit_logs
+            admin_logs_query = text("""
+                SELECT 
+                    created_at,
+                    action,
+                    resource_type,
+                    resource_id,
+                    admin_email,
+                    status,
+                    error_message,
+                    description
+                FROM admin_audit_logs
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """)
+            
+            admin_result = await self.db.execute(admin_logs_query, {"limit": limit})
+            
+            for row in admin_result.fetchall():
+                created_at = row[0]
+                action = row[1]
+                resource_type = row[2]
+                resource_id = row[3]
+                admin_email = row[4]
+                log_status = row[5]
+                error_message = row[6]
+                description = row[7]
+                
+                time_ago = self._get_time_ago(created_at)
+                
+                # Determine log type based on status and action
+                if log_status == "error" or log_status == "failed":
+                    log_type = "error"
+                    severity = "high"
+                elif log_status == "warning":
+                    log_type = "warning"
+                    severity = "medium"
+                elif action.startswith("DELETE") or action.startswith("REMOVE"):
+                    log_type = "warning"
+                    severity = "medium"
+                elif action.startswith("CREATE") or action.startswith("UPDATE"):
+                    log_type = "success"
+                    severity = "low"
+                else:
+                    log_type = "info"
+                    severity = "low"
+                
+                # Build message
+                if description:
+                    message = description
+                else:
+                    message = f"{action} on {resource_type}"
+                    if resource_id:
+                        message += f" #{resource_id[:8]}"
+                    message += f" by {admin_email}"
+                
+                if error_message:
+                    message += f" - {error_message}"
+                
+                logs.append({
+                    "type": log_type,
+                    "message": message,
+                    "time": time_ago,
+                    "severity": severity,
+                    "timestamp": created_at,
+                    "source": "admin"
+                })
+
+            # 2. Get recent failed uploads from audit_logs (user/guest actions)
             failed_uploads_query = text("""
                 SELECT 
                     timestamp,
@@ -564,10 +632,11 @@ class StatisticsService:
                     "message": f"Failed image upload" + (f" from user #{str(user_id)[:8]}" if user_id else ""),
                     "time": time_ago,
                     "severity": "high",
-                    "timestamp": created_at
+                    "timestamp": created_at,
+                    "source": "user"
                 })
 
-            # Get recent successful analyses (as info logs)
+            # 3. Get recent successful analyses (as info logs)
             recent_analyses_query = text("""
                 SELECT 
                     analyzed_at,
@@ -593,19 +662,23 @@ class StatisticsService:
                     "message": f"Analysis completed with {total_detections} detection(s)",
                     "time": time_ago,
                     "severity": "low",
-                    "timestamp": analyzed_at
+                    "timestamp": analyzed_at,
+                    "source": "system"
                 })
 
-            # Sort by timestamp
+            # Sort by timestamp and limit
             logs.sort(key=lambda x: x.get("timestamp", datetime.min), reverse=True)
             logs = logs[:limit]
 
-            # Count unresolved errors
+            # Count unresolved errors (from both tables)
             unresolved_query = text("""
-                SELECT COUNT(*) as total
-                FROM audit_logs
-                WHERE action IN ('image_upload', 'upload_image') AND success = false
-                AND timestamp >= NOW() - INTERVAL '24 hours'
+                SELECT 
+                    (SELECT COUNT(*) FROM audit_logs 
+                     WHERE action IN ('image_upload', 'upload_image') AND success = false
+                     AND timestamp >= NOW() - INTERVAL '24 hours') +
+                    (SELECT COUNT(*) FROM admin_audit_logs 
+                     WHERE status IN ('error', 'failed')
+                     AND created_at >= NOW() - INTERVAL '24 hours') as total
             """)
             unresolved_result = await self.db.execute(unresolved_query)
             unresolved_errors = unresolved_result.scalar() or 0

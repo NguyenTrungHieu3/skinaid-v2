@@ -1,4 +1,5 @@
 import { Search, SlidersHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import "./MapComponents.css";
 
 interface SearchBarProps {
@@ -9,13 +10,15 @@ interface SearchBarProps {
 }
 
 const SearchBar = ({ value, onChange, onFilterClick, onSearch }: SearchBarProps) => {
+    const { t } = useTranslation();
+
     return (
         <div className="search-bar">
             <div className="search-input-wrapper">
                 <Search className="search-icon" />
                 <input
                     type="text"
-                    placeholder="Tìm kiếm bệnh viện, phòng khám, nhà thuốc..."
+                    placeholder={t('map.search_placeholder')}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && onSearch()}
@@ -25,7 +28,7 @@ const SearchBar = ({ value, onChange, onFilterClick, onSearch }: SearchBarProps)
             <button
                 className="filter-btn"
                 onClick={onFilterClick}
-                title="Bộ lọc"
+                title={t('map.filter')}
             >
                 <SlidersHorizontal className="h-5 w-5" />
             </button>
