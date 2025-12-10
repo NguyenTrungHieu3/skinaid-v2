@@ -76,7 +76,7 @@ const UserManagement: FC = () => {
         limit: 10,
         search: searchTerm,
         role: selectedRole,
-        status: selectedStatus
+        is_active: selectedStatus
       });
 
       if (response.success && response.data) {
@@ -136,10 +136,14 @@ const UserManagement: FC = () => {
   // Handle add user
   const handleAddUser = async (data: UserFormData) => {
     if (isSubmitting) return;
+    if (!data.password) {
+      toast.error('Password is required');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
-      const response = await createUser(data);
+      const response = await createUser({ ...data, password: data.password });
       if (response.success) {
         setShowAddModal(false);
         fetchUsers();

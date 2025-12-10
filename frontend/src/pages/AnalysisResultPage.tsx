@@ -14,6 +14,7 @@ import {
   type AnalysisGetResponse,
   type SignificantWound,
 } from "../services/aiService";
+import { BACKEND_URL } from "../services/api";
 import { useParams } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -110,8 +111,8 @@ const AnalysisResultPage = () => {
   const [analysisData, setAnalysisData] = useState<AnalysisGetResponse | null>(
     null
   );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setIsLoading] = useState(true);
+  const [, setError] = useState<string | null>(null);
 
   const [summaryCounts, setSummaryCounts] = useState<SummaryCounts>({
     total: 0,
@@ -198,7 +199,8 @@ const AnalysisResultPage = () => {
     if (firstTabInGroup) setActiveTab(firstTabInGroup.id);
   };
 
-  const currentTabDataIndex = tabData.findIndex((t) => t.id === activeTab);
+  const _currentTabDataIndex = tabData.findIndex((t) => t.id === activeTab);
+  void _currentTabDataIndex; // unused but kept for potential future use
   const currentTabData = tabData.find((t) => t.id === activeTab);
 
   const getActiveWoundData = (): SignificantWound | null => {
@@ -364,7 +366,7 @@ const AnalysisResultPage = () => {
           <div className={styles.visualGroup}>
             <div className={styles.imageArea}>
               <AnalyzedImage
-                imageSrc={`http://localhost:8000${analysisData.image_url}`}
+                imageSrc={`${BACKEND_URL}${analysisData.image_url}`}
                 boundingBox={currentWoundData.bounding_box}
                 label={`${currentWoundData.wound_type} ${currentWoundData.confidence_score}`}
               />
@@ -413,7 +415,7 @@ const AnalysisResultPage = () => {
       {analysisData && (
         <AnalysisReportTemplate
           wounds={woundsToExport}
-          imageUrl={`http://localhost:8000${analysisData.image_url}`}
+          imageUrl={`${BACKEND_URL}${analysisData.image_url}`}
           reportId={analysis_id || "UNK"}
           fileName={analysisData.file_name}
           analyzedAt={analysisData.analyzed_at}

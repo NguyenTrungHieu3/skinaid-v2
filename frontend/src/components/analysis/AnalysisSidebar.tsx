@@ -1,13 +1,12 @@
-import { useState, useRef, type ChangeEvent } from "react";
+import { useState } from "react";
 import styles from "./AnalysisSidebar.module.css";
 import {
   FaCheckCircle,
-  FaUpload,
   FaChevronDown,
   FaChevronUp,
   FaListAlt,
 } from "react-icons/fa"; // Thêm icon
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Logo from "../../assets/images/general/logo.png";
 import { useTranslation } from "react-i18next";
 

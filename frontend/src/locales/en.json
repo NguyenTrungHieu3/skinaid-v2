@@ -206,7 +206,14 @@
     "alert_location_required": "Please allow location access to use directions",
     "alert_copied": "Information copied to clipboard",
     "share_text": "Medical facility: {{name}}\\n{{address}}",
-    "back_to_list": "Back to list"
+    "back_to_list": "Back to list",
+    "geolocation_not_supported": "Your browser does not support location services",
+    "location_error": "Could not get your location",
+    "location_permission_denied": "Location access denied. Please allow location in browser settings.",
+    "location_unavailable": "Location information unavailable",
+    "location_timeout": "Location request timed out",
+    "getting_location": "Getting location...",
+    "retry_location": "Get my location"
   },
   "upload_page": {
     "title": "Upload Skin Wound Image",
@@ -632,6 +639,7 @@
           "email": "Email",
           "username": "Username",
           "password": "Password",
+          "password_optional": "(Leave blank to keep unchanged)",
           "role": "Role"
         },
         "password_hint": "At least 8 characters with 1 uppercase, 1 lowercase, and 1 number",

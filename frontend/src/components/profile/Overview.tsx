@@ -78,15 +78,22 @@ const Overview = () => {
         const historyData = await getHistory(3, 0); // Get 3 most recent
         
         const events = historyData.events || [];
-        const transformed: Analysis[] = events.map((event) => ({
-          id: event.analysis_id,
-          type: event.wound_types.length > 0 
-            ? event.wound_types[0].charAt(0).toUpperCase() + event.wound_types[0].slice(1)
-            : "Unknown",
-          location: "-", // API doesn't provide location
-          severity: mapSeverity(event.severity_summary || "moderate"),
-          timestamp: formatDate(event.analyzed_at),
-        }));
+        const transformed: Analysis[] = events.map((event) => {
+          // Lấy wound_types từ significant_wounds
+          const woundTypes = event.significant_wounds?.map(w => w.wound_type) || [];
+          // Lấy severity đầu tiên hoặc moderate
+          const severitySummary = event.significant_wounds?.[0]?.severity || "moderate";
+          
+          return {
+            id: event.analysis_id,
+            type: woundTypes.length > 0 
+              ? woundTypes[0].charAt(0).toUpperCase() + woundTypes[0].slice(1)
+              : "Unknown",
+            location: "-", // API doesn't provide location
+            severity: mapSeverity(severitySummary),
+            timestamp: formatDate(event.analyzed_at || event.created_at),
+          };
+        });
         
         setAnalyses(transformed);
       } catch (err) {

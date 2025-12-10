@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import CountryFlag from "react-country-flag";
 import styles from "./LanguageSwitcher.module.css"; // Style riêng cho component này

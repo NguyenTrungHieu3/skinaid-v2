@@ -39,6 +39,9 @@ const MapModal = ({ isOpen, onClose }: MapModalProps) => {
   useEffect(() => {
     if (!isOpen) return;
 
+    // Default location: Da Nang, Vietnam
+    const DEFAULT_LOCATION = { lat: 16.0474546, lng: 108.1992956 };
+
     const fetchLocation = async () => {
       setLoadingLocation(true);
       setLocationError(null);
@@ -54,27 +57,26 @@ const MapModal = ({ isOpen, onClose }: MapModalProps) => {
               });
               setLoadingLocation(false);
             },
-            async () => {
-              // Fallback to IP location
-              try {
-                const loc = await mapService.getIpLocation();
-                setUserLocation({ lat: loc.latitude, lng: loc.longitude });
-              } catch {
-                setLocationError(t("map_modal.location_error"));
-              } finally {
-                setLoadingLocation(false);
-              }
+            () => {
+              // Fallback to default location (Da Nang, Vietnam)
+              console.log("Geolocation denied, using default location");
+              setUserLocation(DEFAULT_LOCATION);
+              setLoadingLocation(false);
             },
-            { timeout: 10000 }
+            { 
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 300000
+            }
           );
         } else {
-          // No geolocation support, use IP
-          const loc = await mapService.getIpLocation();
-          setUserLocation({ lat: loc.latitude, lng: loc.longitude });
+          // No geolocation support, use default
+          setUserLocation(DEFAULT_LOCATION);
           setLoadingLocation(false);
         }
       } catch {
         setLocationError(t("map_modal.location_error"));
+        setUserLocation(DEFAULT_LOCATION);
         setLoadingLocation(false);
       }
     };

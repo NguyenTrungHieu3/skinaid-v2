@@ -1,9 +1,8 @@
-import React, { useRef, type ChangeEvent } from "react";
+import { useRef, type ChangeEvent } from "react";
 import styles from "./MainHeader.module.css";
 import {
   FaSave,
   FaDownload,
-  FaHeart,
   FaCamera,
   FaChevronDown, // Icon mũi tên cho dropdown
 } from "react-icons/fa";

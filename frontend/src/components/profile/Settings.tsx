@@ -71,7 +71,7 @@ const Settings = () => {
   }, [settings]);
 
   const handleToggle = (key: keyof typeof settings) => {
-    setSettings((prev) => ({
+    setSettings((prev: typeof settings) => ({
       ...prev,
       [key]: !prev[key],
     }));

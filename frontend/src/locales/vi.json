@@ -196,7 +196,14 @@
     "alert_location_required": "Vui lòng cho phép truy cập vị trí để sử dụng tính năng chỉ đường",
     "alert_copied": "Đã sao chép thông tin vào clipboard",
     "share_text": "Cơ sở y tế: {{name}}\\n{{address}}",
-    "back_to_list": "Quay lại danh sách"
+    "back_to_list": "Quay lại danh sách",
+    "geolocation_not_supported": "Trình duyệt của bạn không hỗ trợ dịch vụ vị trí",
+    "location_error": "Không thể lấy vị trí của bạn",
+    "location_permission_denied": "Quyền truy cập vị trí bị từ chối. Vui lòng cho phép trong cài đặt trình duyệt.",
+    "location_unavailable": "Thông tin vị trí không khả dụng",
+    "location_timeout": "Yêu cầu vị trí đã hết thời gian",
+    "getting_location": "Đang lấy vị trí...",
+    "retry_location": "Lấy vị trí của tôi"
   },
   "upload_page": {
     "title": "Tải lên hình ảnh vết thương ngoài da",
@@ -622,6 +629,7 @@
           "email": "Email",
           "username": "Tên đăng nhập",
           "password": "Mật khẩu",
+          "password_optional": "(Để trống nếu giữ nguyên)",
           "role": "Vai trò"
         },
         "password_hint": "Ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",

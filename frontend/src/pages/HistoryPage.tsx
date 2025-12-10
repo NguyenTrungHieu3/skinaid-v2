@@ -4,7 +4,7 @@ import TimelineVirtualized, { type HistoryEvent } from "../components/history/Ti
 import HistorySidebar from "../components/history/HistorySidebar";
 import HistoryDetail from "../components/history/HistoryDetail";
 
-import { type CombinedEventDetail } from "../DUMMY_DATA";
+import { type CombinedEventDetail } from "../types/appTypes";
 import {
   getHistory,
   getAnalysisDetail,

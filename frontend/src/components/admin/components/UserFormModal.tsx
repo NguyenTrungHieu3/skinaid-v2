@@ -150,7 +150,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           <div className={styles.formGroup}>
             <label>
               {t('admin.user_management.form.labels.password')}
-              {isEdit ? ' (Để trống nếu giữ nguyên)' : ' *'}
+              {isEdit ? ` ${t('admin.user_management.form.labels.password_optional')}` : ' *'}
             </label>
             <div style={{ position: 'relative' }}>
               <input

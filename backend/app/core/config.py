@@ -1,4 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict 
+from pydantic import field_validator
+from typing import List, Union
 
 class Settings(BaseSettings):  
 
@@ -37,11 +39,19 @@ class Settings(BaseSettings):
 
     GEOAPIFY_API_KEY: str = ""
 
-    CORS_ORIGINS: list = [
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+    
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            # Nếu là string, split bằng dấu phẩy
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
     
     APP_DESCRIPTION: str = "API SkinAid - Phân tích vết thương và trợ lý sơ cứu"
     DOCS_URL: str = "/docs"

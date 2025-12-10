@@ -101,10 +101,12 @@ class WoundAnalysisService:
             sub_info = f" (sub_type: {guide.get('sub_type')})" if guide.get('sub_type') else ""
             logger.info(f"Đã tìm thấy: {guide.get('title')}{sub_info}")
         else:
+            sub_type = wound_info['sub_type']
+            severity = wound_info['severity']
+            sub_type_str = f"/{sub_type}" if sub_type else ""
             logger.warning(
                 f"Không tìm thấy hướng dẫn cho {mapped_wound_type}/"
-                f"{wound_info['severity']}"
-                f"{f'/{wound_info['sub_type']}' if wound_info['sub_type'] else ''}"
+                f"{severity}{sub_type_str}"
             )
 
         return guide

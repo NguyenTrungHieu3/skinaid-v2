@@ -1,4 +1,4 @@
-import api from "./api"; // Giả định import từ file api.ts của bạn
+import api, { BACKEND_URL } from "./api";
 import {
   type ApiSuccessResponse,
 } from "../types/responseTypes";
@@ -10,7 +10,7 @@ import {
   type HistoryEvent,
   type CombinedEventDetail,
   type SingleWoundDetail,
-} from "../DUMMY_DATA"; // Import kiểu frontend
+} from "../types/appTypes"; // Import kiểu frontend từ appTypes
 
 // --- CÁC HÀM GỌI API ---
 
@@ -80,7 +80,7 @@ export function transformApiHistoryToTimeline(
     status: event.total_detections === 0
       ? "Không có vết thương"
       : `${event.total_detections} detection(s)`,
-    imageUrl: `http://localhost:8000${event.image_url}`,
+    imageUrl: `${BACKEND_URL}${event.image_url}`,
   }));
 }
 
@@ -121,7 +121,7 @@ export function transformApiDetailToCombinedEvent(
         type: wound.wound_type,
         accuracy: wound.confidence_score * 100, // Chuyển 0.95 -> 95
         severity: wound.severity, // Lấy trực tiếp từ 'significant_wounds'
-        sub_type: wound.sub_type, // Lấy trực tiếp từ 'significant_wounds'
+        sub_type: wound.sub_type || '', // Lấy trực tiếp từ 'significant_wounds'
         reliable_source: snapshot.source || {},
         healingTime: snapshot.estimated_healing_time || "Chưa có dữ liệu",
         firstAid: firstAidString || "Không có gợi ý sơ cứu.",
@@ -142,7 +142,7 @@ export function transformApiDetailToCombinedEvent(
     status: apiEvent.total_detections === 0
       ? "Không có vết thương"
       : `${apiEvent.total_detections} detection(s)`,
-    imageUrl: `http://localhost:8000${apiEvent.image_url}`,
+    imageUrl: `${BACKEND_URL}${apiEvent.image_url}`,
     detail: details,
   };
 }

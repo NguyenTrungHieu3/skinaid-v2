@@ -1,5 +1,4 @@
 // src/pages/AboutPage.tsx
-import React from "react";
 import styles from "./AboutPage.module.css";
 import {
   Upload,
@@ -9,7 +8,6 @@ import {
   Clock,
   Heart,
   Smartphone,
-  ArrowRight,
 } from "lucide-react";
 import featuredImage from "../assets/images/about-page/healthcare_technology.png";
 import { useTranslation } from "react-i18next";
@@ -18,12 +16,8 @@ interface AboutPageProps {
   switchForm?: () => void;
 }
 
-const AboutPage: React.FC<AboutPageProps> = ({ switchForm }) => {
+const AboutPage: React.FC<AboutPageProps> = () => {
   const { t } = useTranslation();
-
-  const handleGetStarted = () => {
-    if (switchForm) switchForm();
-  };
 
   return (
     <div className={styles.aboutPage}>

@@ -134,6 +134,52 @@
   }
 }
 
+/* Location Status */
+.location-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.location-status.location-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.retry-location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retry-location-btn:hover:not(:disabled) {
+  background-color: #059669;
+}
+
+.retry-location-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.retry-location-btn svg {
+  font-size: 0.75rem;
+}
+
 /* Mobile View Toggle */
 .mobile-view-toggle {
   display: flex;

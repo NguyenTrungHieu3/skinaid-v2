@@ -31,14 +31,14 @@ const formatDate = (dateString: string | undefined, lang: string) => {
 };
 
 // Hàm helper để xử lý hiển thị URL ảnh (nếu BE trả về path tương đối)
-// Nếu API trả về "/uploads/abc.jpg" và server chạy localhost:8000
+// Nếu API trả về "/uploads/abc.jpg" và server chạy backend
+import { BACKEND_URL } from "../../services/api";
+
 const getImageUrl = (url: string | null | undefined) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
   // Nếu url là đường dẫn tương đối, nối thêm domain API
-  // Bạn có thể lấy biến này từ env, ví dụ: import.meta.env.VITE_API_URL
-  const API_BASE_URL = "http://localhost:8000";
-  return `${API_BASE_URL}${url}`;
+  return `${BACKEND_URL}${url}`;
 };
 
 const BannerHeader = () => {
@@ -140,7 +140,7 @@ const BannerHeader = () => {
 
   // 2. Hàm callback khi crop thay đổi (lấy tọa độ pixel)
   const onCropComplete = useCallback(
-    (croppedArea: Area, croppedAreaPixels: Area) => {
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
     []

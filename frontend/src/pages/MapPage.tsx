@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n";
@@ -9,7 +9,7 @@ import FacilityCard, { type Facility } from "../components/map/FacilityCard";
 import MapView from "../components/map/MapView";
 import DirectionsPanel from "../components/map/DirectionsPanel";
 import mapService, { type RouteResponse } from "../services/mapService";
-import { FaArrowLeft, FaBars, FaList, FaMap } from "react-icons/fa";
+import { FaArrowLeft, FaBars, FaList, FaMap, FaLocationArrow } from "react-icons/fa";
 import type { MainLayoutContextType } from "../components/layout/MainLayout";
 import "./MapPage.css";
 
@@ -23,6 +23,8 @@ const MapPage = () => {
     const [facilities, setFacilities] = useState<Facility[]>([]);
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
     const [loading, setLoading] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(true);
+    const [locationError, setLocationError] = useState<string | null>(null);
 
     // Mobile view toggle state
     const [mobileView, setMobileView] = useState<"list" | "map">("list");
@@ -34,40 +36,58 @@ const MapPage = () => {
     const [travelMode, setTravelMode] = useState<"drive" | "walk" | "bike">("drive");
 
     // Get user location on mount
-    useEffect(() => {
-        const fetchLocation = async () => {
-            try {
-                // Try to get from browser geolocation first
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            setUserLocation({
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude,
-                            });
-                        },
-                        async () => {
-                            // Fallback to IP location
-                            try {
-                                const loc = await mapService.getIpLocation();
-                                setUserLocation({ lat: loc.latitude, lng: loc.longitude });
-                            } catch (error) {
-                                console.error("Error getting IP location:", error);
-                            }
-                        }
-                    );
-                } else {
-                    // Fallback to IP location
-                    const loc = await mapService.getIpLocation();
-                    setUserLocation({ lat: loc.latitude, lng: loc.longitude });
-                }
-            } catch (error) {
-                console.error("Error getting location:", error);
-            }
-        };
+    const requestUserLocation = useCallback(() => {
+        setLocationLoading(true);
+        setLocationError(null);
+        
+        // Default location: Da Nang, Vietnam (only used as last resort)
+        const fallbackLocation = { lat: 16.0474546, lng: 108.1992956 };
+        
+        if (!navigator.geolocation) {
+            setLocationError(t('map.geolocation_not_supported'));
+            setUserLocation(fallbackLocation);
+            setLocationLoading(false);
+            return;
+        }
 
-        fetchLocation();
-    }, []);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setUserLocation({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                });
+                setLocationError(null);
+                setLocationLoading(false);
+            },
+            (error) => {
+                let errorMessage = t('map.location_error');
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = t('map.location_permission_denied');
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = t('map.location_unavailable');
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = t('map.location_timeout');
+                        break;
+                }
+                console.log("Geolocation error:", errorMessage);
+                setLocationError(errorMessage);
+                setUserLocation(fallbackLocation);
+                setLocationLoading(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 300000 // 5 minutes cache
+            }
+        );
+    }, [t]);
+
+    useEffect(() => {
+        requestUserLocation();
+    }, [requestUserLocation]);
 
     // Fetch facilities when location or filters change
     useEffect(() => {
@@ -207,6 +227,21 @@ const MapPage = () => {
                                 <h1 className="map-title">{t('map.title')}</h1>
                             </div>
                             <p className="map-subtitle">{t('map.subtitle')}</p>
+
+                            {/* Location status */}
+                            {locationError && (
+                                <div className="location-status location-error">
+                                    <span>{locationError}</span>
+                                    <button 
+                                        className="retry-location-btn"
+                                        onClick={requestUserLocation}
+                                        disabled={locationLoading}
+                                    >
+                                        <FaLocationArrow />
+                                        {locationLoading ? t('map.getting_location') : t('map.retry_location')}
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Mobile View Toggle */}
                             <div className="mobile-view-toggle">

@@ -1,5 +1,5 @@
 // src/components/analysis/DownloadModal.tsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import styles from "./DownloadModal.module.css";
 import { FaFilePdf, FaTimes } from "react-icons/fa";
 import { type SignificantWound } from "../../services/aiService";

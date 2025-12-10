@@ -11,9 +11,16 @@ import axios from "axios";
 //   return sessionId;
 // };
 
+// Lấy API URL từ environment variable hoặc dùng mặc định
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+
+// Export BACKEND_URL để dùng cho static files (images, uploads)
+// Ví dụ: VITE_API_URL = "http://18.179.57.221:8000/api/v1" => BACKEND_URL = "http://18.179.57.221:8000"
+export const BACKEND_URL = API_BASE_URL.replace("/api/v1", "");
+
 // Tạo 1 instance của axios với cấu hình mặc định
 const apiClient = axios.create({
-  baseURL: "http://localhost:8000/api/v1", // URL gốc của backend
+  baseURL: API_BASE_URL,
 
   // KHÔNG set "Content-Type" mặc định ở đây
 });

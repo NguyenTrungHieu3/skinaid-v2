@@ -1,7 +1,10 @@
+# Docker Compose for Production - Pull images from Docker Hub
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 services:
   database-postgresql:
-    container_name: my_postgres_container
-    image: postgres:18-alpine
+    container_name: skinaid_postgres
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -9,7 +12,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-    - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
@@ -18,21 +21,14 @@ services:
       retries: 5
       start_period: 30s
     networks:
-    - skinaid_net
+      - skinaid_net
 
   backend:
     container_name: skinaid_backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: nguyentrunghieu123/skinaid-backend:latest
     restart: unless-stopped
     environment:
       # Database
-      - DB_HOST=database-postgresql
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
       - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@database-postgresql:5432/${DB_NAME}
       
       # JWT & Security
@@ -46,9 +42,9 @@ services:
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-true}
+      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-false}
 
-      # AI Service (deployed on Hugging Face)
+      # AI Service (Hugging Face)
       - AI_SERVICE_URL=${AI_SERVICE_URL}
       - AI_API_KEY=${AI_API_KEY}
       - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-30}
@@ -58,13 +54,10 @@ services:
       - APP_NAME=SkinAid Wound Detection API
       - VERSION=0.1.0
       - DEBUG=${DEBUG:-false}
-      - TESTING=${TESTING:-false}
       - UPLOAD_DIR=/app/uploads
 
-      # CORS Origins
+      # CORS & URLs
       - CORS_ORIGINS=${CORS_ORIGINS}
-      
-      # Base URL
       - BASE_URL=${BASE_URL}
       
       # Geoapify
@@ -73,35 +66,39 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/uploads:/app/uploads
+      - uploads_data:/app/uploads
     depends_on:
       database-postgresql:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
     networks:
-    - skinaid_net
+      - skinaid_net
 
-  frontend: 
+  frontend:
     container_name: skinaid_frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+    image: nguyentrunghieu123/skinaid-frontend:latest
     ports:
       - "3000:80"
     restart: unless-stopped
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - skinaid_net
+
 volumes:
   postgres_data:
+  uploads_data:
 
 networks:
   skinaid_net:
