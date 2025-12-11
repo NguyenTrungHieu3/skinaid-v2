@@ -348,15 +348,14 @@
   },
 
   "history": {
-    "title": "History - {{fullname}}",
-
     "loading": {
       "timeline": "Loading timeline...",
       "detail": "Loading details..."
     },
 
     "error": {
-      "load": "Unable to load data."
+      "load": "Unable to load data.",
+      "detail": "Errors : {{errors}}"
     },
 
     "empty": {
@@ -373,7 +372,8 @@
     },
 
     "timeline": {
-      "title": "Analysis Timeline"
+      "title": "Analysis Timeline",
+      "default_label": "Timeline"
     },
 
     "detail": {
@@ -387,11 +387,14 @@
       "3_days": "3 days",
       "7_days": "7 days",
       "1_month": "1 month",
-      "3_months": "3 months",
-      "6_months": "6 months",
-      "1_year": "1 year"
+      "newest": "Newest → Oldest",
+      "oldest": "Oldest → Newest",
+      "all" : "Remove filter"
     },
-    "no_logo_fallback": "Logo"
+
+    "no_logo_fallback": "Logo",
+
+    "upload_button": "Upload Image / Data"
   },
 
   "profile": {

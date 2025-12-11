@@ -1,61 +1,84 @@
 import { useState } from "react";
 import styles from "./HistorySidebar.module.css";
-import { Search, Filter} from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import LogoPlaceholder from "../../assets/images/general/logo_placeholder.png";
 import type { HistoryEvent } from "./TimelineVirtualized";
+import { useTranslation } from "react-i18next";
 
-// Define props interface
 interface HistorySidebarProps {
   events: HistoryEvent[];
   onSearchFilter: (filteredEvents: HistoryEvent[]) => void;
 }
 
-const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter }) => {
+const HistorySidebar: React.FC<HistorySidebarProps> = ({
+  events,
+  onSearchFilter,
+}) => {
+  const { t } = useTranslation();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("7 ngày");
+
+  // --- THAY ĐỔI 1: Để mặc định là rỗng để hiển thị label gốc ---
+  const [activeFilter, setActiveFilter] = useState("");
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filters = [
-    "1 ngày",
-    "3 ngày",
-    "7 ngày",
-    "1 tháng",
-    "3 tháng",
-    "6 tháng",
-    "1 năm",
+    t("history.date_filters.1_day"),
+    t("history.date_filters.3_days"),
+    t("history.date_filters.7_days"),
+    t("history.date_filters.1_month"),
+    t("history.date_filters.newest"),
+    t("history.date_filters.oldest"),
+    // Bạn có thể thêm nút "Tất cả" để reset nếu muốn
+    // t("history.date_filters.all"),
   ];
 
-  // Filter events based on search query and date filter
-  const filterEvents = (query: string, dateFilter: string) => {
-    let filtered = events;
+  const filterEvents = (query: string, selectedFilter: string) => {
+    let filtered = [...events];
 
-    // Filter by date range
-    const now = new Date();
-    const daysToSubtract: { [key: string]: number } = {
-      "1 ngày": 1,
-      "3 ngày": 3,
-      "7 ngày": 7,
-      "1 tháng": 30,
-      "3 tháng": 90,
-      "6 tháng": 180,
-      "1 năm": 365,
-    };
-
-    const days = daysToSubtract[dateFilter] || 7;
-    const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-
-    filtered = filtered.filter((event) => {
-      const eventDate = new Date(event.date);
-      return eventDate >= startDate;
-    });
-
-    // Filter by search query
+    // 1. Search filter
     if (query.trim()) {
-      filtered = filtered.filter((event) =>
-        event.title.toLowerCase().includes(query.toLowerCase()) ||
-        event.status.toLowerCase().includes(query.toLowerCase())
+      filtered = filtered.filter(
+        (event) =>
+          event.title.toLowerCase().includes(query.toLowerCase()) ||
+          event.status.toLowerCase().includes(query.toLowerCase())
       );
+    }
+
+    // --- THAY ĐỔI 2: Chỉ lọc ngày/sắp xếp nếu CÓ chọn filter ---
+    if (selectedFilter) {
+      // Handle date filters
+      const now = new Date();
+      const daysToSubtract: Record<string, number> = {
+        [t("history.date_filters.1_day")]: 1,
+        [t("history.date_filters.3_days")]: 3,
+        [t("history.date_filters.7_days")]: 7,
+        [t("history.date_filters.1_month")]: 30,
+      };
+
+      if (daysToSubtract[selectedFilter]) {
+        const days = daysToSubtract[selectedFilter];
+        const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+        filtered = filtered.filter((event) => {
+          const eventDate = new Date(event.date);
+          return eventDate >= startDate;
+        });
+      }
+
+      // Handle sorting filters
+      if (selectedFilter === t("history.date_filters.newest")) {
+        filtered.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      }
+
+      if (selectedFilter === t("history.date_filters.oldest")) {
+        filtered.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+      }
     }
 
     return filtered;
@@ -71,6 +94,8 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
 
   // Handle date filter change
   const handleFilterChange = (filter: string) => {
+    // Nếu bấm vào filter đang chọn -> có thể bỏ chọn (tùy chọn)
+    // Ở đây ta cứ set filter mới
     setActiveFilter(filter);
     const filtered = filterEvents(searchQuery, filter);
     onSearchFilter(filtered);
@@ -84,7 +109,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
         <div className={styles.searchBar}>
           <input
             type="text"
-            placeholder="Tìm kiếm sự kiện..."
+            placeholder={t("history.search_placeholder")}
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -94,7 +119,11 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
         {/* 2. Bộ lọc theo ngày */}
         <div className={styles.filterSection}>
           <div className={styles.filterHeader}>
-            <span>Lọc</span>
+            {/* --- THAY ĐỔI 3: Hiển thị tên Filter nếu có, ngược lại hiện label mặc định --- */}
+            <span className={activeFilter ? styles.activeLabel : ""}>
+              {activeFilter || t("history.filter_label")}
+            </span>
+
             <Filter
               size={15}
               className={styles.filterIcon}
@@ -115,22 +144,30 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ events, onSearchFilter 
                   {filter}
                 </button>
               ))}
+
+              {/* Nút Reset (Tùy chọn: Để quay về trạng thái "Lọc" ban đầu) */}
+              <button
+                className={styles.filterButton}
+                onClick={() => handleFilterChange("")}
+                style={{
+                  borderTop: "1px solid #eee",
+                  marginTop: "4px",
+                  color: "#666",
+                }}
+              >
+                {t("history.date_filters.all") || "Bỏ lọc"}
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* KHỐI MỚI: Logo Placeholder */}
       <div className={styles.logoWrapper}>
-        {/* THAY THẾ BẰNG ẢNH THẬT CỦA BẠN */}
         <img
-          // Bạn có thể đặt ảnh trong folder /public
-          // và gọi nó như '/logo-skinaid.png'
-          src={LogoPlaceholder} // <-- THAY BẰNG LINK ẢNH CỦA BẠN
+          src={LogoPlaceholder}
           alt="SkinAid Logo"
           className={styles.realLogo}
           onError={(e) => {
-            // Dự phòng nếu ảnh của bạn bị lỗi
             (e.target as HTMLImageElement).src =
               "https://placehold.co/150x150/f0f0f0/b0bec5?text=Logo";
           }}

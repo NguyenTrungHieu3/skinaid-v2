@@ -36,7 +36,9 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       setShowDeleteConfirm(false);
       onClose();
     } catch (error: any) {
-      setDeleteError(error.message || "Không thể xóa bản ghi. Vui lòng thử lại.");
+      setDeleteError(
+        error.message || "Không thể xóa bản ghi. Vui lòng thử lại."
+      );
       setIsDeleting(false);
     }
   };
@@ -69,7 +71,10 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
         <div className={styles.confirmDialog}>
           <div className={styles.confirmContent}>
             <h3>Xác nhận xóa</h3>
-            <p>Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này không thể hoàn tác.</p>
+            <p>
+              Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này
+              không thể hoàn tác.
+            </p>
             <div className={styles.confirmActions}>
               <button
                 onClick={handleCancelDelete}
@@ -91,11 +96,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       )}
 
       {/* Show delete error if any */}
-      {deleteError && (
-        <div className={styles.errorMessage}>
-          {deleteError}
-        </div>
-      )}
+      {deleteError && <div className={styles.errorMessage}>{deleteError}</div>}
 
       {currentWound && <h2>{currentWound.titleGuide}</h2>}
 
@@ -147,11 +148,16 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                 {currentWound.severity} {/* <-- SỬA LỖI Ở ĐÂY: Dùng severity */}
               </span>
               {/* --- (Kết thúc sửa lỗi) --- */}
-              <span className={`${
-                  currentWound.sub_type === "skintear" || currentWound.sub_type === "blister"
+              <span
+                className={`${
+                  currentWound.sub_type === "skintear" ||
+                  currentWound.sub_type === "blister"
                     ? styles.moderate
                     : styles.statusBadge
-                }`}>{currentWound.sub_type}</span>
+                }`}
+              >
+                {currentWound.sub_type}
+              </span>
             </div>
 
             <p className={styles.date}>
@@ -173,16 +179,58 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
               return (
                 <>
-                  {/* Độ chính xác (Không đổi) */}
+                  {/* Độ chính xác */}
                   <div className={styles.detailItem}>
                     <h5>Độ chính xác</h5>
                     <div className={styles.accuracyMeter}>
                       <div
-                        className={styles.accuracyBar}
+                        // Logic xác định class màu sắc
+                        className={`${styles.accuracyBar} ${
+                          currentWound.accuracy < 30
+                            ? styles.accLow // Dưới 30% -> Đỏ
+                            : currentWound.accuracy <= 65
+                            ? styles.accMedium // 30% - 65% -> Vàng
+                            : styles.accHigh // Trên 65% -> Xanh
+                        }`}
                         style={{ width: `${currentWound.accuracy}%` }}
                       >
                         {Math.round(currentWound.accuracy)}%
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Thời gian hồi phục (Không đổi) */}
+                  <div className={styles.detailItem}>
+                    <h5>Thời gian hồi phục (dự kiến)</h5>
+                    <p>
+                      <strong>{currentWound.healingTime}</strong>
+                    </p>
+                  </div>
+
+                  {/* Vật tư cần thiết */}
+                  <div className={styles.detailItem}>
+                    <h5>Vật tư cần thiết</h5>
+                    <div className={styles.firstAidSteps}>
+                      {(() => {
+                        const suppliesSteps = currentWound.suppliesNeeded
+                          ?.split(/\d+\.\s+/)
+                          .filter(Boolean)
+                          .map((step) => step.trim());
+
+                        return suppliesSteps && suppliesSteps.length > 0 ? (
+                          suppliesSteps.map((step, index) => (
+                            <p key={index} className={styles.firstAidStep}>
+                              <span>{index + 1}</span>
+                              <span>{step}</span>
+                            </p>
+                          ))
+                        ) : (
+                          <p>
+                            {currentWound.suppliesNeeded ||
+                              "Không có thông tin."}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -193,7 +241,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                       {firstAidSteps && firstAidSteps.length > 0 ? (
                         firstAidSteps.map((step, index) => (
                           <p key={index} className={styles.firstAidStep}>
-                            <span>{index + 1}.</span>
+                            <span>{index + 1}</span>
                             <span>{step}</span>
                           </p>
                         ))
@@ -203,26 +251,65 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                       )}
                     </div>
                   </div>
-                  {/* Nên làm */}
+                  {/* Phần Nên làm */}
                   <div className={styles.detailItem}>
                     <h5>Nên làm</h5>
-                    <p>{currentWound.shouldDo}</p>
-                  </div>
-                  {/* Không nên làm */}
-                  <div className={styles.detailItem}>
-                    <h5>Không nên làm</h5>
-                    <p>{currentWound.shouldNotDo}</p>
+                    <div className={styles.firstAidSteps}>
+                      {(() => {
+                        const shouldDoSteps = currentWound.shouldDo
+                          ?.split(/\d+\.\s+/)
+                          .filter(Boolean)
+                          .map((step) => step.trim());
+
+                        return shouldDoSteps && shouldDoSteps.length > 0 ? (
+                          shouldDoSteps.map((step, index) => (
+                            <p
+                              key={index}
+                              // THÊM CLASS stepPositive TẠI ĐÂY
+                              className={`${styles.firstAidStep} ${styles.stepPositive}`}
+                            >
+                              <span>{index + 1}</span>
+                              <span>{step}</span>
+                            </p>
+                          ))
+                        ) : (
+                          <p>
+                            {currentWound.shouldDo || "Không có thông tin."}
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
 
-                  {/* Thời gian hồi phục (Không đổi) */}
+                  {/* Phần Không nên làm */}
                   <div className={styles.detailItem}>
-                    <h5>Thời gian hồi phục (dự kiến)</h5>
-                    <p>{currentWound.healingTime}</p>
-                  </div>
-                  {/* Vật tư cần thiết */}
-                  <div className={styles.detailItem}>
-                    <h5>Vật tư cần thiết</h5>
-                    <p>{currentWound.suppliesNeeded}</p>
+                    <h5>Không nên làm</h5>
+                    <div className={styles.firstAidSteps}>
+                      {(() => {
+                        const shouldNotDoSteps = currentWound.shouldNotDo
+                          ?.split(/\d+\.\s+/)
+                          .filter(Boolean)
+                          .map((step) => step.trim());
+
+                        return shouldNotDoSteps &&
+                          shouldNotDoSteps.length > 0 ? (
+                          shouldNotDoSteps.map((step, index) => (
+                            <p
+                              key={index}
+                              // THÊM CLASS stepNegative TẠI ĐÂY
+                              className={`${styles.firstAidStep} ${styles.stepNegative}`}
+                            >
+                              <span>{index + 1}</span>
+                              <span>{step}</span>
+                            </p>
+                          ))
+                        ) : (
+                          <p>
+                            {currentWound.shouldNotDo || "Không có thông tin."}
+                          </p>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </>
               );
@@ -237,17 +324,20 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
         </div>
       )}
 
-      {currentWound && (
+      {/* {currentWound && (
         <div className={styles.detailItem}>
           <h5>Nguồn</h5>
           <ul className={styles.sourceReliable}>
             <li>
-              <strong>Tên:</strong> {currentWound.reliable_source.name || "Không rõ"}
+              <strong>Tên:</strong>{" "}
+              {currentWound.reliable_source.name || "Không rõ"}
             </li>
             <li>
               <strong>Ngày đăng:</strong>{" "}
               {currentWound.reliable_source.date
-                ? new Date(currentWound.reliable_source.date).toLocaleDateString("vi-VN")
+                ? new Date(
+                    currentWound.reliable_source.date
+                  ).toLocaleDateString("vi-VN")
                 : "Không rõ"}
             </li>
             <li>
@@ -266,7 +356,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
             </li>
           </ul>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

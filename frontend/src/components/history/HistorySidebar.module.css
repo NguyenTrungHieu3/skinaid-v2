@@ -11,7 +11,7 @@
 /* --- Wrapper cho các thanh điều khiển --- */
 .topControlsWrapper {
   display: grid;
-  grid-template-columns: 5fr 1fr;
+  grid-template-columns: 4fr 1fr;
   gap: 1rem;
   align-items: flex-start;
   flex-shrink: 0;
@@ -60,6 +60,11 @@
   position: relative;
   overflow: visible;
   z-index: 5;
+}
+
+.activeLabel {
+  color: #00897b; /* Màu xanh chủ đạo */
+  font-weight: 700;
 }
 
 .filterHeader {
@@ -162,7 +167,7 @@
 }
 
 /* TABLET: 768px - 1024px */
-@media (max-width: 1024px) {
+/* @media (max-width: 1024px) {
   .sidebarContainer {
     padding: 0.5rem;
     gap: 1rem;
@@ -180,87 +185,71 @@
   .realLogo {
     max-width: 130px;
   }
-}
+} */
+
+/* ... Code desktop giữ nguyên ... */
 
 /* MOBILE: Below 768px */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebarContainer {
-    padding: 0.5rem;
+    /* --- QUAN TRỌNG: BỎ FIXED ĐỂ NÓ NẰM TRONG LUỒNG TRANG --- */
+    position: static; /* Hoặc relative */
+    height: auto; /* Chiều cao tự động */
+    width: 100%; /* Full chiều rộng */
+
+    /* Padding xung quanh nội dung sidebar */
+    padding: 1rem 1.25rem;
     gap: 1rem;
-    height: auto;
-    position: fixed;
-    top: 5vh;
-    left: 0;
-    padding: 1.25rem;
-    z-index: 10;
+
+    /* Xóa các thuộc tính cũ gây lỗi */
+    top: auto;
+    left: auto;
+    background-color: #fff; /* Nền trắng */
   }
 
+  /* Wrapper chứa Search và Filter */
   .topControlsWrapper {
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    display: flex; /* Dùng flex để search và filter nằm ngang hoặc dọc tùy ý */
+    flex-direction: row; /* Để nằm ngang hàng nhau cho gọn */
+    align-items: center;
+    gap: 10px;
+    width: 100%;
   }
 
+  /* Thanh tìm kiếm: Chiếm phần lớn diện tích */
   .searchBar {
-    /* flex: 1 1 100%; */
+    flex: 1; /* Tự động giãn hết khoảng trống */
   }
 
+  /* Nút lọc: Nằm gọn bên cạnh */
   .filterSection {
-    flex: 1 0 calc(50% - 0.375rem);
-    min-width: 100px;
+    flex: 0 0 auto; /* Không co giãn, giữ kích thước nội dung */
+    min-width: auto; /* Bỏ min-width cũ */
   }
 
+  /* Chỉnh lại dropdown filter để không bị tràn màn hình */
   .filterOptions {
-    max-height: 300px;
-    overflow-y: auto;
+    right: 0;
+    left: auto; /* Căn phải để không bị mất menu bên trái */
+    width: 200px; /* Độ rộng cố định cho menu dropdown */
+    max-height: 50vh;
   }
 
+  /* Ẩn logo trên mobile để tiết kiệm diện tích */
   .logoWrapper {
-    padding-top: 1rem;
-    min-height: 80px;
     display: none;
-  }
-
-  .realLogo {
-    max-width: 120px;
   }
 }
 
 /* SMALL MOBILE: Below 480px */
 @media (max-width: 480px) {
-  .sidebarContainer {
-    padding: 0.5rem;
-    gap: 0.75rem;
-  }
-
+  /* Nếu màn hình quá nhỏ thì cho search và filter xuống dòng */
   .topControlsWrapper {
     flex-direction: column;
-    gap: 0.5rem;
+    align-items: stretch;
   }
 
-  .searchBar {
-    /* flex: 1 1 100%; */
-  }
-
-  .searchBar input {
-    padding: 10px 35px 10px 12px;
-    font-size: 0.8rem;
-  }
-
-  .filterSection {
-    flex: 1 1 100%;
-  }
-
-  .filterHeader {
-    padding: 8px 10px;
-    font-size: 0.8rem;
-  }
-
-  .filterButton {
-    padding: 10px 10px;
-    font-size: 0.75rem;
-  }
-
-  .logoWrapper {
-    display: none;
+  .filterOptions {
+    width: 100%; /* Dropdown full width */
   }
 }

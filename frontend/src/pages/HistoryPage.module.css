@@ -50,6 +50,13 @@
   flex-direction: column;
 }
 
+/* --- CLASS MỚI: Dùng khi không có dữ liệu --- */
+.fullWidth {
+  max-width: 100% !important; /* Ghi đè max-width 550px */
+  align-items: center; /* Căn giữa nội dung Empty State theo trục ngang */
+  justify-content: center; /* Căn giữa theo trục dọc nếu cần */
+}
+
 /* CỘT 2: KHỐI TRỐNG (MỚI) */
 .asideSection {
   /* flex: 0 1 400px;
@@ -69,22 +76,43 @@
   box-sizing: border-box;
   margin: 0.5rem 0;
 }
-@media (max-width: 768px) {
+/* ... Các code desktop giữ nguyên ... */
+
+/* --- RESPONSIVE MOBILE (<= 1024px) --- */
+@media (max-width: 1024px) {
+  /* 1. Thiết lập container chính xếp dọc */
   .historyContent {
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column; /* Xếp dọc */
+    align-items: center; /* Căn giữa */
+    padding: 0; /* Bỏ padding 2 bên nếu muốn full màn hình */
+    gap: 0; /* Reset gap để tự chỉnh margin từng phần */
   }
 
-  .timelineSection,
+  /* 2. SIDEBAR: Lên đầu, full width */
   .asideSection {
-    padding-top: 4vh;
-    max-width: 100%;
-    min-width: auto;
-    flex: none;
-    width: 100%;
-  }
-
-  .asideSection {
+    order: -1; /* Đẩy lên vị trí đầu tiên */
+    width: 100%; /* Phủ kín chiều ngang */
+    flex: none; /* Không co giãn theo flex, lấy chiều cao tự nhiên */
+    height: auto; /* Chiều cao tự động theo nội dung bên trong */
     margin: 0;
+    padding: 0; /* Padding sẽ được xử lý bên trong component con */
+    background: #fff; /* Đảm bảo nền trắng đè lên background xám */
+
+    /* Tạo khoảng cách với Header (giả sử header cao 60px) */
+    /* position: sticky; -> Nếu bạn muốn thanh lọc dính trên cùng khi scroll thì dùng cái này */
+    /* top: 60px; */
+    z-index: 10;
+    border-bottom: 1px solid #eee; /* Đường kẻ ngăn cách với timeline */
   }
+
+  /* 3. TIMELINE: Nằm dưới, full width */
+  .timelineSection {
+    order: 0; /* Nằm sau sidebar */
+    width: 100%; /* Phủ kín chiều ngang */
+    max-width: 100%; /* Ghi đè max-width cũ */
+    flex: 1; /* Chiếm phần còn lại */
+    /* padding-top: 1rem; Cách sidebar một chút cho thoáng */
+  }
+
+  /* Nếu timeline có padding bên trong, bạn có thể muốn reset ở đây */
 }

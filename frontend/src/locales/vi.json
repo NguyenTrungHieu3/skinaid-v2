@@ -8,7 +8,8 @@
     "register_page": "Đăng ký",
     "forgot_password_page": "Quên mật khẩu",
     "reset_password_page": "Đặt lại mật khẩu",
-    "analysis_result": "Kết quả phân tích - SkinAid"
+    "analysis_result": "Kết quả phân tích - SkinAid",
+    "history_page": "Lịch sử - {{fullname}}"
   },
 
   "auth_page": {
@@ -377,11 +378,12 @@
       "3_days": "3 ngày",
       "7_days": "7 ngày",
       "1_month": "1 tháng",
-      "3_months": "3 tháng",
-      "6_months": "6 tháng",
-      "1_year": "1 năm"
+      "newest": "Mới → Cũ",
+      "oldest": "Cũ → Mới",
+      "all": "Bỏ lọc"
     },
-    "no_logo_fallback": "Logo"
+    "no_logo_fallback": "Logo",
+    "upload_button": "Tải ảnh để phân tích"
   },
 
   "profile": {

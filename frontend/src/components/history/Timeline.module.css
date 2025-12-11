@@ -1,143 +1,137 @@
-/* --- 1. Container chính (Grid 2 cột) --- */
+/* --- 1. Container chính --- */
 .timelineContainer {
+  /* Quan trọng: Phải chiếm 100% chiều cao cha thì con mới scroll được */
   height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  grid-template-rows: 1fr;
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1fr 3fr; /* Cột tháng - Cột list */
+  grid-template-rows: 1fr;
+
   position: relative;
+  overflow: hidden; /* Ngăn scroll ở container ngoài cùng */
 }
 
-/* --- 1.5. SVG Curved Line - Fixed --- */
-.timelineLineFixed {
-  position: fixed;
-  top: 0;
-  left: 0; /* bắt đầu từ container */
-  height: 100vh;
-  width: 0; /* chỉ là line thẳng đứng */
-  pointer-events: none;
-  z-index: 0;
-  width: 4px; /* đường line dày bằng strokeWidth */
-  display: flex;
-  justify-content: flex-start;
-  align-items: stretch;
-}
-.timelineLine {
-  position: fixed;
-  top: 0;
-  left: 12px; /* 12px = bán kính dot 20px / 2 */
-  width: 4px;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.timelineSvg {
-  width: 100%;
-  height: 100%;
-}
-
-/* --- 2. Cột 1: Nhãn Tháng (Bên trái) --- */
+/* --- 2. Cột 1: Nhãn Tháng --- */
 .monthLabelContainer {
   grid-column: 1;
-  grid-row: 1;
-  text-align: right;
+  /* Căn chỉnh label */
+  text-align: center;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  position: sticky;
-  top: 50%;
-  left: -2%;
-  transform: translateY(-50%);
-  height: fit-content;
-  width: fit-content;
+  padding: 0 20px;
+  position: relative;
+  height: 100%; /* Full chiều cao để sticky hoạt động tốt */
 }
 
 .monthLabel {
   font-size: 1.5rem;
   font-weight: bold;
   color: #00897b;
+  /* Sticky để trượt theo */
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
   transition: all 0.3s ease;
 }
 
-/* --- 3. Cột 2: Danh sách Card (Bên phải) --- */
+/* --- 3. Cột 2: Danh sách Event --- */
 .eventList {
   grid-column: 2;
-  grid-row: 1;
   position: relative;
   height: 100%;
-  z-index: 10;
+  /* Fix lỗi scroll: Dùng flex để ép chiều cao con */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Bỏ đường line cũ vì đã có SVG curved line */
+/* --- Đường kẻ thẳng (Nằm dưới list) --- */
+.continuousLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 22px; /* Căn chỉnh với tâm Dot */
+  width: 4px;
+  background-color: #00897b; /* Để màu xám nhạt cho đỡ rối mắt so với Dot xanh */
+  z-index: 0;
+}
 
-/* --- 4. Wrappers (Fade và Scroll) --- */
+/* --- 4. Wrappers (FIX LỖI MỜ & SCROLL TẠI ĐÂY) --- */
 .fadeWrapper {
-  height: 100%;
+  /* Fix: Flex 1 để chiếm toàn bộ không gian còn lại của eventList */
+  flex: 1;
   position: relative;
-  -webkit-mask-image: linear-gradient(
+  overflow: hidden; /* Bắt buộc để mask hoạt động trong phạm vi này */
+
+  /* Cấu hình Mask (Hiệu ứng mờ 2 đầu) */
+  --mask-gradient: linear-gradient(
     to bottom,
     transparent 0%,
-    black 10%,
-    black 90%,
+    black 5%,
+    black 95%,
     transparent 100%
   );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 10%,
-    black 90%,
-    transparent 100%
-  );
+
+  /* Webkit cho Chrome/Safari/Edge */
+  -webkit-mask-image: var(--mask-gradient);
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+
+  /* Standard cho Firefox */
+  mask-image: var(--mask-gradient);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
 }
 
 .scrollWrapper {
-  height: calc(100vh - 60px);
+  height: 100%;
+  width: 100%;
+
+  /* Kích hoạt Scroll */
   overflow-y: auto;
-  position: relative;
+  overflow-x: hidden;
+
+  /* Padding để nội dung không đè lên đường kẻ */
   padding-left: 42px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  padding-right: 10px; /* Thêm chút padding phải cho thoáng */
+  padding-bottom: 50px; /* Khoảng trống dưới cùng để dễ scroll hết */
+
+  /* Ẩn thanh cuộn nhưng vẫn scroll được */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
   scroll-behavior: smooth;
 }
 
 .scrollWrapper::-webkit-scrollbar {
-  display: none;
+  display: none; /* Chrome/Safari */
 }
 
-/* Wrapper cho mỗi event item */
+/* Item Wrapper */
 .eventScrollWrapper {
   position: relative;
-  height: 16vh;
+  /* Chuyển sang min-height để tránh lỗi hiển thị trên màn hình nhỏ */
+  min-height: 16vh;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-}
-.eventScrollWrapper::before {
-  content: "";
-  position: absolute;
-  left: -20px;
-  top: 0;
-  width: 4px;
-  height: 100%;
-  background-color: #00897b;
-  z-index: 0;
+  padding: 10px 0; /* Thêm padding đệm giữa các item */
 }
 
-/* --- 5. Từng Item (Chấm tròn + Card) --- */
+/* --- 5. Timeline Item (Dot & Card) --- */
 .timelineItem {
   position: relative;
   width: 100%;
-  will-change: transform, opacity;
 }
 
 .timelineDot {
   position: absolute;
   left: -28px;
-  transform: translateY(-50%);
   top: 50%;
+  transform: translateY(-50%);
   width: 20px;
   height: 20px;
   background-color: white;
@@ -145,27 +139,16 @@
   border-radius: 50%;
   z-index: 2;
   transition: all 0.3s ease;
+  box-sizing: border-box; /* Đảm bảo border không làm lệch kích thước */
 }
 
 .activeDot {
   background-color: #00897b;
   box-shadow: 0 0 0 4px rgba(0, 137, 123, 0.2);
-  animation: dotPulse 2s ease-out infinite;
+  transform: translateY(-50%) scale(1.2);
 }
 
-@keyframes dotPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(0, 137, 123, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(0, 137, 123, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(0, 137, 123, 0);
-  }
-}
-
-/* --- 6. Thẻ Card (Nội dung) --- */
+/* --- 6. Card Styles --- */
 .timelineCard {
   position: relative;
   z-index: 1;
@@ -178,7 +161,8 @@
   background-color: #ffffff;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
   transition: all 0.3s ease;
-  width: 335px;
+  width: 100%;
+  max-width: 450px; /* Tăng giới hạn chiều rộng card một chút */
   cursor: pointer;
 }
 
@@ -187,39 +171,25 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
 }
 
-/* Khi Item được chọn (active) */
 .activeItem .timelineCard {
-  border: 2px solid #00897b;
+  border-color: #00897b;
   box-shadow: 0 4px 12px rgba(0, 137, 123, 0.25);
-  animation: cardActivate 0.3s ease forwards;
 }
 
-@keyframes cardActivate {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-5px) scale(1.02);
-  }
-  100% {
-    transform: translateY(-3px) scale(1.02);
-  }
-}
-
-/* --- 7. Card Image --- */
+/* Image & Text Styles */
 .cardImage {
   width: 60px;
   height: 60px;
   border-radius: 8px;
   object-fit: cover;
-  flex-shrink: 0;
   background-color: #f0f0f0;
   border: 1px solid #eee;
+  flex-shrink: 0; /* Ngăn ảnh bị bóp méo */
 }
 
-/* Cột thông tin */
 .cardInfo {
-  /* flex-grow: 1; */
+  flex: 1;
+  min-width: 0; /* Giúp text truncate hoạt động nếu cần */
 }
 
 .cardTimestamp {
@@ -229,82 +199,170 @@
 }
 
 .cardTitle {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: #222;
   margin: 0;
-  width: fit-content;
+  /* Cắt chữ nếu quá dài */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Cột "View" */
 .cardAction a {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #00897b;
-  text-decoration: none;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  padding: 5px 10px;
 }
 
-.cardAction a:hover {
-  background-color: rgba(0, 137, 123, 0.1);
-  color: #00796b;
-}
-
-/* --- 8. Empty State --- */
-.emptyState {
-  grid-column: 1 / -1;
+/* --- Empty State --- */
+.emptyStateWrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 40px;
-  color: #999;
-  font-size: 1.2rem;
+  padding: 2rem;
 }
 
-/* --- 9. Responsive --- */
+/* ... Các code cũ giữ nguyên ... */
+
+/* === SKELETON LOADING (Hiệu ứng Facebook) === */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Class chung để tạo hiệu ứng lấp lánh */
+.skeletonAnim {
+  background: #f6f7f8;
+  background-image: linear-gradient(
+    90deg,
+    #f6f7f8 0%,
+    #edeef1 20%,
+    #f6f7f8 40%,
+    #f6f7f8 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Dot giả */
+.skeletonDot {
+  border-color: #e0e0e0; /* Màu viền xám nhạt thay vì xanh */
+  background-color: #f6f7f8;
+}
+
+/* Card giả */
+.skeletonCard {
+  cursor: default;
+  pointer-events: none; /* Không cho click */
+}
+.skeletonCard:hover {
+  transform: none;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* Ảnh giả */
+.skeletonImage {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Khối text giả */
+.skeletonContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Dòng text giả (Title & Date) */
+.skeletonLine {
+  height: 12px;
+  border-radius: 4px;
+}
+
+/* Action giả (nút View) */
+.skeletonAction {
+  width: 40px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+/* --- Responsive --- */
+/* ... Các code cũ giữ nguyên ... */
+
+/* --- Responsive --- */
 @media (max-width: 768px) {
   .timelineContainer {
-    grid-template-columns: 1fr;
-    gap: 20px 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
-  .timelineLineFixed {
-    left: 30px;
-  }
-
+  /* --- 1. CHỈNH SỬA NHÃN THÁNG (Bỏ Sticky) --- */
   .monthLabelContainer {
-    grid-column: 1;
-    text-align: center;
-    justify-content: center;
-    position: relative;
-    top: 0;
-    transform: none;
-    left: 33px;
-  }
-
-  .monthLabel {
-    font-size: 1.2rem;
-  }
-
-  .eventList {
-    grid-column: 1;
-  }
-  .eventScrollWrapper {
-    height: 11vh;
-  }
-
-  .timelineCard {
+    display: flex;
     width: 100%;
-    max-width: 350px;
+    height: auto;
+    padding: 10px 20px;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: #f9fafb; /* Giữ màu nền để tách biệt */
+    border-bottom: 1px solid #eee;
+
+    /* --- THAY ĐỔI Ở ĐÂY --- */
+    position: relative; /* Thay vì sticky, dùng relative để nó trôi theo nội dung */
+    top: auto; /* Reset thuộc tính top */
+    z-index: 1; /* Giảm z-index xuống vì không còn đè lên nội dung */
+  }
+
+  /* Reset style của chữ cho mobile */
+  .monthLabel {
+    font-size: 1.1rem;
+    position: static;
+    transform: none;
+    margin: 0;
+  }
+
+  /* --- 2. CÁC PHẦN KHÁC GIỮ NGUYÊN --- */
+  .eventList {
+    width: 100%;
+    flex: 1;
+    /* overflow: hidden; -> Đã có ở class gốc */
   }
 
   .scrollWrapper {
-    height: calc(100vh - 100px);
-    padding-top: 10px;
-    padding-left: 35px;
+    padding-left: 50px;
+    padding-right: 15px;
+    padding-top: 15px;
   }
 
-  .timelineDot {
-    left: -28px;
+  /* Cấu hình card full width trên mobile */
+  .timelineCard {
+    max-width: 100%;
+    width: 100%;
+    padding: 12px;
+  }
+
+  .continuousLine {
+    left: 30px;
+  }
+
+  .cardImage,
+  .skeletonImage {
+    width: 50px;
+    height: 50px;
   }
 }

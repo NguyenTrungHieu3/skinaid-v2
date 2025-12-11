@@ -113,7 +113,7 @@ const HistoryPage = () => {
 
   const renderSidebarContent = () => {
     if (activeEventId) {
-      if (isLoadingDetail) return <p>Đang tải chi tiết...</p>;
+      if (isLoadingDetail) return <p>{t("history.loading.details")}</p>;
       if (selectedEventData)
         return (
           <HistoryDetail
@@ -131,6 +131,14 @@ const HistoryPage = () => {
     );
   };
 
+  // --- LOGIC MỚI: Kiểm tra xem có nên hiện Sidebar không ---
+  // Hiện sidebar khi: KHÔNG loading VÀ (có event HOẶC đang xem chi tiết activeEventId)
+  // Tuy nhiên, logic đơn giản nhất theo yêu cầu của bạn là dựa vào danh sách filter
+  const hasData = filteredEvents.length > 0;
+
+  // Sidebar chỉ hiện khi có dữ liệu và không bị lỗi
+  const showSidebar = !isLoadingList && !error && hasData;
+
   return (
     <div className={styles.historyPage}>
       <title>
@@ -140,20 +148,41 @@ const HistoryPage = () => {
       </title>
 
       <main className={styles.historyContent}>
-        <div className={styles.timelineSection}>
+        {/* THÊM LOGIC CLASS: 
+            Nếu không hiện sidebar, timelineSection cần bỏ giới hạn max-width 
+            để Empty State hiển thị ra giữa màn hình.
+        */}
+        <div
+          className={`${styles.timelineSection} ${
+            !showSidebar ? styles.fullWidth : ""
+          }`}
+        >
           {isLoadingList ? (
-            <p>Đang tải timeline...</p>
-          ) : error && filteredEvents.length === 0 ? (
-            <p>Lỗi: {error}</p>
+            <p style={{ color: "#00897b" }}>{t("history.loading.timeline")}</p>
+          ) : error ? (
+            // SỬA TẠI ĐÂY: In thẳng lỗi ra màn hình & Console để debug
+            <div style={{ textAlign: "center", color: "red" }}>
+              <p>Có lỗi xảy ra: {error}</p>
+              <p>Key i18n: {t("error.detail", { error: error })}</p>
+            </div>
           ) : (
             <TimelineVirtualized
               events={filteredEvents}
               activeEventId={activeEventId}
               onSelectEvent={setActiveEventId}
+              isLoading={isLoadingList} // <--- Truyền state loading vào đây
             />
           )}
         </div>
-        <aside className={styles.asideSection}>{renderSidebarContent()}</aside>
+
+        {/* LOGIC ẨN SIDEBAR:
+            Chỉ render aside khi showSidebar = true
+        */}
+        {showSidebar && (
+          <aside className={styles.asideSection}>
+            {renderSidebarContent()}
+          </aside>
+        )}
       </main>
     </div>
   );
