@@ -5,33 +5,31 @@ import styles from "./ProfilePage.module.css"; // File CSS chung
 // Import các component
 import BannerHeader from "../components/profile/BannerHeader";
 import TabBar from "../components/profile/TabBar"; // <-- IMPORT COMPONENT MỚI
-import Overview from "../components/profile/Overview";
+// import Overview from "../components/profile/Overview";
 import PersonalInfo from "../components/profile/PersonalInfo";
 import Settings from "../components/profile/Settings";
 import { useAuth } from "../contexts/AuthContext";
 
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState("overview"); // State vẫn giữ ở trang cha
+  const [activeTab, setActiveTab] = useState("personalInfo"); // State vẫn giữ ở trang cha
   const { user } = useAuth();
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "overview":
-        return <Overview />;
+      // case "overview":
+      //   return <Overview />;
       case "personalInfo":
         return <PersonalInfo />;
       case "settings":
         return <Settings />;
       default:
-        return <Overview />;
+        return <PersonalInfo />;
     }
   };
 
   return (
     <div className={styles.profileContainer}>
-      <title>
-        {user?.full_name || user?.user_name || "Profile"}
-      </title>
+      <title>{user?.full_name || user?.user_name || "Profile"}</title>
       {/* 1. Banner Header (Dùng chung) */}
       <BannerHeader />
       {/* 2. KHỐI NỘI DUNG CHÍNH (Wrapper mới) */}

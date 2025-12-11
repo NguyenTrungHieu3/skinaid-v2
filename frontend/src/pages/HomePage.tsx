@@ -62,10 +62,10 @@ const HomePage = () => {
                 <FaPlay />
                 <span>{t("home_page.hero_analysis_button")}</span>
               </Link>
-              <Link to="/demo" className={styles.btnSecondary}>
+              {/* <Link to="/demo" className={styles.btnSecondary}>
                 <FaVideo />
                 <span>{t("home_page.hero_demo_button")}</span>
-              </Link>
+              </Link> */}
             </div>
           </ScrollAnimation>
           <ScrollAnimation animation="fade-left" className={styles.heroImage}>

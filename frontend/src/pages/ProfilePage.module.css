@@ -713,6 +713,12 @@
   gap: 0.5rem;
 }
 
+.errorText {
+  color: #d9534f;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
 @media (max-width: 768px) {
   .infoGrid {
     /* Trên di động, chuyển từ 2 cột sang 1 cột */

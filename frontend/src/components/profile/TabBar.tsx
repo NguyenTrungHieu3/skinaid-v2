@@ -10,7 +10,7 @@ type TabBarProps = {
 };
 
 // Định nghĩa thứ tự các tab
-const TABS = ["overview", "personalInfo", "settings"];
+const TABS = ["personalInfo", "settings"];
 
 const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
   // Tìm index của tab hiện tại
@@ -43,7 +43,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
         <FaChevronLeft />
       </button>
 
-      {/* Nút Overview */}
+      {/* Nút Overview
       <button
         className={`${styles.tabButton} ${
           activeTab === "overview" ? styles.active : ""
@@ -51,7 +51,7 @@ const TabBar: React.FC<TabBarProps> = ({ activeTab, onTabChange }) => {
         onClick={() => onTabChange("overview")}
       >
         {t("overview.title")}
-      </button>
+      </button> */}
 
       {/* Nút Personal Info */}
       <button

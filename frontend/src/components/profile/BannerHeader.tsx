@@ -253,8 +253,7 @@ const BannerHeader = () => {
           </div>
 
           {/* 2. KHỐI BADGE MỚI */}
-          <div className={styles.profileBadges}>
-            {/* Badge 1: Total Scans */}
+          {/* <div className={styles.profileBadges}>
             <div className={`${styles.badgeCard} ${styles.badgeGreen}`}>
               <div className={styles.badgeContent}>
                 <span>Total Scans</span>
@@ -263,10 +262,10 @@ const BannerHeader = () => {
               <div className={`${styles.badgeIcon} ${styles.iconBgGreen}`}>
                 <FiCamera />
               </div>
-            </div>
+            </div> */}
 
-            {/* Badge 2: Last Analysis */}
-            <div className={`${styles.badgeCard} ${styles.badgeBlue}`}>
+          {/* Badge 2: Last Analysis */}
+          {/* <div className={`${styles.badgeCard} ${styles.badgeBlue}`}>
               <div className={styles.badgeContent}>
                 <span>Last Analysis</span>
                 <strong>Yesterday, 20:15</strong>
@@ -275,7 +274,7 @@ const BannerHeader = () => {
                 <FaRegClock />
               </div>
             </div>
-          </div>
+          </div>*/}
         </div>
       </div>
 

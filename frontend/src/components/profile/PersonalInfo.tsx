@@ -68,6 +68,9 @@ const PersonalInfo = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState("");
   const [apiSuccess, setApiSuccess] = useState("");
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // SỬA LỖI 1: Thêm 'gender' vào state
   const [formData, setFormData] = useState({
@@ -79,6 +82,59 @@ const PersonalInfo = () => {
   });
 
   const [originalData, setOriginalData] = useState(formData);
+
+  const validateForm = (data: typeof formData) => {
+    const errors: Record<string, string> = {};
+
+    // Full Name
+    if (!data.fullName.trim()) {
+      errors.fullName = "Full name is required.";
+    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(data.fullName)) {
+      errors.fullName =
+        "Full name must not contain numbers or special characters.";
+    } else if (data.fullName.length < 2) {
+      errors.fullName = "Full name is too short.";
+    }
+
+    // Phone
+    if (!data.phone.trim()) {
+      errors.phone = "Phone number is required.";
+    } else if (!/^[0-9]+$/.test(data.phone)) {
+      errors.phone = "Phone number must be digits only.";
+    } else if (!/^0\d{9}$/.test(data.phone)) {
+      errors.phone = "Phone number must be 10 digits and start with 0.";
+    }
+
+    // Date of Birth
+    if (!data.dob) {
+      errors.dob = "Date of birth is required.";
+    } else {
+      const inputDate = new Date(data.dob);
+      const today = new Date();
+
+      if (inputDate > today) {
+        errors.dob = "Date of birth cannot be in the future.";
+      }
+
+      const age = today.getFullYear() - inputDate.getFullYear();
+      if (age < 16) {
+        errors.dob = "You must be at least 16 years old.";
+      }
+    }
+
+    // Gender
+    const validGender = ["male", "female", "other", ""];
+    if (!validGender.includes(data.gender)) {
+      errors.gender = "Invalid gender value.";
+    }
+
+    // Address
+    if (data.address && data.address.trim().length < 5) {
+      errors.address = "Address is too short.";
+    }
+
+    return errors;
+  };
 
   useEffect(() => {
     const formatDate = (dateString: string | null) => {
@@ -191,6 +247,15 @@ const PersonalInfo = () => {
   };
 
   const handleSaveBasic = () => {
+    const errors = validateForm(formData);
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return; // Không gọi API nếu có lỗi
+    }
+
+    setValidationErrors({}); // Xóa lỗi cũ
+
     // SỬA LỖI 2: Thêm 'gender' vào đây
     const dataToUpdate = {
       full_name: formData.fullName,
@@ -206,6 +271,7 @@ const PersonalInfo = () => {
   const handleEditBasic = () => {
     setOriginalData(formData);
     setIsEditingBasic(true);
+    setValidationErrors({}); // Xóa lỗi cũ
     setApiError("");
     setApiSuccess("");
   };
@@ -214,6 +280,7 @@ const PersonalInfo = () => {
     setIsEditingBasic(false);
     setApiError("");
     setApiSuccess("");
+    setValidationErrors({}); // Xóa lỗi cũ
   };
 
   if (isLoading) {
@@ -245,7 +312,9 @@ const PersonalInfo = () => {
               editable={isEditingBasic}
               onChange={handleChange("fullName")}
             />
-
+            {validationErrors.fullName && (
+              <p className={styles.errorText}>{validationErrors.fullName}</p>
+            )}
             <InfoField
               icon={<FaPhone />}
               label={t("personalInfo.phone")}
@@ -253,7 +322,9 @@ const PersonalInfo = () => {
               editable={isEditingBasic}
               onChange={handleChange("phone")}
             />
-
+            {validationErrors.phone && (
+              <p className={styles.errorText}>{validationErrors.phone}</p>
+            )}
             <InfoField
               icon={<FaCalendarDay />}
               label={t("personalInfo.dob")}
@@ -262,7 +333,9 @@ const PersonalInfo = () => {
               onChange={handleChange("dob")}
               type="date" // <-- THÊM DÙNG NÀY
             />
-
+            {validationErrors.dob && (
+              <p className={styles.errorText}>{validationErrors.dob}</p>
+            )}
             {/* THÊM LẠI TRƯỜNG GENDER VÀO JSX */}
             <InfoField
               icon={<FaVenusMars />}
@@ -271,7 +344,9 @@ const PersonalInfo = () => {
               editable={isEditingBasic}
               onChange={handleChange("gender")}
             />
-
+            {validationErrors.gender && (
+              <p className={styles.errorText}>{validationErrors.gender}</p>
+            )}
             <InfoField
               icon={<FaMapMarkerAlt />}
               label={t("personalInfo.address")}
@@ -279,6 +354,9 @@ const PersonalInfo = () => {
               editable={isEditingBasic}
               onChange={handleChange("address")}
             />
+            {validationErrors.address && (
+              <p className={styles.errorText}>{validationErrors.address}</p>
+            )}
 
             {isEditingBasic && (
               <div className={styles.action}>
