@@ -5,6 +5,7 @@ import {
   type CombinedEventDetail,
   type SingleWoundDetail,
 } from "../../types/appTypes";
+import { useTranslation } from "react-i18next";
 
 interface HistoryDetailProps {
   event: CombinedEventDetail;
@@ -13,6 +14,7 @@ interface HistoryDetailProps {
 }
 
 const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -37,7 +39,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       onClose();
     } catch (error: any) {
       setDeleteError(
-        error.message || "Không thể xóa bản ghi. Vui lòng thử lại."
+        error.message || t("history.detail.error_delete")
       );
       setIsDeleting(false);
     }
@@ -54,13 +56,13 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       <div className={styles.detailHeader}>
         <button onClick={onClose} className={styles.backButton}>
           <ArrowLeft size={20} />
-          <span>Quay lại</span>
+          <span>{t("history.detail.back_button")}</span>
         </button>
         <button
           onClick={handleDeleteClick}
           disabled={isDeleting || showDeleteConfirm}
           className={styles.deleteButton}
-          title="Xóa bản ghi này"
+          title={t("history.detail.confirm_delete")}
         >
           <Trash2 size={20} />
         </button>
@@ -70,10 +72,9 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       {showDeleteConfirm && (
         <div className={styles.confirmDialog}>
           <div className={styles.confirmContent}>
-            <h3>Xác nhận xóa</h3>
+            <h3>{t("history.detail.confirm_delete")}</h3>
             <p>
-              Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này
-              không thể hoàn tác.
+              {t("history.detail.delete_message")}
             </p>
             <div className={styles.confirmActions}>
               <button
@@ -81,14 +82,14 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                 disabled={isDeleting}
                 className={styles.cancelButton}
               >
-                Không, giữ lại
+                {t("history.detail.cancel_button")}
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
                 className={styles.confirmButton}
               >
-                {isDeleting ? "Đang xóa..." : "Có, xóa bản ghi"}
+                {isDeleting ? t("history.detail.deleting") : t("history.detail.confirm_delete_button")}
               </button>
             </div>
           </div>
@@ -167,7 +168,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
           {/* 5. Chi tiết Phân tích */}
           <div className={styles.analysisSection}>
-            <h4>Chi tiết Phân tích</h4>
+            <h4>{t("history.detail.analysis_details")}</h4>
 
             {/* --- SỬA LỖI CRASH: Di chuyển logic firstAidSteps vào đây --- */}
             {(() => {
@@ -181,7 +182,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                 <>
                   {/* Độ chính xác */}
                   <div className={styles.detailItem}>
-                    <h5>Độ chính xác</h5>
+                    <h5>{t("history.detail.accuracy")}</h5>
                     <div className={styles.accuracyMeter}>
                       <div
                         // Logic xác định class màu sắc
@@ -201,7 +202,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
                   {/* Thời gian hồi phục (Không đổi) */}
                   <div className={styles.detailItem}>
-                    <h5>Thời gian hồi phục (dự kiến)</h5>
+                    <h5>{t("history.detail.healing_time")}</h5>
                     <p>
                       <strong>{currentWound.healingTime}</strong>
                     </p>
@@ -209,7 +210,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
                   {/* Vật tư cần thiết */}
                   <div className={styles.detailItem}>
-                    <h5>Vật tư cần thiết</h5>
+                    <h5>{t("history.detail.supplies_needed")}</h5>
                     <div className={styles.firstAidSteps}>
                       {(() => {
                         const suppliesSteps = currentWound.suppliesNeeded
@@ -227,7 +228,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                         ) : (
                           <p>
                             {currentWound.suppliesNeeded ||
-                              "Không có thông tin."}
+                              t("history.detail.no_info")}
                           </p>
                         );
                       })()}
@@ -236,7 +237,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
                   {/* Gợi ý sơ cứu (Dùng biến 'firstAidSteps' đã sửa) */}
                   <div className={styles.detailItem}>
-                    <h5>Gợi ý sơ cứu</h5>
+                    <h5>{t("history.detail.first_aid")}</h5>
                     <div className={styles.firstAidSteps}>
                       {firstAidSteps && firstAidSteps.length > 0 ? (
                         firstAidSteps.map((step, index) => (
@@ -247,13 +248,13 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                         ))
                       ) : (
                         // Fallback: Nếu không tách được (ví dụ: "Chườm lạnh")
-                        <p>{currentWound.firstAid || "Không có gợi ý."}</p>
+                        <p>{currentWound.firstAid || t("history.detail.no_info")}</p>
                       )}
                     </div>
                   </div>
                   {/* Phần Nên làm */}
                   <div className={styles.detailItem}>
-                    <h5>Nên làm</h5>
+                    <h5>{t("history.detail.should_do")}</h5>
                     <div className={styles.firstAidSteps}>
                       {(() => {
                         const shouldDoSteps = currentWound.shouldDo
@@ -274,7 +275,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                           ))
                         ) : (
                           <p>
-                            {currentWound.shouldDo || "Không có thông tin."}
+                            {currentWound.shouldDo || t("history.detail.no_info")}
                           </p>
                         );
                       })()}
@@ -283,7 +284,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
 
                   {/* Phần Không nên làm */}
                   <div className={styles.detailItem}>
-                    <h5>Không nên làm</h5>
+                    <h5>{t("history.detail.should_not_do")}</h5>
                     <div className={styles.firstAidSteps}>
                       {(() => {
                         const shouldNotDoSteps = currentWound.shouldNotDo
@@ -305,7 +306,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
                           ))
                         ) : (
                           <p>
-                            {currentWound.shouldNotDo || "Không có thông tin."}
+                            {currentWound.shouldNotDo || t("history.detail.no_info")}
                           </p>
                         );
                       })()}
@@ -320,7 +321,7 @@ const HistoryDetail = ({ event, onClose, onDelete }: HistoryDetailProps) => {
       ) : (
         // Trường hợp không có chi tiết nào
         <div className={styles.infoSection}>
-          <p>Không có chi tiết phân tích cho sự kiện này.</p>
+          <p>{t("history.detail.no_detail")}</p>
         </div>
       )}
 

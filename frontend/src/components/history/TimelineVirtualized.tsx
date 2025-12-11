@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./Timeline.module.css";
 import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 
 export interface HistoryEvent {
   id: string;
@@ -25,11 +27,16 @@ const TimelineVirtualized = ({
   isLoading = false, // <--- Default value
   hasHistory,
 }: Props) => {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [currentMonth, setCurrentMonth] = useState<string>("");
   const { t } = useTranslation();
 
   // --- LOGIC SCROLL (Tính tháng khi cuộn) ---
+  const getLocale = () => {
+    return i18n.language === "vi" ? "vi-VN" : "en-US";
+  };
+
   const handleScroll = () => {
     if (!scrollRef.current) return;
 
@@ -45,7 +52,7 @@ const TimelineVirtualized = ({
       if (rect.top < center && rect.bottom > center) {
         const event = events[i];
         if (event) {
-          month = new Date(event.date).toLocaleString("en-US", {
+          month = new Date(event.date).toLocaleString(getLocale(), {
             month: "long",
             year: "numeric",
           });
@@ -64,7 +71,7 @@ const TimelineVirtualized = ({
       // Khi đang chọn item: Set tháng theo item đó
       const selectedEvent = events.find((e) => e.id === activeEventId);
       if (selectedEvent) {
-        const monthStr = new Date(selectedEvent.date).toLocaleString("en-US", {
+        const monthStr = new Date(selectedEvent.date).toLocaleString(getLocale(), {
           month: "long",
           year: "numeric",
         });
@@ -76,7 +83,7 @@ const TimelineVirtualized = ({
       // Hoặc nếu muốn reset về tháng của item đang ở giữa màn hình scroll thì gọi lại handleScroll()
       // handleScroll();
     }
-  }, [activeEventId, events]);
+  }, [activeEventId, events, i18n.language]);
 
   // --- Render Empty State ---
   // --- 3. SỬA LOGIC EMPTY STATE ---
@@ -99,7 +106,10 @@ const TimelineVirtualized = ({
 
           {/* Chỉ hiện nút Upload khi KHÔNG CÓ lịch sử (hasHistory = false) */}
           {!hasHistory && (
-            <button className={styles.uploadButton}>
+            <button 
+              className={styles.uploadButton}
+              onClick={() => navigate("/upload")}
+            >
               {t("history.upload_button")}
             </button>
           )}
@@ -170,7 +180,10 @@ const TimelineVirtualized = ({
 
           {/* SỬA 3: Chỉ hiện nút Upload khi KHÔNG CÓ lịch sử (hasHistory = false) */}
           {!hasHistory && (
-            <button className={styles.uploadButton}>
+            <button 
+              className={styles.uploadButton}
+              onClick={() => navigate("/upload")}
+            >
               {t("history.upload_button")}
             </button>
           )}
@@ -234,10 +247,10 @@ const TimelineVirtualized = ({
                                 month: "short",
                               })}
                             </p>
-                            <h4 className={styles.cardTitle}>{ev.title}</h4>
+                            <h4 className={styles.cardTitle}>{t("history.analysis")} {ev.title}</h4>
                           </div>
                           <div className={styles.cardAction}>
-                            <a>View</a>
+                            <a>{t("history.view")}</a>
                           </div>
                         </div>
                       </div>

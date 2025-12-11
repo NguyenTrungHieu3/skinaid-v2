@@ -27,7 +27,7 @@ export const getHistory = async (
     );
     return response.data.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || "Không thể tải lịch sử");
+    throw new Error(error.response?.data?.message || "Error loading history");
   }
 };
 
@@ -43,7 +43,7 @@ export const getAnalysisDetail = async (
     >(`/ai/analysis/${analysisId}`);
     return response.data.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || "Không thể tải chi tiết");
+    throw new Error(error.response?.data?.message || "Error loading details");
   }
 };
 
@@ -59,7 +59,7 @@ export const deleteAnalysis = async (
     );
     return response.data.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || "Không thể xóa phân tích");
+    throw new Error(error.response?.data?.message || "Error deleting analysis");
   }
 };
 
@@ -73,12 +73,12 @@ export function transformApiHistoryToTimeline(
 ): HistoryEvent[] {
   return apiData.map((event) => ({
     id: event.analysis_id,
-    title: `Phân tích ${new Date(event.created_at).toLocaleDateString(
-      "vi-VN"
+    title: `${new Date(event.created_at).toLocaleDateString(
+      "en-US"
     )}`,
     date: event.created_at,
     status: event.total_detections === 0
-      ? "Không có vết thương"
+      ? "No wounds detected"
       : `${event.total_detections} detection(s)`,
     imageUrl: `${BACKEND_URL}${event.image_url}`,
   }));
@@ -123,24 +123,24 @@ export function transformApiDetailToCombinedEvent(
         severity: wound.severity, // Lấy trực tiếp từ 'significant_wounds'
         sub_type: wound.sub_type || '', // Lấy trực tiếp từ 'significant_wounds'
         reliable_source: snapshot.source || {},
-        healingTime: snapshot.estimated_healing_time || "Chưa có dữ liệu",
-        firstAid: firstAidString || "Không có gợi ý sơ cứu.",
-        shouldDo: shouldDoString || "Không có thông tin.",
-        shouldNotDo: shouldNotDoString || "Không có thông tin.",
-        titleGuide: titleString || "Không có tiêu đề.",
-        suppliesNeeded: suppliesNeededString || "Không có thông tin.",
+        healingTime: snapshot.estimated_healing_time || "",
+        firstAid: firstAidString || "",
+        shouldDo: shouldDoString || "",
+        shouldNotDo: shouldNotDoString || "",
+        titleGuide: titleString || "",
+        suppliesNeeded: suppliesNeededString || "",
       };
     }
   );
 
   return {
     id: apiEvent.analysis_id,
-    title: `Phân tích ${new Date(apiEvent.created_at).toLocaleDateString(
-      "vi-VN"
+    title: `Analysis ${new Date(apiEvent.created_at).toLocaleDateString(
+      "en-US"
     )}`,
     date: apiEvent.created_at,
     status: apiEvent.total_detections === 0
-      ? "Không có vết thương"
+      ? "No wounds detected"
       : `${apiEvent.total_detections} detection(s)`,
     imageUrl: `${BACKEND_URL}${apiEvent.image_url}`,
     detail: details,

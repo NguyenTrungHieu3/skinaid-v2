@@ -347,6 +347,8 @@
     "timeline": {
       "title": "Dòng thời gian phân tích"
     },
+    "view": "Xem",
+    "analysis": "Phân tích",
     "detail": {
       "title": "Chi tiết phân tích"
     },
@@ -362,7 +364,31 @@
       "all": "Bỏ lọc"
     },
     "no_logo_fallback": "Logo",
-    "upload_button": "Tải ảnh để phân tích"
+    "upload_button": "Tải ảnh để phân tích",
+    "service": {
+      "analysis_title": "Phân tích",
+      "no_wounds": "Không có vết thương",
+      "error_load_history": "Không thể tải lịch sử",
+      "error_load_detail": "Không thể tải chi tiết",
+      "error_delete": "Không thể xóa phân tích"
+    },
+    "detail": {
+      "back_button": "Quay lại",
+      "confirm_delete": "Xác nhận xóa",
+      "delete_message": "Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này không thể hoàn tác.",
+      "cancel_button": "Không, giữ lại",
+      "confirm_delete_button": "Có, xóa bản ghi",
+      "deleting": "Đang xóa...",
+      "no_detail": "Không có chi tiết phân tích cho sự kiện này.",
+      "analysis_details": "Chi tiết Phân tích",
+      "accuracy": "Độ chính xác",
+      "healing_time": "Thời gian hồi phục (dự kiến)",
+      "supplies_needed": "Vật tư cần thiết",
+      "first_aid": "Gợi ý sơ cứu",
+      "should_do": "Nên làm",
+      "should_not_do": "Không nên làm",
+      "no_info": "Không có thông tin."
+    }
   },
   "profile": {
     "banner_date": "Thành viên từ",
