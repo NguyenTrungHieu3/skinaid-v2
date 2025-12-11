@@ -25,7 +25,7 @@ class AIController:
         self.response_mapper = ResponseMapper()
 
     def _validate_identifiers(self, user_id: Optional[UUID], session_id: Optional[UUID]) -> Optional[ErrorResponse]:
-        """Validate user_id and session_id (exactly one required)"""
+        """Xác thực user_id và session_id (yêu cầu chính xác một trong hai)"""
         if user_id is None and session_id is None:
             return ErrorResponse(
                 message=Message.AI_MISSING_IDENTIFIER_MSG,
@@ -43,19 +43,21 @@ class AIController:
         return None
 
     def _check_access(self, analysis, user_id: Optional[UUID], session_id: Optional[UUID]) -> Optional[ErrorResponse]:
-        """Check if user/session has access to analysis"""
-        if user_id and analysis.user_id and user_id != analysis.user_id:
-            return ErrorResponse(
-                message=Message.AI_ACCESS_DENIED_MSG,
-                error_code=ErrorCode.AI_ACCESS_DENIED,
-                status_code=status.HTTP_403_FORBIDDEN
-            )
-        if session_id and analysis.session_id and session_id != analysis.session_id:
-            return ErrorResponse(
-                message=Message.AI_ACCESS_DENIED_MSG,
-                error_code=ErrorCode.AI_ACCESS_DENIED,
-                status_code=status.HTTP_403_FORBIDDEN
-            )
+        """Kiểm tra xem user/session có quyền truy cập vào phân tích không"""
+        if analysis.user_id:
+            if not user_id or user_id != analysis.user_id:
+                return ErrorResponse(
+                    message=Message.AI_ACCESS_DENIED_MSG,
+                    error_code=ErrorCode.AI_ACCESS_DENIED,
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
+        elif analysis.session_id:
+            if not session_id or session_id != analysis.session_id:
+                return ErrorResponse(
+                    message=Message.AI_ACCESS_DENIED_MSG,
+                    error_code=ErrorCode.AI_ACCESS_DENIED,
+                    status_code=status.HTTP_403_FORBIDDEN
+                )
         return None
 
     async def analyze_image(self, file, user_id: Optional[UUID] = None, session_id: Optional[UUID] = None) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:
@@ -69,7 +71,7 @@ class AIController:
 
     async def get_analysis_history(self, user_id: Optional[UUID] = None, session_id: Optional[UUID] = None, 
                                    limit: int = 50, offset: int = 0) -> Union[SuccessResponse[WoundAnalysisListResponse], ErrorResponse]:
-        """Get analysis history"""
+        """Lấy lịch sử phân tích"""
         try:
             logger.info(f"[GET_HISTORY] user: {user_id}, session: {session_id}")
             analyses = await self.analysis_service.get_history(user_id=user_id, session_id=session_id, limit=limit, offset=offset)
@@ -97,7 +99,7 @@ class AIController:
 
     async def get_analysis_detail(self, analysis_id: UUID, user_id: Optional[UUID] = None, 
                                   session_id: Optional[UUID] = None) -> Union[SuccessResponse[WoundAnalysisDetailResponse], ErrorResponse]:
-        """Get detailed analysis by ID"""
+        """Lấy chi tiết phân tích theo ID"""
         try:
             logger.info(f"[GET_DETAIL] {analysis_id}")
             analysis = await self.analysis_service.get_by_id(analysis_id)
@@ -133,7 +135,7 @@ class AIController:
 
     async def delete_analysis(self, analysis_id: UUID, user_id: Optional[UUID] = None, 
                              session_id: Optional[UUID] = None) -> Union[SuccessResponse[dict], ErrorResponse]:
-        """Soft delete analysis"""
+        """Xóa mềm phân tích"""
         try:
             logger.info(f"[DELETE_ANALYSIS] {analysis_id}")
             analysis = await self.analysis_service.get_by_id(analysis_id)

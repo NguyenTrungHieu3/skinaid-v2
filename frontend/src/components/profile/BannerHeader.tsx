@@ -1,12 +1,12 @@
 // src/components/profile/BannerHeader.tsx
 import styles from "../../pages/ProfilePage.module.css"; // Dùng file CSS chung
-import { FaUser, FaCamera, FaRegClock, FaSpinner } from "react-icons/fa";
+import { FaUser, FaCamera, FaSpinner, FaTrash } from "react-icons/fa";
 import { useAuth } from "../../contexts/AuthContext"; // <-- Import AuthContext
-import { FiCamera } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import {
   uploadAvatarFile,
   updateMyProfile,
+  deleteAvatar,
 } from "../../services/profileService";
 import { useCallback, useRef, useState } from "react";
 
@@ -44,10 +44,9 @@ const getImageUrl = (url: string | null | undefined) => {
 const BannerHeader = () => {
   const { user, refreshUser } = useAuth(); // <-- Lấy thông tin user
   const { t, i18n } = useTranslation();
-
-  // State quản lý upload
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- STATE CHO CROP IMAGE ---
   const [imageSrc, setImageSrc] = useState<string | null>(null); // Ảnh gốc được chọn
@@ -159,7 +158,7 @@ const BannerHeader = () => {
 
       // B. Upload file đã cắt
       const uploadResponse = await uploadAvatarFile(croppedFile);
-      const avatarUrl = uploadResponse.data.data.url;
+      const avatarUrl = uploadResponse.data.data.avatar_url;
 
       if (!avatarUrl) throw new Error("Không nhận được URL ảnh từ server");
 
@@ -187,6 +186,32 @@ const BannerHeader = () => {
     setImageSrc(null);
   };
 
+  // 5. Xóa avatar
+  const handleDeleteAvatar = async () => {
+    if (!user?.avatar_url) return;
+
+    // Xác nhận trước khi xóa
+    const confirmed = window.confirm(t("profile.delete_avatar_confirm") || "Bạn có chắc chắn muốn xóa ảnh đại diện?");
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteAvatar();
+
+      // Refresh UI
+      if (refreshUser) {
+        await refreshUser();
+      } else {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Delete avatar error:", error);
+      alert(t("profile.delete_avatar_error") || "Có lỗi xảy ra khi xóa ảnh đại diện.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <header className={styles.profileBanner}>
       <input
@@ -201,6 +226,16 @@ const BannerHeader = () => {
         {/* BÊN TRÁI - AVATAR */}
         <div className={styles.profileLeft}>
           <div className={styles.avatarWrapper}>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+
+            {/* Avatar display */}
             <div className={styles.avatarPlaceholder}>
               {/* Layer Loading */}
               {isUploading && (
@@ -228,13 +263,23 @@ const BannerHeader = () => {
             {/* Nút Camera */}
             <div
               // Kết hợp class: nếu đang uploading thì thêm class uploading
-              className={`${styles.cameraIcon} ${
-                isUploading ? styles.uploading : ""
-              }`}
+              className={`${styles.cameraIcon} ${isUploading ? styles.uploading : ""
+                }`}
               onClick={handleCameraClick}
             >
               <FaCamera />
             </div>
+
+            {/* Nút Xóa Avatar - Chỉ hiển thị khi có avatar */}
+            {user?.avatar_url && (
+              <div
+                className={`${styles.deleteIcon} ${isDeleting ? styles.deleting : ""}`}
+                onClick={handleDeleteAvatar}
+                title={t("profile.delete_avatar") || "Xóa ảnh đại diện"}
+              >
+                {isDeleting ? <FaSpinner className="fa-spin" /> : <FaTrash />}
+              </div>
+            )}
           </div>
         </div>
 

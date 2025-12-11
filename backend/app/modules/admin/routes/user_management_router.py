@@ -14,40 +14,40 @@ from app.modules.admin.schemas.user_management_schemas import (
 )
 from app.core.dependencies import get_db, require_admin
 from app.modules.auth.models.user import User
-from app.core.rate_limit import limiter
+from app.middleware.rate_limit import limiter
 
 router = APIRouter(prefix="/admin/users", tags=["Admin - User Management"])
 
 
 async def get_user_controller(db: AsyncSession = Depends(get_db)) -> UserManagementController:
-    """Dependency to get user management controller instance"""
+    """Dependency để lấy user management controller instance"""
     return UserManagementController(db)
 
 
 @router.get(
     "",
     response_model=SuccessResponse[UserListResponse],
-    summary="Get Users List",
-    description="Get paginated list of users with optional filters"
+    summary="Lấy danh sách người dùng",
+    description="Lấy danh sách người dùng có phân trang với các bộ lọc tùy chọn"
 )
 async def get_users(
-    page: int = Query(1, ge=1, description="Page number (starts from 1)"),
-    limit: int = Query(10, ge=1, le=100, description="Number of users per page"),
-    search: Optional[str] = Query(None, description="Search by email or display name"),
-    role: Optional[str] = Query(None, description="Filter by role (user, moderator, admin)"),
-    status: Optional[str] = Query(None, description="Filter by status (active, inactive)"),
+    page: int = Query(1, ge=1, description="Số trang (bắt đầu từ 1)"),
+    limit: int = Query(10, ge=1, le=100, description="Số lượng người dùng mỗi trang"),
+    search: Optional[str] = Query(None, description="Tìm kiếm theo email hoặc tên hiển thị"),
+    role: Optional[str] = Query(None, description="Lọc theo vai trò (user, moderator, admin)"),
+    status: Optional[str] = Query(None, description="Lọc theo trạng thái (active, inactive)"),
     controller: UserManagementController = Depends(get_user_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Get paginated list of users with filters:
-    - **page**: Page number (starts from 1)
-    - **limit**: Records per page (1-100)
-    - **search**: Search in email and display name
-    - **role**: Filter by role (user, moderator, admin)
-    - **status**: Filter by status (active, inactive)
+    Lấy danh sách người dùng có phân trang với các bộ lọc:
+    - **page**: Số trang (bắt đầu từ 1)
+    - **limit**: Số bản ghi mỗi trang (1-100)
+    - **search**: Tìm kiếm trong email và tên hiển thị
+    - **role**: Lọc theo vai trò (user, moderator, admin)
+    - **status**: Lọc theo trạng thái (active, inactive)
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.get_users(
         page=page,
@@ -61,21 +61,21 @@ async def get_users(
 @router.get(
     "/stats",
     response_model=SuccessResponse[UserStatsResponse],
-    summary="Get User Statistics",
-    description="Get overall user statistics"
+    summary="Lấy thống kê người dùng",
+    description="Lấy thống kê tổng quan về người dùng"
 )
 async def get_user_stats(
     controller: UserManagementController = Depends(get_user_controller),
     current_user: User = Depends(require_admin)
 ):
     """
-    Get overall user statistics:
-    - Total users
-    - Active users
-    - Verified users
-    - Users by role
+    Lấy thống kê tổng quan về người dùng:
+    - Tổng số người dùng
+    - Người dùng đang hoạt động
+    - Người dùng đã xác thực
+    - Người dùng theo vai trò
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.get_user_stats()
 
@@ -83,8 +83,8 @@ async def get_user_stats(
 @router.get(
     "/{user_id}",
     response_model=SuccessResponse[UserDetailResponse],
-    summary="Get User Detail",
-    description="Get detailed information about a specific user"
+    summary="Lấy chi tiết người dùng",
+    description="Lấy thông tin chi tiết về một người dùng cụ thể"
 )
 async def get_user_detail(
     user_id: str,
@@ -92,9 +92,9 @@ async def get_user_detail(
     current_user: User = Depends(require_admin)
 ):
     """
-    Get detailed information about a specific user by ID.
+    Lấy thông tin chi tiết về một người dùng cụ thể theo ID.
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.get_user_detail(user_id)
 
@@ -102,8 +102,8 @@ async def get_user_detail(
 @router.post(
     "",
     response_model=SuccessResponse[UserDetailResponse],
-    summary="Create New User",
-    description="Create a new user account",
+    summary="Tạo người dùng mới",
+    description="Tạo một tài khoản người dùng mới",
     status_code=201
 )
 @limiter.limit("100/minute")
@@ -114,16 +114,16 @@ async def create_user(
     current_user: User = Depends(require_admin)
 ):
     """
-    Create a new user account with the following information:
-    - **email**: Valid email address (unique)
-    - **display_name**: User's display name (2-100 characters)
-    - **password**: Password (minimum 6 characters)
-    - **role**: User role (user, moderator, admin)
+    Tạo một tài khoản người dùng mới với các thông tin sau:
+    - **email**: Địa chỉ email hợp lệ (duy nhất)
+    - **display_name**: Tên hiển thị của người dùng (2-100 ký tự)
+    - **password**: Mật khẩu (tối thiểu 6 ký tự)
+    - **role**: Vai trò người dùng (user, moderator, admin)
     
-    Admin-created users are automatically verified.
+    Người dùng do admin tạo sẽ được tự động xác thực.
     
-    **Rate Limited**: 100 requests per minute
-    **Requires admin role**
+    **Giới hạn tốc độ**: 100 yêu cầu mỗi phút
+    **Yêu cầu quyền admin**
     """
     return await controller.create_user(user_data)
 
@@ -131,8 +131,8 @@ async def create_user(
 @router.put(
     "/{user_id}",
     response_model=SuccessResponse[UserDetailResponse],
-    summary="Update User",
-    description="Update user information"
+    summary="Cập nhật người dùng",
+    description="Cập nhật thông tin người dùng"
 )
 async def update_user(
     user_id: str,
@@ -141,13 +141,13 @@ async def update_user(
     current_user: User = Depends(require_admin)
 ):
     """
-    Update user information. All fields are optional:
-    - **display_name**: Update display name
-    - **email**: Update email (must be unique)
-    - **role**: Update role (user, moderator, admin)
-    - **is_active**: Update active status
+    Cập nhật thông tin người dùng. Tất cả các trường đều là tùy chọn:
+    - **display_name**: Cập nhật tên hiển thị
+    - **email**: Cập nhật email (phải là duy nhất)
+    - **role**: Cập nhật vai trò (user, moderator, admin)
+    - **is_active**: Cập nhật trạng thái hoạt động
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.update_user(user_id, user_data)
 
@@ -155,8 +155,8 @@ async def update_user(
 @router.patch(
     "/{user_id}/status",
     response_model=SuccessResponse[UserDetailResponse],
-    summary="Update User Status",
-    description="Update user active/inactive status"
+    summary="Cập nhật trạng thái người dùng",
+    description="Cập nhật trạng thái hoạt động/không hoạt động của người dùng"
 )
 async def update_user_status(
     user_id: str,
@@ -165,11 +165,11 @@ async def update_user_status(
     current_user: User = Depends(require_admin)
 ):
     """
-    Update user active/inactive status.
+    Cập nhật trạng thái hoạt động/không hoạt động của người dùng.
     
-    Setting is_active to False will effectively disable the user account.
+    Đặt is_active thành False sẽ vô hiệu hóa tài khoản người dùng.
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.update_user_status(user_id, status_data)
 
@@ -177,8 +177,8 @@ async def update_user_status(
 @router.delete(
     "/{user_id}",
     response_model=SuccessResponse,
-    summary="Delete User",
-    description="Delete a user account (soft delete)"
+    summary="Xóa người dùng",
+    description="Xóa tài khoản người dùng (soft delete)"
 )
 async def delete_user(
     user_id: str,
@@ -186,11 +186,11 @@ async def delete_user(
     current_user: User = Depends(require_admin)
 ):
     """
-    Delete a user account (soft delete).
+    Xóa tài khoản người dùng (soft delete).
     
-    This sets the user's is_active status to False rather than permanently deleting the record.
+    Hành động này đặt trạng thái is_active của người dùng thành False thay vì xóa vĩnh viễn bản ghi.
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.delete_user(user_id)
 
@@ -198,8 +198,8 @@ async def delete_user(
 @router.post(
     "/{user_id}/resend-verification",
     response_model=SuccessResponse,
-    summary="Resend Verification Email",
-    description="Resend verification email to unverified user"
+    summary="Gửi lại email xác thực",
+    description="Gửi lại email xác thực cho người dùng chưa xác thực"
 )
 async def resend_verification_email(
     user_id: str,
@@ -207,14 +207,14 @@ async def resend_verification_email(
     current_user: User = Depends(require_admin)
 ):
     """
-    Resend verification email to user.
+    Gửi lại email xác thực cho người dùng.
     
-    This endpoint will:
-    - Check if user exists and is not verified
-    - Generate new verification token
-    - Send verification email
+    Endpoint này sẽ:
+    - Kiểm tra xem người dùng có tồn tại và chưa được xác thực không
+    - Tạo token xác thực mới
+    - Gửi email xác thực
     
-    **Requires admin role**
+    **Yêu cầu quyền admin**
     """
     return await controller.resend_verification_email(user_id)
 
@@ -222,13 +222,13 @@ async def resend_verification_email(
 @router.get(
     "/health/check",
     response_model=SuccessResponse[dict],
-    summary="User Management Service Health Check",
-    description="Check if user management service is healthy"
+    summary="Kiểm tra sức khỏe dịch vụ quản lý người dùng",
+    description="Kiểm tra xem dịch vụ quản lý người dùng có hoạt động tốt không"
 )
 async def user_management_health_check():
-    """Health check endpoint for user management service"""
+    """Endpoint kiểm tra sức khỏe cho dịch vụ quản lý người dùng"""
     return SuccessResponse(
-        message="User management service is healthy",
+        message="Dịch vụ quản lý người dùng hoạt động tốt",
         data={
             "status": "healthy",
             "service": "user_management",

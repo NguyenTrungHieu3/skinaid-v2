@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, status, HTTPException, Query, Path, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union, List, Dict, Any, Optional
+from typing import Union, List, Dict, Any, Optional, Annotated
+import uuid
 
 from app.shared.schemas.response import SuccessResponse, ErrorResponse
-from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse,AvatarUploadResponse
+from app.modules.profile.schemas.user_profile_schemas import (
+    UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse,
+    AvatarUploadResponse, AvatarDeleteResponse, PublicAvatarResponse
+)
 from app.modules.profile.controllers.profile_controller import ProfileController
-from app.core.dependencies import get_db, get_current_active_user, require_admin
+from app.core.dependencies import get_db, get_current_active_user, get_current_user, require_admin
 from app.modules.auth.models.user import User
 from app.modules.audit.services.audit_service import AuditService
 from fastapi import File, UploadFile # Nhớ import File, UploadFile
@@ -57,13 +61,13 @@ async def update_profile(
 async def upload_avatar(
     file: UploadFile = File(...),
     controller: ProfileController = Depends(get_profile_controller),
-    current_user: User = Depends(get_current_active_user), # Yêu cầu đăng nhập mới được up
+    current_user: User = Depends(get_current_active_user),
 ):
     """
     Upload avatar (Multipart/form-data).
     Trả về URL của ảnh.
     """
-    return await controller.upload_avatar(file)
+    return await controller.upload_avatar(user_id=current_user.user_id, file=file)
 
 @router.get(
     "/me",
@@ -126,3 +130,48 @@ async def get_completion_suggestions(
     current_user: User = Depends(get_current_active_user)
 ):
     return await controller.get_profile_completion_suggestions(current_user.user_id)
+
+
+@router.delete(
+    "/avatar",
+    response_model=SuccessResponse[AvatarDeleteResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Xóa ảnh đại diện",
+    description="Xóa ảnh đại diện của user đang đăng nhập",
+    tags=["Profile - Avatar"]
+)
+async def delete_avatar(
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> SuccessResponse[AvatarDeleteResponse] | ErrorResponse:
+    """
+    Xóa ảnh đại diện (avatar) của user
+    """
+    controller = ProfileController(db)
+
+    result = await controller.delete_avatar(
+        user_id=current_user.user_id
+    )
+
+    return result
+
+
+@router.get(
+    "/avatar/{user_id}",
+    response_model=SuccessResponse[PublicAvatarResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Lấy ảnh đại diện (Công khai)",
+    description="Lấy ảnh đại diện của bất kỳ user nào (không cần authentication)",
+    tags=["Profile - Avatar"]
+)
+async def get_user_avatar(
+    user_id: Annotated[uuid.UUID, Path(description="ID của user cần lấy avatar")],
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> SuccessResponse[PublicAvatarResponse] | ErrorResponse:
+    """
+    Lấy ảnh đại diện của user (Public endpoint - không cần đăng nhập)
+    """
+    controller = ProfileController(db)
+    result = await controller.get_public_avatar(user_id)
+
+    return result

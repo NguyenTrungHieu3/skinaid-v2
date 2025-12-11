@@ -84,9 +84,9 @@ class FirstAidGuide(SQLModel, table=True):
         )
         
         if not guide.validate():
-            raise ValueError(f"Invalid guide: {guide.wound_type}/{guide.severity}")
+            raise ValueError(f"Hướng dẫn không hợp lệ: {guide.wound_type}/{guide.severity}")
         
-        logger.info(f"Đã tạo hướng dẫn: {guide.wound_type}/{guide.severity}")
+        logger.info(f"[FIRSTAID_MODEL] Đã tạo hướng dẫn: {guide.wound_type}/{guide.severity}")
         return guide
 
     def validate(self) -> bool:
@@ -95,11 +95,11 @@ class FirstAidGuide(SQLModel, table=True):
         valid_burn_subtypes = ["blister", "skintear"]
 
         if self.wound_type.lower() not in valid_wound_types:
-            logger.error(f"Loại vết thương không hợp lệ: {self.wound_type}")
+            logger.error(f"[FIRSTAID_MODEL] Loại vết thương không hợp lệ: {self.wound_type}")
             return False
 
         if self.severity.lower() not in valid_severities:
-            logger.error(f"Mức độ nghiêm trọng không hợp lệ: {self.severity}")
+            logger.error(f"[FIRSTAID_MODEL] Mức độ nghiêm trọng không hợp lệ: {self.severity}")
             return False
 
         # Sub-type validation removed to allow flexibility

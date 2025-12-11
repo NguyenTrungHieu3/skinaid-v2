@@ -35,7 +35,7 @@ class TokenCleanupService:
         await db.commit()
         
         deleted_count = result.rowcount
-        logger.info(f"[Cleanup] Đã xóa {deleted_count} expired blacklist tokens")
+        logger.info(f"[Cleanup] Đã xóa {deleted_count} token blacklist đã hết hạn")
         return deleted_count
     
     @staticmethod

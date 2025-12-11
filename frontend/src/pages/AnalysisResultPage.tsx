@@ -15,7 +15,8 @@ import {
   type SignificantWound,
 } from "../services/aiService";
 import { BACKEND_URL } from "../services/api";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import DownloadModal from "../components/analysis/DownloadModal";
@@ -107,12 +108,16 @@ const AnalysisResultPage = () => {
   const { t } = useTranslation();
 
   const { analysis_id } = useParams<{ analysis_id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const [analysisData, setAnalysisData] = useState<AnalysisGetResponse | null>(
     null
   );
-  const [, setIsLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isAccessDenied, setIsAccessDenied] = useState(false);
 
   const [summaryCounts, setSummaryCounts] = useState<SummaryCounts>({
     total: 0,
@@ -143,6 +148,7 @@ const AnalysisResultPage = () => {
     const fetchResult = async () => {
       try {
         setIsLoading(true);
+        setIsAccessDenied(false);
         // 1. Fetch Analysis Result
         const response = await getAnalysisResult(analysis_id);
         if (response.data.success) {
@@ -174,16 +180,24 @@ const AnalysisResultPage = () => {
           setUserProfile(null);
         }
       } catch (err) {
-        if (isAxiosError(err))
-          setError(err.response?.data?.message || "Failed to fetch.");
-        else setError("Unknown error.");
+        if (isAxiosError(err)) {
+          // Check for 403 Forbidden (Access Denied)
+          if (err.response?.status === 403) {
+            setIsAccessDenied(true);
+            setError(t("analysis_result.access_denied_message") || "Bạn không có quyền xem kết quả phân tích này.");
+          } else {
+            setError(err.response?.data?.message || "Failed to fetch.");
+          }
+        } else {
+          setError("Unknown error.");
+        }
       } finally {
         // Thêm timeout nhỏ để đảm bảo animation chạy mượt mà sau khi DOM mount
         setTimeout(() => setIsLoading(false), 300);
       }
     };
     fetchResult();
-  }, [analysis_id]);
+  }, [analysis_id, t]);
 
   // --- Handlers ---
   // --- LOGIC ĐIỀU HƯỚNG MỚI ---
@@ -292,14 +306,77 @@ const AnalysisResultPage = () => {
     } else {
       alert("CSV export coming soon!");
     }
-    setIsDownloadModalOpen(false);
   };
 
-  // // --- Render Loading/Error ---
-  // // Bạn có thể thêm animation skeleton ở đây nếu muốn pro hơn
-  // if (isLoading)
-  //   return <div className={styles.loadingContainer}>Loading analysis...</div>;
-  // if (error) return <div className={styles.errorContainer}>Error: {error}</div>;
+  // --- Render Loading State ---
+  if (isLoading) {
+    return (
+      <div className={styles.analysisPage}>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingSpinner}></div>
+          <p>{t("analysis_result.loading") || "Đang tải kết quả phân tích..."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Render Access Denied State ---
+  if (isAccessDenied) {
+    return (
+      <div className={styles.analysisPage}>
+        <div className={styles.accessDeniedContainer}>
+          <div className={styles.accessDeniedIcon}>🔒</div>
+          <h2>{t("analysis_result.access_denied_title") || "Truy cập bị từ chối"}</h2>
+          <p>{error || t("analysis_result.access_denied_message") || "Bạn không có quyền xem kết quả phân tích này."}</p>
+          <p className={styles.accessDeniedHint}>
+            {t("analysis_result.access_denied_hint") || "Kết quả phân tích này thuộc về tài khoản khác. Vui lòng đăng nhập với tài khoản đã thực hiện phân tích."}
+          </p>
+          <div className={styles.accessDeniedActions}>
+            {!isAuthenticated ? (
+              <button
+                className={styles.loginButton}
+                onClick={() => navigate("/login", { state: { from: location.pathname } })}
+              >
+                {t("analysis_result.login_button") || "Đăng nhập"}
+              </button>
+            ) : (
+              <button
+                className={styles.homeButton}
+                onClick={() => navigate("/")}
+              >
+                {t("analysis_result.go_home") || "Về trang chủ"}
+              </button>
+            )}
+            <button
+              className={styles.uploadButton}
+              onClick={() => navigate("/upload")}
+            >
+              {t("analysis_result.new_analysis") || "Phân tích mới"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Render General Error State ---
+  if (error && !isAccessDenied) {
+    return (
+      <div className={styles.analysisPage}>
+        <div className={styles.errorContainer}>
+          <div className={styles.errorIcon}>⚠️</div>
+          <h2>{t("analysis_result.error_title") || "Đã xảy ra lỗi"}</h2>
+          <p>{error}</p>
+          <button
+            className={styles.retryButton}
+            onClick={() => window.location.reload()}
+          >
+            {t("analysis_result.retry") || "Thử lại"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // --- Render Empty State ---
   if (!analysisData || !currentWoundData || !currentTabData) {

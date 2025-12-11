@@ -1,17 +1,18 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text, UUID
+from sqlalchemy import text
 from typing import Optional, Dict, Any, List
 import uuid
 import logging
+import os
 from datetime import datetime, timezone
-import shutil
 from pathlib import Path
-from fastapi import UploadFile, HTTPException, status
 
 from app.modules.profile.models.user_profile import UserProfile
 from app.modules.profile.schemas.user_profile_schemas import UserProfileUpdate, UserProfileResponse, ProfileStatisticsResponse
 from app.utils.constants.error_codes import USER_INVALID_DATA, USER_NOT_FOUND
+from app.shared.validators.file_validator import FileValidator
+from app.shared.services.file_service import FileService
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class ProfileService:
             return UserProfile.model_validate(dict(row))
 
         except Exception as e:
-            logger.error(f"Lỗi khi lấy profile theo user_id {user_id}: {str(e)}")
+            logger.error(f"Lỗi khi lấy hồ sơ theo user_id {user_id}: {str(e)}")
             return None
     
     async def update_profile(
@@ -86,7 +87,7 @@ class ProfileService:
                 if existing_profile:
                     return existing_profile
                 else:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy profile")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không tìm thấy hồ sơ")
             if existing_profile:
                 set_clauses = []
                 params = {"user_id": user_id, "updated_at": current_time}
@@ -155,13 +156,13 @@ class ProfileService:
                 await self.db.commit()
             row = result.mappings().first()
             if row is None:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật hồ sơ")
             return UserProfile.model_validate(dict(row))
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Lỗi khi cập nhật profile cho user {user_id}: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật profile do lỗi nội bộ")
+            logger.error(f"Lỗi khi cập nhật hồ sơ cho user {user_id}: {str(e)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Không thể cập nhật hồ sơ do lỗi nội bộ")
         
     async def create_profile_response(self, profile) -> UserProfileResponse:
         """
@@ -241,7 +242,7 @@ class ProfileService:
             )
 
         except Exception as e:
-            logger.error(f"Không thể lấy thống kê profile: {e}")
+            logger.error(f"Không thể lấy thống kê hồ sơ: {e}")
             return ProfileStatisticsResponse(
                 total_users=0,
                 users_with_profile=0,
@@ -311,7 +312,7 @@ class ProfileService:
             return profiles
 
         except Exception as e:
-            logger.error(f"Không thể tìm kiếm profiles: {e}")
+            logger.error(f"Không thể tìm kiếm hồ sơ: {e}")
             return []
 
     async def get_profile_completion_suggestions(self, user_id: uuid.UUID) -> Dict[str, Any]:
@@ -359,44 +360,287 @@ class ProfileService:
             logger.error(f"Không thể lấy gợi ý hoàn thiện cho {user_id}: {e}")
             return {"suggestions": [], "missing_fields": []}
     
-    async def save_avatar_file(self, file: UploadFile) -> str:
+    async def upload_avatar(
+        self,
+        user_id: uuid.UUID,
+        file: UploadFile
+    ) -> Dict[str, Any]:
         """
-        Lưu file upload vào thư mục local và trả về URL truy cập.
+        Upload và lưu avatar cho user.
+
+        Workflow:
+        1. Xác minh user tồn tại trong database
+        2. Validate file (loại, kích thước, đuôi mở rộng)
+        3. Xóa avatar cũ nếu tồn tại (dọn dẹp)
+        4. Lưu file mới vào storage
+        5. Cập nhật avatar_url trong UserProfile
+        6. Commit transaction và trả về dữ liệu response
         """
+        logger.info(f"[UPLOAD_AVATAR] Bắt đầu upload avatar cho user: {user_id}")
+        print(f"\n[DEBUG] upload_avatar được gọi cho {user_id}")
+
+        # [STEP 1] Kiểm tra user có tồn tại không
+        profile = await self.get_profile_by_user_id(user_id)
+        if profile:
+            print(f"[DEBUG] Tìm thấy hồ sơ. avatar_url: {profile.avatar_url} (type: {type(profile.avatar_url)})")
+        else:
+            print("[DEBUG] Không tìm thấy hồ sơ")
+
+        if not profile:
+            logger.warning(f"[UPLOAD_AVATAR] User {user_id} không tồn tại")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy user"
+            )
+
+        # [STEP 2] Validate file sử dụng FileValidator
+        validation_result = await FileValidator.validate_upload_file(
+            file=file,
+            max_size=5 * 1024 * 1024,  
+            allowed_types=['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        )
+
+        if not validation_result['valid']:
+            logger.warning(
+                f"[UPLOAD_AVATAR] Validate file thất bại cho user {user_id}: "
+                f"{validation_result['error']}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=validation_result['error']
+            )
+
+        # Lấy nội dung file và kích thước từ kết quả validation
+        file_content = validation_result['content']
+        file_size = validation_result['size']
+
+        logger.debug(
+            f"[UPLOAD_AVATAR] Validate file thành công - "
+            f"Type: {validation_result['mime_type']}, Size: {file_size} bytes"
+        )
+
         try:
-            # 1. Định nghĩa thư mục lưu (Khớp với cấu hình trong main.py)
-            UPLOAD_DIR = Path("uploads/profile")
-            # UPLOAD_DIR.mkdir(exist_ok=True) # Đảm bảo thư mục tồn tại
+            # [STEP 3] Xóa avatar cũ nếu tồn tại
+            if profile.avatar_url:
+                old_file_path = self._get_file_path_from_url_debug(profile.avatar_url)
+                if old_file_path and os.path.exists(old_file_path):
+                    logger.info(
+                        f"[UPLOAD_AVATAR] Xóa avatar cũ: {old_file_path} "
+                        f"for user {user_id}"
+                    )
+                    await FileService.delete_file(old_file_path)
 
-            # parents=True: Tự động tạo thư mục cha nếu chưa có (tạo uploads rồi tạo profile)
-            UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+            # [STEP 4] Lưu file mới vào storage
+            file_result = await FileService.save_file(
+                file_content=file_content,
+                filename=file.filename,
+                subfolder="avatars"  # Lưu vào /uploads/avatars/
+            )
 
-            # 2. Validate định dạng file (Chỉ cho phép ảnh)
-            if not file.content_type.startswith("image/"):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST, 
-                    detail="File không hợp lệ. Chỉ chấp nhận file ảnh."
-                )
+            logger.debug(
+                f"[UPLOAD_AVATAR] Lưu file thành công - "
+                f"URL: {file_result['file_url']}"
+            )
 
-            # 3. Tạo tên file mới (UUID) để tránh trùng lặp
-            file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-            unique_filename = f"{uuid.uuid4()}.{file_ext}"
-            file_path = UPLOAD_DIR / unique_filename
+            # [STEP 5] Cập nhật avatar_url trong UserProfile
+            update_query = text("""
+                UPDATE user_profiles
+                SET avatar_url = :avatar_url,
+                    updated_at = :updated_at
+                WHERE user_id = :user_id
+            """)
 
-            # 4. Lưu file xuống ổ cứng
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
-            # 5.--- TRẢ VỀ URL ---
-            # Vì trong main.py ta mount "/uploads" trỏ tới thư mục "uploads"
-            # Nên URL /uploads/profile/abc.jpg sẽ trỏ tới folder uploads/profile/abc.jpg -> KHỚP
-            return f"/uploads/profile/{unique_filename}"
+            await self.db.execute(
+                update_query,
+                {
+                    "avatar_url": file_result["file_url"],
+                    "updated_at": current_time,
+                    "user_id": user_id
+                }
+            )
+
+            # [STEP 6] Commit transaction
+            await self.db.commit()
+
+            logger.info(
+                f"[UPLOAD_AVATAR] Upload avatar thành công cho user {user_id} - "
+                f"URL: {file_result['file_url']}"
+            )
+
+            # Return response data
+            return {
+                "avatar_url": file_result["file_url"],
+                "file_name": file_result["filename"],
+                "file_size": file_size,
+                "uploaded_at": current_time
+            }
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Lỗi khi lưu avatar file: {str(e)}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                detail="Không thể lưu file ảnh."
+            logger.error(
+                f"[UPLOAD_AVATAR] Lỗi khi upload avatar cho user {user_id}",
+                exc_info=True
             )
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi khi lưu avatar: {str(e)}"
+            )
+
+    async def delete_avatar(
+        self,
+        user_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Xóa avatar của user.
+
+        Workflow:
+        1. Xác minh user tồn tại
+        2. Kiểm tra user có avatar hay không
+        3. Xóa file từ storage
+        4. Cập nhật avatar_url = NULL trong database
+        5. Commit transaction và trả về xác nhận
+        """
+        logger.info(f"[DELETE_AVATAR] Bắt đầu xóa avatar cho user: {user_id}")
+
+        # [STEP 1] Kiểm tra user có tồn tại không
+        profile = await self.get_profile_by_user_id(user_id)
+        if not profile:
+            logger.warning(f"[DELETE_AVATAR] User {user_id} không tồn tại")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy user"
+            )
+
+        # [STEP 2] Kiểm tra user có avatar không
+        if not profile.avatar_url:
+            logger.warning(f"[DELETE_AVATAR] User {user_id} không có avatar")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User chưa có avatar để xóa"
+            )
+
+        try:
+            # [STEP 3] Xóa file từ storage
+            file_path = self._get_file_path_from_url_debug(profile.avatar_url)
+
+            if file_path and os.path.exists(file_path):
+                logger.info(f"[DELETE_AVATAR] Xóa file: {file_path}")
+                file_deleted = await FileService.delete_file(file_path)
+
+                if not file_deleted:
+                    logger.warning(
+                        f"[DELETE_AVATAR] Không thể xóa file {file_path}, "
+                        f"nhưng vẫn tiếp tục cập nhật database"
+                    )
+            else:
+                logger.warning(
+                    f"[DELETE_AVATAR] File không tồn tại: {file_path}, "
+                    f"chỉ update database"
+                )
+
+            # [STEP 4] Cập nhật avatar_url = NULL trong database
+            update_query = text("""
+                UPDATE user_profiles
+                SET avatar_url = NULL,
+                    updated_at = :updated_at
+                WHERE user_id = :user_id
+            """)
+
+            current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+
+            await self.db.execute(
+                update_query,
+                {
+                    "updated_at": current_time,
+                    "user_id": user_id
+                }
+            )
+
+            # [STEP 5] Commit transaction
+            await self.db.commit()
+
+            logger.info(f"[DELETE_AVATAR] Xóa avatar thành công cho user {user_id}")
+
+            return {
+                "deleted": True,
+                "message": "Avatar đã được xóa thành công",
+                "deleted_at": current_time
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(
+                f"[DELETE_AVATAR] Lỗi khi xóa avatar cho user {user_id}",
+                exc_info=True
+            )
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Lỗi khi xóa avatar: {str(e)}"
+            )
+
+
+    async def get_public_avatar(
+        self,
+        user_id: uuid.UUID
+    ) -> Dict[str, Any]:
+        """
+        Lấy avatar của user (public endpoint - không cần authentication).
+
+        Workflow:
+        1. Truy vấn user profile từ database
+        2. Trả về avatar_url và cờ has_avatar
+        3. Không raise exception nếu user không tồn tại, trả về has_avatar=False
+        """
+        logger.debug(f"[GET_PUBLIC_AVATAR] Lấy avatar cho user: {user_id}")
+
+        # [STEP 1] Query user profile
+        profile = await self.get_profile_by_user_id(user_id)
+
+        # [STEP 2] Xây dựng response
+        if not profile:
+            logger.debug(f"[GET_PUBLIC_AVATAR] User {user_id} không tồn tại")
+            return {
+                "user_id": user_id,
+                "avatar_url": None,
+                "has_avatar": False
+            }
+
+        logger.debug(
+            f"[GET_PUBLIC_AVATAR] User {user_id} có avatar: "
+            f"{bool(profile.avatar_url)}"
+        )
+
+        return {
+            "user_id": user_id,
+            "avatar_url": profile.avatar_url,
+            "has_avatar": bool(profile.avatar_url)
+        }
+
+
+    def _get_file_path_from_url_debug(self, file_url: str) -> Optional[str]:
+        """
+        Chuyển đổi file URL thành đường dẫn file tuyệt đối
+        """
+        try:
+            if not file_url:
+                return None
+            
+            if not isinstance(file_url, str):
+                logger.warning(f"[WARNING] file_url không phải là chuỗi: {file_url} (type: {type(file_url)})")
+                return None
+
+            relative_path = file_url.lstrip("/").removeprefix("uploads/")
+            from app.core.config import settings
+            absolute_path = Path(settings.UPLOAD_DIR) / relative_path
+
+            return str(absolute_path)
+        except Exception as e:
+            logger.error(f"[ERROR] Lỗi trong _get_file_path_from_url: {e}", exc_info=True)
+            # Re-raise với thông tin debug để thấy trong output test
+            raise Exception(f"DEBUG_ERROR: file_url='{file_url}', type={type(file_url)}, error={e}")

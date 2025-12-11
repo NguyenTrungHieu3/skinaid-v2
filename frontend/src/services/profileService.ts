@@ -38,7 +38,10 @@ export interface UserProfileUpdate {
 }
 
 export interface AvatarUploadResponse {
-  url: string; // URL ảnh trả về từ BE
+  avatar_url: string; // URL ảnh trả về từ BE
+  file_name: string;
+  file_size: number;
+  uploaded_at: string;
 }
 
 // --- HÀM GỌI API ---
@@ -78,4 +81,16 @@ export const uploadAvatarFile = (file: File) => {
       headers: { "Content-Type": "multipart/form-data" },
     }
   );
+};
+
+// --- THÊM RESPONSE TYPE CHO DELETE AVATAR ---
+export interface AvatarDeleteResponse {
+  deleted: boolean;
+  message: string;
+  deleted_at: string;
+}
+
+// --- THÊM HÀM DELETE AVATAR ---
+export const deleteAvatar = () => {
+  return apiClient.delete<SuccessResponse<AvatarDeleteResponse>>("/profile/avatar");
 };

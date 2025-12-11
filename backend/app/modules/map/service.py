@@ -138,7 +138,7 @@ class GeoapifyService:
         # Extract thông tin route
         features = data.get("features", [])
         if not features:
-            logger.warning("[MAP_SERVICE] Không tìm thấy route")
+            logger.warning("[MAP_SERVICE] Không tìm thấy đường đi")
             return {
                 "distance": 0,
                 "duration": 0,

@@ -24,7 +24,7 @@ class PasswordService:
     
     def __init__(self, db: AsyncSession, user_service: Optional[UserService] = None):
         """
-        Initialize PasswordService
+        Khởi tạo PasswordService
         """
         self.db = db
         self.user_service = user_service or UserService(db)
@@ -146,7 +146,7 @@ class PasswordService:
         new_password: str,
     ) -> bool:
         """
-        Reset password dựa trên token
+        Đặt lại mật khẩu dựa trên token
         """
         try:
             # Validate password

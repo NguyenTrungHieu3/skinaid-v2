@@ -1,10 +1,3 @@
-"""
-Messages for the entire system
-Convention: 
-- All messages end with _MSG
-- Dynamic messages use {variable} placeholders
-- Grouped by module and type (success/error)
-"""
 
 # ============================================
 # AUTHENTICATION & AUTHORIZATION (AUTH)
@@ -141,6 +134,10 @@ PROFILE_GET_SUCCESS_MSG = "Profile retrieved successfully"
 PROFILE_STATISTICS_SUCCESS_MSG = "Profile statistics retrieved successfully"
 PROFILE_COMPLETION_SUGGESTIONS_SUCCESS_MSG = "Profile completion suggestions retrieved successfully"
 
+# File operation success messages
+FILE_UPLOAD_SUCCESS_MSG = "File uploaded successfully"
+FILE_DELETE_SUCCESS_MSG = "File deleted successfully"
+
 # --- Dynamic Formatted Messages ---
 PROFILE_SEARCH_FOUND_COUNT_MSG = "Found {count} profiles"
 
@@ -156,4 +153,4 @@ PROFILE_GET_ERROR_MSG = "Error occurred while retrieving profile"
 # ============================================
 
 # --- Error Messages ---
-INTERNAL_ERROR_MSG = "An error occurred, please try again"
+INTERNAL_ERROR_MSG = "An error occurred, please try again"  

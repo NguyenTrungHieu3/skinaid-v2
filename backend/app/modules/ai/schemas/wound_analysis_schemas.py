@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
 class WoundDetectionResponse(BaseModel):
-    """Response schema for wound detection."""
+    """Schema phản hồi cho phát hiện vết thương."""
     detection_id: UUID
     wound_type: str
     severity: str
@@ -13,7 +13,7 @@ class WoundDetectionResponse(BaseModel):
     detection_index: int
     firstaid_snapshot: Dict[str, Any]
 class WoundAnalysisResponse(BaseModel):
-    """Basic wound analysis response."""
+    """Phản hồi phân tích vết thương cơ bản."""
     analysis_id: UUID
     user_id: Optional[UUID] = None
     session_id: Optional[UUID] = None
@@ -24,10 +24,10 @@ class WoundAnalysisResponse(BaseModel):
     analyzed_at: datetime
     created_at: datetime
 class WoundAnalysisDetailResponse(WoundAnalysisResponse):
-    """Detailed wound analysis response with detections."""
+    """Phản hồi phân tích vết thương chi tiết với các phát hiện."""
     detections: List[WoundDetectionResponse] = Field(default_factory=list)
 class WoundAnalysisListResponse(BaseModel):
-    """List of wound analyses."""
+    """Danh sách các phân tích vết thương."""
     total: int
     limit: int
     offset: int

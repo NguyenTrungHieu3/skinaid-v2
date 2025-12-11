@@ -6,11 +6,11 @@ import uuid
 # Refresh Token Rotation
 class TokenFamily(SQLModel, table=True): 
     """
-        WorkFlow: 
-        1. Login → Create token family (refresh_jti + access_jti)
-        2. Refresh → Create new family (with parent_jti link)
-        3. Logout → Revoke entire family (both access + refresh)
-        4. Reuse detection → If refresh token used twice, revoke whole chain
+        Quy trình: 
+        1. Đăng nhập → Tạo token family (refresh_jti + access_jti)
+        2. Làm mới → Tạo family mới (với liên kết parent_jti)
+        3. Đăng xuất → Thu hồi toàn bộ family (cả access + refresh)
+        4. Phát hiện tái sử dụng → Nếu refresh token được sử dụng hai lần, thu hồi toàn bộ chuỗi
     """
     __tablename__ ="token_families"
 

@@ -48,7 +48,7 @@ export default function AdminLogs() {
 
       const params: any = {
         limit: logsPerPage,
-        offset: (currentPage - 1) * logsPerPage
+        page: currentPage
       };
 
       // Add search filter

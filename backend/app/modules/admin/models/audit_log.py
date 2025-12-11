@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 
 class AdminAuditLog(SQLModel, table=True):
-    """Model for admin audit logs table"""
+    """Model cho bảng admin audit logs"""
     
     __tablename__ = "admin_audit_logs"
     
@@ -48,7 +48,7 @@ class AdminAuditLog(SQLModel, table=True):
 
 
 class AuditLogCreate(BaseModel):
-    """Schema for creating audit log entries"""
+    """Schema để tạo audit log"""
     
     admin_user_id: UUID
     admin_email: str
@@ -69,7 +69,7 @@ class AuditLogCreate(BaseModel):
 
 
 class AuditLogResponse(BaseModel):
-    """Schema for audit log responses"""
+    """Schema cho phản hồi audit log"""
     
     log_id: UUID
     admin_email: str

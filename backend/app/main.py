@@ -6,9 +6,9 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
-from app.core.cors import setup_cors
+from app.middleware.cors import setup_cors
 from app.core.events import lifespan
-from app.core.rate_limit import limiter
+from app.middleware.rate_limit import limiter
 
 # Khởi tạo FastAPI app với lifespan
 app = FastAPI(

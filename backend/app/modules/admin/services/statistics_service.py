@@ -14,15 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class StatisticsService:
-    """Service for gathering dashboard statistics"""
+    """Service để thu thập thống kê cho dashboard"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_dashboard_overview(self, period: str = 'month') -> Dict[str, Any]:
         """
-        Get overview statistics for admin dashboard
-        Returns data for all 4 main cards
+        Lấy thống kê tổng quan cho dashboard admin
+        Trả về dữ liệu cho tất cả 4 thẻ chính
         """
         try:
             start_date, prev_start_date = self._get_date_range(period)
@@ -47,11 +47,11 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get dashboard overview: {e}")
+            logger.error(f"Thất bại khi lấy tổng quan dashboard: {e}")
             return self._get_default_overview()
 
     async def _get_user_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
-        """Get user-related statistics"""
+        """Lấy thống kê liên quan đến người dùng"""
         try:
             # Total users (created in this period)
             if start_date == datetime.min:
@@ -97,7 +97,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get user statistics: {e}")
+            logger.error(f"Thất bại khi lấy thống kê người dùng: {e}")
             return {
                 "total_users": 0,
                 "new_users_this_month": 0,
@@ -105,7 +105,7 @@ class StatisticsService:
             }
 
     async def _get_image_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
-        """Get image/upload statistics"""
+        """Lấy thống kê hình ảnh/upload"""
         try:
             # Total uploads in period
             if start_date == datetime.min:
@@ -186,7 +186,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get image statistics: {e}")
+            logger.error(f"Thất bại khi lấy thống kê hình ảnh: {e}")
             return {
                 "total_images": 0,
                 "analyzed_images": 0,
@@ -195,7 +195,7 @@ class StatisticsService:
             }
 
     async def _get_detection_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
-        """Get wound detection statistics"""
+        """Lấy thống kê phát hiện vết thương"""
         try:
             # Total detections in period
             if start_date == datetime.min:
@@ -285,7 +285,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get detection statistics: {e}")
+            logger.error(f"Thất bại khi lấy thống kê phát hiện: {e}")
             return {
                 "total_detections": 0,
                 "detection_growth_rate": 0.0,
@@ -294,7 +294,7 @@ class StatisticsService:
             }
 
     async def _get_model_accuracy_statistics(self, start_date: datetime, prev_start_date: datetime) -> Dict[str, Any]:
-        """Get AI model accuracy statistics based on confidence scores"""
+        """Lấy thống kê độ chính xác của mô hình AI dựa trên điểm tin cậy"""
         try:
             # Average confidence score from wound_detections in period
             if start_date == datetime.min:
@@ -374,7 +374,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get model accuracy statistics: {e}")
+            logger.error(f"Thất bại khi lấy thống kê độ chính xác mô hình: {e}")
             return {
                 "model_accuracy": 0.0,
                 "accuracy_trend": 0.0,
@@ -383,7 +383,7 @@ class StatisticsService:
 
     async def get_wound_type_distribution(self, period: str = 'month') -> Dict[str, Any]:
         """
-        Get distribution of wound types for pie chart
+        Lấy phân bố các loại vết thương cho biểu đồ tròn
         """
         try:
             start_date, _ = self._get_date_range(period)
@@ -449,7 +449,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get wound type distribution: {e}")
+            logger.error(f"Thất bại khi lấy phân bố loại vết thương: {e}")
             return {
                 "distribution": [],
                 "total_detections": 0
@@ -457,7 +457,7 @@ class StatisticsService:
 
     async def get_weekly_activity(self) -> Dict[str, Any]:
         """
-        Get weekly activity statistics for bar chart
+        Lấy thống kê hoạt động hàng tuần cho biểu đồ cột
         """
         try:
             # Get data for last 7 days
@@ -500,7 +500,7 @@ class StatisticsService:
 
             # Build daily stats for 7 days
             daily_stats = []
-            day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            day_names = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
             total_uploads = 0
             total_analyses = 0
 
@@ -528,12 +528,12 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get weekly activity: {e}")
+            logger.error(f"Thất bại khi lấy hoạt động hàng tuần: {e}")
             return self._get_default_weekly_activity()
 
     async def get_system_logs(self, limit: int = 10) -> Dict[str, Any]:
         """
-        Get recent system logs and alerts from admin_audit_logs and audit_logs
+        Lấy logs hệ thống và cảnh báo gần đây
         """
         try:
             logs = []
@@ -622,14 +622,14 @@ class StatisticsService:
             
             for row in failed_result.fetchall():
                 created_at = row[0]
-                error_message = row[1] or "Upload failed"
+                error_message = row[1] or "Upload thất bại"
                 user_id = row[2]
                 
                 time_ago = self._get_time_ago(created_at)
                 
                 logs.append({
                     "type": "error",
-                    "message": f"Failed image upload" + (f" from user #{str(user_id)[:8]}" if user_id else ""),
+                    "message": f"Upload hình ảnh thất bại" + (f" từ user #{str(user_id)[:8]}" if user_id else ""),
                     "time": time_ago,
                     "severity": "high",
                     "timestamp": created_at,
@@ -659,7 +659,7 @@ class StatisticsService:
                 
                 logs.append({
                     "type": "success" if total_detections > 0 else "info",
-                    "message": f"Analysis completed with {total_detections} detection(s)",
+                    "message": f"Phân tích hoàn tất với {total_detections} phát hiện",
                     "time": time_ago,
                     "severity": "low",
                     "timestamp": analyzed_at,
@@ -690,7 +690,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get system logs: {e}")
+            logger.error(f"Thất bại khi lấy logs hệ thống: {e}")
             # Return empty logs instead of mock data
             return {
                 "logs": [],
@@ -699,27 +699,27 @@ class StatisticsService:
             }
 
     def _get_time_ago(self, timestamp: datetime) -> str:
-        """Convert timestamp to human readable time ago"""
+        """Chuyển đổi timestamp sang dạng thời gian trôi qua dễ đọc"""
         try:
             now = datetime.now(timezone.utc).replace(tzinfo=None)
             diff = now - timestamp
 
             if diff.days > 0:
-                return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+                return f"{diff.days} ngày trước"
             elif diff.seconds >= 3600:
                 hours = diff.seconds // 3600
-                return f"{hours} hour{'s' if hours > 1 else ''} ago"
+                return f"{hours} giờ trước"
             elif diff.seconds >= 60:
                 minutes = diff.seconds // 60
-                return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+                return f"{minutes} phút trước"
             else:
-                return "Just now"
+                return "Vừa xong"
         except:
-            return "Unknown"
+            return "Không xác định"
 
     def _get_date_range(self, period: str) -> Tuple[datetime, datetime]:
         """
-        Calculate start date and previous period start date based on period
+        Tính toán ngày bắt đầu và ngày bắt đầu của kỳ trước dựa trên khoảng thời gian
         """
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         
@@ -742,7 +742,7 @@ class StatisticsService:
         return start, prev
 
     def _get_default_overview(self) -> Dict[str, Any]:
-        """Default values when database query fails"""
+        """Giá trị mặc định khi truy vấn cơ sở dữ liệu thất bại"""
         return {
             "total_users": 0,
             "new_users_this_month": 0,
@@ -761,16 +761,16 @@ class StatisticsService:
         }
 
     def _get_default_weekly_activity(self) -> Dict[str, Any]:
-        """Default weekly activity data"""
+        """Dữ liệu hoạt động hàng tuần mặc định"""
         return {
             "daily_stats": [
-                {"date": "Mon", "uploads": 0, "analyses": 0},
-                {"date": "Tue", "uploads": 0, "analyses": 0},
-                {"date": "Wed", "uploads": 0, "analyses": 0},
-                {"date": "Thu", "uploads": 0, "analyses": 0},
-                {"date": "Fri", "uploads": 0, "analyses": 0},
-                {"date": "Sat", "uploads": 0, "analyses": 0},
-                {"date": "Sun", "uploads": 0, "analyses": 0}
+                {"date": "T2", "uploads": 0, "analyses": 0},
+                {"date": "T3", "uploads": 0, "analyses": 0},
+                {"date": "T4", "uploads": 0, "analyses": 0},
+                {"date": "T5", "uploads": 0, "analyses": 0},
+                {"date": "T6", "uploads": 0, "analyses": 0},
+                {"date": "T7", "uploads": 0, "analyses": 0},
+                {"date": "CN", "uploads": 0, "analyses": 0}
             ],
             "total_uploads": 0,
             "total_analyses": 0
@@ -780,9 +780,9 @@ class StatisticsService:
 
     async def get_severity_stats(self, period: str = 'month') -> Dict[str, Any]:
         """
-        Get severity level statistics from wound detections
-        Returns distribution of Mild, Moderate, and Severe wounds
-        Always returns all 3 severity levels even if count is 0
+        Lấy thống kê mức độ nghiêm trọng từ các phát hiện vết thương
+        Trả về phân bố của các vết thương Nhẹ, Trung bình và Nặng
+        Luôn trả về tất cả 3 mức độ nghiêm trọng ngay cả khi số lượng là 0
         """
         try:
             start_date, _ = self._get_date_range(period)
@@ -824,16 +824,16 @@ class StatisticsService:
 
             # Normalize severity names
             name_map = {
-                "mild": "Mild",
-                "moderate": "Moderate",
-                "severe": "Severe"
+                "mild": "Nhẹ",
+                "moderate": "Trung bình",
+                "severe": "Nặng"
             }
 
             # Initialize all severity levels with 0
             severity_data = {
-                "mild": {"name": "Mild", "value": 0, "color": "#10b981"},
-                "moderate": {"name": "Moderate", "value": 0, "color": "#f59e0b"},
-                "severe": {"name": "Severe", "value": 0, "color": "#ef4444"}
+                "mild": {"name": "Nhẹ", "value": 0, "color": "#10b981"},
+                "moderate": {"name": "Trung bình", "value": 0, "color": "#f59e0b"},
+                "severe": {"name": "Nặng", "value": 0, "color": "#ef4444"}
             }
 
             total_detections = 0
@@ -848,7 +848,7 @@ class StatisticsService:
                     severity_data[severity_level]["value"] = count
                 else:
                     # Handle unexpected severity levels
-                    logger.warning(f"Unexpected severity level found: {severity_level}")
+                    logger.warning(f"Phát hiện mức độ nghiêm trọng không mong đợi: {severity_level}")
                     display_name = name_map.get(severity_level, severity_level.capitalize())
                     color = color_map.get(severity_level, "#6b7280")
                     severity_data[severity_level] = {
@@ -870,7 +870,7 @@ class StatisticsService:
             }
 
         except Exception as e:
-            logger.error(f"Failed to get severity stats: {e}")
+            logger.error(f"Thất bại khi lấy thống kê mức độ nghiêm trọng: {e}")
             # Return default data with all 3 levels on error
             return {
                 "stats": [

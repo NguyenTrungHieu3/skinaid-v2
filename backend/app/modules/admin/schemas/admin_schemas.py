@@ -6,25 +6,25 @@ from datetime import datetime
 class DashboardOverviewResponse(BaseModel):
     # User Statistics
     total_users: int
-    new_users_this_month: int = Field(description="Number of new users registered this month")
+    new_users_this_month: int = Field(description="Số lượng người dùng mới đăng ký trong tháng này")
     growth_rate: float 
     
     # Upload Statistics
     total_images: int
     analyzed_images: int
     image_growth_rate: float
-    new_uploads_week: int = Field(description="Number of new uploads in the last 7 days")
+    new_uploads_week: int = Field(description="Số lượng upload mới trong 7 ngày qua")
     
     # Detection Statistics (replaced Active Users)
-    total_detections: int = Field(description="Total number of detected wounds")
-    detection_growth_rate: float = Field(description="Detection growth percentage")
-    severe_detections: int = Field(description="Number of severe wound detections")
-    new_detections_week: int = Field(description="Number of new detections in the last 7 days")
+    total_detections: int = Field(description="Tổng số vết thương được phát hiện")
+    detection_growth_rate: float = Field(description="Tỷ lệ tăng trưởng phát hiện")
+    severe_detections: int = Field(description="Số lượng phát hiện vết thương nặng")
+    new_detections_week: int = Field(description="Số lượng phát hiện mới trong 7 ngày qua")
     
     # Model Accuracy Statistics (replaces Session Statistics)
-    model_accuracy: float = Field(description="Average model confidence score percentage")
-    accuracy_trend: float = Field(description="Accuracy trend compared to previous period")
-    high_confidence_detections: int = Field(description="Number of high-confidence detections (>80%)")
+    model_accuracy: float = Field(description="Điểm tin cậy trung bình của mô hình (%)")
+    accuracy_trend: float = Field(description="Xu hướng độ chính xác so với kỳ trước")
+    high_confidence_detections: int = Field(description="Số lượng phát hiện có độ tin cậy cao (>80%)")
 
     class Config:
         json_schema_extra = {
@@ -113,12 +113,12 @@ class WeeklyActivityResponse(BaseModel):
 
 
 class SystemLogItem(BaseModel):
-    """Schema for system log entry"""
-    type: str = Field(description="Log type: error, warning, info, success")
-    message: str = Field(description="Log message")
-    time: str = Field(description="Human readable time ago")
-    severity: str = Field(description="Severity level: high, medium, low")
-    timestamp: Optional[datetime] = Field(default=None, description="Actual timestamp")
+    """Schema cho mục log hệ thống"""
+    type: str = Field(description="Loại log: error, warning, info, success")
+    message: str = Field(description="Nội dung log")
+    time: str = Field(description="Thời gian (dạng dễ đọc)")
+    severity: str = Field(description="Mức độ nghiêm trọng: high, medium, low")
+    timestamp: Optional[datetime] = Field(default=None, description="Thời gian thực tế")
 
     class Config:
         json_schema_extra = {
@@ -133,10 +133,10 @@ class SystemLogItem(BaseModel):
 
 
 class SystemLogsResponse(BaseModel):
-    """Schema for system logs response"""
-    logs: List[SystemLogItem] = Field(description="List of system logs")
-    total_logs: int = Field(description="Total number of logs")
-    unresolved_errors: int = Field(default=0, description="Number of unresolved errors")
+    """Schema cho phản hồi logs hệ thống"""
+    logs: List[SystemLogItem] = Field(description="Danh sách logs hệ thống")
+    total_logs: int = Field(description="Tổng số logs")
+    unresolved_errors: int = Field(default=0, description="Số lượng lỗi chưa giải quyết")
 
     class Config:
         json_schema_extra = {
@@ -156,10 +156,10 @@ class SystemLogsResponse(BaseModel):
 
 
 class SeverityStatsItem(BaseModel):
-    """Schema for severity level statistics item"""
-    name: str = Field(description="Severity level name")
-    value: int = Field(description="Count or percentage")
-    color: str = Field(description="Display color for the severity level")
+    """Schema cho mục thống kê mức độ nghiêm trọng"""
+    name: str = Field(description="Tên mức độ nghiêm trọng")
+    value: int = Field(description="Số lượng hoặc phần trăm")
+    color: str = Field(description="Màu hiển thị cho mức độ nghiêm trọng")
 
     class Config:
         json_schema_extra = {
@@ -172,9 +172,9 @@ class SeverityStatsItem(BaseModel):
 
 
 class SeverityStatsResponse(BaseModel):
-    """Schema for severity level statistics response"""
-    stats: List[SeverityStatsItem] = Field(description="List of severity statistics")
-    total_detections: int = Field(description="Total number of wound detections")
+    """Schema cho phản hồi thống kê mức độ nghiêm trọng"""
+    stats: List[SeverityStatsItem] = Field(description="Danh sách thống kê mức độ nghiêm trọng")
+    total_detections: int = Field(description="Tổng số phát hiện vết thương")
 
     class Config:
         json_schema_extra = {

@@ -52,7 +52,7 @@ class ImageProcessingService:
             validation = await self.validator.validate_upload_file(file)
             if not validation['valid']:
                 logger.warning(
-                    f"[PROCESS_SINGLE] File '{file.filename}' validation failed: "
+                    f"[PROCESS_SINGLE] File '{file.filename}' xác thực thất bại: "
                     f"{validation['error']}"
                 )
                 return ErrorResponse(
@@ -72,7 +72,7 @@ class ImageProcessingService:
             )
             
             logger.debug(
-                f"[PROCESS_SINGLE] File saved: {save_result['file_url']}"
+                f"[PROCESS_SINGLE] File đã được lưu: {save_result['file_url']}"
             )
             
             ai_result = await self.ai_service.analyze_wound(
@@ -82,8 +82,8 @@ class ImageProcessingService:
             # Kiểm tra AI có trả về lỗi không
             if not ai_result.get('success', False):
                 logger.error(
-                    f"[PROCESS_SINGLE] AI analysis failed for '{file.filename}': "
-                    f"{ai_result.get('error', 'Unknown error')}"
+                    f"[PROCESS_SINGLE] Phân tích AI thất bại cho '{file.filename}': "
+                    f"{ai_result.get('error', 'Lỗi không xác định')}"
                 )
                 return ErrorResponse(
                     message="Phân tích AI thất bại",
@@ -143,7 +143,7 @@ class ImageProcessingService:
             response_data = self.response_mapper.map_wound_analysis_basic(analysis)
             
             logger.debug(
-                f"[PROCESS_SINGLE] Success for '{file.filename}': "
+                f"[PROCESS_SINGLE] Thành công cho '{file.filename}': "
                 f"{analysis.analysis_id}"
             )
             
@@ -165,7 +165,7 @@ class ImageProcessingService:
             )
         except Exception as e:
             logger.error(
-                f"[PROCESS_SINGLE] Unexpected error for '{file.filename}'",
+                f"[PROCESS_SINGLE] Lỗi không mong đợi cho '{file.filename}'",
                 exc_info=True
             )
             return ErrorResponse(
@@ -195,7 +195,7 @@ class ImageProcessingService:
         start_time = time.time()
         
         logger.info(
-            f"[BATCH_PROCESS] Starting batch analysis - "
+            f"[BATCH_PROCESS] Bắt đầu phân tích batch - "
             f"files: {len(files)}, user: {user_id}, session: {session_id}"
         )
         
@@ -219,7 +219,7 @@ class ImageProcessingService:
             
             if isinstance(result, Exception):
                 logger.error(
-                    f"[BATCH_PROCESS] File '{file_name}' failed with exception: {result}"
+                    f"[BATCH_PROCESS] File '{file_name}' thất bại với ngoại lệ: {result}"
                 )
                 batch_results.append(BatchAnalysisItemResult(
                     success=False,
@@ -232,7 +232,7 @@ class ImageProcessingService:
             
             if isinstance(result, ErrorResponse):
                 logger.warning(
-                    f"[BATCH_PROCESS] File '{file_name}' failed: {result.message}"
+                    f"[BATCH_PROCESS] File '{file_name}' thất bại: {result.message}"
                 )
                 batch_results.append(BatchAnalysisItemResult(
                     success=False,
@@ -245,7 +245,7 @@ class ImageProcessingService:
 
             if isinstance(result, SuccessResponse):
                 logger.info(
-                    f"[BATCH_PROCESS] File '{file_name}' analyzed successfully"
+                    f"[BATCH_PROCESS] File '{file_name}' đã được phân tích thành công"
                 )
                 batch_results.append(BatchAnalysisItemResult(
                     success=True,
@@ -257,9 +257,9 @@ class ImageProcessingService:
         processing_time_ms = int((time.time() - start_time) * 1000)
         
         logger.info(
-            f"[BATCH_PROCESS] Completed - "
-            f"Total: {len(files)}, Success: {successful_count}, "
-            f"Failed: {failed_count}, Time: {processing_time_ms}ms"
+            f"[BATCH_PROCESS] Hoàn thành - "
+            f"Tổng: {len(files)}, Thành công: {successful_count}, "
+            f"Thất bại: {failed_count}, Thời gian: {processing_time_ms}ms"
         )
         
         return BatchAnalysisResponse(
