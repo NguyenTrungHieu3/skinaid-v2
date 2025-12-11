@@ -137,7 +137,6 @@ async def get_system_logs(
 @router.get(
     "/health",
     response_model=SuccessResponse[dict],
-    response_model=SuccessResponse[dict],
     summary="Kiểm tra sức khỏe dịch vụ Admin",
     description="Kiểm tra xem dịch vụ admin có hoạt động tốt không"
 )

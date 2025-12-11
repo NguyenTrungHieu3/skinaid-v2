@@ -14,7 +14,7 @@ from app.modules.admin.schemas.user_management_schemas import (
 )
 from app.core.dependencies import get_db, require_admin
 from app.modules.auth.models.user import User
-from app.core.rate_limit import limiter
+from app.middleware.rate_limit import limiter
 
 router = APIRouter(prefix="/admin/users", tags=["Admin - User Management"])
 
@@ -26,7 +26,6 @@ async def get_user_controller(db: AsyncSession = Depends(get_db)) -> UserManagem
 
 @router.get(
     "",
-    response_model=SuccessResponse[UserListResponse],
     response_model=SuccessResponse[UserListResponse],
     summary="Lấy danh sách người dùng",
     description="Lấy danh sách người dùng có phân trang với các bộ lọc tùy chọn"
@@ -62,7 +61,6 @@ async def get_users(
 @router.get(
     "/stats",
     response_model=SuccessResponse[UserStatsResponse],
-    response_model=SuccessResponse[UserStatsResponse],
     summary="Lấy thống kê người dùng",
     description="Lấy thống kê tổng quan về người dùng"
 )
@@ -85,7 +83,6 @@ async def get_user_stats(
 @router.get(
     "/{user_id}",
     response_model=SuccessResponse[UserDetailResponse],
-    response_model=SuccessResponse[UserDetailResponse],
     summary="Lấy chi tiết người dùng",
     description="Lấy thông tin chi tiết về một người dùng cụ thể"
 )
@@ -104,7 +101,6 @@ async def get_user_detail(
 
 @router.post(
     "",
-    response_model=SuccessResponse[UserDetailResponse],
     response_model=SuccessResponse[UserDetailResponse],
     summary="Tạo người dùng mới",
     description="Tạo một tài khoản người dùng mới",
@@ -135,7 +131,6 @@ async def create_user(
 @router.put(
     "/{user_id}",
     response_model=SuccessResponse[UserDetailResponse],
-    response_model=SuccessResponse[UserDetailResponse],
     summary="Cập nhật người dùng",
     description="Cập nhật thông tin người dùng"
 )
@@ -160,7 +155,6 @@ async def update_user(
 @router.patch(
     "/{user_id}/status",
     response_model=SuccessResponse[UserDetailResponse],
-    response_model=SuccessResponse[UserDetailResponse],
     summary="Cập nhật trạng thái người dùng",
     description="Cập nhật trạng thái hoạt động/không hoạt động của người dùng"
 )
@@ -183,7 +177,6 @@ async def update_user_status(
 @router.delete(
     "/{user_id}",
     response_model=SuccessResponse,
-    response_model=SuccessResponse,
     summary="Xóa người dùng",
     description="Xóa tài khoản người dùng (soft delete)"
 )
@@ -204,7 +197,6 @@ async def delete_user(
 
 @router.post(
     "/{user_id}/resend-verification",
-    response_model=SuccessResponse,
     response_model=SuccessResponse,
     summary="Gửi lại email xác thực",
     description="Gửi lại email xác thực cho người dùng chưa xác thực"
@@ -229,7 +221,6 @@ async def resend_verification_email(
 
 @router.get(
     "/health/check",
-    response_model=SuccessResponse[dict],
     response_model=SuccessResponse[dict],
     summary="Kiểm tra sức khỏe dịch vụ quản lý người dùng",
     description="Kiểm tra xem dịch vụ quản lý người dùng có hoạt động tốt không"
