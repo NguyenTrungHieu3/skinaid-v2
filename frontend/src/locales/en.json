@@ -343,6 +343,8 @@
       "title": "Analysis Timeline",
       "default_label": "Timeline"
     },
+    "view": "View",
+    "analysis": "Analysis",
     "detail": {
       "title": "Analysis Details"
     },
@@ -358,7 +360,31 @@
       "all": "Remove filter"
     },
     "no_logo_fallback": "Logo",
-    "upload_button": "Upload Image / Data"
+    "upload_button": "Upload Image / Data",
+    "service": {
+      "analysis_title": "Analysis",
+      "no_wounds": "No wounds detected",
+      "error_load_history": "Error loading history",
+      "error_load_detail": "Error loading details",
+      "error_delete": "Error deleting analysis"
+    },
+    "detail": {
+      "back_button": "Back",
+      "confirm_delete": "Confirm Delete",
+      "delete_message": "Are you sure you want to delete this analysis record? This action cannot be undone.",
+      "cancel_button": "No, keep it",
+      "confirm_delete_button": "Yes, delete record",
+      "deleting": "Deleting...",
+      "no_detail": "No analysis details available for this event.",
+      "analysis_details": "Analysis Details",
+      "accuracy": "Accuracy",
+      "healing_time": "Estimated Healing Time (Expected)",
+      "supplies_needed": "Supplies Needed",
+      "first_aid": "First Aid Tips",
+      "should_do": "Should Do",
+      "should_not_do": "Should Not Do",
+      "no_info": "No information."
+    }
   },
   "profile": {
     "banner_date": "Member since"
