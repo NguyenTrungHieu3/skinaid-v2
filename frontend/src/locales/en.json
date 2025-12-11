@@ -9,7 +9,7 @@
     "forgot_password_page": "Forgot Password",
     "reset_password_page": "Reset Password",
     "analysis_result": "Analyzed Result - SkinAid",
-    "history": "History - {{fullname}}"
+    "history_page": "History - {{fullname}}"
   },
   "auth_page": {
     "left_title": "Welcome to SkinAid",

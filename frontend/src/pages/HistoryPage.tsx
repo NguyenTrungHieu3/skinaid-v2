@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import styles from "./HistoryPage.module.css";
-import TimelineVirtualized, { type HistoryEvent } from "../components/history/TimelineVirtualized";
+import TimelineVirtualized, {
+  type HistoryEvent,
+} from "../components/history/TimelineVirtualized";
 import HistorySidebar from "../components/history/HistorySidebar";
 import HistoryDetail from "../components/history/HistoryDetail";
 
@@ -14,14 +16,18 @@ import {
 } from "../services/historyService";
 
 import { useAuth } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const HistoryPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
+
+  const { user, isAuthenticated } = useAuth();
 
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<HistoryEvent[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<HistoryEvent[]>([]);
-  const [selectedEventData, setSelectedEventData] = useState<CombinedEventDetail | null>(null);
+  const [selectedEventData, setSelectedEventData] =
+    useState<CombinedEventDetail | null>(null);
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +74,8 @@ const HistoryPage = () => {
         setError(null);
 
         const apiDetailData = await getAnalysisDetail(activeEventId);
-        const transformedDetail = transformApiDetailToCombinedEvent(apiDetailData);
+        const transformedDetail =
+          transformApiDetailToCombinedEvent(apiDetailData);
         setSelectedEventData(transformedDetail);
       } catch (err: any) {
         setError(err.message || "Không thể tải chi tiết.");
@@ -116,11 +123,22 @@ const HistoryPage = () => {
           />
         );
     }
-    return <HistorySidebar events={timelineEvents} onSearchFilter={setFilteredEvents} />;
+    return (
+      <HistorySidebar
+        events={timelineEvents}
+        onSearchFilter={setFilteredEvents}
+      />
+    );
   };
 
   return (
     <div className={styles.historyPage}>
+      <title>
+        {t("title.history_page", {
+          fullname: user?.full_name || user?.user_name,
+        })}
+      </title>
+
       <main className={styles.historyContent}>
         <div className={styles.timelineSection}>
           {isLoadingList ? (
