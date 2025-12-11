@@ -217,14 +217,53 @@
 }
 
 /* --- Empty State --- */
+/* --- EMPTY STATE --- */
+/* --- Empty State Professional Style --- */
 .emptyStateWrapper {
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 50px 20px;
   text-align: center;
-  padding: 2rem;
+  color: #555;
+}
+
+.emptyIllustration {
+  width: 160px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+}
+
+.emptyTitle {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.emptySubtitle {
+  font-size: 0.95rem;
+  color: #777;
+  max-width: 320px;
+  margin-bottom: 25px;
+}
+
+.uploadButton {
+  padding: 12px 20px;
+  background-color: #00897b;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  transition: 0.25s ease;
+}
+
+.uploadButton:hover {
+  background-color: #00796b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 137, 123, 0.25);
 }
 
 /* ... Các code cũ giữ nguyên ... */
@@ -344,7 +383,7 @@
   }
 
   .scrollWrapper {
-    padding-left: 50px;
+    padding-left: 15px;
     padding-right: 15px;
     padding-top: 15px;
   }

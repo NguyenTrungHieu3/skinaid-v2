@@ -131,13 +131,15 @@ const HistoryPage = () => {
     );
   };
 
-  // --- LOGIC MỚI: Kiểm tra xem có nên hiện Sidebar không ---
-  // Hiện sidebar khi: KHÔNG loading VÀ (có event HOẶC đang xem chi tiết activeEventId)
-  // Tuy nhiên, logic đơn giản nhất theo yêu cầu của bạn là dựa vào danh sách filter
-  const hasData = filteredEvents.length > 0;
+  // 1. Kiểm tra xem người dùng CÓ dữ liệu gốc hay không (chứ không phải dữ liệu đã lọc)
+  const hasHistoryData = timelineEvents.length > 0;
 
-  // Sidebar chỉ hiện khi có dữ liệu và không bị lỗi
-  const showSidebar = !isLoadingList && !error && hasData;
+  // 2. Sidebar hiện khi:
+  // - Không đang loading
+  // - Không lỗi
+  // - VÀ có dữ liệu gốc (hasHistoryData)
+  //   (Dù search ra 0 kết quả thì vẫn hiện sidebar để người dùng còn xóa từ khóa search)
+  const showSidebar = !isLoadingList && !error && hasHistoryData;
 
   return (
     <div className={styles.historyPage}>
@@ -171,6 +173,7 @@ const HistoryPage = () => {
               activeEventId={activeEventId}
               onSelectEvent={setActiveEventId}
               isLoading={isLoadingList} // <--- Truyền state loading vào đây
+              hasHistory={timelineEvents.length > 0}
             />
           )}
         </div>

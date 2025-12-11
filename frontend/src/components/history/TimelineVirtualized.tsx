@@ -15,6 +15,7 @@ interface Props {
   activeEventId: string | null;
   onSelectEvent: (id: string) => void;
   isLoading?: boolean; // <--- 1. Thêm prop này
+  hasHistory: boolean; // <--- 1. THÊM PROP NÀY
 }
 
 const TimelineVirtualized = ({
@@ -22,6 +23,7 @@ const TimelineVirtualized = ({
   activeEventId,
   onSelectEvent,
   isLoading = false, // <--- Default value
+  hasHistory,
 }: Props) => {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [currentMonth, setCurrentMonth] = useState<string>("");
@@ -77,22 +79,34 @@ const TimelineVirtualized = ({
   }, [activeEventId, events]);
 
   // --- Render Empty State ---
-  if (!events || events.length === 0) {
+  // --- 3. SỬA LOGIC EMPTY STATE ---
+  if (!isLoading && (!events || events.length === 0)) {
     return (
       <div className={styles.scrollWrapper}>
         <div className={styles.emptyStateWrapper}>
-          <div className={styles.emptyTitle}>{t("history.empty.history")}</div>
-          <div className={styles.emptySubtitle}>
-            {t("history.empty.detail")}
+          {/* Đổi câu thông báo tùy theo ngữ cảnh */}
+          <div className={styles.emptyTitle}>
+            {hasHistory
+              ? t("Không tìm thấy kết quả") // Hoặc key i18n: "history.empty.search"
+              : t("history.empty.history")}
           </div>
-          <button className={styles.uploadButton}>
-            {t("history.upload_button")}
-          </button>
+
+          <div className={styles.emptySubtitle}>
+            {hasHistory
+              ? t("Vui lòng thử từ khóa hoặc bộ lọc khác")
+              : t("history.empty.detail")}
+          </div>
+
+          {/* Chỉ hiện nút Upload khi KHÔNG CÓ lịch sử (hasHistory = false) */}
+          {!hasHistory && (
+            <button className={styles.uploadButton}>
+              {t("history.upload_button")}
+            </button>
+          )}
         </div>
       </div>
     );
   }
-
   // --- 2. LOGIC RENDER SKELETON ---
   // Tạo một mảng giả gồm 5 phần tử để hiển thị khi loading
   const renderSkeletons = () => {
@@ -133,10 +147,34 @@ const TimelineVirtualized = ({
 
   // --- 3. CHECK EMPTY STATE (Cập nhật logic) ---
   // Nếu không loading VÀ không có events thì mới hiện Empty State
+  // --- 3. SỬA LOGIC EMPTY STATE ---
   if (!isLoading && (!events || events.length === 0)) {
     return (
       <div className={styles.scrollWrapper}>
-        {/* ... Code Empty State cũ giữ nguyên ... */}
+        <div className={styles.emptyStateWrapper}>
+          {/* SỬA 1: Đổi tiêu đề tùy theo ngữ cảnh */}
+          <div className={styles.emptyTitle}>
+            {
+              hasHistory
+                ? t("Không tìm thấy kết quả") // Khi có lịch sử nhưng search không ra
+                : t("history.empty.history") // Khi chưa có lịch sử nào
+            }
+          </div>
+
+          {/* SỬA 2: Đổi phụ đề */}
+          <div className={styles.emptySubtitle}>
+            {hasHistory
+              ? t("Vui lòng thử từ khóa hoặc bộ lọc khác")
+              : t("history.empty.detail")}
+          </div>
+
+          {/* SỬA 3: Chỉ hiện nút Upload khi KHÔNG CÓ lịch sử (hasHistory = false) */}
+          {!hasHistory && (
+            <button className={styles.uploadButton}>
+              {t("history.upload_button")}
+            </button>
+          )}
+        </div>
       </div>
     );
   }
