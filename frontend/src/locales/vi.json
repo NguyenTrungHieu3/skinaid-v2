@@ -9,7 +9,11 @@
     "forgot_password_page": "Quên mật khẩu",
     "reset_password_page": "Đặt lại mật khẩu",
     "analysis_result": "Kết quả phân tích - SkinAid",
-    "history_page": "Lịch sử - {{fullname}}"
+    "history_page": "Lịch sử - {{fullname}}",
+    "admin_dashboard": "Bảng điều khiển - Quản trị viên",
+    "admin_logs": "Nhật ký quản trị viên",
+    "admin_user_management": "Quản lý người dùng",
+    "admin_first_aid": "Quản lý sơ cứu"
   },
   "auth_page": {
     "left_title": "Chào mừng bạn đến với SkinAid",
@@ -45,7 +49,14 @@
     "reset_confirm_password_placeholder": "Xác nhận mật khẩu mới",
     "reset_password_button": "Đặt lại mật khẩu",
     "reset_password_button_sub": "Cập nhật!",
-    "reset_password_back_to_login": "Quay lại Đăng nhập"
+    "reset_password_back_to_login": "Quay lại Đăng nhập",
+
+    "session_expired": {
+      "title": "Phiên đăng nhập hết hạn",
+      "message": "Phiên làm việc của bạn đã kết thúc. Vui lòng đăng nhập lại để tiếp tục.",
+      "button": "Đăng nhập lại"
+    },
+    "loading": "Đang tải SkinAid..."
   },
   "validation": {
     "error_username_required": "Tên người dùng là bắt buộc.",
@@ -354,7 +365,12 @@
     "upload_button": "Tải ảnh để phân tích"
   },
   "profile": {
-    "banner_date": "Thành viên từ"
+    "banner_date": "Thành viên từ",
+    "delete_avatar": "Xóa hình đại diện",
+    "delete_avatar_confirm_title": "Xác nhận xóa",
+    "delete_avatar_confirm_desc": "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại? Hành động này không thể hoàn tác.",
+    "cancel": "Hủy bỏ",
+    "delete": "Xóa ảnh"
   },
   "settings": {
     "title": "Cài đặt",
@@ -393,6 +409,9 @@
     "email": "Email",
     "phone": "Số điện thoại",
     "dob": "Ngày sinh",
+    "gender": "Giới tính",
+    "male": "Nam",
+    "female": "Nữ",
     "address": "Địa chỉ",
     "cancel_button": "Hủy",
     "save_button": "Lưu",
@@ -400,7 +419,19 @@
     "blood_type": "Nhóm máu",
     "known_allergies": "Các loại dị ứng đã biết",
     "current_medications": "Các loại thuốc hiện đang dùng",
-    "emergency_contact": "Liên hệ khẩn cấp"
+    "emergency_contact": "Liên hệ khẩn cấp",
+    "crop_title": "Chỉnh sửa ảnh đại diện",
+    "crop_zoom": "Zoom",
+
+    "validation": {
+      "fullName_invalid": "Họ tên không được chứa số hoặc ký tự đặc biệt.",
+      "fullName_too_short": "Họ tên quá ngắn.",
+      "phone_invalid": "Số điện thoại chỉ được chứa số.",
+      "phone_format": "Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0.",
+      "dob_future": "Ngày sinh không hợp lệ.",
+      "gender_invalid": "Giới tính không hợp lệ.",
+      "address_too_short": "Địa chỉ quá ngắn."
+    }
   },
   "button": {
     "cancel": "Hủy",
@@ -448,9 +479,11 @@
     "f_easy_desc": "Giao diện đơn giản, trực quan — không cần kiến thức y khoa."
   },
   "admin": {
-    "topbar": {
+    "top_bar": {
+      "logout_confirm_title": "Xác nhận đăng xuất",
       "logout_confirm": "Bạn có chắc chắn muốn đăng xuất?",
       "logout": "Đăng xuất",
+      "cancel": "Hủy bỏ ",
       "roles": {
         "admin": "Quản trị viên",
         "moderator": "Điều hành viên",

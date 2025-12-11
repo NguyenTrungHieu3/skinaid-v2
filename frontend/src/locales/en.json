@@ -9,7 +9,11 @@
     "forgot_password_page": "Forgot Password",
     "reset_password_page": "Reset Password",
     "analysis_result": "Analyzed Result - SkinAid",
-    "history_page": "History - {{fullname}}"
+    "history_page": "History - {{fullname}}",
+    "admin_dashboard": "Dashboard - Admin",
+    "admin_logs": "Admin Logs",
+    "admin_user_management": "User Management",
+    "admin_first_aid": "Fist-Aid Management"
   },
   "auth_page": {
     "left_title": "Welcome to SkinAid",
@@ -45,7 +49,14 @@
     "reset_confirm_password_placeholder": "Confirm new password",
     "reset_password_button": "Reset Password",
     "reset_password_button_sub": "Update!",
-    "reset_password_back_to_login": "Back to Login"
+    "reset_password_back_to_login": "Back to Login",
+
+    "session_expired": {
+      "title": "Session expired",
+      "message": "Your session has ended. Please log in again to continue.",
+      "button": "Log in again"
+    },
+    "loading": "Loading SkinAid..."
   },
   "validation": {
     "error_username_required": "Username is required.",
@@ -361,7 +372,12 @@
     "upload_button": "Upload Image / Data"
   },
   "profile": {
-    "banner_date": "Member since"
+    "banner_date": "Member since",
+    "delete_avatar": "Delete avatar",
+    "delete_avatar_confirm_title": "Confirm deletion",
+    "delete_avatar_confirm_desc": "Are you sure you want to delete the current avatar? This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete avatar"
   },
   "settings": {
     "title": "Settings",
@@ -400,6 +416,9 @@
     "email": "Email",
     "phone": "Phone number",
     "dob": "Day of birth",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
     "address": "Address",
     "cancel_button": "Cancel",
     "save_button": "Save",
@@ -407,7 +426,19 @@
     "blood_type": "Blood Type",
     "known_allergies": "Known Allergies",
     "current_medications": "Current Medications",
-    "emergency_contact": "Emergency Contact"
+    "emergency_contact": "Emergency Contact",
+    "crop_title": "Edit profile picture",
+    "crop_zoom": "Zoom",
+
+    "validation": {
+      "fullName_invalid": "Full name must not contain numbers or special characters.",
+      "fullName_too_short": "Full name is too short.",
+      "phone_invalid": "Phone numbers must only contain numbers.",
+      "phone_format": "Phone numbers must have 10 digits and start with 0.",
+      "dob_future": "Date of birth is invalid.",
+      "gender_invalid": "Gender is invalid.",
+      "address_too_short": "Address is too short."
+    }
   },
   "button": {
     "cancel": "Cancel",
@@ -455,9 +486,11 @@
     "f_easy_desc": "Simple, intuitive interface designed for everyone—no medical knowledge required."
   },
   "admin": {
-    "topbar": {
+    "top_bar": {
+      "logout_confirm_title": "Confirm logout",
       "logout_confirm": "Are you sure you want to logout?",
       "logout": "Logout",
+      "cancel": "Cancel",
       "roles": {
         "admin": "Administrator",
         "moderator": "Moderator",

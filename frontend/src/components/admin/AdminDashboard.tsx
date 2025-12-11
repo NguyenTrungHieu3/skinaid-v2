@@ -1,28 +1,28 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getDashboardOverview,
   getWoundTypeDistribution,
-  getSeverityStats
-} from '../../services/adminService';
-import { getAuditLogs } from '../../services/auditService';
+  getSeverityStats,
+} from "../../services/adminService";
+import { getAuditLogs } from "../../services/auditService";
 import type {
   DashboardOverview,
   WoundTypeItem,
-  SeverityStatsItem
-} from '../../types/admin';
-import type { AuditLog } from '../../services/auditService';
-import DashboardStats from './components/DashboardStats';
-import DashboardCharts from './components/DashboardCharts';
-import DashboardLogs from './components/DashboardLogs';
-import styles from './AdminDashboard.module.css';
+  SeverityStatsItem,
+} from "../../types/admin";
+import type { AuditLog } from "../../services/auditService";
+import DashboardStats from "./components/DashboardStats";
+import DashboardCharts from "./components/DashboardCharts";
+import DashboardLogs from "./components/DashboardLogs";
+import styles from "./AdminDashboard.module.css";
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
   // State
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState("month");
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [woundTypeData, setWoundTypeData] = useState<WoundTypeItem[]>([]);
   const [severityStats, setSeverityStats] = useState<SeverityStatsItem[]>([]);
@@ -45,12 +45,13 @@ export default function AdminDashboard() {
 
     // Gọi hàm lấy data từ API
     try {
-      const [overviewRes, woundTypeRes, severityRes, logsRes] = await Promise.all([
-        getDashboardOverview(period),
-        getWoundTypeDistribution(period),
-        getSeverityStats(period),
-        getAuditLogs({ limit: 5, page: 1 })
-      ]);
+      const [overviewRes, woundTypeRes, severityRes, logsRes] =
+        await Promise.all([
+          getDashboardOverview(period),
+          getWoundTypeDistribution(period),
+          getSeverityStats(period),
+          getAuditLogs({ limit: 5, page: 1 }),
+        ]);
 
       if (overviewRes.success && overviewRes.data) {
         setOverview(overviewRes.data);
@@ -67,10 +68,9 @@ export default function AdminDashboard() {
       if (logsRes.success && logsRes.data) {
         setAuditLogs(logsRes.data.logs);
       }
-
     } catch (err) {
-      console.error('Failed to fetch dashboard data:', err);
-      setError('Failed to load dashboard data. Please try again.');
+      console.error("Failed to fetch dashboard data:", err);
+      setError("Failed to load dashboard data. Please try again.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -99,19 +99,21 @@ export default function AdminDashboard() {
 
   // Helper to map audit logs to dashboard log format
   const mapAuditLogs = (logs: AuditLog[]) => {
-    return logs.map(log => ({
-      type: log.success ? 'success' : 'error' as 'error' | 'success' | 'info',
-      severity: log.success ? 'low' : 'high' as 'low' | 'medium' | 'high',
-      message: `${translateAction(log.action)} - ${translateResource(log.resource_type || 'system')}`,
-      time: new Date(log.timestamp + 'Z').toLocaleString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      })
+    return logs.map((log) => ({
+      type: log.success ? "success" : ("error" as "error" | "success" | "info"),
+      severity: log.success ? "low" : ("high" as "low" | "medium" | "high"),
+      message: `${translateAction(log.action)} - ${translateResource(
+        log.resource_type || "system"
+      )}`,
+      time: new Date(log.timestamp + "Z").toLocaleString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
     }));
   };
 
@@ -121,20 +123,23 @@ export default function AdminDashboard() {
       <div className={styles.adminDashboard}>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner}></div>
-          <p>{t('admin.dashboard.loading')}</p>
+          <p>{t("admin.dashboard.loading")}</p>
         </div>
       </div>
     );
   }
 
-  // Nếu có lỗi hiển thị nút retry để load lại dữ liệu 
+  // Nếu có lỗi hiển thị nút retry để load lại dữ liệu
   if (error) {
     return (
       <div className={styles.adminDashboard}>
         <div className={styles.errorContainer}>
           <p className={styles.errorMessage}>{error}</p>
-          <button onClick={() => fetchDashboardData()} className={styles.retryButton}>
-            {t('admin.dashboard.retry')}
+          <button
+            onClick={() => fetchDashboardData()}
+            className={styles.retryButton}
+          >
+            {t("admin.dashboard.retry")}
           </button>
         </div>
       </div>
@@ -143,10 +148,11 @@ export default function AdminDashboard() {
 
   return (
     <div className={styles.adminDashboard}>
+      <title>{t("title.admin_dashboard")}</title>
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>{t('admin.dashboard.title')}</h1>
-          <p>{t('admin.dashboard.subtitle')}</p>
+          <h1>{t("admin.dashboard.title")}</h1>
+          <p>{t("admin.dashboard.subtitle")}</p>
         </div>
         <div className={styles.headerActions}>
           <select
@@ -155,18 +161,26 @@ export default function AdminDashboard() {
             className={styles.filterSelect}
             disabled={loading || refreshing}
           >
-            <option value="day">{t('admin.dashboard.periods.today')}</option>
-            <option value="week">{t('admin.dashboard.periods.last_7_days')}</option>
-            <option value="month">{t('admin.dashboard.periods.last_30_days')}</option>
-            <option value="year">{t('admin.dashboard.periods.last_year')}</option>
-            <option value="all">{t('admin.dashboard.periods.all_time')}</option>
+            <option value="day">{t("admin.dashboard.periods.today")}</option>
+            <option value="week">
+              {t("admin.dashboard.periods.last_7_days")}
+            </option>
+            <option value="month">
+              {t("admin.dashboard.periods.last_30_days")}
+            </option>
+            <option value="year">
+              {t("admin.dashboard.periods.last_year")}
+            </option>
+            <option value="all">{t("admin.dashboard.periods.all_time")}</option>
           </select>
           <button
             onClick={handleRefresh}
             className={styles.adminBtnPrimary}
             disabled={refreshing}
           >
-            {refreshing ? t('admin.dashboard.refreshing') : t('admin.dashboard.refresh')}
+            {refreshing
+              ? t("admin.dashboard.refreshing")
+              : t("admin.dashboard.refresh")}
           </button>
         </div>
       </div>

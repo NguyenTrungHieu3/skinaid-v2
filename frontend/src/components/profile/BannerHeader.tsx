@@ -55,6 +55,8 @@ const BannerHeader = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null); // Tọa độ pixel cắt
   const [isCropModalOpen, setIsCropModalOpen] = useState(false); // Đóng/Mở modal
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   // Sự kiện click vào icon máy ảnh -> kích hoạt input file ẩn
   const handleCameraClick = () => {
     if (!isUploading && fileInputRef.current) {
@@ -186,16 +188,19 @@ const BannerHeader = () => {
     setImageSrc(null);
   };
 
-  // 5. Xóa avatar
-  const handleDeleteAvatar = async () => {
+
+  // 5. Nút thùng rác được click -> Mở Modal xác nhận
+  const handleDeleteIconClick = () => {
     if (!user?.avatar_url) return;
+    setIsDeleteModalOpen(true); // Chỉ mở modal, chưa xóa
+  };
 
-    // Xác nhận trước khi xóa
-    const confirmed = window.confirm(t("profile.delete_avatar_confirm") || "Bạn có chắc chắn muốn xóa ảnh đại diện?");
-    if (!confirmed) return;
-
+  // 6. Hàm thực hiện xóa (Được gọi khi bấm "Xóa" trong Modal)
+  const confirmDeleteAvatar = async () => {
     try {
-      setIsDeleting(true);
+      setIsDeleteModalOpen(false); // Đóng modal trước
+      setIsDeleting(true); // Bắt đầu loading
+
       await deleteAvatar();
 
       // Refresh UI
@@ -206,7 +211,10 @@ const BannerHeader = () => {
       }
     } catch (error) {
       console.error("Delete avatar error:", error);
-      alert(t("profile.delete_avatar_error") || "Có lỗi xảy ra khi xóa ảnh đại diện.");
+      alert(
+        t("profile.delete_avatar_error") ||
+          "Có lỗi xảy ra khi xóa ảnh đại diện."
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -232,7 +240,7 @@ const BannerHeader = () => {
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               onChange={handleFileChange}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
             />
 
             {/* Avatar display */}
@@ -263,8 +271,9 @@ const BannerHeader = () => {
             {/* Nút Camera */}
             <div
               // Kết hợp class: nếu đang uploading thì thêm class uploading
-              className={`${styles.cameraIcon} ${isUploading ? styles.uploading : ""
-                }`}
+              className={`${styles.cameraIcon} ${
+                isUploading ? styles.uploading : ""
+              }`}
               onClick={handleCameraClick}
             >
               <FaCamera />
@@ -273,8 +282,10 @@ const BannerHeader = () => {
             {/* Nút Xóa Avatar - Chỉ hiển thị khi có avatar */}
             {user?.avatar_url && (
               <div
-                className={`${styles.deleteIcon} ${isDeleting ? styles.deleting : ""}`}
-                onClick={handleDeleteAvatar}
+                className={`${styles.deleteIcon} ${
+                  isDeleting ? styles.deleting : ""
+                }`}
+                onClick={handleDeleteIconClick} // <-- Gọi hàm mở modal
                 title={t("profile.delete_avatar") || "Xóa ảnh đại diện"}
               >
                 {isDeleting ? <FaSpinner className="fa-spin" /> : <FaTrash />}
@@ -327,7 +338,7 @@ const BannerHeader = () => {
       {isCropModalOpen && (
         <div className={styles.cropModalOverlay}>
           <div className={styles.cropModalContent}>
-            <h3>Chỉnh sửa ảnh đại diện</h3>
+            <h3>{t("personalInfo.crop_title")}</h3>
 
             <div className={styles.cropContainer}>
               <Cropper
@@ -344,7 +355,7 @@ const BannerHeader = () => {
             </div>
 
             <div className={styles.sliderContainer}>
-              <label>Zoom</label>
+              <label>{t("personalInfo.crop_zoom")}</label>
               <input
                 type="range"
                 value={zoom}
@@ -359,10 +370,41 @@ const BannerHeader = () => {
 
             <div className={styles.cropActions}>
               <button onClick={handleCancelCrop} className={styles.btnCancel}>
-                Hủy
+                {t("personalInfo.cancel_button")}
               </button>
               <button onClick={handleSaveCrop} className={styles.btnSave}>
-                Lưu ảnh
+                {t("personalInfo.save_button")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL XÁC NHẬN XÓA (MỚI THÊM VÀO) --- */}
+      {isDeleteModalOpen && (
+        <div className={styles.deleteModalOverlay}>
+          <div className={styles.deleteModalContent}>
+            <h3>
+              {t("profile.delete_avatar_confirm_title") || "Xác nhận xóa"}
+            </h3>
+            <p>
+              {t("profile.delete_avatar_confirm_desc") ||
+                "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại? Hành động này không thể hoàn tác."}
+            </p>
+
+            <div className={styles.deleteActions}>
+              <button
+                className={styles.btnCancel}
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                {t("profile.cancel") || "Hủy bỏ"}
+              </button>
+
+              <button
+                className={styles.btnDeleteConfirm}
+                onClick={confirmDeleteAvatar}
+              >
+                {t("profile.delete") || "Xóa ảnh"}
               </button>
             </div>
           </div>

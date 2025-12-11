@@ -1,13 +1,19 @@
-import { useState, useEffect, useRef, type FC } from 'react';
-import { Plus } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { getUsers, createUser, updateUser, updateUserStatus, deleteUser } from '../../services/userService';
-import { useToast } from '../../contexts/ToastContext';
-import UserFilters from './components/UserFilters';
-import UserTable from './components/UserTable';
-import UserFormModal from './components/UserFormModal';
-import Pagination from '../common/Pagination';
-import styles from './UserManagement.module.css';
+import { useState, useEffect, useRef, type FC } from "react";
+import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  updateUserStatus,
+  deleteUser,
+} from "../../services/userService";
+import { useToast } from "../../contexts/ToastContext";
+import UserFilters from "./components/UserFilters";
+import UserTable from "./components/UserTable";
+import UserFormModal from "./components/UserFormModal";
+import Pagination from "../common/Pagination";
+import styles from "./UserManagement.module.css";
 
 interface User {
   user_id: string;
@@ -51,10 +57,10 @@ const UserManagement: FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   // Debounce timer ref
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,7 +82,7 @@ const UserManagement: FC = () => {
         limit: 10,
         search: searchTerm,
         role: selectedRole,
-        is_active: selectedStatus
+        is_active: selectedStatus,
       });
 
       if (response.success && response.data) {
@@ -86,8 +92,8 @@ const UserManagement: FC = () => {
       }
     } catch (err: unknown) {
       const error = err as ApiError;
-      console.error('Error fetching users:', error);
-      setError(error.response?.data?.error || 'Failed to fetch users');
+      console.error("Error fetching users:", error);
+      setError(error.response?.data?.error || "Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -137,7 +143,7 @@ const UserManagement: FC = () => {
   const handleAddUser = async (data: UserFormData) => {
     if (isSubmitting) return;
     if (!data.password) {
-      toast.error('Password is required');
+      toast.error("Password is required");
       return;
     }
 
@@ -147,12 +153,12 @@ const UserManagement: FC = () => {
       if (response.success) {
         setShowAddModal(false);
         fetchUsers();
-        toast.success('User created successfully!');
+        toast.success("User created successfully!");
       }
     } catch (err: unknown) {
       const error = err as ApiError;
-      console.error('Error creating user:', error);
-      toast.error(error.response?.data?.error || 'Failed to create user');
+      console.error("Error creating user:", error);
+      toast.error(error.response?.data?.error || "Failed to create user");
     } finally {
       setIsSubmitting(false);
     }
@@ -167,11 +173,11 @@ const UserManagement: FC = () => {
 
       // Only include password if it was provided (not empty)
       const updateData: Partial<UserFormData> = {
-        ...data
+        ...data,
       };
 
       // If password is empty, remove it from the update data
-      if (!data.password || data.password.trim() === '') {
+      if (!data.password || data.password.trim() === "") {
         delete updateData.password;
       }
 
@@ -180,12 +186,12 @@ const UserManagement: FC = () => {
         setShowEditModal(false);
         setSelectedUser(null);
         fetchUsers();
-        toast.success('User updated successfully!');
+        toast.success("User updated successfully!");
       }
     } catch (err: unknown) {
       const error = err as ApiError;
-      console.error('Error updating user:', error);
-      toast.error(error.response?.data?.error || 'Failed to update user');
+      console.error("Error updating user:", error);
+      toast.error(error.response?.data?.error || "Failed to update user");
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +199,9 @@ const UserManagement: FC = () => {
 
   // Handle delete user
   const handleDeleteUser = async (userId: string, displayName: string) => {
-    if (window.confirm(`Are you sure you want to delete user "${displayName}"?`)) {
+    if (
+      window.confirm(`Are you sure you want to delete user "${displayName}"?`)
+    ) {
       if (isDeletingUser) return;
 
       try {
@@ -201,12 +209,12 @@ const UserManagement: FC = () => {
         const response = await deleteUser(userId);
         if (response.success) {
           fetchUsers();
-          toast.success('User deleted successfully!');
+          toast.success("User deleted successfully!");
         }
       } catch (err: unknown) {
         const error = err as ApiError;
-        console.error('Error deleting user:', error);
-        toast.error(error.response?.data?.error || 'Failed to delete user');
+        console.error("Error deleting user:", error);
+        toast.error(error.response?.data?.error || "Failed to delete user");
       } finally {
         setIsDeletingUser(null);
       }
@@ -223,12 +231,14 @@ const UserManagement: FC = () => {
       const response = await updateUserStatus(userId, newStatus);
       if (response.success) {
         fetchUsers();
-        toast.success(`User status updated to ${newStatus ? 'active' : 'inactive'}`);
+        toast.success(
+          `User status updated to ${newStatus ? "active" : "inactive"}`
+        );
       }
     } catch (err: unknown) {
       const error = err as ApiError;
-      console.error('Error updating status:', error);
-      toast.error(error.response?.data?.error || 'Failed to update status');
+      console.error("Error updating status:", error);
+      toast.error(error.response?.data?.error || "Failed to update status");
     } finally {
       setIsTogglingStatus(null);
     }
@@ -247,7 +257,7 @@ const UserManagement: FC = () => {
     // Use a more specific selector or ref if possible, but this works for now
     const tableElement = document.querySelector(`.${styles.userTable}`);
     if (tableElement) {
-      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -257,18 +267,19 @@ const UserManagement: FC = () => {
 
   return (
     <div className={styles.userManagementPage}>
+      <title>{t("title.admin_user_management")}</title>
       {/* Header */}
       <div className={styles.adminPageHeader}>
         <div className={styles.adminPageTitle}>
-          <h1>{t('admin.user_management.title')}</h1>
-          <p>{t('admin.user_management.subtitle')}</p>
+          <h1>{t("admin.user_management.title")}</h1>
+          <p>{t("admin.user_management.subtitle")}</p>
         </div>
         <button
           className={styles.adminBtnPrimary}
           onClick={() => setShowAddModal(true)}
         >
           <Plus size={18} strokeWidth={2.5} />
-          {t('admin.user_management.add_user')}
+          {t("admin.user_management.add_user")}
         </button>
       </div>
 
@@ -284,23 +295,31 @@ const UserManagement: FC = () => {
 
       {/* Users count */}
       <div className={styles.usersCount}>
-        {t('admin.user_management.total_users')} ({totalUsers} total)
+        {t("admin.user_management.total_users")} ({totalUsers} total)
         {totalUsers > 0 && (
-          <span style={{ marginLeft: '1rem', color: '#666', fontSize: '0.9rem' }}>
-            {t('admin.user_management.showing', { start: indexOfFirstUser, end: indexOfLastUser, total: totalUsers })}
+          <span
+            style={{ marginLeft: "1rem", color: "#666", fontSize: "0.9rem" }}
+          >
+            {t("admin.user_management.showing", {
+              start: indexOfFirstUser,
+              end: indexOfLastUser,
+              total: totalUsers,
+            })}
           </span>
         )}
       </div>
 
       {/* Error message */}
       {error && (
-        <div style={{
-          padding: '1rem',
-          background: '#fee',
-          color: '#c33',
-          borderRadius: '8px',
-          marginBottom: '1rem'
-        }}>
+        <div
+          style={{
+            padding: "1rem",
+            background: "#fee",
+            color: "#c33",
+            borderRadius: "8px",
+            marginBottom: "1rem",
+          }}
+        >
           {error}
         </div>
       )}
@@ -346,11 +365,15 @@ const UserManagement: FC = () => {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         onSubmit={handleEditUser}
-        initialData={selectedUser ? {
-          email: selectedUser.email,
-          user_name: selectedUser.user_name,
-          roles: selectedUser.roles
-        } : null}
+        initialData={
+          selectedUser
+            ? {
+                email: selectedUser.email,
+                user_name: selectedUser.user_name,
+                roles: selectedUser.roles,
+              }
+            : null
+        }
         isEdit={true}
         isSubmitting={isSubmitting}
       />

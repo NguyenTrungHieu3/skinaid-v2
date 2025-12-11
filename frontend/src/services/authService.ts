@@ -123,17 +123,24 @@ export const getMe = (token: string) => {
 /**
  * 6. Đăng xuất (cần token)
  */
-export const logoutUser = (token: string) => {
-  return apiClient.post<SuccessResponse<{}>>(
-    "/auth/logout",
-    {}, // API logout không cần body
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+/**
+ * Đăng xuất người dùng
+ * Gọi API /auth/logout để backend ghi log và vô hiệu hóa token
+ */
+export const logoutUser = () => {
+  return apiClient.post<SuccessResponse<{}>>("/auth/logout");
 };
+// export const logoutUser = (token: string) => {
+//   return apiClient.post<SuccessResponse<{}>>(
+//     "/auth/logout",
+//     {}, // API logout không cần body
+//     {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//       },
+//     }
+//   );
+// };
 
 /**
  * 7. Thay đổi mật khẩu (khi đã đăng nhập) - (ĐÃ SỬA LỖI)

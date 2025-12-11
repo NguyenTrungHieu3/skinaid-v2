@@ -55,6 +55,117 @@
   align-items: center;
 }
 
+/* --- DELETE CONFIRMATION MODAL (Soft UI) --- */
+.deleteModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4); /* Giảm độ tối nền một chút */
+  backdrop-filter: blur(2px); /* Làm mờ nền phía sau nhẹ */
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.deleteModalContent {
+  background-color: #fff;
+  border-radius: 16px; /* Bo góc tròn hơn */
+  width: 90%;
+  max-width: 360px; /* Thu nhỏ chiều rộng modal */
+  padding: 1.5rem; /* Giảm padding */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Bóng đổ mềm hơn */
+  animation: scaleUp 0.2s ease-out;
+}
+
+.deleteModalContent h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333; /* Đổi sang màu xám đen thay vì đỏ */
+  font-size: 1.1rem; /* Chữ nhỏ hơn */
+  font-weight: 600;
+}
+
+.deleteModalContent p {
+  color: #666; /* Màu chữ nhạt hơn */
+  font-size: 0.9rem; /* Chữ nội dung nhỏ hơn */
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+.deleteActions {
+  display: flex;
+  gap: 0.75rem; /* Khoảng cách giữa 2 nút gần hơn */
+  width: 100%;
+  justify-content: center;
+}
+
+/* Nút Hủy */
+.btnCancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  color: #555;
+  border-radius: 8px;
+  font-size: 0.85rem; /* Chữ nút nhỏ hơn */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1; /* Chia đều chiều rộng */
+}
+
+.btnCancel:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Nút Xóa (Màu đỏ dịu hơn) */
+.btnDeleteConfirm {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #ef5350; /* Màu đỏ nhẹ (Red 400) */
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1; /* Chia đều chiều rộng */
+  box-shadow: 0 2px 5px rgba(239, 83, 80, 0.3); /* Bóng đỏ nhẹ */
+}
+
+.btnDeleteConfirm:hover {
+  background-color: #e53935; /* Đậm hơn chút khi hover */
+  transform: translateY(-1px);
+}
+
+/* Animation giữ nguyên */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .profileLeft {
   flex-shrink: 0;
 }
@@ -426,7 +537,6 @@
 }
 
 @media (max-width: 992px) {
-
   /* Khối bên phải (Info + Badges) sẽ tự xếp chồng */
   .profileRight {
     flex-direction: column;
@@ -444,7 +554,6 @@
 
 /* Mobile: < 768px */
 @media (max-width: 768px) {
-
   /* Toàn bộ banner xếp chồng */
   .bannerContentWrapper {
     flex-direction: column;
@@ -856,12 +965,35 @@
   color: #333;
 }
 
+/* --- INPUT FIELD STYLES (Edit Mode) --- */
 .inlineInput {
-  font-size: 1rem;
-  padding: 0.5rem 0;
-  border: none;
-  border-bottom: 2px solid #009688;
+  font-size: 0.9rem; /* Chữ nhỏ hơn (từ 1rem -> 0.9rem) */
+  padding: 0.5rem 0.75rem; /* Tăng padding ngang để chữ không dính viền */
+  border: 1px solid #d1d5db; /* Viền xám nhạt bao quanh (thay vì chỉ border-bottom) */
+  border-radius: 6px; /* Bo tròn góc */
   outline: none;
+  width: 100%;
+  color: #333;
+  background-color: #fff;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Bóng đổ rất nhẹ */
+}
+
+/* Hiệu ứng khi focus vào input */
+.inlineInput:focus {
+  border-color: #009688; /* Đổi màu viền sang xanh chủ đạo */
+  box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.1); /* Hiệu ứng glow nhẹ */
+  background-color: #f0fdfa; /* Nền xanh rất nhạt */
+}
+
+/* Style riêng cho Select box để mũi tên không bị lệch */
+select.inlineInput {
+  appearance: none; /* Xóa style mặc định của trình duyệt */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem; /* Chừa chỗ cho icon mũi tên */
 }
 
 .action {
@@ -896,9 +1028,44 @@
 }
 
 .errorText {
-  color: #d9534f;
-  font-size: 13px;
+  color: #d32f2f; /* Đỏ đậm dễ đọc */
+  font-size: 0.85rem;
   margin-top: 4px;
+  margin-bottom: 8px; /* Tạo khoảng cách với input tiếp theo */
+  padding-left: 24px; /* Thụt vào để thẳng hàng với text của input (trừ icon) */
+  position: relative;
+
+  /* Hiệu ứng hiện ra nhẹ nhàng */
+  animation: slideInError 0.2s ease-out;
+}
+
+/* Thêm icon chấm than nhỏ trước lỗi (Optional) */
+.errorText::before {
+  content: "!";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 16px;
+  height: 16px;
+  background-color: #d32f2f;
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes slideInError {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
@@ -992,11 +1159,11 @@
   border-radius: 50%;
 }
 
-.switch input:checked+.slider {
+.switch input:checked + .slider {
   background-color: #009688;
 }
 
-.switch input:checked+.slider:before {
+.switch input:checked + .slider:before {
   transform: translateX(22px);
 }
 
@@ -1055,7 +1222,6 @@
 /* Thêm vào cuối file Form.module.css */
 
 @keyframes fadeInAndOut {
-
   /* (0s -> 0.3s) Fade In */
   0% {
     opacity: 0;

@@ -24,7 +24,9 @@ interface InfoFieldProps {
   label: string;
   value: string;
   editable: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => void;
   type?: string;
   options?: { value: string; label: string }[]; // Thêm options cho select
 }
@@ -104,50 +106,43 @@ const PersonalInfo = () => {
     const errors: Record<string, string> = {};
 
     // Full Name
-    if (!data.fullName.trim()) {
-      errors.fullName = "Full name is required.";
-    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(data.fullName)) {
-      errors.fullName =
-        "Full name must not contain numbers or special characters.";
+    if (data.fullName.trim() && !/^[a-zA-ZÀ-ỹ\s]+$/.test(data.fullName)) {
+      errors.fullName = t("personalInfo.validation.fullName_invalid");
     } else if (data.fullName.length < 2) {
-      errors.fullName = "Full name is too short.";
+      errors.fullName = t("personalInfo.validation.fullName_too_short");
     }
 
     // Phone
-    if (!data.phone.trim()) {
-      errors.phone = "Phone number is required.";
-    } else if (!/^[0-9]+$/.test(data.phone)) {
-      errors.phone = "Phone number must be digits only.";
+    if (data.phone.trim() && !/^[0-9]+$/.test(data.phone)) {
+      errors.phone = t("personalInfo.validation.phone_invalid");
     } else if (!/^0\d{9}$/.test(data.phone)) {
-      errors.phone = "Phone number must be 10 digits and start with 0.";
+      errors.phone = t("personalInfo.validation.phone_format");
     }
 
     // Date of Birth
-    if (!data.dob) {
-      errors.dob = "Date of birth is required.";
-    } else {
+    if (data.dob) {
       const inputDate = new Date(data.dob);
       const today = new Date();
 
-      if (inputDate > today) {
-        errors.dob = "Date of birth cannot be in the future.";
+      // 1. Kiểm tra ngày có hợp lệ không (Valid Date)
+      if (isNaN(inputDate.getTime())) {
+        errors.dob = t("personalInfo.validation.dob_invalid");
       }
-
-      const age = today.getFullYear() - inputDate.getFullYear();
-      if (age < 16) {
-        errors.dob = "You must be at least 16 years old.";
+      // 2. Kiểm tra ngày tương lai (Không được lớn hơn hôm nay)
+      else if (inputDate > today) {
+        errors.dob = t("personalInfo.validation.dob_future");
       }
     }
 
     // Gender
-    const validGender = ["male", "female", "other", ""];
+    const validGender = ["male", "female", ""];
     if (!validGender.includes(data.gender)) {
-      errors.gender = "Invalid gender value.";
+      errors.gender = t("personalInfo.validation.gender_invalid");
     }
 
     // Address
     if (data.address && data.address.trim().length < 5) {
-      errors.address = "Address is too short.";
+      errors.address = t("personalInfo.validation.address_too_short");
     }
 
     return errors;
@@ -200,11 +195,11 @@ const PersonalInfo = () => {
 
   const handleChange =
     (field: keyof typeof formData) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData((prev) => ({ ...prev, [field]: e.target.value }));
-        if (apiSuccess) setApiSuccess(""); // Xóa thông báo khi user sửa
-        if (apiError) setApiError("");
-      };
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      if (apiSuccess) setApiSuccess(""); // Xóa thông báo khi user sửa
+      if (apiError) setApiError("");
+    };
 
   const handleSave = async (
     dataToSave: UserProfileUpdate,
@@ -258,14 +253,16 @@ const PersonalInfo = () => {
     } catch (err) {
       if (isAxiosError(err)) {
         // Hiển thị chi tiết lỗi validation từ server
-        const errorMessage = err.response?.data?.message || "Failed to save profile.";
+        const errorMessage =
+          err.response?.data?.message || "Failed to save profile.";
         const errorDetail = err.response?.data?.error_details;
 
         // Nếu có chi tiết lỗi validation (như gender không hợp lệ)
         if (errorDetail) {
-          const detailedError = typeof errorDetail === 'string'
-            ? errorDetail
-            : JSON.stringify(errorDetail);
+          const detailedError =
+            typeof errorDetail === "string"
+              ? errorDetail
+              : JSON.stringify(errorDetail);
           setApiError(`${errorMessage}: ${detailedError}`);
         } else {
           setApiError(errorMessage);
@@ -316,6 +313,13 @@ const PersonalInfo = () => {
   if (isLoading) {
     return <div className={styles.infoCard}>Loading profile...</div>;
   }
+
+  // Hàm helper để lấy text hiển thị cho Gender
+  const getGenderLabel = (genderValue: string) => {
+    if (genderValue === "male") return t("personalInfo.male");
+    if (genderValue === "female") return t("personalInfo.female");
+    return genderValue; // Fallback nếu rỗng hoặc giá trị lạ
+  };
 
   return (
     <div className={styles.personalInfoWrapper}>
@@ -369,15 +373,21 @@ const PersonalInfo = () => {
             {/* THÊM LẠI TRƯỜNG GENDER VÀO JSX */}
             <InfoField
               icon={<FaVenusMars />}
-              label="Giới tính"
-              value={formData.gender}
+              label={t("personalInfo.gender")}
+              // Logic hiển thị thông minh:
+              // Nếu đang sửa (isEditingBasic) -> hiện giá trị gốc (male/female) để select box binding đúng
+              // Nếu đang xem -> hiện text đã dịch (Nam/Nữ)
+              value={
+                isEditingBasic
+                  ? formData.gender
+                  : getGenderLabel(formData.gender)
+              }
               editable={isEditingBasic}
               onChange={handleChange("gender")}
               type="select"
               options={[
-                { value: "male", label: "Nam" },
-                { value: "female", label: "Nữ" },
-                { value: "other", label: "Khác" },
+                { value: "male", label: t("personalInfo.male") },
+                { value: "female", label: t("personalInfo.female") },
               ]}
             />
             {validationErrors.gender && (

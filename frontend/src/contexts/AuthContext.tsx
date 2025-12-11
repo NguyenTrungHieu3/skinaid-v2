@@ -6,9 +6,10 @@ import {
   type ReactNode,
 } from "react";
 import { jwtDecode } from "jwt-decode";
-import { getMe } from "../services/authService"; // API /auth/me
+import { getMe, logoutUser } from "../services/authService"; // API /auth/me
 // 1. IMPORT THÊM profileService
 import { getMyProfile } from "../services/profileService";
+import { useTranslation } from "react-i18next";
 
 // ====== Kiểu dữ liệu người dùng (Giữ nguyên) ======
 interface User {
@@ -46,11 +47,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Giữ state loading
 
-  const logout = () => {
+  const { t } = useTranslation();
+  // 1. STATE MỚI: Quản lý thông báo hết phiên
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
+
+  // --- HÀM LOGOUT CHÍNH THỨC ---
+  // Hàm này sẽ xóa data và redirect
+  const performLogout = () => {
     localStorage.removeItem("userToken");
     sessionStorage.removeItem("userToken");
     setUser(null);
     setIsAuthenticated(false);
+    setIsSessionExpired(false); // Tắt modal sau khi logout
+    window.location.href = "/login"; // Chuyển hướng
+  };
+
+  // --- HÀM GỌI API LOGOUT (Do người dùng chủ động bấm) ---
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.warn("Logout error:", error);
+    } finally {
+      performLogout();
+    }
   };
 
   // 3. SỬA HÀM FETCHUSER (ĐỂ GỌI CẢ 2 API KHI RELOAD)
@@ -123,44 +143,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
 
     const initializeAuth = async () => {
-      console.log("🔍 [AuthContext] Initializing auth...", {
-        hasToken: !!token,
-      });
-
       try {
         if (token) {
           try {
             const decoded: { exp: number } = jwtDecode(token);
-            console.log("🔍 [AuthContext] Token decoded", {
-              exp: decoded.exp,
-              now: Date.now() / 1000,
-            });
 
+            // 2. KIỂM TRA HẾT HẠN
             if (decoded.exp * 1000 > Date.now()) {
-              console.log("✅ [AuthContext] Token valid, fetching user...");
-              await fetchUser(token); // Chờ fetchUser (đã sửa) chạy xong
-              console.log("✅ [AuthContext] User fetched successfully");
+              await fetchUser(token);
             } else {
-              console.log("❌ [AuthContext] Token expired");
-              logout();
+              console.log("❌ Token expired");
+              // Thay vì logout ngay, ta bật thông báo
+              setIsSessionExpired(true);
+              // Xóa token để tránh các request tiếp theo dùng token lỗi
+              localStorage.removeItem("userToken");
+              sessionStorage.removeItem("userToken");
             }
           } catch (error) {
-            console.error("❌ [AuthContext] Token không hợp lệ:", error);
-            logout();
+            console.error("Token invalid:", error);
+            performLogout(); // Token rác thì logout luôn
           }
-        } else {
-          console.log("ℹ️ [AuthContext] No token found");
         }
       } finally {
-        // CRITICAL FIX: Use finally block to ensure setIsLoading(false) runs
-        // AFTER all async operations complete (success or failure)
-        console.log("🔍 [AuthContext] Setting isLoading to false");
         setIsLoading(false);
       }
     };
 
     initializeAuth();
-  }, []); // [] chỉ chạy 1 lần
+  }, []);
 
   // 4. SỬA HÀM LOGIN (ĐỂ NHẬN 'USER' TRỰC TIẾP)
   const login = (token: string, userToSet: User, rememberMe: boolean) => {
@@ -201,10 +211,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Ngăn con render khi đang xác thực lúc reload
   if (isLoading) {
-    return <div>Loading SkinAid...</div>; // (Hoặc 1 spinner)
+    return (
+      <div className="full-screen-loading">
+        <div className="loading-spinner"></div>
+        <div className="loading-text">{t("auth_page.loading")}</div>
+
+        {/* Tùy chọn: Nếu muốn hiện logo thay vì text thì dùng dòng dưới */}
+        {/* <img src="/path/to/logo.png" alt="Logo" style={{ width: '60px', marginTop: '10px' }} /> */}
+      </div>
+    );
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // 3. RENDER GIAO DIỆN + MODAL
+  return (
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        login,
+        logout,
+        updateUser,
+        refreshUser,
+      }}
+    >
+      {/* Hiển thị children (App) */}
+      {!isLoading && children}
+
+      {/* Loading Screen */}
+      {isLoading && <div>{t("auth_page.loading")}</div>}
+
+      {/* 4. MODAL HẾT PHIÊN ĐĂNG NHẬP */}
+      {isSessionExpired && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "2rem",
+              borderRadius: "8px",
+              textAlign: "center",
+              maxWidth: "400px",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+            }}
+          >
+            <h3 style={{ marginTop: 0, color: "#d32f2f" }}>
+              {t("auth_page.session_expired.title")}
+            </h3>
+            <p>{t("auth_page.session_expired.message")}</p>
+            <button
+              onClick={performLogout}
+              style={{
+                backgroundColor: "#009688",
+                color: "white",
+                border: "none",
+                padding: "10px 20px",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "1rem",
+                fontWeight: "bold",
+              }}
+            >
+              {t("auth_page.session_expired.button")}
+            </button>
+          </div>
+        </div>
+      )}
+    </AuthContext.Provider>
+  );
 };
 
 // ====== Hook (Giữ nguyên) ======
