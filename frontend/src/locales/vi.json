@@ -11,14 +11,11 @@
     "analysis_result": "Kết quả phân tích - SkinAid",
     "history_page": "Lịch sử - {{fullname}}"
   },
-
   "auth_page": {
     "left_title": "Chào mừng bạn đến với SkinAid",
     "left_desc": "Hệ thống hỗ trợ phát hiện và phân loại vết thương thông minh",
-
     "login_tab": "ĐĂNG NHẬP",
     "register_tab": "ĐĂNG KÝ",
-
     "username": "Tên người dùng",
     "username_placeholder": "Nhập tên người dùng của bạn",
     "password": "Mật khẩu",
@@ -33,7 +30,6 @@
     "term": "Tôi đồng ý với Điều khoản và Điều kiện",
     "login_button": "Đăng nhập",
     "register_button": "Đăng ký",
-
     "forgot_password_title": "Quên mật khẩu?",
     "forgot_password_subtitle": "Đừng lo! Hãy nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn liên kết để đặt lại mật khẩu.",
     "forgot_password_email": "Địa chỉ email",
@@ -41,7 +37,6 @@
     "forgot_password_back_to_login": "Quay lại trang đăng nhập",
     "forgot_password_tip": "Lời khuyên: ",
     "forgot_password_tip_desc": "Hãy đảm bảo sử dụng địa chỉ email được liên kết với tài khoản của bạn.",
-
     "reset_password_title": "Đặt lại mật khẩu",
     "reset_password_subtitle": "Vui lòng nhập mật khẩu mới của bạn bên dưới.",
     "reset_password_new": "Mật khẩu mới",
@@ -250,7 +245,6 @@
       "ready_tip": "Sẵn sàng gửi tới AI để phân tích."
     }
   },
-
   "analysis": {
     "sidebar_complete": "Phân tích hoàn tất",
     "sidebar_complete_desc": "Phân tích hoàn tất",
@@ -265,52 +259,40 @@
     "sidebar_details": "Chi tiết",
     "sidebar_details_desc": "Danh sách từng loại vết thương",
     "sidebar_no_wounds_found": "Không tìm thấy vết thương nào cho loại này.",
-
     "header_upload_button": "Tải ảnh mới",
     "header_save_button": "Lưu",
     "header_download_button": "Tải báo cáo",
-
     "medical_title": "Lưu ý quan trọng về thông tin y tế",
     "medical_desc": "Phân tích AI chỉ nhằm mục đích cung cấp thông tin và không thay thế cho lời khuyên y tế chuyên nghiệp. Mục đích của phân tích này là giúp mọi người có cái nhìn chính xác hơn về tình trạng vết thương, nhưng không thể thay thế đánh giá lâm sàng thực tế. Luôn tham khảo ý kiến ​​bác sĩ hoặc chuyên gia y tế để được chẩn đoán và điều trị an toàn và phù hợp.",
-
     "image_title": "Hình ảnh đã phân tích",
-
     "detail_title": "KHẢ NĂNG PHÁT HIỆN VẾT THƯƠNG",
     "detail_wound": "Loại vết thương",
     "detail_severity": "Mức độ nghiêm trọng",
     "detail_healing_time": "Thời gian hồi phục ước tính",
     "detail_items": "Đã xác định được vật phẩm hỗ trợ",
-
     "treatment_title": "Khuyến nghị điều trị",
     "treatment_desc": "Thực hiện theo các hướng dẫn chăm sóc dựa trên phân tích này để đạt hiệu quả chữa lành tối ưu",
     "treatment_immediate_label": "Các bước sơ cứu",
     "treatment_immediate_sub_label": "Các bước cần thực hiện ngay - {{step_length}} bước",
-
     "treatment_ongoing_label": "Chăm sóc hằng ngày",
     "treatment_ongoing_sub_label": "Những điều nên làm - {{item_length}} mục",
-
     "treatment_not_recommended_label": "Không được khuyến nghị",
     "treatment_not_recommended_sub_label": "Những điều cần tránh - {{item_length}} mục",
-
     "treatment_not_step": "Không có hướng dẫn cụ thể nào.",
-
     "wound_type": {
       "abrasion": "Trầy xước",
       "burn": "Bỏng",
       "bruise": "Bầm tím"
     },
-
     "wound_type_uppercase": {
       "Abrasion": "Trầy xước",
       "Burn": "Bỏng",
       "Bruise": "Bầm tím"
     },
-
     "wound_sub": {
       "blister": "Phồng rộp",
       "skintear": "Trầy xước"
     },
-
     "severity": {
       "Mild": "Nhẹ",
       "Moderate": "Trung bình",
@@ -320,57 +302,43 @@
   "download": {
     "title": "Tải báo cáo",
     "subtitle": "Chọn định dạng bạn muốn xuất:",
-
     "format_pdf_title": "Tài liệu PDF",
     "format_pdf_desc": "Phù hợp để chia sẻ và in ấn.",
-
     "format_csv_title": "Tệp CSV",
     "format_csv_desc": "Hữu ích cho bảng tính và phân tích dữ liệu.",
-
     "select_wounds": "Chọn các vết thương muốn xuất:",
     "full_report": "Sẽ tạo báo cáo đầy đủ.",
     "custom_report": "Sẽ tạo báo cáo theo các mục đã chọn.",
-
     "button_cancel": "Hủy",
     "button_download": "Tải xuống ",
-
     "severity_label": "Mức độ",
     "confidence": "Độ tin cậy"
   },
-
   "history": {
     "title": "Lịch sử - {{fullname}}",
-
     "loading": {
       "timeline": "Đang tải timeline...",
       "detail": "Đang tải chi tiết..."
     },
-
     "error": {
       "load": "Không thể tải dữ liệu."
     },
-
     "empty": {
       "history": "Không có lịch sử phân tích.",
       "detail": "Không có dữ liệu chi tiết."
     },
-
     "auth": {
       "not_logged_in": "Bạn cần đăng nhập để xem lịch sử."
     },
-
     "sidebar": {
       "search_placeholder": "Tìm kiếm lịch sử..."
     },
-
     "timeline": {
       "title": "Dòng thời gian phân tích"
     },
-
     "detail": {
       "title": "Chi tiết phân tích"
     },
-
     "search_placeholder": "Tìm kiếm sự kiện...",
     "filter_label": "Lọc",
     "date_filters": {
@@ -385,7 +353,6 @@
     "no_logo_fallback": "Logo",
     "upload_button": "Tải ảnh để phân tích"
   },
-
   "profile": {
     "banner_date": "Thành viên từ"
   },
@@ -446,50 +413,37 @@
     "new_password": "Nhập mật khẩu mới (tối thiểu 8 ký tự)",
     "confirmNew_password": "Xác nhận mật khẩu mới của bạn"
   },
-
   "about": {
     "hero_title": "Chào mừng đến với <strong>SkinAid</strong>",
     "hero_subtitle": "Người bạn đồng hành thông minh trong chăm sóc vết thương, sử dụng trí tuệ nhân tạo để cung cấp khả năng phát hiện nhanh chóng, đánh giá chính xác và hướng dẫn điều trị cá nhân hóa.",
     "hero_button": "Bắt đầu ngay",
-
     "what_is_title": "SkinAid là gì?",
     "what_is_p1": "SkinAid là nền tảng ứng dụng AI đột phá giúp mọi người dễ dàng tiếp cận chăm sóc vết thương đạt chuẩn y tế. Với công nghệ máy học tiên tiến, chúng tôi hỗ trợ bạn phát hiện, theo dõi và xử lý vết thương một cách tự tin.",
     "what_is_p2": "Dù bạn đang gặp phải vết xước nhẹ, bỏng hay vết thương mãn tính, SkinAid sẽ cung cấp phân tích tức thì và gợi ý điều trị dựa trên bằng chứng — mọi lúc, mọi nơi.",
     "what_is_p3": "Được thành lập vào năm 2024, SkinAid đã hỗ trợ hàng nghìn người hiểu rõ hơn và chăm sóc tốt hơn cho vết thương của mình, thu hẹp khoảng cách giữa chấn thương hằng ngày và chăm sóc y tế chuyên nghiệp.",
-
     "how_title": "SkinAid hoạt động như thế nào?",
     "how_subtitle": "Đánh giá vết thương chuẩn y tế chỉ với 3 bước đơn giản",
-
     "step_1_label": "Bước 1",
     "step_1_title": "Tải ảnh lên",
     "step_1_desc": "Chụp ảnh rõ nét vùng bị thương bằng điện thoại hoặc máy ảnh, sau đó tải lên SkinAid.",
-
     "step_2_label": "Bước 2",
     "step_2_title": "AI phân tích",
     "step_2_desc": "AI của chúng tôi phân tích hình ảnh để phát hiện loại vết thương, kích thước và mức độ nghiêm trọng.",
-
     "step_3_label": "Bước 3",
     "step_3_title": "Nhận hướng dẫn",
     "step_3_desc": "Nhận hướng dẫn chăm sóc cá nhân hóa và theo dõi tiến trình hồi phục theo thời gian.",
-
     "features_title": "Tại sao chọn SkinAid?",
     "features_subtitle": "Kết hợp công nghệ tiên tiến với kiến thức y khoa để mang lại hỗ trợ chăm sóc vết thương vượt trội",
-
     "f_ai_title": "Độ chính xác cao nhờ AI",
     "f_ai_desc": "Độ chính xác 94% với AI được huấn luyện trên hàng nghìn ảnh y khoa và kiểm chứng bởi chuyên gia.",
-
     "f_instant_title": "Kết quả tức thì",
     "f_instant_desc": "Phân tích vết thương chỉ trong vài giây — hoạt động 24/7 bất cứ khi nào bạn cần.",
-
     "f_security_title": "Tuân thủ HIPAA",
     "f_security_desc": "Dữ liệu sức khỏe của bạn được bảo mật bằng tiêu chuẩn doanh nghiệp và mã hóa đầu cuối.",
-
     "f_evidence_title": "Hướng dẫn theo bằng chứng y khoa",
     "f_evidence_desc": "Khuyến nghị điều trị dựa trên nghiên cứu mới nhất và hướng dẫn lâm sàng.",
-
     "f_mobile_title": "Tương thích mọi thiết bị",
     "f_mobile_desc": "Truy cập SkinAid mọi lúc mọi nơi qua điện thoại, máy tính bảng hoặc máy tính.",
-
     "f_easy_title": "Dễ sử dụng",
     "f_easy_desc": "Giao diện đơn giản, trực quan — không cần kiến thức y khoa."
   },
@@ -831,5 +785,19 @@
     "login_button": "Đăng nhập",
     "go_home": "Về trang chủ",
     "new_analysis": "Phân tích mới"
+  },
+  "save_modal": {
+    "title_guest": "Lưu kết quả phân tích",
+    "title_authenticated": "Lưu kết quả phân tích",
+    "guest_message": "Để lưu kết quả phân tích vào lịch sử, bạn cần đăng nhập hoặc đăng ký tài khoản.",
+    "login_button": "Đăng nhập",
+    "register_button": "Đăng ký tài khoản",
+    "cancel_guest": "Để sau",
+    "confirm_save": "Bạn có muốn lưu kết quả này vào lịch sử phân tích?",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "success": "Đã lưu thành công vào lịch sử của bạn!",
+    "error_generic": "Không thể lưu kết quả. Vui lòng thử lại."
   }
 }

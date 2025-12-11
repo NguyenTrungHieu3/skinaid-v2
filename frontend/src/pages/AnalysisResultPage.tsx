@@ -8,6 +8,7 @@ import AnalysisDetails from "../components/analysis/AnalysisDetails";
 import TreatmentSection from "../components/analysis/TreatmentSection";
 import SeverityAlert from "../components/analysis/SeverityAlert";
 import MapModal from "../components/analysis/MapModal";
+import SaveLoginModal from "../components/analysis/SaveLoginModal";
 import { isAxiosError } from "axios";
 import {
   getAnalysisResult,
@@ -141,6 +142,9 @@ const AnalysisResultPage = () => {
 
   // State for MapModal
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  // State for SaveLoginModal (guest save flow)
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
   // 4. Fetch dữ liệu khi component mount
   useEffect(() => {
@@ -443,6 +447,8 @@ const AnalysisResultPage = () => {
               ? () => setIsDownloadModalOpen(true)
               : undefined
           }
+          // Logic Save (cho guest)
+          onSaveClick={() => setIsSaveModalOpen(true)}
         />
 
         <MedicalDisclaimer />
@@ -513,6 +519,17 @@ const AnalysisResultPage = () => {
       <MapModal
         isOpen={isMapModalOpen}
         onClose={() => setIsMapModalOpen(false)}
+      />
+
+      {/* Save Login Modal for guest users */}
+      <SaveLoginModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        analysisId={analysis_id || ""}
+        onSaveSuccess={() => {
+          // Refresh page or update UI after successful save
+          console.log("Analysis claimed successfully!");
+        }}
       />
     </div>
   );

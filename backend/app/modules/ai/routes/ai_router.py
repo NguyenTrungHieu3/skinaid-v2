@@ -35,20 +35,13 @@ async def get_session_id(
     x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
 ) -> Optional[UUID]:
     session_str = session_id or x_session_id
-    
-    logger.info(f"[GET_SESSION_ID] Cookie session_id: {session_id}")
-    logger.info(f"[GET_SESSION_ID] Header X-Session-ID: {x_session_id}")
-    logger.info(f"[GET_SESSION_ID] Using session_str: {session_str}")
 
     if session_str:
         try:
-            parsed_session = UUID(session_str)
-            logger.info(f"[GET_SESSION_ID] Parsed session UUID: {parsed_session}")
-            return parsed_session
+            return UUID(session_str)
         except ValueError:
             raise HTTPException(status_code=400, detail="Định dạng session_id không hợp lệ")
 
-    logger.warning("[GET_SESSION_ID] No session_id provided!")
     return None
 
 @router.post("/analyze")

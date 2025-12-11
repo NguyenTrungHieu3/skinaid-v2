@@ -56,15 +56,8 @@ apiClient.interceptors.request.use(
     } else {
       // 3. Nếu KHÔNG có token (guest user), gửi session_id
       const sessionId = localStorage.getItem("guest_session_id");
-
-      // DEBUG: Log session_id being sent
-      console.log("[API Interceptor] Sending request to:", config.url);
-      console.log("[API Interceptor] Session ID in localStorage:", sessionId);
-
       if (sessionId) {
         config.headers["X-Session-ID"] = sessionId;
-      } else {
-        console.warn("[API Interceptor] No session_id found in localStorage!");
       }
     }
 

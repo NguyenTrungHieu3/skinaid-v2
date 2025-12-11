@@ -792,5 +792,19 @@
     "login_button": "Login",
     "go_home": "Go to Home",
     "new_analysis": "New Analysis"
+  },
+  "save_modal": {
+    "title_guest": "Save Analysis Result",
+    "title_authenticated": "Save Analysis Result",
+    "guest_message": "To save this analysis to your history, you need to login or register an account.",
+    "login_button": "Login",
+    "register_button": "Register Account",
+    "cancel_guest": "Maybe Later",
+    "confirm_save": "Do you want to save this result to your analysis history?",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "success": "Successfully saved to your history!",
+    "error_generic": "Could not save the result. Please try again."
   }
 }

@@ -31,6 +31,7 @@ interface MainHeaderProps {
   onSelectTab?: (id: string) => void; // Hàm xử lý khi chọn
 
   onDownload?: () => void;
+  onSaveClick?: () => void; // Handler khi click nút Save (cho guest)
 }
 
 const getSeverityClass = (severity: Severity = "") => {
@@ -74,6 +75,7 @@ const MainHeader = ({
   activeTabId,
   onSelectTab,
   onDownload,
+  onSaveClick,
 }: MainHeaderProps) => {
   const { t } = useTranslation();
 
@@ -153,8 +155,8 @@ const MainHeader = ({
         </button>
 
         {/* 3. CHỈ HIỂN THỊ NÚT SAVE KHI CHƯA ĐĂNG NHẬP (!isAuthenticated) */}
-        {!isAuthenticated && (
-          <button className={styles.actionBtn}>
+        {!isAuthenticated && onSaveClick && (
+          <button className={styles.actionBtn} onClick={onSaveClick}>
             <FaSave />
             <span className={styles.btnText}>
               {t("analysis.header_save_button")}

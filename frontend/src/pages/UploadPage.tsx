@@ -248,8 +248,6 @@ const UploadPage = () => {
       const sessionId = localStorage.getItem("guest_session_id");
 
       if (!sessionId) {
-        console.log("[handleSubmit] Session not ready in localStorage, waiting...");
-
         // Đợi session được tạo (tối đa 3 giây)
         let waitCount = 0;
         const maxWait = 30; // 30 * 100ms = 3 seconds
@@ -266,10 +264,6 @@ const UploadPage = () => {
           setErrorMessage("Không thể tạo session. Vui lòng thử lại.");
           return;
         }
-
-        console.log("[handleSubmit] Session ready after waiting:", finalSessionId);
-      } else {
-        console.log("[handleSubmit] Session already in localStorage:", sessionId);
       }
     }
 

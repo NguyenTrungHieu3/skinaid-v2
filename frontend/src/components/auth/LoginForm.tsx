@@ -133,20 +133,29 @@ const LoginForm = () => {
         );
 
         // Check for pending actions (e.g., claiming analysis)
-        const state = location.state as { claimAnalysisId?: string; from?: any } | null;
+        const state = location.state as { claimAnalysisId?: string; returnTo?: string; from?: any } | null;
 
-        if (state?.claimAnalysisId) {
-          console.log("Found pending analysis claim:", state.claimAnalysisId);
+        // Check both location state and sessionStorage for pending claim
+        const pendingClaimId = state?.claimAnalysisId || sessionStorage.getItem("pendingClaimAnalysisId");
+
+        if (pendingClaimId) {
+          console.log("Found pending analysis claim:", pendingClaimId);
           try {
-            // Import claimAnalysis dynamically or at top level
-            // We'll assume it's imported at the top
-            await claimAnalysis(state.claimAnalysisId);
-            console.log("Analysis claimed successfully, redirecting to history");
-            navigate("/history", { replace: true });
+            await claimAnalysis(pendingClaimId);
+            console.log("Analysis claimed successfully!");
+
+            // Clear the pending claim from sessionStorage
+            sessionStorage.removeItem("pendingClaimAnalysisId");
+
+            // Redirect to the analysis result page or history
+            const returnTo = state?.returnTo || `/analysis-result/${pendingClaimId}`;
+            navigate(returnTo, { replace: true });
             return;
           } catch (err) {
             console.error("Failed to claim analysis after login:", err);
-            // Fall through to normal redirect but maybe show a toast?
+            // Clear the pending claim even if it fails
+            sessionStorage.removeItem("pendingClaimAnalysisId");
+            // Fall through to normal redirect
           }
         }
 

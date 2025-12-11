@@ -48,12 +48,6 @@ export const getSessionId = (): string | null => {
 
   const now = new Date();
 
-  // DEBUG: Log for troubleshooting
-  console.log("[getSessionId] expiryStr:", expiryStr);
-  console.log("[getSessionId] expiryDate:", expiryDate.toISOString());
-  console.log("[getSessionId] now:", now.toISOString());
-  console.log("[getSessionId] isExpired:", now >= expiryDate);
-
   if (now >= expiryDate) {
     // Session đã hết hạn, xóa đi
     clearSessionId();
