@@ -14,10 +14,8 @@
   "auth_page": {
     "left_title": "Welcome to SkinAid",
     "left_desc": "Smart Wound Detection & Classification Support System",
-
     "login_tab": "LOGIN",
     "register_tab": "REGISTER",
-
     "username": "Username",
     "username_placeholder": "Enter your username",
     "password": "Password",
@@ -32,7 +30,6 @@
     "term": "I agree to the Terms and Conditions",
     "login_button": "Login",
     "register_button": "Register",
-
     "forgot_password_title": "Forgot Your Password?",
     "forgot_password_subtitle": "No worries! Enter your email address and we'll send you a link to reset your password.",
     "forgot_password_email": "Email Address",
@@ -40,7 +37,6 @@
     "forgot_password_back_to_login": "Back to Login",
     "forgot_password_tip": "Tip: ",
     "forgot_password_tip_desc": "Make sure to use the email address associated with your account.",
-
     "reset_password_title": "Reset Your Password",
     "reset_password_subtitle": "Please enter your new password below.",
     "reset_password_new": "New Password",
@@ -56,19 +52,15 @@
     "error_username_less_than_3": "Username must be at least 3 characters.",
     "error_username_more_than_50": "Username cannot exceed 50 characters.",
     "error_username_format": "Username can only contain letters, numbers, underscores (_), and hyphens (-). No spaces or diacritics allowed.",
-
     "error_password_required": "Password is required.",
     "error_password_less_than_8": "Password must be at least 8 characters.",
     "error_password_uppercase": "Password must contain at least one uppercase letter.",
     "error_password_one_number": "Password must contain at least one number.",
     "error_password__special_character": "Password must contain at least one special character (!@#$%^&*).",
-
     "error_confirm_password_required": "Please confirm your password.",
     "error_confirm_passwords_not_match": "Passwords do not match.",
-
     "error_email_required": "Email is required.",
     "error_email_invalid": "Please enter a valid email address.",
-
     "error_terms_required": "You must agree to the Terms and Conditions."
   },
   "header": {
@@ -273,113 +265,87 @@
     "sidebar_details": "Details",
     "sidebar_details_desc": "List of each type of wound",
     "sidebar_no_wounds_found": "No wounds found for this category.",
-
     "header_upload_button": "Upload image",
     "header_save_button": "Save",
     "header_download_button": "Download",
-
     "medical_title": "Important Medical Information Notice",
     "medical_desc": "AI analysis is for informational purposes only and is not a substitute for professional medical advice. The purpose of this analysis is to help people gain a more accurate view of the wound condition, but it cannot replace actual clinical assessment. Always consult a doctor or medical professional for safe and appropriate diagnosis and treatment.",
-
     "image_title": "Analyzed Image",
-
     "detail_title": "WOUND DETECTION LIKELIHOOD",
     "detail_wound": "Wound",
     "detail_severity": "Severity",
     "detail_healing_time": "Est. Healing Time",
     "detail_items": "Support Items Identified",
-
     "treatment_title": "Treatment Recommendations",
     "treatment_desc": "Follow these evidence-based care guidelines for optimal healing",
     "treatment_immediate_label": "First aid steps",
     "treatment_immediate_sub_label": "Steps to take now - {{step_length}} steps",
-
     "treatment_ongoing_label": "Ongoing Care (Daily Care)",
     "treatment_ongoing_sub_label": "Things you should do - {{item_length}} items",
-
     "treatment_not_recommended_label": "Not recommended",
     "treatment_not_recommended_sub_label": "Things to avoid - {{item_length}} items",
-
     "treatment_not_step": "There are no specific instructions.",
-
     "wound_type": {
       "abrasion": "Abrasion",
       "burn": "Burn",
       "bruise": "Bruise"
     },
-
     "wound_type_uppercase": {
       "Abrasion": "Abrasion",
       "Burn": "Burn",
       "Bruise": "Bruise"
     },
-
     "wound_sub": {
       "blister": "Blister",
       "scratch": "Scratch"
     },
-
     "severity": {
       "Mild": "Mild",
       "Moderate": "Moderate",
       "Severe": "Severe"
     }
   },
-
   "download": {
     "title": "Download Report",
     "subtitle": "Select the format you want to export:",
-
     "format_pdf_title": "PDF Document",
     "format_pdf_desc": "Best for sharing and printing.",
-
     "format_csv_title": "CSV File",
     "format_csv_desc": "Useful for spreadsheets and data analysis.",
-
     "select_wounds": "Select wounds to include:",
     "full_report": "Full report will be generated.",
     "custom_report": "Custom report with selected wounds.",
-
     "button_cancel": "Cancel",
     "button_download": "Download ",
-
     "severity_label": "Severity",
     "confidence": "Confidence"
   },
-
   "history": {
     "loading": {
       "timeline": "Loading timeline...",
       "detail": "Loading details..."
     },
-
     "error": {
       "load": "Unable to load data.",
       "detail": "Errors : {{errors}}"
     },
-
     "empty": {
       "history": "No analysis history available.",
       "detail": "No detail available."
     },
-
     "auth": {
       "not_logged_in": "You must log in to view history."
     },
-
     "sidebar": {
       "search_placeholder": "Search history..."
     },
-
     "timeline": {
       "title": "Analysis Timeline",
       "default_label": "Timeline"
     },
-
     "detail": {
       "title": "Analysis Details"
     },
-
     "search_placeholder": "Search events...",
     "filter_label": "Filter",
     "date_filters": {
@@ -389,18 +355,14 @@
       "1_month": "1 month",
       "newest": "Newest → Oldest",
       "oldest": "Oldest → Newest",
-      "all" : "Remove filter"
+      "all": "Remove filter"
     },
-
     "no_logo_fallback": "Logo",
-
     "upload_button": "Upload Image / Data"
   },
-
   "profile": {
     "banner_date": "Member since"
   },
-
   "settings": {
     "title": "Settings",
     "notifications": "Notifications",
@@ -462,45 +424,33 @@
     "hero_title": "Welcome to <strong>SkinAid</strong>",
     "hero_subtitle": "Your intelligent companion for wound care, powered by artificial intelligence to provide instant detection, accurate assessment, and personalized guidance.",
     "hero_button": "Get Started",
-
     "what_is_title": "What is SkinAid?",
     "what_is_p1": "SkinAid is a revolutionary AI-powered platform designed to make professional-grade wound care accessible to everyone. Using advanced machine learning technology, we help you detect, monitor, and manage wounds with confidence.",
     "what_is_p2": "Whether you're dealing with a minor cut, burn, or chronic wound, SkinAid provides instant analysis and evidence-based treatment recommendations—anytime, anywhere.",
     "what_is_p3": "Founded in 2024, we've already helped thousands of users better understand and care for their wounds, bridging the gap between everyday injuries and professional medical care.",
-
     "how_title": "How SkinAid Works",
     "how_subtitle": "Get professional wound assessment in three simple steps",
-
     "step_1_label": "Step 1",
     "step_1_title": "Upload Photo",
     "step_1_desc": "Take a clear photo of the wound using your smartphone or camera and upload it to SkinAid.",
-
     "step_2_label": "Step 2",
     "step_2_title": "AI Analysis",
     "step_2_desc": "Our advanced AI instantly analyzes the image to detect wound type, size, and severity.",
-
     "step_3_label": "Step 3",
     "step_3_title": "Get Guidance",
     "step_3_desc": "Receive personalized care recommendations and track healing progress over time.",
-
     "features_title": "Why Choose SkinAid?",
     "features_subtitle": "Combining cutting-edge technology with medical expertise to deliver exceptional wound care support",
-
     "f_ai_title": "AI-Powered Accuracy",
     "f_ai_desc": "94% accuracy rate with AI trained on thousands of medical images and validated by healthcare professionals.",
-
     "f_instant_title": "Instant Results",
     "f_instant_desc": "Get comprehensive wound analysis in seconds, available 24/7 whenever you need it.",
-
     "f_security_title": "HIPAA Compliant",
     "f_security_desc": "Your health data is protected with enterprise-grade security and end-to-end encryption.",
-
     "f_evidence_title": "Evidence-Based Care",
     "f_evidence_desc": "Treatment recommendations based on the latest medical research and clinical guidelines.",
-
     "f_mobile_title": "Mobile Friendly",
     "f_mobile_desc": "Access SkinAid anywhere, anytime on your smartphone, tablet, or computer with our responsive design.",
-
     "f_easy_title": "Easy to Use",
     "f_easy_desc": "Simple, intuitive interface designed for everyone—no medical knowledge required."
   },
@@ -831,5 +781,16 @@
     "nearby_facilities": "Nearby Facilities",
     "loading_location": "Getting your location...",
     "location_error": "Unable to determine your location. Please allow location access or try again."
+  },
+  "analysis_result": {
+    "loading": "Loading analysis result...",
+    "error_title": "An error occurred",
+    "retry": "Retry",
+    "access_denied_title": "Access Denied",
+    "access_denied_message": "You do not have permission to view this analysis result.",
+    "access_denied_hint": "This analysis result belongs to another account. Please log in with the account that performed the analysis.",
+    "login_button": "Login",
+    "go_home": "Go to Home",
+    "new_analysis": "New Analysis"
   }
 }

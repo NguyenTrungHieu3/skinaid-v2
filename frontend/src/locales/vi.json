@@ -820,5 +820,16 @@
     "nearby_facilities": "Cơ sở y tế gần đây",
     "loading_location": "Đang xác định vị trí của bạn...",
     "location_error": "Không thể xác định vị trí. Vui lòng cho phép truy cập vị trí hoặc thử lại."
+  },
+  "analysis_result": {
+    "loading": "Đang tải kết quả phân tích...",
+    "error_title": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "access_denied_title": "Truy cập bị từ chối",
+    "access_denied_message": "Bạn không có quyền xem kết quả phân tích này.",
+    "access_denied_hint": "Kết quả phân tích này thuộc về tài khoản khác. Vui lòng đăng nhập với tài khoản đã thực hiện phân tích.",
+    "login_button": "Đăng nhập",
+    "go_home": "Về trang chủ",
+    "new_analysis": "Phân tích mới"
   }
 }

@@ -74,7 +74,9 @@ const UploadPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  useGuestSession();
+
+  // Đợi guest session được khởi tạo hoàn tất trước khi cho phép phân tích
+  const { isLoading: isSessionLoading } = useGuestSession();
 
   // --- STATE ---
   const [step, setStep] = useState<ProcessStep>("IDLE");
@@ -237,6 +239,40 @@ const UploadPage = () => {
 
   const handleSubmit = async () => {
     if (!currentFile) return;
+
+    // Kiểm tra trực tiếp localStorage thay vì dựa vào state (có thể có race condition)
+    const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+
+    if (!token) {
+      // User là guest - cần có session_id
+      const sessionId = localStorage.getItem("guest_session_id");
+
+      if (!sessionId) {
+        console.log("[handleSubmit] Session not ready in localStorage, waiting...");
+
+        // Đợi session được tạo (tối đa 3 giây)
+        let waitCount = 0;
+        const maxWait = 30; // 30 * 100ms = 3 seconds
+
+        while (!localStorage.getItem("guest_session_id") && waitCount < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waitCount++;
+        }
+
+        // Kiểm tra lại sau khi đợi
+        const finalSessionId = localStorage.getItem("guest_session_id");
+        if (!finalSessionId) {
+          console.error("[handleSubmit] Session creation timed out!");
+          setErrorMessage("Không thể tạo session. Vui lòng thử lại.");
+          return;
+        }
+
+        console.log("[handleSubmit] Session ready after waiting:", finalSessionId);
+      } else {
+        console.log("[handleSubmit] Session already in localStorage:", sessionId);
+      }
+    }
+
     setStep("UPLOADING");
     const formData = new FormData();
     formData.append("file", currentFile);
@@ -498,6 +534,7 @@ const UploadPage = () => {
                     <button
                       onClick={handleSubmit}
                       className={styles.btnPrimaryLarge}
+                      disabled={isSessionLoading}
                     >
                       {t("upload.btn.analyze")} <FaArrowRight />
                     </button>

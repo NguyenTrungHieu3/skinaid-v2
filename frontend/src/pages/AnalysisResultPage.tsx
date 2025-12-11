@@ -112,6 +112,10 @@ const AnalysisResultPage = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
 
+  // KHÔNG tạo session mới trên trang này
+  // Guest chỉ có thể xem analysis nếu họ đã có session_id trong localStorage (từ lúc upload)
+  // Nếu session hết hạn hoặc không có, họ đúng là không có quyền xem
+
   const [analysisData, setAnalysisData] = useState<AnalysisGetResponse | null>(
     null
   );
@@ -169,14 +173,19 @@ const AnalysisResultPage = () => {
           setError(response.data.message);
         }
 
-        // 2. Fetch User Profile (Silent fail allowed)
-        try {
-          const profileResponse = await getMyProfile();
-          if (profileResponse.data.success) {
-            setUserProfile(profileResponse.data.data);
+        // 2. Fetch User Profile - Chỉ gọi khi user đã đăng nhập
+        if (isAuthenticated) {
+          try {
+            const profileResponse = await getMyProfile();
+            if (profileResponse.data.success) {
+              setUserProfile(profileResponse.data.data);
+            }
+          } catch (profileError) {
+            console.warn("Profile fetch failed:", profileError);
+            setUserProfile(null);
           }
-        } catch (profileError) {
-          console.warn("Guest mode or profile fetch failed");
+        } else {
+          // Guest user - không cần profile
           setUserProfile(null);
         }
       } catch (err) {
@@ -197,7 +206,7 @@ const AnalysisResultPage = () => {
       }
     };
     fetchResult();
-  }, [analysis_id, t]);
+  }, [analysis_id, t, isAuthenticated]);
 
   // --- Handlers ---
   // --- LOGIC ĐIỀU HƯỚNG MỚI ---

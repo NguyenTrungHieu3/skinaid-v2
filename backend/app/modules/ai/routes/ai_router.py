@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Cookie, Header, Request
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlmodel.ext.asyncio.session import AsyncSession
 from uuid import UUID
 from typing import Optional, List
@@ -12,18 +14,41 @@ from app.modules.guest.services.guest_service import GuestService
 
 router = APIRouter(prefix="/ai")
 
+
+def handle_controller_response(result):
+    """
+    Xử lý response từ controller.
+    Nếu là ErrorResponse, trả về JSONResponse với status_code đúng.
+    """
+    if isinstance(result, ErrorResponse):
+        return JSONResponse(
+            status_code=result.status_code,
+            content=jsonable_encoder(result)
+        )
+    return jsonable_encoder(result)
+
+import logging
+logger = logging.getLogger(__name__)
+
 async def get_session_id(
     session_id: Optional[str] = Cookie(None, alias="session_id"),
     x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
 ) -> Optional[UUID]:
     session_str = session_id or x_session_id
+    
+    logger.info(f"[GET_SESSION_ID] Cookie session_id: {session_id}")
+    logger.info(f"[GET_SESSION_ID] Header X-Session-ID: {x_session_id}")
+    logger.info(f"[GET_SESSION_ID] Using session_str: {session_str}")
 
     if session_str:
         try:
-            return UUID(session_str)
+            parsed_session = UUID(session_str)
+            logger.info(f"[GET_SESSION_ID] Parsed session UUID: {parsed_session}")
+            return parsed_session
         except ValueError:
             raise HTTPException(status_code=400, detail="Định dạng session_id không hợp lệ")
 
+    logger.warning("[GET_SESSION_ID] No session_id provided!")
     return None
 
 @router.post("/analyze")
@@ -38,7 +63,6 @@ async def analyze_wound_image(
 
     user_id = current_user.user_id if current_user else None
     if not user_id and not session_id:
-        # Auto-create guest session for unauthenticated users
         guest_service = GuestService(db)
         session_data = await guest_service.create_guest_session(
             ip_address=request.client.host if request.client else None,
@@ -79,7 +103,7 @@ async def analyze_wound_image(
             guest_session_id=session_id if user_id is None else None
         )
 
-    return result
+    return handle_controller_response(result)
 
 @router.get("/history")
 async def get_analysis_history(
@@ -106,7 +130,7 @@ async def get_analysis_history(
         offset=offset
     )
 
-    return result
+    return handle_controller_response(result)
 
 @router.get("/analysis/{analysis_id}")
 async def get_analysis_detail(
@@ -125,7 +149,7 @@ async def get_analysis_detail(
         session_id=session_id
     )
 
-    return result
+    return handle_controller_response(result)
 
 @router.delete("/analysis/{analysis_id}")
 async def delete_analysis(
@@ -159,7 +183,7 @@ async def delete_analysis(
         error_message=result.message if isinstance(result, ErrorResponse) else None
     )
 
-    return result
+    return handle_controller_response(result)
 
 @router.post("/analyze/batch")
 async def analyze_multiple_wound_images(
@@ -194,4 +218,4 @@ async def analyze_multiple_wound_images(
         max_files=5 
     )
     
-    return result
+    return handle_controller_response(result)

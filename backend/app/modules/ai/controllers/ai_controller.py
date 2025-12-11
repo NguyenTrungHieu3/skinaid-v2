@@ -44,8 +44,14 @@ class AIController:
 
     def _check_access(self, analysis, user_id: Optional[UUID], session_id: Optional[UUID]) -> Optional[ErrorResponse]:
         """Kiểm tra xem user/session có quyền truy cập vào phân tích không"""
+        logger.info(f"[CHECK_ACCESS] Analysis user_id: {analysis.user_id}")
+        logger.info(f"[CHECK_ACCESS] Analysis session_id: {analysis.session_id}")
+        logger.info(f"[CHECK_ACCESS] Request user_id: {user_id}")
+        logger.info(f"[CHECK_ACCESS] Request session_id: {session_id}")
+        
         if analysis.user_id:
             if not user_id or user_id != analysis.user_id:
+                logger.warning(f"[CHECK_ACCESS] User mismatch! analysis.user_id={analysis.user_id}, request.user_id={user_id}")
                 return ErrorResponse(
                     message=Message.AI_ACCESS_DENIED_MSG,
                     error_code=ErrorCode.AI_ACCESS_DENIED,
@@ -53,11 +59,14 @@ class AIController:
                 )
         elif analysis.session_id:
             if not session_id or session_id != analysis.session_id:
+                logger.warning(f"[CHECK_ACCESS] Session mismatch! analysis.session_id={analysis.session_id}, request.session_id={session_id}")
                 return ErrorResponse(
                     message=Message.AI_ACCESS_DENIED_MSG,
                     error_code=ErrorCode.AI_ACCESS_DENIED,
                     status_code=status.HTTP_403_FORBIDDEN
                 )
+        
+        logger.info("[CHECK_ACCESS] Access granted!")
         return None
 
     async def analyze_image(self, file, user_id: Optional[UUID] = None, session_id: Optional[UUID] = None) -> Union[SuccessResponse[WoundAnalysisResponse], ErrorResponse]:

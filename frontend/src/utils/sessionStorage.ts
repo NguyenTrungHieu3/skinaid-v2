@@ -25,8 +25,34 @@ export const getSessionId = (): string | null => {
   }
 
   // Kiểm tra xem session đã hết hạn chưa
-  const expiryDate = new Date(expiryStr);
+  // Backend trả về expires_at dạng UTC nhưng không có "Z" suffix
+  // Cần thêm "Z" để JavaScript parse đúng là UTC time
+  let expiryDate: Date;
+
+  // Check if string already has timezone info:
+  // - Ends with "Z" (UTC)
+  // - Contains "+" after "T" (positive offset like +07:00)
+  // - Contains "-" after the time part (negative offset like -05:00)
+  const hasTimezoneInfo =
+    expiryStr.endsWith("Z") ||
+    (expiryStr.includes("T") && expiryStr.split("T")[1]?.includes("+")) ||
+    (expiryStr.includes("T") && expiryStr.split("T")[1]?.match(/-\d{2}:/));
+
+  if (hasTimezoneInfo) {
+    // Already has timezone info
+    expiryDate = new Date(expiryStr);
+  } else {
+    // No timezone info - assume UTC and append "Z"
+    expiryDate = new Date(expiryStr + "Z");
+  }
+
   const now = new Date();
+
+  // DEBUG: Log for troubleshooting
+  console.log("[getSessionId] expiryStr:", expiryStr);
+  console.log("[getSessionId] expiryDate:", expiryDate.toISOString());
+  console.log("[getSessionId] now:", now.toISOString());
+  console.log("[getSessionId] isExpired:", now >= expiryDate);
 
   if (now >= expiryDate) {
     // Session đã hết hạn, xóa đi
