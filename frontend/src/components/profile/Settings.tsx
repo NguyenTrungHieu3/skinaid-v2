@@ -80,15 +80,15 @@ const Settings = () => {
   return (
     <div className={styles.settingsWrapper}>
       <div className={styles.settingsCard}>
-        <div className={styles.cardHeader}>
+        {/* <div className={styles.cardHeader}>
           <h3>
             <FaBell className={styles.cardHeaderIcon} />
             <span>{t("settings.notifications")}</span>
           </h3>
-        </div>
+        </div> */}
 
         {/* Item 1: Email Notifications */}
-        <div className={styles.settingItem}>
+        {/*<div className={styles.settingItem}>
           <div className={styles.settingInfo}>
             <h4>{t("settings.email_title")}</h4>
             <p>{t("settings.email_desc")}</p>
@@ -98,10 +98,10 @@ const Settings = () => {
             checked={settings.email}
             onChange={() => handleToggle("email")}
           />
-        </div>
+        </div>*/}
 
         {/* Item 2: Push Notifications */}
-        <div className={styles.settingItem}>
+        {/*<div className={styles.settingItem}>
           <div className={styles.settingInfo}>
             <h4>{t("settings.push_nofi_title")}</h4>
             <p>{t("settings.push_nofi_desc")}</p>
@@ -111,7 +111,7 @@ const Settings = () => {
             checked={settings.push}
             onChange={() => handleToggle("push")}
           />
-        </div>
+        </div>*/}
 
         <div className={styles.cardHeader} style={{ marginTop: "1.5rem" }}>
           <h3>
@@ -126,7 +126,6 @@ const Settings = () => {
             <h4>{t("settings.password_title")}</h4>
             <p>{t("settings.password_desc")}</p>
           </div>
-          {/* Đây nên là 1 nút bấm, không phải toggle */}
           <button
             className={styles.languageSelect} // Tái sử dụng style của dropdown
             onClick={() => setIsModalOpen(true)} // Điều hướng
@@ -136,31 +135,15 @@ const Settings = () => {
         </div>
 
         {/* Appearance section */}
-        <div className={styles.cardHeader} style={{ marginTop: "1.5rem" }}>
+        {/*<div className={styles.cardHeader} style={{ marginTop: "1.5rem" }}>
           <h3>
             <FaMoon className={styles.cardHeaderIcon} />
             <span>{t("settings.appearance")}</span>
           </h3>
-        </div>
-
-        {/* <div className={styles.settingItem}>
-          <div className={styles.settingInfo}>
-            <h4>{t("settings.language_title")}</h4>
-            <p>{t("settings.language_desc")}</p>
-          </div>
-          
-          <select
-            value={i18n.language} // Lấy ngôn ngữ hiện tại
-            onChange={handleLanguageChange} // Gọi hàm đổi ngônS ngữ
-            className={styles.languageSelect} // (Thêm CSS cho đẹp)
-          >
-            <option value="en">English</option>
-            <option value="vi">Tiếng Việt</option>
-          </select>
-        </div> */}
+        </div>*/}
 
         {/* Item 3: Dark Mode */}
-        <div className={styles.settingItem}>
+        {/*<div className={styles.settingItem}>
           <div className={styles.settingInfo}>
             <h4>{t("settings.mode_title")}</h4>
             <p>{t("settings.mode_desc")}</p>
@@ -170,7 +153,7 @@ const Settings = () => {
             checked={settings.darkMode}
             onChange={() => handleToggle("darkMode")}
           />
-        </div>
+        </div>*/}
       </div>
       {/* --- 4. RENDER MODAL (Nằm bên ngoài .settingsCard) --- */}
       {isModalOpen && (
