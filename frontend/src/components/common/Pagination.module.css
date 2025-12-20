@@ -148,32 +148,3 @@
     }
 }
 
-/* Dark Mode Support (Optional) */
-@media (prefers-color-scheme: dark) {
-    .pagination {
-        background: #1e293b;
-        border-color: #334155;
-    }
-
-    .paginationInfo {
-        color: #94a3b8;
-    }
-
-    .paginationBtn,
-    .paginationNumber {
-        background: #0f172a;
-        border-color: #334155;
-        color: #cbd5e1;
-    }
-
-    .paginationBtn:hover:not(:disabled),
-    .paginationNumber:hover {
-        background: #1e293b;
-        border-color: #475569;
-    }
-
-    .paginationNumber.active {
-        background: linear-gradient(135deg, #1E9378 0%, #17805f 100%);
-        border-color: #1E9378;
-    }
-}

@@ -9,18 +9,23 @@ from models.detection.wound_detector import WoundDetector
 from models.classification.wound_classifier import SeverityClassifier
 from configs.config import settings
 
+
 class WoundAnalyzer:
-    def __init__(self, yolo_model_path: Optional[str] = None, efficientnet_model_path: Optional[str] = None):
+    def __init__(
+        self,
+        yolo_model_path: Optional[str] = None,
+        efficientnet_model_path: Optional[str] = None,
+    ):
         if yolo_model_path is None:
             yolo_model_path = Path(settings.YOLO_MODEL_PATH)
-        else: 
+        else:
             yolo_model_path = Path(yolo_model_path)
 
         if efficientnet_model_path is None:
             efficientnet_model_path = Path(settings.EFFICIENTNET_MODEL_PATH)
-        else: 
+        else:
             efficientnet_model_path = Path(efficientnet_model_path)
-            
+
         self.detector = WoundDetector(str(yolo_model_path))
         self.classifier = SeverityClassifier(str(efficientnet_model_path))
 
@@ -38,6 +43,11 @@ class WoundAnalyzer:
         except Exception:
             return []
 
+    def getConfidenceFusion(
+        self, yolo_conf: float, eff_conf: float, w_yolo: float, w_eff: float
+    ) -> Optional[float]:
+        return yolo_conf * w_yolo + eff_conf * w_eff
+
     def analyze(self, image, conf_threshold: Optional[float] = None):
         try:
             if conf_threshold is None:
@@ -46,7 +56,7 @@ class WoundAnalyzer:
             detections = self.detector.detect(image, conf_threshold)
             if not detections:
                 return []
-            
+
             boxes = [d["bbox"] for d in detections]
             crops = self.crop_boxes(image, boxes)
 
@@ -54,13 +64,24 @@ class WoundAnalyzer:
             for i, crop in enumerate(crops):
                 try:
                     severity, conf = self.classifier.classify(crop)
-                    results.append({
-                        "bbox": detections[i]["bbox"],
-                        "class_name": detections[i]["class_name"],
-                        "wound_confidence": detections[i]["confidence"],
-                        "severity": severity,
-                        "severity_confidence": conf
-                    })
+
+                    # Công thức kết hợp độ tin cậy
+                    final_conf = self.getConfidenceFusion(
+                        detections[i]["confidence"], conf, 0.3, 0.7
+                    )
+                    print("yolo_conf:", detections[i]["confidence"])
+                    print("eff_conf:", conf)
+                    print("final_conf:", final_conf)
+
+                    results.append(
+                        {
+                            "bbox": detections[i]["bbox"],
+                            "class_name": detections[i]["class_name"],
+                            "wound_confidence": detections[i]["confidence"],
+                            "severity": severity,
+                            "severity_confidence": final_conf,
+                        }
+                    )
                 except Exception:
                     continue
             return results

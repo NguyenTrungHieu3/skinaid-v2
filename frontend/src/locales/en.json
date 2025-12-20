@@ -308,7 +308,7 @@
     },
     "wound_sub": {
       "blister": "Blister",
-      "scratch": "Scratch"
+      "skintear": "Skintear"
     },
     "severity": {
       "Mild": "Mild",
