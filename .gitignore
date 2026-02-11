@@ -153,10 +153,8 @@ backend/User_Guidelines.md
 *~
 .vim/
 .netrwhist
-.qoder/
-.kilocode/
 backend/tests/image_test
-.agent/
+
 
 # OS specific
 .DS_Store
@@ -282,3 +280,5 @@ pids/
 *.csr
 *.p12
 *.pfx
+
+.agent/

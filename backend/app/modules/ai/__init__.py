@@ -1,11 +1,19 @@
+# AI Module - Wound Analysis and Detection
+"""
+AI module cung cấp phân tích và phát hiện vết thương.
+- Phân tích ảnh vết thương bằng AI
+- Lưu trữ kết quả và lịch sử phân tích
+"""
+
 from .models.wound_analysis import WoundAnalysis
 from .models.wound_detection import WoundDetection
-from .controllers.ai_controller import AIController
-from .routes.ai_router import router as ai_router
+from .exceptions import AIError, WoundAnalysisNotFoundError, AIProcessFailedError, ImageDownloadError
 
 __all__ = [
     "WoundAnalysis",
     "WoundDetection",
-    "AIController",
-    "ai_router"
+    "AIError",
+    "WoundAnalysisNotFoundError",
+    "AIProcessFailedError",
+    "ImageDownloadError",
 ]

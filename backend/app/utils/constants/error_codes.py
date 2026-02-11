@@ -1,6 +1,12 @@
 """
-Error codes cho toàn bộ hệ thống
-Quy ước đặt tên: <MODULE>_<DESCRIPTION> = "<MODULE>_<NUMBER>"
+⚠️  DEPRECATED — File này sẽ bị xóa khi refactor controllers.
+
+Error codes cũ — chỉ giữ lại tạm thời vì controllers hiện tại
+vẫn đang sử dụng pattern `ErrorCode.XXX`.
+Khi refactor sang exception-based error handling, tất cả references
+đến file này sẽ được thay bằng module-specific exceptions.
+
+Xem: shared/exceptions/base.py cho hệ thống mới.
 """
 
 # ============================================
@@ -29,9 +35,9 @@ USER_INVALID_DATA = "USER_002"
 # Mã lỗi AI/ML (AI)
 # ============================================
 AI_SERVICE_ERROR = "AI_020"
-AI_MISSING_IDENTIFIER = "AI_024" 
+AI_MISSING_IDENTIFIER = "AI_024"
 AI_MULTIPLE_IDENTIFIERS = "AI_025"
-AI_INVALID_FILE = "AI_026" 
+AI_INVALID_FILE = "AI_026"
 AI_ANALYSIS_ERROR = "AI_027"
 AI_ANALYSIS_NOT_FOUND = "AI_028"
 AI_ACCESS_DENIED = "AI_029"
@@ -48,7 +54,6 @@ FIRSTAID_UPDATE_ERROR = "FIRSTAID_003"
 FIRSTAID_DELETE_ERROR = "FIRSTAID_004"
 FIRSTAID_GET_ERROR = "FIRSTAID_005"
 
-# Controller-specific error codes (with _GUIDE_ in name)
 FIRSTAID_GUIDE_CREATE_ERROR = "FIRSTAID_002"
 FIRSTAID_GUIDE_UPDATE_ERROR = "FIRSTAID_003"
 FIRSTAID_GUIDE_DELETE_ERROR = "FIRSTAID_004"

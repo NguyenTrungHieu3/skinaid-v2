@@ -1,17 +1,15 @@
-from .guest_schemas import (
+from .api import (
+    CreateGuestSessionRequest,
     GuestSessionResponse,
-    GuestUploadResponse,
-    GuestAnalysisResponse,
-    GuestSessionCreate,
-    GuestUploadCreate,
-    GuestAnalysisCreate
+    GuestStatsResponse,
+    ClaimAnalysisRequest,
 )
+from .domain import GuestSessionBase
 
 __all__ = [
+    "CreateGuestSessionRequest",
     "GuestSessionResponse",
-    "GuestUploadResponse",
-    "GuestAnalysisResponse",
-    "GuestSessionCreate",
-    "GuestUploadCreate",
-    "GuestAnalysisCreate"
+    "GuestStatsResponse",
+    "ClaimAnalysisRequest",
+    "GuestSessionBase",
 ]

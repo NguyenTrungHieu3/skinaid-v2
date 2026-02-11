@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.shared.schemas.response import SuccessResponse
-from app.modules.admin.controllers.admin_controller import AdminController
+from app.shared.response import SuccessResponse
+from app.modules.admin.services.statistics_service import StatisticsService
 from app.modules.admin.schemas.admin_schemas import (
     DashboardOverviewResponse,
     WoundTypeDistributionResponse,
@@ -12,14 +12,13 @@ from app.modules.admin.schemas.admin_schemas import (
 )
 from app.core.dependencies import get_db, require_admin
 from app.modules.auth.models.user import User
-from app.core.database import get_session
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 
 
-async def get_admin_controller(db: AsyncSession = Depends(get_db)) -> AdminController:
-    """Dependency để lấy admin controller instance"""
-    return AdminController(db)
+def get_statistics_service(db: AsyncSession = Depends(get_db)) -> StatisticsService:
+    """Dependency to get StatisticsService instance"""
+    return StatisticsService(db)
 
 
 @router.get(
@@ -29,8 +28,9 @@ async def get_admin_controller(db: AsyncSession = Depends(get_db)) -> AdminContr
     description="Lấy thống kê tổng quan cho dashboard admin (4 thẻ chính)"
 )
 async def get_dashboard_overview(
-    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
-    controller: AdminController = Depends(get_admin_controller),
+    period: str = Query("month", enum=[
+                        "day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
+    service: StatisticsService = Depends(get_statistics_service),
     current_user: User = Depends(require_admin)
 ):
     """
@@ -39,10 +39,15 @@ async def get_dashboard_overview(
     - Tổng số ảnh và số lượng đã phân tích
     - Chỉ số độ chính xác của mô hình
     - Thống kê phiên làm việc
-    
+
     **Yêu cầu quyền admin**
     """
-    return await controller.get_dashboard_overview(period=period)
+    data = await service.get_dashboard_overview(period=period)
+    response = DashboardOverviewResponse(**data)
+    return SuccessResponse(
+        message="Lấy tổng quan dashboard thành công",
+        data=response
+    )
 
 
 @router.get(
@@ -52,8 +57,9 @@ async def get_dashboard_overview(
     description="Lấy phân bố các loại vết thương cho biểu đồ tròn"
 )
 async def get_wound_type_distribution(
-    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
-    controller: AdminController = Depends(get_admin_controller),
+    period: str = Query("month", enum=[
+                        "day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
+    service: StatisticsService = Depends(get_statistics_service),
     current_user: User = Depends(require_admin)
 ):
     """
@@ -61,10 +67,15 @@ async def get_wound_type_distribution(
     - Tên loại vết thương (Trầy xước, Bỏng, Bầm tím, v.v.)
     - Số lượng cho mỗi loại
     - Màu hiển thị
-    
+
     **Yêu cầu quyền admin**
     """
-    return await controller.get_wound_type_distribution(period=period)
+    data = await service.get_wound_type_distribution(period=period)
+    response = WoundTypeDistributionResponse(**data)
+    return SuccessResponse(
+        message="Lấy phân bố loại vết thương thành công",
+        data=response
+    )
 
 
 @router.get(
@@ -74,7 +85,7 @@ async def get_wound_type_distribution(
     description="Lấy thống kê hoạt động hàng tuần cho biểu đồ cột (7 ngày qua)"
 )
 async def get_weekly_activity(
-    controller: AdminController = Depends(get_admin_controller),
+    service: StatisticsService = Depends(get_statistics_service),
     current_user: User = Depends(require_admin)
 ):
     """
@@ -82,10 +93,15 @@ async def get_weekly_activity(
     - Số lượng upload hàng ngày
     - Số lượng phân tích hàng ngày
     - Dữ liệu 7 ngày qua
-    
+
     **Yêu cầu quyền admin**
     """
-    return await controller.get_weekly_activity()
+    data = await service.get_weekly_activity()
+    response = WeeklyActivityResponse(**data)
+    return SuccessResponse(
+        message="Lấy hoạt động hàng tuần thành công",
+        data=response
+    )
 
 
 @router.get(
@@ -95,8 +111,9 @@ async def get_weekly_activity(
     description="Lấy phân bố mức độ nghiêm trọng của vết thương (Nhẹ, Trung bình, Nặng)"
 )
 async def get_severity_stats(
-    period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
-    controller: AdminController = Depends(get_admin_controller),
+    period: str = Query("month", enum=[
+                        "day", "week", "month", "year", "all"], description="Khoảng thời gian thống kê"),
+    service: StatisticsService = Depends(get_statistics_service),
     current_user: User = Depends(require_admin)
 ):
     """
@@ -105,10 +122,15 @@ async def get_severity_stats(
     - Số lượng vết thương trung bình
     - Số lượng vết thương nặng
     - Tổng số phát hiện
-    
+
     **Yêu cầu quyền admin**
     """
-    return await controller.get_severity_stats(period=period)
+    data = await service.get_severity_stats(period=period)
+    response = SeverityStatsResponse(**data)
+    return SuccessResponse(
+        message="Lấy thống kê mức độ nghiêm trọng thành công",
+        data=response
+    )
 
 
 @router.get(
@@ -119,7 +141,7 @@ async def get_severity_stats(
 )
 async def get_system_logs(
     limit: int = Query(10, ge=1, le=50, description="Số lượng logs cần lấy"),
-    controller: AdminController = Depends(get_admin_controller),
+    service: StatisticsService = Depends(get_statistics_service),
     current_user: User = Depends(require_admin)
 ):
     """
@@ -128,10 +150,15 @@ async def get_system_logs(
     - Thông báo cảnh báo
     - Thông báo thông tin
     - Sự kiện thành công
-    
+
     **Yêu cầu quyền admin**
     """
-    return await controller.get_system_logs(limit=limit)
+    data = await service.get_system_logs(limit=limit)
+    response = SystemLogsResponse(**data)
+    return SuccessResponse(
+        message="Lấy logs hệ thống thành công",
+        data=response
+    )
 
 
 @router.get(

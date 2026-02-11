@@ -1,140 +1,239 @@
-from fastapi import APIRouter, Query, HTTPException, status
-from typing import List
 import logging
+from typing import List
 
-from .controller import map_controller
-from .schemas import (
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+import httpx
+
+from app.modules.map.dependencies import get_map_service, MapSvc
+from app.modules.map.service import MapService
+from app.modules.map.schemas.api import (
+    LocationResponse,
     NearbyPlacesRequest,
     PlaceResponse,
     RouteRequest,
     RouteResponse,
-    LocationResponse,
     GeocodeResponse,
     ReverseGeocodeResponse
 )
+from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/map")
+router = APIRouter(prefix="/map", tags=["Map Services"])
 
 
 @router.get(
-    "/ip-location",
-    response_model=LocationResponse,
-    summary="Lấy vị trí từ IP",
-    description="Xác định vị trí người dùng dựa trên địa chỉ IP (dự phòng khi GPS không khả dụng)"
+    "/location/ip",
+    response_model=SuccessResponse[LocationResponse],
+    summary="Lấy vị trí từ IP"
 )
-async def get_ip_location():
-    """
-    Lấy vị trí người dùng từ địa chỉ IP
-    """
-    logger.info("[MAP_API] GET /ip-location")
-    return await map_controller.get_user_location_from_ip()
-
-
-@router.get(
-    "/location",
-    response_model=LocationResponse,
-    summary="Lấy vị trí từ IP (alias)",
-    description="Endpoint alias cho /ip-location để tương thích ngược"
-)
-async def get_location():
-    """
-    Alias cho get_ip_location - tương thích ngược
-    """
-    logger.info("[MAP_API] GET /location (alias for /ip-location)")
-    return await map_controller.get_user_location_from_ip()
+async def get_user_location_from_ip(
+    service: MapSvc
+) -> SuccessResponse:
+    try:
+        location_data = await service.get_ip_location()
+        return SuccessResponse(
+            message="Lấy vị trí thành công",
+            data=LocationResponse(**location_data)
+        )
+    except httpx.HTTPError as e:
+        logger.error(f"[MAP] Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dịch vụ định vị tạm thời không khả dụng"
+        )
 
 
 @router.post(
-    "/nearby-places",
-    response_model=List[PlaceResponse],
-    summary="Tìm địa điểm gần đây",
-    description="Tìm các cơ sở y tế (bệnh viện, phòng khám, nhà thuốc) gần vị trí đã cho"
+    "/places/nearby",
+    response_model=SuccessResponse[List[PlaceResponse]],
+    summary="Tìm địa điểm lân cận"
 )
-async def find_nearby_places(request: NearbyPlacesRequest):
-    """
-    Tìm các địa điểm gần vị trí người dùng
-    """
-    logger.info(
-        f"[MAP_API] POST /nearby-places: "
-        f"category={request.category}, radius={request.radius}m"
-    )
-    return await map_controller.find_nearby_healthcare_facilities(request)
+async def find_nearby_places(
+    request: NearbyPlacesRequest,
+    service: MapSvc
+) -> SuccessResponse:
+    try:
+        places_data = await service.find_nearby_places(
+            latitude=request.latitude,
+            longitude=request.longitude,
+            category=request.category,
+            radius=request.radius,
+            limit=request.limit
+        )
 
+        places = []
+        for p in places_data:
+            # Calculate icon URL
+            icon_url = _get_icon_for_category(service, p["category"])
 
-@router.post(
-    "/nearby",
-    response_model=List[PlaceResponse],
-    summary="Tìm địa điểm gần đây (alias)",
-    description="Endpoint alias cho /nearby-places để tương thích ngược"
-)
-async def find_nearby(request: NearbyPlacesRequest):
-    """
-    Alias cho find_nearby_places - tương thích ngược
-    """
-    logger.info(
-        f"[MAP_API] POST /nearby (alias): "
-        f"category={request.category}, radius={request.radius}m"
-    )
-    return await map_controller.find_nearby_healthcare_facilities(request)
+            places.append(PlaceResponse(
+                place_id=p["place_id"],
+                name=p["name"],
+                category=p["category"],
+                latitude=p["latitude"],
+                longitude=p["longitude"],
+                address=p["address"],
+                distance=p["distance"],
+                phone=p.get("phone"),
+                opening_hours=p.get("opening_hours"),
+                rating=p.get("rating"),
+                website=p.get("website"),
+                marker_icon_url=icon_url
+            ))
+
+        # Sort by distance
+        places.sort(key=lambda x: x.distance)
+
+        return SuccessResponse(
+            message=f"Tìm thấy {len(places)} địa điểm",
+            data=places
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dịch vụ tìm kiếm địa điểm lỗi"
+        )
 
 
 @router.post(
     "/route",
-    response_model=RouteResponse,
-    summary="Tính đường đi",
-    description="Tính toán route từ vị trí hiện tại đến địa điểm đã chọn"
+    response_model=SuccessResponse[RouteResponse],
+    summary="Tính đường đi"
 )
-async def calculate_route(request: RouteRequest):
-    """
-    Tính toán route từ điểm A đến điểm B
-    """
-    logger.info(
-        f"[MAP_API] POST /route: "
-        f"({request.start_latitude},{request.start_longitude}) → "
-        f"({request.end_latitude},{request.end_longitude}), "
-        f"mode={request.mode}"
-    )
-    return await map_controller.calculate_route_to_place(request)
+async def calculate_route(
+    request: RouteRequest,
+    service: MapSvc
+) -> SuccessResponse:
+    try:
+        route_data = await service.calculate_route(
+            start_lat=request.start_latitude,
+            start_lon=request.start_longitude,
+            end_lat=request.end_latitude,
+            end_lon=request.end_longitude,
+            mode=request.mode
+        )
+
+        if not route_data.get("geometry"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Không tìm thấy đường đi"
+            )
+
+        # Format details
+        distance = route_data["distance"]
+        duration = route_data["duration"]
+        mode = route_data["mode"]
+
+        dist_km = round(distance / 1000, 2)
+        dur_min = round(duration / 60, 1)
+
+        mode_vn = {
+            "drive": "Lái xe",
+            "walk": "Đi bộ",
+            "bike": "Đạp xe"
+        }
+        summary = f"{mode_vn.get(mode, mode)}: {dist_km}km, khoảng {int(dur_min)} phút"
+
+        geom = route_data["geometry"]
+        steps = []
+        for s in route_data["steps"]:
+            steps.append({
+                "instruction": s["instruction"],
+                "distance": s["distance"],
+                "duration": s["duration"]
+            })
+
+        return SuccessResponse(
+            message="Tính đường đi thành công",
+            data=RouteResponse(
+                distance=distance,
+                duration=duration,
+                distance_km=dist_km,
+                duration_minutes=dur_min,
+                mode=mode,
+                summary=summary,
+                geometry=geom,
+                steps=steps
+            )
+        )
+    except HTTPException:
+        raise
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dịch vụ dẫn đường lỗi"
+        )
 
 
 @router.get(
     "/geocode",
-    response_model=GeocodeResponse,
-    summary="Tìm tọa độ từ địa chỉ",
-    description="Tìm kiếm địa điểm theo tên hoặc địa chỉ (Geocoding)"
+    response_model=SuccessResponse[GeocodeResponse],
+    summary="Tìm tọa độ từ địa chỉ"
 )
 async def geocode_address(
-    address: str = Query(
-        ...,
-        description="Địa chỉ hoặc tên địa điểm cần tìm",
-        min_length=3,
-        example="Bệnh viện Chợ Rẫy, TP.HCM"
-    )
-):
-    """
-    Tìm tọa độ từ địa chỉ text (Geocoding)
-    """
-    logger.info(f"[MAP_API] GET /geocode: address={address}")
-    return await map_controller.geocode_search(address)
+    service: MapSvc,
+    address: str = Query(..., min_length=3)
+) -> SuccessResponse:
+    try:
+        result = await service.geocode_address(address)
+        if not result:
+            raise HTTPException(status_code=404, detail="Address not found")
+
+        return SuccessResponse(
+            message="Tìm tọa độ thành công",
+            data=GeocodeResponse(**result)
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=503, detail="Geocoding service unavailable")
 
 
 @router.get(
     "/reverse-geocode",
-    response_model=ReverseGeocodeResponse,
-    summary="Chuyển tọa độ thành địa chỉ",
-    description="Reverse geocoding: tìm địa chỉ từ tọa độ"
+    response_model=SuccessResponse[ReverseGeocodeResponse],
+    summary="Tìm địa chỉ từ tọa độ"
 )
 async def reverse_geocode(
-    latitude: float = Query(..., description="Vĩ độ", ge=-90, le=90),
-    longitude: float = Query(..., description="Kinh độ", ge=-180, le=180)
-):
-    """
-    Chuyển tọa độ thành địa chỉ (Reverse Geocoding)
-    """
-    logger.info(
-        f"[MAP_API] GET /reverse-geocode: ({latitude}, {longitude})"
-    )
-    result = await map_controller.reverse_geocode_location(latitude, longitude)
-    return ReverseGeocodeResponse(**result)
+    latitude: float,
+    longitude: float,
+    service: MapSvc
+) -> SuccessResponse:
+    try:
+        result = await service.reverse_geocode(latitude, longitude)
+        if not result:
+            raise HTTPException(status_code=404, detail="Location not found")
+
+        return SuccessResponse(
+            message="Tìm địa chỉ thành công",
+            data=ReverseGeocodeResponse(**result)
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=503, detail="Reverse geocoding service unavailable")
+
+
+def _get_icon_for_category(service: MapService, category: str) -> str:
+    category = category.lower()
+    icon_map = {
+        "healthcare.hospital": ("hospital", "16a34a"),
+        "healthcare.clinic": ("clinic-medical", "3b82f6"),
+        "healthcare.pharmacy": ("prescription-bottle", "f97316"),
+        "healthcare.dentist": ("tooth", "8b5cf6"),
+        "healthcare.doctors": ("user-md", "0ea5e9"),
+    }
+    # Check simple substring match if exact match fails
+    icon_name, color = ("hospital", "dc2626")  # Default
+
+    if category in icon_map:
+        icon_name, color = icon_map[category]
+    else:
+        # Fallback logic
+        if "hospital" in category:
+            icon_name, color = icon_map["healthcare.hospital"]
+        elif "clinic" in category:
+            icon_name, color = icon_map["healthcare.clinic"]
+        elif "pharmacy" in category:
+            icon_name, color = icon_map["healthcare.pharmacy"]
+
+    return service.get_marker_icon_url(icon=icon_name, color=color)

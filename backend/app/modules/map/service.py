@@ -1,11 +1,12 @@
-import httpx 
-import logging 
-from typing import Dict, Any, List, Optional, Tuple
+import httpx
+import logging
+from typing import Dict, Any, List, Optional
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-class GeoapifyService:
+
+class MapService:
     def __init__(self):
         self.api_key = settings.GEOAPIFY_API_KEY
         self.base_url = "https://api.geoapify.com"
@@ -27,8 +28,9 @@ class GeoapifyService:
             "longitude": data["location"]["longitude"],
             "city": data.get("city", {}).get("name", "Unknown"),
             "country": data.get("country", {}).get("name", "Unknown"),
-            "accuracy": "ip_based", 
-            "raw_data": data  
+            "accuracy": "ip_based",
+            "source": "ip",
+            "raw_data": data
         }
 
         logger.info(
@@ -51,7 +53,7 @@ class GeoapifyService:
         url = f"{self.base_url}/v2/places"
 
         filter_area = f"circle:{longitude},{latitude},{radius}"
-        
+
         # Map category to Geoapify format
         geoapify_category = self._map_category_to_geoapify(category)
 
@@ -116,13 +118,8 @@ class GeoapifyService:
             "apiKey": self.api_key
         }
 
-        # Map frontend mode 'bike' to Geoapify 'motorcycle' (common in Vietnam)
-        if mode == "bike":
-            params["mode"] = "motorcycle"
-        elif mode == "walk":
-            params["mode"] = "walk"
-        elif mode == "drive":
-            params["mode"] = "drive"
+        # Request schemas already mapped the mode, but good to be safe
+        params["mode"] = mode
 
         logger.info(
             f"[MAP_SERVICE] Tính route: "
@@ -152,11 +149,7 @@ class GeoapifyService:
         geometry = feature.get("geometry", {})
 
         coordinates = geometry.get("coordinates", [])
-        
-        # Geoapify trả về LineString với coordinates = [[lon, lat], [lon, lat], ...]
-        # hoặc có thể là MultiLineString = [[[lon, lat], ...], [[lon, lat], ...]]
-        # Chúng ta cần flatten nếu là MultiLineString và convert [lon, lat] -> [lat, lon]
-        
+
         geometry_points = []
         if coordinates:
             # Kiểm tra xem có phải MultiLineString không (nested 3 levels)
@@ -167,7 +160,7 @@ class GeoapifyService:
             else:
                 # LineString: [[lon, lat], ...]
                 coords_list = coordinates
-            
+
             # Convert [lon, lat] -> [lat, lon]
             geometry_points = [[coord[1], coord[0]] for coord in coords_list]
 
@@ -196,7 +189,7 @@ class GeoapifyService:
 
         return result
 
-    async def geocode_address(self, address: str) -> Dict[str, Any]:
+    async def geocode_address(self, address: str) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/v1/geocode/search"
 
         params = {
@@ -261,8 +254,9 @@ class GeoapifyService:
 
         features = data.get("features", [])
         if not features:
+            # Try finding ANY feature if address not found
             logger.warning(
-                f"[MAP_SERVICE] Không tìm thấy địa chỉ cho tọa độ: "
+                f"[MAP_SERVICE] Không tìm thấy địa chỉ chính xác. Tọa độ: "
                 f"({latitude}, {longitude})"
             )
             return None
@@ -310,24 +304,17 @@ class GeoapifyService:
     def _map_category_to_geoapify(self, category: str) -> str:
         """
         Map user-friendly category names to Geoapify's category format.
-        
-        Geoapify requires categories in format: "healthcare.hospital", "healthcare.clinic", etc.
-        Users can input simple names like "hospital", "clinic", "pharmacy", "all"
         """
         category_mapping = {
             "hospital": "healthcare.hospital",
             "clinic": "healthcare.clinic,healthcare.doctors",
             "pharmacy": "healthcare.pharmacy",
             "dentist": "healthcare.dentist",
-            "all": "healthcare",  # Tìm tất cả loại healthcare
-            "healthcare": "healthcare"  # Nếu đã đúng format thì giữ nguyên
+            "all": "healthcare",
+            "healthcare": "healthcare"
         }
-        
-        mapped = category_mapping.get(category.lower(), category)
-        
-        logger.debug(f"[MAP_SERVICE] Category mapping: '{category}' -> '{mapped}'")
-        
-        return mapped
+
+        return category_mapping.get(category.lower(), category)
 
     def _format_address(self, properties: Dict[str, Any]) -> str:
         if "formatted" in properties:
@@ -359,5 +346,3 @@ class GeoapifyService:
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return int(R * c)
-
-geoapify_service = GeoapifyService()

@@ -24,8 +24,6 @@ class EmailService:
     def generate_verification_token(self) -> str:
         return secrets.token_urlsafe(32)
     
-    # Đã xóa nội dung tạo email xác thực vì không còn yêu cầu xác thực email
-    
     def create_password_reset_email_content(self, email: str, token: str) -> tuple[str, str, str]:
         encoded_token = quote(token)
         encoded_email = quote(email)
@@ -90,10 +88,6 @@ class EmailService:
         """
         
         return subject, html_body, text_body
-    
-    # Đã xóa các phương thức email xác thực vì không còn yêu cầu xác thực email
-
-    # Đã xóa phương thức email xác thực async vì không còn yêu cầu xác thực email
 
     def _send_email_sync(self, email: str, token: str, email_type: str):
         """Synchronous email sending executed in thread pool"""
@@ -124,11 +118,7 @@ class EmailService:
         except Exception as e:
             logger.error(f"Failed to send {email_type} email to {email}: {str(e)}")
             raise
-    
-    # Đã xóa phương thức email chào mừng vì không còn yêu cầu xác thực email
-
-    # Đã xóa các phương thức email chào mừng vì không còn yêu cầu xác thực email
-    
+     
     async def send_password_reset_email(self, email: str, token: str) -> bool:
         """Send password reset email synchronously (legacy method)"""
         try:

@@ -1,3 +1,4 @@
+# Models
 from .models.user import User
 from .models.verification_token import VerificationToken
 from .models.roles import Role
@@ -6,34 +7,45 @@ from .models.user_roles import UserRole
 from .models.role_permissions import RolePermission
 
 # Dịch vụ
-from .services.auth_service import AuthService
+from .service import AuthService
 
-# Controllers
-from .controllers.auth_controller import AuthController
+# Router
+from .router import router as auth_router
 
 # Schemas
-from .schemas.user_schemas import (
-    UserBase, UserCreate, UserLogin, UserResponse,
-    PasswordResetRequest, PasswordResetConfirm, PasswordResetResponse,
-    ChangePasswordRequest, ChangePasswordResponse,
-    # EmailVerificationRequest, EmailVerificationResponse
+from .schemas.api import (
+    ChangePasswordRequest,
+    ChangePasswordResponse,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    PasswordResetResponse,
+    RefreshTokenRequest,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
 )
-
-# Routes
-from .routes.auth_router import router as auth_router
+from .schemas.domain import Token, UserBase
 
 __all__ = [
-    "User", "VerificationToken",
-    "Role", "Permission", "UserRole", "RolePermission",
-
+    "User",
+    "VerificationToken",
+    "Role",
+    "Permission",
+    "UserRole",
+    "RolePermission",
     "AuthService",
-
-    "AuthController",
-
-    "UserBase", "UserCreate", "UserLogin", "UserResponse",
-    "PasswordResetRequest", "PasswordResetConfirm", "PasswordResetResponse",
-    "ChangePasswordRequest", "ChangePasswordResponse",
-    # "EmailVerificationRequest", "EmailVerificationResponse",
-
-    "auth_router"
+    "auth_router",
+    "UserBase",
+    "UserCreate",
+    "UserLogin",
+    "UserResponse",
+    "RefreshTokenRequest",
+    "Token",
+    "TokenResponse",
+    "PasswordResetRequest",
+    "PasswordResetResponse",
+    "PasswordResetConfirm",
+    "ChangePasswordRequest",
+    "ChangePasswordResponse",
 ]

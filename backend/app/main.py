@@ -9,6 +9,11 @@ from app.core.config import settings
 from app.middleware.cors import setup_cors
 from app.core.events import lifespan
 from app.middleware.rate_limit import limiter
+from app.shared.exceptions import (
+    AppException,
+    app_exception_handler,
+    generic_exception_handler,
+)
 
 # Khởi tạo FastAPI app với lifespan
 app = FastAPI(
@@ -21,6 +26,10 @@ app = FastAPI(
 # Setup rate limiting
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Setup global exception handlers
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 # Setup CORS
 setup_cors(app)

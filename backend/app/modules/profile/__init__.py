@@ -1,23 +1,25 @@
-# Profile Module - Quản lý hồ sơ người dùng
-
 from .models.user_profile import UserProfile
-from .services.profile_service import ProfileService
-from .controllers.profile_controller import ProfileController
+from .repository import ProfileRepository
+from .router import router as profile_router
 from .schemas.user_profile_schemas import (
+    AvatarDeleteResponse,
+    AvatarUploadResponse,
+    ProfileStatisticsResponse,
+    PublicAvatarResponse,
     UserProfileResponse,
     UserProfileUpdate,
-    UserProfileBase,
-    ProfileStatisticsResponse
 )
-from .routes.profile_router import router as profile_router
+from .service import ProfileService
 
 __all__ = [
     "UserProfile",
+    "ProfileRepository",
     "ProfileService",
-    "ProfileController",
+    "profile_router",
     "UserProfileResponse",
     "UserProfileUpdate",
-    "UserProfileBase",
     "ProfileStatisticsResponse",
-    "profile_router"
+    "AvatarUploadResponse",
+    "AvatarDeleteResponse",
+    "PublicAvatarResponse",
 ]

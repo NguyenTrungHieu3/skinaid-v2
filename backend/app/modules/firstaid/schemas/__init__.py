@@ -1,9 +1,18 @@
-from .first_aid_schemas import (
+from .api import (
+    CreateGuideRequest,
     FirstAidGuideResponse,
-    WoundTypeResponse
+    GuideStatsResponse,
+    GuideValidationResponse,
+    UpdateGuideRequest,
 )
+from .domain import FirstAidGuideBase, GuideItem
 
 __all__ = [
+    "CreateGuideRequest",
     "FirstAidGuideResponse",
-    "WoundTypeResponse"
+    "GuideStatsResponse",
+    "GuideValidationResponse",
+    "UpdateGuideRequest",
+    "FirstAidGuideBase",
+    "GuideItem",
 ]
