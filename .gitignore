@@ -281,4 +281,6 @@ pids/
 *.csr
 *.p12
 *.pfx
+.agent/
+.kilocode/
 
