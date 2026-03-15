@@ -1,7 +1,3 @@
-"""
-Auth Domain Schemas — Internal data structures / Base schemas.
-"""
-
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
@@ -18,7 +14,6 @@ class UserBase(BaseModel):
 
 
 class Token(BaseModel):
-    """Token schema basic."""
 
     access_token: str
     token_type: str = "bearer"

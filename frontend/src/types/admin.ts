@@ -90,3 +90,32 @@ export interface SystemLogsResponse {
   total_logs: number;
   unresolved_errors: number;
 }
+
+/**
+ * Weekly Activity Item
+ * Matches backend DailyActivityItem
+ */
+export interface DailyActivityItem {
+  date: string;
+  uploads: number;
+  analyses: number;
+}
+
+/**
+ * Weekly Activity Response
+ * Matches backend WeeklyActivityResponse
+ */
+export interface WeeklyActivityResponse {
+  daily_stats: DailyActivityItem[];
+  total_uploads: number;
+  total_analyses: number;
+}
+
+/**
+ * Severity Statistics Response (updated)
+ * Matches backend SeverityStatsResponse
+ */
+export interface SeverityStatsResponse {
+  distribution: Record<string, number>;
+  total: number;
+}

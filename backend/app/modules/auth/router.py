@@ -1,19 +1,12 @@
-"""
-Auth Router — Route → Service (no controller layer).
-
-Router chỉ parse request, gọi service, build response.
-Exception handling được global handler xử lý (shared/exceptions/handler.py).
-"""
-
-import logging
-import uuid
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
+import logging
+import uuid
 
 from app.core.Security.jwt import JWTHandler
 from app.core.dependencies import get_current_active_user, get_db, get_token
+from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.services.audit_service import AuditService
 from app.modules.auth.dependencies import get_auth_service
 from app.modules.auth.models.user import User
@@ -39,16 +32,13 @@ jwt_handler = JWTHandler()
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# ── Helpers ───────────────────────────────────────────────
-
-
-def _build_user_response(user: User) -> UserResponse:
-    """Chuyển đổi User entity → UserResponse schema."""
-    roles = (
-        [ur.role.role_name for ur in user.user_roles if ur.role]
-        if user.user_roles
-        else []
-    )
+async def _build_user_response(user: User) -> UserResponse:
+    """Build user response with eager-loaded relationships."""
+    roles = []
+    if user.user_roles:
+        for ur in user.user_roles:
+            if hasattr(ur, 'role') and ur.role:
+                roles.append(ur.role.role_name)
 
     return UserResponse(
         user_id=user.user_id,
@@ -78,9 +68,9 @@ async def _audit(
     error_message: str | None = None,
     details: dict | None = None,
 ) -> None:
-    """Audit log helper — fire-and-forget trong try/except."""
     try:
-        audit_service = AuditService(db)
+        audit_repo = AuditRepository(db)
+        audit_service = AuditService(audit_repo)
         await audit_service.log_event(
             action=action,
             user_id=user_id,
@@ -96,16 +86,11 @@ async def _audit(
         logger.warning("Audit log failed: %s", str(e))
 
 
-# ══════════════════════════════════════════════════════════
-# PUBLIC ENDPOINTS
-# ══════════════════════════════════════════════════════════
-
-
 @router.post(
     "/signup",
     response_model=SuccessResponse[UserResponse],
     status_code=status.HTTP_201_CREATED,
-    summary="Đăng ký user mới",
+    summary="Register new user",
 )
 async def register_user(
     request: Request,
@@ -113,9 +98,8 @@ async def register_user(
     service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    """Đăng ký tài khoản mới. Sau khi đăng ký sẽ gửi email xác thực."""
     user = await service.register_user(user_data)
-    user_response = _build_user_response(user)
+    user_response = await _build_user_response(user)
 
     await _audit(
         db,
@@ -135,7 +119,7 @@ async def register_user(
 @router.post(
     "/signin",
     response_model=SuccessResponse[TokenResponse],
-    summary="Đăng nhập",
+    summary="Login",
 )
 async def login_user(
     request: Request,
@@ -143,7 +127,6 @@ async def login_user(
     service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    """Đăng nhập hệ thống và trả về token xác thực."""
     result = await service.login(credentials)
     user = result["user"]
 
@@ -156,12 +139,14 @@ async def login_user(
         details={"user_name": credentials.user_name},
     )
 
+    user_response = await _build_user_response(user)
+
     return SuccessResponse(
         message="Đăng nhập thành công",
         data=TokenResponse(
             access_token=result["access_token"],
             refresh_token=result["refresh_token"],
-            user=_build_user_response(user),
+            user=user_response,
         ),
     )
 
@@ -169,22 +154,22 @@ async def login_user(
 @router.post(
     "/refresh",
     response_model=SuccessResponse[TokenResponse],
-    summary="Làm mới token",
+    summary="Refresh token",
 )
 async def refresh_token(
     refresh_request: RefreshTokenRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
-    """Làm mới access token bằng refresh token."""
-    # Delegate logic to service
     result = await service.refresh_token(refresh_request.refresh_token)
+
+    user_response = await _build_user_response(result["user"])
 
     return SuccessResponse(
         message="Làm mới token thành công",
         data=TokenResponse(
             access_token=result["access_token"],
             refresh_token=result["refresh_token"],
-            user=_build_user_response(result["user"]),
+            user=user_response,
         ),
     )
 
@@ -192,13 +177,12 @@ async def refresh_token(
 @router.post(
     "/password-reset/request",
     response_model=SuccessResponse[PasswordResetResponse],
-    summary="Yêu cầu đặt lại mật khẩu",
+    summary="Request password reset",
 )
 async def request_password_reset(
     reset_request: PasswordResetRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
-    """Gửi yêu cầu đặt lại mật khẩu qua email."""
     await service.initiate_password_reset(reset_request.email)
     return SuccessResponse(
         message="Yêu cầu đặt lại mật khẩu đang được xử lý",
@@ -213,7 +197,7 @@ async def request_password_reset(
 @router.post(
     "/password-reset/confirm",
     response_model=SuccessResponse[PasswordResetResponse],
-    summary="Xác nhận đặt lại mật khẩu",
+    summary="Confirm password reset",
 )
 async def confirm_password_reset(
     request: Request,
@@ -221,7 +205,6 @@ async def confirm_password_reset(
     service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    """Xác nhận đặt lại mật khẩu với token từ email."""
     await service.reset_password(
         reset_data.email, reset_data.token, reset_data.new_password
     )
@@ -243,38 +226,33 @@ async def confirm_password_reset(
     )
 
 
-# ══════════════════════════════════════════════════════════
-# AUTHENTICATED ENDPOINTS
-# ══════════════════════════════════════════════════════════
-
-
 @router.get(
     "/me",
     response_model=SuccessResponse[UserResponse],
-    summary="Thông tin user hiện tại",
+    summary="Get current user info",
 )
 async def read_users_me(
     current_user: User = Depends(get_current_active_user),
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
-    """Lấy thông tin cá nhân của user hiện tại."""
     user = await service.get_user_by_id(current_user.user_id)
-    # user guaranteed to exist if current_user exists, but checking strict
     if not user:
         from app.modules.auth.exceptions import UserNotFoundError
 
         raise UserNotFoundError(str(current_user.user_id))
 
+    user_response = await _build_user_response(user)
+
     return SuccessResponse(
         message="Lấy thông tin người dùng thành công",
-        data=_build_user_response(user),
+        data=user_response,
     )
 
 
 @router.post(
     "/logout",
     response_model=SuccessResponse[dict],
-    summary="Đăng xuất",
+    summary="Logout",
 )
 async def logout_user(
     request: Request,
@@ -282,14 +260,11 @@ async def logout_user(
     service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    """Đăng xuất khỏi hệ thống và vô hiệu hóa token."""
     now_iso = datetime.now(timezone.utc).isoformat()
     revoked_count = 0
     user_id = None
 
     try:
-        # We decode just to get JTI and user_id for logging/revocation
-        # Valid signature needed? verify_exp=False covers expired tokens on logout
         payload = jwt_handler.decode_token(token, verify_exp=False)
         jti = payload.get("jti")
         user_id = payload.get("sub")
@@ -297,7 +272,6 @@ async def logout_user(
         if jti:
             revoked_count = await service.revoke_token_family(jti)
     except Exception:
-        # Token invalid — still return success
         pass
 
     await _audit(
@@ -323,13 +297,12 @@ async def logout_user(
 @router.post(
     "/logout-all-devices",
     response_model=SuccessResponse[dict],
-    summary="Đăng xuất khỏi tất cả thiết bị",
+    summary="Logout from all devices",
 )
 async def logout_all_devices(
     current_user: User = Depends(get_current_active_user),
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
-    """Đăng xuất khỏi TẤT CẢ thiết bị."""
     result = await service.revoke_all_user_tokens(current_user.user_id)
 
     return SuccessResponse(
@@ -346,7 +319,7 @@ async def logout_all_devices(
 @router.post(
     "/change-password",
     response_model=SuccessResponse[ChangePasswordResponse],
-    summary="Thay đổi mật khẩu (auto logout all devices)",
+    summary="Change password",
 )
 async def change_password(
     request: Request,
@@ -355,14 +328,12 @@ async def change_password(
     service: AuthService = Depends(get_auth_service),
     db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    """Thay đổi mật khẩu tài khoản (đã đăng nhập)."""
     await service.change_password(
         user_id=current_user.user_id,
         old_password=password_data.old_password,
         new_password=password_data.new_password,
     )
 
-    # Revoke all tokens sau khi đổi password
     await service.revoke_all_user_tokens(current_user.user_id)
 
     await _audit(
@@ -382,18 +353,12 @@ async def change_password(
     )
 
 
-# ══════════════════════════════════════════════════════════
-# UTILITY
-# ══════════════════════════════════════════════════════════
-
-
 @router.get(
     "/health",
     response_model=SuccessResponse[dict],
-    summary="Kiểm tra tình trạng service",
+    summary="Health check",
 )
 async def health_check() -> SuccessResponse:
-    """Kiểm tra trạng thái hoạt động của service."""
     return SuccessResponse(
         message="Auth service đang hoạt động",
         data={

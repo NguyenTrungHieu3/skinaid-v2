@@ -1,9 +1,13 @@
+import logging
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import select, func, or_, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
+from app.modules.firstaid.utils import normalize_field_comparison, build_active_filter
 from app.shared.base_repository import BaseRepository
+
+logger = logging.getLogger(__name__)
 
 
 class FirstAidRepository(BaseRepository[FirstAidGuide]):
@@ -13,7 +17,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
     async def get_specific_guide(
         self, wound_type: str, severity: str, sub_type: str
     ) -> Optional[FirstAidGuide]:
-        """Tìm guide cụ thể khớp cả wound_type, severity và sub_type."""
         stmt = (
             select(FirstAidGuide)
             .where(
@@ -31,7 +34,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
     async def get_general_guide(
         self, wound_type: str, severity: str
     ) -> Optional[FirstAidGuide]:
-        """Tìm guide chung (không có sub_type)."""
         stmt = (
             select(FirstAidGuide)
             .where(
@@ -47,7 +49,23 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
             .order_by(desc(FirstAidGuide.version))
             .limit(1)
         )
-        return await self.get_one_by_stmt(stmt)
+        result = await self.get_one_by_stmt(stmt)
+        
+        if not result:
+            fallback_stmt = (
+                select(FirstAidGuide)
+                .where(
+                    func.lower(FirstAidGuide.wound_type) == func.lower(wound_type),
+                    func.lower(FirstAidGuide.severity) == func.lower(severity),
+                    FirstAidGuide.is_active == True,
+                    FirstAidGuide.is_deleted == False,
+                )
+                .order_by(desc(FirstAidGuide.version))
+                .limit(1)
+            )
+            result = await self.get_one_by_stmt(fallback_stmt)
+
+        return result
 
     async def check_duplicate_active(
         self,
@@ -56,7 +74,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
         sub_type: Optional[str],
         exclude_id: Optional[Any] = None,
     ) -> bool:
-        """Check nếu đã có guide active khác tồn tại."""
         conditions = [
             func.lower(FirstAidGuide.wound_type) == func.lower(wound_type),
             func.lower(FirstAidGuide.severity) == func.lower(severity),
@@ -84,7 +101,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
         return result.scalars().first() is not None
 
     async def get_available_types(self) -> List[Dict[str, Any]]:
-        """Lấy danh sách các loại vết thương có sẵn."""
         stmt = (
             select(FirstAidGuide.wound_type, FirstAidGuide.severity)
             .where(
@@ -95,13 +111,7 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
             .order_by(FirstAidGuide.wound_type, FirstAidGuide.severity)
         )
         result = await self.db.execute(stmt)
-        rows = result.all()
-
-        # Group logic (move to service or keep here? keep here is fine for data transform)
-        # But repository usually returns entities or raw rows.
-        # I'll return raw rows and let service group them.
-        # Actually existing service does grouping. I can just return list of (type, severity)
-        return rows
+        return result.all()
 
     async def search(
         self,
@@ -113,7 +123,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
         is_active: Optional[bool] = None,
         search_query: Optional[str] = None,
     ) -> Tuple[List[FirstAidGuide], int]:
-        """Search với filters và pagination."""
         conditions = [FirstAidGuide.is_deleted == False]
 
         if wound_type:
@@ -131,15 +140,12 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
                 FirstAidGuide.title.ilike(f"%{search_query}%")
             )
 
-        # Count
         count_stmt = (
             select(func.count(FirstAidGuide.firstaidguide_id))
             .where(and_(*conditions))
         )
-        total_result = await self.db.execute(count_stmt)
-        total = total_result.scalar() or 0
+        total = (await self.db.execute(count_stmt)).scalar() or 0
 
-        # Items
         stmt = (
             select(FirstAidGuide)
             .where(and_(*conditions))
@@ -156,20 +162,16 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
         return items, total
 
     async def get_statistics(self) -> Dict[str, Any]:
-        """Aggregation queries."""
-        # Active count
         active_count_stmt = select(func.count()).where(
             FirstAidGuide.is_active == True, FirstAidGuide.is_deleted == False
         )
         active_guides = (await self.db.execute(active_count_stmt)).scalar() or 0
 
-        # Total (non-deleted)
         total_count_stmt = select(func.count()).where(
             FirstAidGuide.is_deleted == False
         )
         total_guides = (await self.db.execute(total_count_stmt)).scalar() or 0
 
-        # By Type
         type_stmt = (
             select(FirstAidGuide.wound_type, func.count())
             .where(
@@ -181,7 +183,6 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
         )
         type_result = (await self.db.execute(type_stmt)).all()
 
-        # By Severity
         sev_stmt = (
             select(FirstAidGuide.severity, func.count())
             .where(

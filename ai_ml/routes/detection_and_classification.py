@@ -45,8 +45,8 @@ async def analyze_wound(
         if img is None:
             raise HTTPException(status_code=400, detail="Invalid image format")
 
-        # Analyze image
-        results_raw = analyzer.analyze(img)
+        # Analyze image with bbox refinement enabled by default
+        results_raw = analyzer.analyze(img, refine_bbox=True)
 
         # --- SỬA LỖI TẠI ĐÂY ---
         # 1. Xử lý rõ ràng trường hợp 'None' (Lỗi 'NoneType' object is not iterable)

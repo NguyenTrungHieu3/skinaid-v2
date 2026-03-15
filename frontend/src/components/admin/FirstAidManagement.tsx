@@ -205,7 +205,8 @@ export default function FirstAidManagement() {
 
       if (response.success && response.data) {
         setGuides(response.data);
-        setTotalCount(response.total || response.data.length);
+        // Total is in extra.total from backend SuccessResponse
+        setTotalCount(response.extra?.total || response.data.length);
       } else if (Array.isArray(response)) {
         setGuides(response);
         setTotalCount(response.length);
@@ -407,11 +408,20 @@ export default function FirstAidManagement() {
     } catch (err: any) {
       console.error("Error creating guide:", err);
       // Prioritize the message field, then detail, then fallback
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
-        err.message ||
-        "Failed to create guide";
+      let errorMessage = "Failed to create guide";
+      
+      if (err.response?.data?.message) {
+        errorMessage = typeof err.response.data.message === 'string' 
+          ? err.response.data.message 
+          : JSON.stringify(err.response.data.message);
+      } else if (err.response?.data?.detail) {
+        errorMessage = typeof err.response.data.detail === 'string' 
+          ? err.response.data.detail 
+          : JSON.stringify(err.response.data.detail);
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       toastError(errorMessage);
     } finally {
       setIsSubmitting(false);

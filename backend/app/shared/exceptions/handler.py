@@ -1,10 +1,3 @@
-"""
-Global exception handlers đăng ký với FastAPI app.
-
-Tự động chuyển AppException thành JSON response chuẩn,
-và bắt Exception chưa xử lý thành 500.
-"""
-
 import logging
 from datetime import datetime, timezone
 from typing import Any
@@ -23,7 +16,6 @@ def _build_error_body(
     message: str,
     details: dict[str, Any],
 ) -> dict[str, Any]:
-    """Tạo error response body chuẩn."""
     return {
         "success": False,
         "error_code": error_code,
@@ -38,7 +30,6 @@ async def app_exception_handler(
     request: Request,
     exc: AppException,
 ) -> JSONResponse:
-    """Xử lý tất cả AppException và sub-classes."""
     logger.warning(
         "[%s] %s — %s | details=%s",
         request.method,
@@ -62,9 +53,8 @@ async def generic_exception_handler(
     request: Request,
     exc: Exception,
 ) -> JSONResponse:
-    """Bắt tất cả exception chưa xử lý → 500."""
     logger.error(
-        "[%s] %s — Lỗi không mong đợi: %s",
+        "[%s] %s — Unexpected error: %s",
         request.method,
         request.url.path,
         str(exc),

@@ -1,15 +1,7 @@
-"""
-Base exception hierarchy cho toàn bộ SkinAid application.
-
-Tất cả module-specific exceptions kế thừa từ các lớp base này.
-Tuân theo /exception-guidelines workflow.
-"""
-
 from typing import Any
 
 
 class AppException(Exception):
-    """Exception gốc cho toàn bộ ứng dụng SkinAid."""
 
     status_code: int = 500
     error_code: str = "INTERNAL_ERROR"
@@ -25,8 +17,6 @@ class AppException(Exception):
 
 
 class NotFoundError(AppException):
-    """Tài nguyên không tồn tại — 404."""
-
     status_code: int = 404
     error_code: str = "NOT_FOUND"
 
@@ -39,8 +29,6 @@ class NotFoundError(AppException):
 
 
 class BadRequestError(AppException):
-    """Dữ liệu đầu vào không hợp lệ — 400."""
-
     status_code: int = 400
     error_code: str = "BAD_REQUEST"
 
@@ -53,8 +41,6 @@ class BadRequestError(AppException):
 
 
 class ValidationError(AppException):
-    """Dữ liệu không vượt qua validation — 422."""
-
     status_code: int = 422
     error_code: str = "VALIDATION_ERROR"
 
@@ -67,8 +53,6 @@ class ValidationError(AppException):
 
 
 class ConflictError(AppException):
-    """Tài nguyên đã tồn tại hoặc xung đột — 409."""
-
     status_code: int = 409
     error_code: str = "CONFLICT"
 
@@ -81,8 +65,6 @@ class ConflictError(AppException):
 
 
 class UnauthorizedError(AppException):
-    """Xác thực thất bại — 401."""
-
     status_code: int = 401
     error_code: str = "UNAUTHORIZED"
 
@@ -95,8 +77,6 @@ class UnauthorizedError(AppException):
 
 
 class ForbiddenError(AppException):
-    """Không có quyền truy cập — 403."""
-
     status_code: int = 403
     error_code: str = "FORBIDDEN"
 
@@ -109,8 +89,6 @@ class ForbiddenError(AppException):
 
 
 class InternalError(AppException):
-    """Lỗi nội bộ hệ thống — 500."""
-
     status_code: int = 500
     error_code: str = "INTERNAL_ERROR"
 
@@ -123,8 +101,6 @@ class InternalError(AppException):
 
 
 class ServiceUnavailableError(AppException):
-    """Dịch vụ bên ngoài không khả dụng — 503."""
-
     status_code: int = 503
     error_code: str = "SERVICE_UNAVAILABLE"
 

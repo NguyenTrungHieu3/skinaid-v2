@@ -20,15 +20,11 @@ class AuditLog(SQLModel, table=True):
     )
     action: str = Field(max_length=100, nullable=False, index=True)
 
-    #Loại tài nguyên liên quan đến hành động 
-    # Ví dụ: "user_profile", "image", "document"
     resource_type: Optional[str] = Field(default=None, max_length=50, index=True) 
 
-    # ID cụ thể của tài nguyên bị tác động
-    # Ví dụ: ảnh upload có ID = "12345"
     resource_id: Optional[str] = Field(default=None, max_length=255, index=True)
-    ip_address: Optional[str] = Field(default=None, max_length=45) # Địa chỉ IP của client thực hiện hành động
-    user_agent: Optional[str] = Field(default=None, max_length=500) #Thông tin trình duyệt / thiết bị client
+    ip_address: Optional[str] = Field(default=None, max_length=45) 
+    user_agent: Optional[str] = Field(default=None, max_length=500) 
     success: bool = Field(default=True, nullable=False)
     error_message:Optional[str] =Field(default=None, max_length=500)
     is_guest: bool = Field(default=False, nullable=False)

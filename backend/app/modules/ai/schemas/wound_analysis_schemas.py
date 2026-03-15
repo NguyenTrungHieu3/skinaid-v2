@@ -3,7 +3,6 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
 class WoundDetectionResponse(BaseModel):
-    """Schema phản hồi cho phát hiện vết thương."""
     detection_id: UUID
     wound_type: str
     severity: str
@@ -13,7 +12,6 @@ class WoundDetectionResponse(BaseModel):
     detection_index: int
     firstaid_snapshot: Dict[str, Any]
 class WoundAnalysisResponse(BaseModel):
-    """Phản hồi phân tích vết thương cơ bản."""
     analysis_id: UUID
     user_id: Optional[UUID] = None
     session_id: Optional[UUID] = None
@@ -24,25 +22,14 @@ class WoundAnalysisResponse(BaseModel):
     analyzed_at: datetime
     created_at: datetime
 class WoundAnalysisDetailResponse(WoundAnalysisResponse):
-    """Phản hồi phân tích vết thương chi tiết với các phát hiện."""
     detections: List[WoundDetectionResponse] = Field(default_factory=list)
 class WoundAnalysisListResponse(BaseModel):
-    """Danh sách các phân tích vết thương."""
     total: int
     limit: int
     offset: int
     events: List[WoundAnalysisResponse]
 
-class BatchAnalysisItemResult(BaseModel): 
-    """
-    Kết quả phân tích cho MỘT ảnh trong batch.
-    
-    Giải thích:
-    - success: True/False cho biết ảnh này được xử lý thành công không
-    - file_name: Tên file gốc để client biết đây là ảnh nào
-    - analysis: Kết quả phân tích (nếu thành công)
-    - error: Thông tin lỗi (nếu thất bại)
-    """
+class BatchAnalysisItemResult(BaseModel):
     success: bool = Field(
         description= "Ảnh này có được phân tích thành công không"
     )
@@ -65,13 +52,6 @@ class BatchAnalysisItemResult(BaseModel):
 class BatchAnalysisResponse(BaseModel):
     """
     Response tổng hợp cho batch analysis.
-    
-    Giải thích:
-    - total_files: Tổng số file được gửi lên
-    - successful: Số lượng file phân tích thành công
-    - failed: Số lượng file thất bại
-    - results: Danh sách kết quả chi tiết cho từng file
-    - processing_time_ms: Tổng thời gian xử lý tất cả ảnh
     """
     total_files: int = Field(
         description="Tổng số file được upload"
@@ -92,11 +72,6 @@ class BatchAnalysisResponse(BaseModel):
 class BatchAnalysisRequest(BaseModel):
     """
     Metadata cho batch analysis request (optional).
-    
-    Có thể dùng để client gửi thêm thông tin như:
-    - Nhóm ảnh này thuộc về ai
-    - Mô tả batch này
-    - Tags, categories, v.v.
     """
     description: Optional[str] = Field(
         default=None,

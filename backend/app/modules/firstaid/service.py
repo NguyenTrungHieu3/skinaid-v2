@@ -33,18 +33,33 @@ class FirstAidService:
         severity: str,
         sub_type: Optional[str] = None,
     ) -> Optional[FirstAidGuide]:
-        """Lấy hướng dẫn (ưu tiên cụ thể, fallback chung)."""
+        logger.info(
+            f"[FIRSTAID_SERVICE] Looking for guide: wound_type='{wound_type}', "
+            f"severity='{severity}', sub_type='{sub_type}'"
+        )
+
         if sub_type:
             guide = await self.repository.get_specific_guide(
                 wound_type, severity, sub_type
             )
             if guide:
+                logger.info(
+                    f"[FIRSTAID_SERVICE] Found specific guide: {guide.title}"
+                )
                 return guide
             logger.info(
                 f"Không tìm thấy guide cụ thể cho {sub_type}, thử tìm guide chung"
             )
 
         guide = await self.repository.get_general_guide(wound_type, severity)
+        if guide:
+            logger.info(
+                f"[FIRSTAID_SERVICE] Found general guide: {guide.title}"
+            )
+        else:
+            logger.warning(
+                f"[FIRSTAID_SERVICE] No guide found for wound_type='{wound_type}', severity='{severity}'"
+            )
         return guide
 
     async def get_guide_by_id(self, guide_id: uuid.UUID) -> FirstAidGuide:
@@ -86,7 +101,6 @@ class FirstAidService:
                 msg += " đã tồn tại."
                 raise GuideAlreadyExistsError(msg)
 
-        # Prepare JSONB fields
         steps_json = {"items": request.steps} if request.steps else None
         dos_json = {"items": request.dos} if request.dos else None
         donts_json = {"items": request.donts} if request.donts else None
@@ -95,28 +109,34 @@ class FirstAidService:
             if request.supplies_needed
             else None
         )
-        source_json = {"source": request.source} if request.source else None
+        # Convert GuideSource to dict for JSONB storage
+        if request.source:
+            if hasattr(request.source, 'model_dump'):
+                source_json = request.source.model_dump()
+            elif isinstance(request.source, dict):
+                source_json = request.source
+            else:
+                source_json = {"name": str(request.source), "url": None}
+        else:
+            source_json = None
 
-        try:
-            guide = FirstAidGuide.create_guide(
-                wound_type=request.wound_type,
-                severity=request.severity,
-                title=request.title,
-                sub_type=request.sub_type,
-                steps=steps_json,
-                dos=dos_json,
-                donts=donts_json,
-                supplies_needed=supplies_json,
-                estimated_healing_time=request.estimated_healing_time,
-                source=source_json,
-                is_active=request.is_active,
-                created_by=created_by
-            )
-        except ValueError as e:
-            raise InvalidGuideDataError(str(e))
+        guide = FirstAidGuide.create_guide(
+            wound_type=request.wound_type,
+            severity=request.severity,
+            title=request.title,
+            sub_type=request.sub_type,
+            steps=steps_json,
+            dos=dos_json,
+            donts=donts_json,
+            supplies_needed=supplies_json,
+            estimated_healing_time=request.estimated_healing_time,
+            source=source_json,
+            is_active=request.is_active,
+            created_by=created_by
+        )
 
         self.db.add(guide)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(guide)
         return guide
 
@@ -155,7 +175,15 @@ class FirstAidService:
 
         if "source" in update_data:
             val = update_data["source"]
-            guide.source = {"source": val} if val else None
+            # Convert GuideSource to dict for JSONB storage
+            if val is not None and hasattr(val, 'model_dump'):
+                guide.source = val.model_dump()
+            elif isinstance(val, dict):
+                guide.source = val
+            elif isinstance(val, str):
+                guide.source = {"name": val, "url": None}
+            else:
+                guide.source = None
 
         fields = ["title", "wound_type", "severity",
                   "sub_type", "estimated_healing_time", "is_active"]
@@ -165,7 +193,7 @@ class FirstAidService:
 
         guide.version += 1
 
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(guide)
         return guide
 
@@ -184,7 +212,6 @@ class FirstAidService:
     async def get_stats(self) -> GuideStatsResponse:
         stats = await self.repository.get_statistics()
 
-        # 15 is Magic Number (4 types * 3 severities + 3 subtypes?)
         coverage = min(100.0, (stats["active_guides"] / 15) * 100)
 
         w_breakdown = {row[0]: row[1] for row in stats["type_stats"]}
@@ -215,7 +242,6 @@ class FirstAidService:
     async def check_availability(
         self, wound_type: str, severity: str, sub_type: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Check availability and return alternatives if not found."""
         guide = await self.get_guide(wound_type, severity, sub_type)
         if guide:
             return {

@@ -1,11 +1,3 @@
-"""
-Shared response schemas cho toàn bộ ứng dụng.
-
-Cung cấp SuccessResponse dùng chung cho tất cả API endpoints.
-ErrorResponse được giữ tạm thời (DEPRECATED) cho đến khi controllers
-được refactor sang exception-based error handling.
-"""
-
 from datetime import datetime, timezone
 from typing import Any, Generic, Optional, TypeVar
 
@@ -15,7 +7,6 @@ T = TypeVar("T")
 
 
 class SuccessResponse(BaseModel, Generic[T]):
-    """Response chuẩn cho các API thành công."""
 
     success: bool = True
     message: str = "Thành công"
@@ -30,12 +21,6 @@ class SuccessResponse(BaseModel, Generic[T]):
 
 
 class ErrorResponse(BaseModel):
-    """
-    ⚠️ DEPRECATED — Sẽ bị xóa khi refactor controllers.
-
-    Dùng shared/exceptions/ thay thế cho error handling.
-    Giữ lại tạm thời vì controllers vẫn tự build ErrorResponse.
-    """
 
     success: bool = False
     message: str = "Đã xảy ra lỗi"

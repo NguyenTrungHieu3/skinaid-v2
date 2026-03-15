@@ -10,9 +10,9 @@ from app.core.config import settings
 
 class FileService: 
     
-    @staticmethod 
-    def generate_unique_filename(orinial_filename: str)-> str: 
-        ext = Path(orinial_filename).suffix
+    @staticmethod
+    def generate_unique_filename(original_filename: str) -> str:
+        ext = Path(original_filename).suffix
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         unique_id = str(uuid4())[:8]
         return f"{timestamp}_{unique_id}{ext}"

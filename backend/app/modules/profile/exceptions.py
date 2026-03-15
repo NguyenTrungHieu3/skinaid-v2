@@ -1,7 +1,3 @@
-"""
-Profile Exceptions — Custom exceptions cho module Profile.
-"""
-
 from app.shared.exceptions import (
     BadRequestError,
     NotFoundError,
@@ -9,7 +5,6 @@ from app.shared.exceptions import (
 
 
 class ProfileNotFoundError(NotFoundError):
-    """không tìm thấy hồ sơ người dùng."""
 
     def __init__(self, user_id: str | None = None) -> None:
         message = (
@@ -24,7 +19,6 @@ class ProfileNotFoundError(NotFoundError):
 
 
 class InvalidProfileDataError(BadRequestError):
-    """Dữ liệu hồ sơ không hợp lệ."""
 
     def __init__(self, message: str = "Dữ liệu hồ sơ không hợp lệ") -> None:
         super().__init__(
@@ -34,7 +28,6 @@ class InvalidProfileDataError(BadRequestError):
 
 
 class AvatarUploadError(BadRequestError):
-    """Lỗi khi upload avatar."""
 
     def __init__(self, message: str = "Lỗi khi upload avatar") -> None:
         super().__init__(

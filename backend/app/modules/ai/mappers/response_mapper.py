@@ -47,7 +47,6 @@ class ResponseMapper:
 
     @staticmethod
     def map_wound_analysis_basic(analysis: Any) -> Dict:
-        """Basic response for POST /ai/analyze — thông tin tối thiểu."""
         return {
             'analysis_id': str(analysis.analysis_id),
             'image_url': analysis.image_url,

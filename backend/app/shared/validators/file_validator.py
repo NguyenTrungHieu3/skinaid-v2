@@ -19,7 +19,6 @@ class FileValidator:
     )-> dict: 
         """Validate uploaded file"""
 
-        # Xác thực KÍCH THƯỚC
         file_content = await file.read()
         file_size = len(file_content)
         max_size = max_size or settings.MAX_UPLOAD_SIZE
@@ -36,7 +35,6 @@ class FileValidator:
                 'error': f'File quá nhỏ. Tối thiểu {settings.MIN_FILE_SIZE}B'
             }
         
-        # Xác thực MIME sử dụng filetype
         kind = filetype.guess(file_content)
         if kind is None:
             return {
@@ -53,7 +51,6 @@ class FileValidator:
                 'error': f'Định dạng không được hỗ trợ. Chỉ chấp nhận: {", ".join(allowed_types)}'
             }
         
-        # Xác thực kích thước ẢNH
         dimensions = None
         try:
             image = Image.open(BytesIO(file_content))
@@ -64,12 +61,6 @@ class FileValidator:
             min_h = min_dimensions[1] if min_dimensions else settings.MIN_IMAGE_HEIGHT
             max_w = max_dimensions[0] if max_dimensions else settings.MAX_IMAGE_WIDTH
             max_h = max_dimensions[1] if max_dimensions else settings.MAX_IMAGE_HEIGHT
-
-            # Ghi log gỡ lỗi
-            print(f"[FILE_VALIDATOR] Image dimensions: {width}x{height}")
-            print(f"[FILE_VALIDATOR] Min allowed: {min_w}x{min_h}")
-            print(f"[FILE_VALIDATOR] Max allowed: {max_w}x{max_h}")
-            print(f"[FILE_VALIDATOR] Settings values - MIN: {settings.MIN_IMAGE_WIDTH}x{settings.MIN_IMAGE_HEIGHT}, MAX: {settings.MAX_IMAGE_WIDTH}x{settings.MAX_IMAGE_HEIGHT}")
 
             if width < min_w or height < min_h:
                 return {

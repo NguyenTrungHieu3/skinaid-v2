@@ -7,7 +7,10 @@ from pydantic import BaseModel, Field, field_validator
 from app.modules.firstaid.schemas.domain import FirstAidGuideBase
 
 
-# ── Shared Mixins ────────────────────────────────────────────────────────────
+class GuideSource(BaseModel):
+    """Source information for first aid guide."""
+    name: str
+    url: Optional[str] = None
 
 
 class GuideContentMixin(BaseModel):
@@ -15,24 +18,11 @@ class GuideContentMixin(BaseModel):
     dos: List[str] = Field(default_factory=list)
     donts: List[str] = Field(default_factory=list)
     supplies_needed: List[str] = Field(default_factory=list)
-    source: Optional[str] = None
-
-
-# ── Response Models ──────────────────────────────────────────────────────────
-
-
-class FirstAidGuideResponse(FirstAidGuideBase, GuideContentMixin):
-    firstaidguide_id: uuid.UUID
-    version: int
-    created_by: Optional[str] = None  # Return ID as string
-    created_at: datetime
-    updated_at: datetime
-    is_deleted: bool
+    source: Optional[Any] = Field(default=None, validate_default=True)
 
     @field_validator("steps", "dos", "donts", "supplies_needed", mode="before")
     @classmethod
     def flatten_jsonb_list(cls, v):
-        """Convert {'items': [...]} to [...] if needed."""
         if isinstance(v, dict):
             return v.get("items", [])
         return v
@@ -40,9 +30,38 @@ class FirstAidGuideResponse(FirstAidGuideBase, GuideContentMixin):
     @field_validator("source", mode="before")
     @classmethod
     def flatten_jsonb_source(cls, v):
-        """Convert {'source': '...'} to '...' if needed."""
+        if v is None:
+            return None
         if isinstance(v, dict):
-            return v.get("source")
+            # Check if it's wrapped {"source": {...}} or direct {name, url}
+            if "source" in v:
+                inner = v.get("source")
+                if isinstance(inner, dict):
+                    return GuideSource.model_validate(inner)
+                return inner
+            # Direct format {name, url}
+            return GuideSource.model_validate(v)
+        elif isinstance(v, str):
+            # Legacy format: just source name as string
+            return GuideSource(name=v, url=None)
+        return v
+
+
+class FirstAidGuideResponse(FirstAidGuideBase, GuideContentMixin):
+    firstaidguide_id: uuid.UUID
+    version: int
+    created_by: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool
+
+    @field_validator("created_by", mode="before")
+    @classmethod
+    def convert_created_by(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, uuid.UUID):
+            return str(v)
         return v
 
     class Config:
@@ -63,16 +82,12 @@ class GuideValidationResponse(BaseModel):
     completeness_score: int
 
 
-# ── Request Models ───────────────────────────────────────────────────────────
-
-
 class CreateGuideRequest(FirstAidGuideBase, GuideContentMixin):
     pass
 
 
 class UpdateGuideRequest(BaseModel):
     title: Optional[str] = None
-    # Usually not updated, but API might allow
     wound_type: Optional[str] = None
     severity: Optional[str] = None
     sub_type: Optional[str] = None

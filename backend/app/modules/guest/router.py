@@ -33,10 +33,6 @@ async def create_guest_session(
     user_agent: Optional[str] = Query(None, description="User agent"),
     service: GuestService = Depends(get_guest_service),
 ) -> SuccessResponse:
-    """
-    Tạo phiên khách mới.
-    Nếu IP/UA không được cung cấp, sẽ tự động lấy từ request.
-    """
     if not ip_address and request.client:
         ip_address = request.client.host
     if not user_agent:
@@ -61,7 +57,6 @@ async def get_guest_session(
     session_id: uuid.UUID,
     service: GuestService = Depends(get_guest_service),
 ) -> SuccessResponse:
-    """Lấy thông tin phiên khách theo ID."""
     session = await service.get_session(session_id)
     return SuccessResponse(
         message="Lấy thông tin phiên thành công",
@@ -78,7 +73,6 @@ async def get_guest_statistics(
     service: GuestService = Depends(get_guest_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
-    """Lấy thống kê hoạt động Guest."""
     stats = await service.get_stats()
     return SuccessResponse(
         message="Lấy thống kê thành công",
@@ -96,6 +90,5 @@ async def claim_analysis(
     service: GuestService = Depends(get_guest_service),
     current_user: User = Depends(require_user),
 ) -> SuccessResponse:
-    """Chuyển quyền sở hữu analysis từ guest sang user hiện tại."""
     await service.claim_analysis(analysis_id, current_user.user_id)
     return SuccessResponse(message="Nhận phân tích thành công")

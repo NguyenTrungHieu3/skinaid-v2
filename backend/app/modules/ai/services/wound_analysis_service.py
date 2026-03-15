@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from app.modules.ai.models.wound_analysis import WoundAnalysis
 from app.modules.ai.models.wound_detection import WoundDetection
 from app.modules.firstaid.service import FirstAidService
+from app.modules.firstaid.repository import FirstAidRepository
 from app.modules.ai.repository.wound_analysis_repository import WoundAnalysisRepository
 from app.modules.ai.exceptions import WoundAnalysisNotFoundError
 
@@ -19,24 +20,9 @@ class WoundAnalysisService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.repository = WoundAnalysisRepository(db)
-        self.first_aid_service = FirstAidService(db)
+        self.first_aid_service = FirstAidService(FirstAidRepository(db), db)
 
-    @classmethod
-    def map_wound_type_for_database(cls, ai_wound_type: str) -> str:
-        """Map wound type from AI to database format"""
-        if ai_wound_type.lower().startswith("burn"):
-            return "burn"
 
-        normalized = ai_wound_type.lower().strip()
-
-        if normalized not in WoundConstants.WOUND_TYPES:
-            logger.warning(
-                f"Wound type '{normalized}' not supported, "
-                f"using 'abrasion' as fallback"
-            )
-            return "abrasion"
-
-        return normalized
 
     async def create_analysis(
         self,
@@ -49,7 +35,6 @@ class WoundAnalysisService:
         total_detections: int,
         processing_time_ms: int
     ) -> WoundAnalysis:
-        """Create wound analysis record"""
         try:
             analysis = WoundAnalysis.create_analysis(
                 user_id=user_id,
@@ -85,19 +70,44 @@ class WoundAnalysisService:
         original_wound_type = detection.get("wound_type", "unknown")
         original_severity = detection.get("severity", "mild")
 
+        logger.info(
+            f"[GET_FIRST_AID] Raw input: wound_type='{original_wound_type}', severity='{original_severity}'"
+        )
+
         wound_info = WoundParser.parse_from_separate_fields(
             original_wound_type,
             original_severity
         )
 
-        mapped_wound_type = self.map_wound_type_for_database(
+        logger.info(
+            f"[GET_FIRST_AID] After parse: wound_type='{wound_info['wound_type']}', "
+            f"severity='{wound_info['severity']}', sub_type='{wound_info['sub_type']}'"
+        )
+
+        mapped_wound_type = WoundParser.map_wound_type_for_database(
             wound_info["wound_type"])
 
-        guide = await self.first_aid_service.get_first_aid_guide(
+        logger.info(
+            f"[FIRST_AID_LOOKUP] wound_type='{mapped_wound_type}', "
+            f"severity='{wound_info['severity']}', sub_type='{wound_info['sub_type']}'"
+        )
+
+        guide = await self.first_aid_service.get_guide(
             wound_type=mapped_wound_type,
             severity=wound_info["severity"],
             sub_type=wound_info["sub_type"]
         )
+
+        if guide:
+            logger.info(
+                f"[FIRST_AID_LOOKUP] Found guide: {guide.title} "
+                f"(wound_type={guide.wound_type}, severity={guide.severity}, sub_type={guide.sub_type})"
+            )
+        else:
+            logger.warning(
+                f"[FIRST_AID_LOOKUP] No guide found for wound_type='{mapped_wound_type}', "
+                f"severity='{wound_info['severity']}', sub_type='{wound_info['sub_type']}'"
+            )
 
         return guide
 
@@ -113,8 +123,10 @@ class WoundAnalysisService:
         return None
 
     @staticmethod
-    def extract_snapshot(guide: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def extract_snapshot(guide: Optional[Any]) -> Dict[str, Any]:
         """Create snapshot of first aid guide"""
+        from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
+        
         if not guide:
             return {
                 "title": "No first aid guide",
@@ -126,6 +138,18 @@ class WoundAnalysisService:
                 "estimated_healing_time": None
             }
 
+        if isinstance(guide, FirstAidGuide):
+            return {
+                "title": guide.title,
+                "source": WoundAnalysisService._extract_source_string(guide.source),
+                "steps": FirstAidGuide.extract_list(guide.steps),
+                "dos": FirstAidGuide.extract_list(guide.dos),
+                "donts": FirstAidGuide.extract_list(guide.donts),
+                "supplies_needed": FirstAidGuide.extract_list(guide.supplies_needed),
+                "estimated_healing_time": guide.estimated_healing_time,
+            }
+        
+        # Fallback for dict (backward compatibility)
         return {
             "title": guide.get("title", ""),
             "source": WoundAnalysisService._extract_source_string(guide.get("source")),
@@ -137,11 +161,16 @@ class WoundAnalysisService:
         }
 
     @staticmethod
-    def extract_guide_id(guide: Optional[Dict[str, Any]]) -> Optional[uuid.UUID]:
-        """Extract guide ID from guide dictionary"""
+    def extract_guide_id(guide: Optional[Any]) -> Optional[uuid.UUID]:
+        """Extract guide ID from guide"""
+        from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
+        
         if not guide:
             return None
 
+        if isinstance(guide, FirstAidGuide):
+            return guide.firstaidguide_id
+        
         guide_id = guide.get("firstaidguide_id")
         if not guide_id:
             return None
@@ -152,6 +181,36 @@ class WoundAnalysisService:
             logger.warning(f"Invalid guide_id format: {guide_id}")
             return None
 
+    async def _process_detection_data(
+        self,
+        detection: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Process detection data: parse wound info and fetch first aid guide.
+        Returns dict with parsed data ready for WoundDetection creation.
+        """
+        original_wound_type = detection.get("wound_type", "unknown")
+        original_severity = detection.get("severity", "mild")
+
+        wound_info = WoundParser.parse_from_separate_fields(
+            original_wound_type,
+            original_severity
+        )
+        mapped_wound_type = WoundParser.map_wound_type_for_database(
+            wound_info["wound_type"])
+
+        guide = await self.get_first_aid_guide_for_detection(detection)
+        guide_id = self.extract_guide_id(guide)
+        snapshot = self.extract_snapshot(guide)
+
+        return {
+            "wound_type": mapped_wound_type,
+            "severity": wound_info["severity"],
+            "sub_type": wound_info["sub_type"],
+            "guide_id": guide_id,
+            "snapshot": snapshot,
+        }
+
     async def save_detections(
         self,
         analysis_id: uuid.UUID,
@@ -161,41 +220,24 @@ class WoundAnalysisService:
         detection_objects = []
 
         for detection in detections:
-            original_wound_type = detection.get("wound_type", "unknown")
-            original_severity = detection.get("severity", "mild")
+            processed = await self._process_detection_data(detection)
 
-            wound_info = WoundParser.parse_from_separate_fields(
-                original_wound_type,
-                original_severity
-            )
-            mapped_wound_type = self.map_wound_type_for_database(
-                wound_info["wound_type"])
-
-            # Get first aid guide
-            guide = await self.get_first_aid_guide_for_detection(detection)
-            guide_id = self.extract_guide_id(guide)
-            snapshot = self.extract_snapshot(guide)
-
-            # Create detection record
             wound_detection = WoundDetection(
                 analysis_id=analysis_id,
-                wound_type=mapped_wound_type,
-                severity=wound_info["severity"],
-                sub_type=wound_info["sub_type"],
+                wound_type=processed["wound_type"],
+                severity=processed["severity"],
+                sub_type=processed["sub_type"],
                 confidence_score=detection.get("confidence", 0.0),
                 bounding_box=detection.get("bounding_box", {}),
                 detection_index=detection.get("detection_index", 0),
-                firstaidguide_id=guide_id,
-                firstaid_snapshot=snapshot,
+                firstaidguide_id=processed["guide_id"],
+                firstaid_snapshot=processed["snapshot"],
                 created_at=datetime.now(timezone.utc).replace(tzinfo=None)
             )
             detection_objects.append(wound_detection)
 
         if detection_objects:
             await self.repository.add_detections(detection_objects)
-            # Commit handled by repository flush/commit or manual commit here?
-            # Repository add_detections uses flush. We should commit.
-            await self.db.commit()
 
         logger.info(
             f"Saved {len(detections)} detections for analysis {analysis_id}")

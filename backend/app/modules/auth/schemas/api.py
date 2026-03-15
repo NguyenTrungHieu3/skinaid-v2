@@ -1,7 +1,3 @@
-"""
-Auth API Schemas — Request/Response models used in endpoints.
-"""
-
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -11,11 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 from app.modules.auth.schemas.domain import Token, UserBase
 
 
-# ── Response Models ──────────────────────────────────────────────────────────
-
-
 class UserResponse(BaseModel):
-    """User response schema."""
 
     user_id: uuid.UUID
     user_name: str
@@ -48,7 +40,6 @@ class UserResponse(BaseModel):
 
 
 class TokenResponse(Token):
-    """Token response including user info."""
 
     user: UserResponse
 
@@ -63,11 +54,7 @@ class ChangePasswordResponse(BaseModel):
     success: bool
 
 
-# ── Request Models ───────────────────────────────────────────────────────────
-
-
 class UserCreate(UserBase):
-    """Signup request."""
 
     user_name: str = Field(
         ...,
@@ -103,26 +90,22 @@ class UserCreate(UserBase):
 
 
 class UserLogin(BaseModel):
-    """Login request."""
 
     user_name: str
     password: str
 
 
 class RefreshTokenRequest(BaseModel):
-    """Refresh Token Request."""
 
     refresh_token: str
 
 
 class PasswordResetRequest(BaseModel):
-    """Request reset password via email."""
 
     email: EmailStr
 
 
 class PasswordResetConfirm(BaseModel):
-    """Confirm reset password with token."""
 
     email: EmailStr
     token: str
@@ -153,7 +136,6 @@ class PasswordResetConfirm(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    """Change password (authenticated)."""
 
     old_password: str = Field(
         ...,

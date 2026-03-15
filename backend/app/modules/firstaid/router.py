@@ -22,9 +22,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/first-aid", tags=["First Aid"])
 
 
-# ── Public Endpoints ─────────────────────────────────────────────────────────
-
-
 @router.get(
     "/guide/{wound_type}/{severity}",
     response_model=SuccessResponse[FirstAidGuideResponse],
@@ -37,15 +34,8 @@ async def get_guide(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Lấy hướng dẫn sơ cứu theo loại, mức độ, và loại phụ."""
     guide = await service.get_guide(wound_type, severity, sub_type)
     if not guide:
-        # Service logic handled fallback, but if returns None -> Not Found
-        # But wait, original controller returned 404 with error details.
-        # Service currently returns None if not found (repo returns None).
-        # We should raise exception in Service or here?
-        # Ideally service raises NotFound. I implemented `get_guide_by_id` raising NotFound.
-        # `get_guide` currently returns Optional.
         from app.modules.firstaid.exceptions import FirstAidGuideNotFoundError
         raise FirstAidGuideNotFoundError(
             message=f"Không tìm thấy hướng dẫn cho {wound_type}/{severity}"
@@ -66,9 +56,7 @@ async def get_wound_types(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Lấy danh sách các loại vết thương có sẵn."""
     types = await service.get_available_types()
-    # Or define a WoundTypeResponse schema? currently List[Dict]
     return SuccessResponse(
         message="Lấy danh sách thành công",
         data=types,
@@ -90,7 +78,11 @@ async def search_guides(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Tìm kiếm với bộ lọc."""
+    # Convert empty strings to None
+    wound_type = wound_type.strip() if wound_type and wound_type.strip() else None
+    severity = severity.strip() if severity and severity.strip() else None
+    search = search.strip() if search and search.strip() else None
+    
     items, total = await service.search_guides(
         skip=offset,
         limit=limit,
@@ -115,7 +107,6 @@ async def get_statistics(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Thống kê tổng quan."""
     stats = await service.get_stats()
     return SuccessResponse(
         message="Lấy thống kê thành công",
@@ -135,13 +126,9 @@ async def validate_availability(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Kiểm tra hướng dẫn có sẵn không."""
     result = await service.check_availability(wound_type, severity, sub_type)
     msg = "Có sẵn" if result["available"] else "Không có sẵn"
     return SuccessResponse(message=msg, data=result)
-
-
-# ── Admin Endpoints ──────────────────────────────────────────────────────────
 
 
 @router.post(
@@ -155,7 +142,6 @@ async def create_guide(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
-    """Tạo hướng dẫn sơ cứu mới."""
     guide = await service.create_guide(request, current_user.user_id)
     return SuccessResponse(
         message="Tạo hướng dẫn thành công",
@@ -173,7 +159,6 @@ async def get_guide_by_id(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
-    """Lấy chi tiết theo ID."""
     guide = await service.get_guide_by_id(guide_id)
     return SuccessResponse(
         message="Lấy hướng dẫn thành công",
@@ -192,7 +177,6 @@ async def update_guide(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
-    """Cập nhật hướng dẫn."""
     guide = await service.update_guide(guide_id, request)
     return SuccessResponse(
         message="Cập nhật thành công",
@@ -211,7 +195,6 @@ async def delete_guide(
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
-    """Xóa hướng dẫn (soft hoặc hard)."""
     await service.delete_guide(guide_id, hard_delete)
     return SuccessResponse(
         message="Xóa thành công",

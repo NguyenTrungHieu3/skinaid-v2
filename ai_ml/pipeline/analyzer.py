@@ -48,12 +48,12 @@ class WoundAnalyzer:
     ) -> Optional[float]:
         return yolo_conf * w_yolo + eff_conf * w_eff
 
-    def analyze(self, image, conf_threshold: Optional[float] = None):
+    def analyze(self, image, conf_threshold: Optional[float] = None, refine_bbox: bool = True):
         try:
             if conf_threshold is None:
                 conf_threshold = settings.YOLO_CONF_THRESHOLD
 
-            detections = self.detector.detect(image, conf_threshold)
+            detections = self.detector.detect(image, conf_threshold, refine_bbox=refine_bbox)
             if not detections:
                 return []
 

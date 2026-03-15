@@ -19,21 +19,8 @@ class JWTHandler:
         token_version: int = 0,
         additional_claims: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """
-        Tạo cặp token access + refresh với theo dõi family
-        Trả về:
-            {
-                "access_token": "...",
-                "refresh_token": "...",
-                "access_jti": "...",
-                "refresh_jti": "...",
-                "access_exp": datetime,
-                "refresh_exp": datetime
-            }
-        """
         current_time = datetime.now(timezone.utc)
 
-        #tạo access token
         access_exp = current_time + timedelta(minutes=self.access_token_expire_minutes)
         access_jti = hashlib.sha256(
             f"{subject}{current_time}{self.secret_key}access{token_version}".encode()
@@ -53,7 +40,6 @@ class JWTHandler:
         
         access_token = jwt.encode(access_payload, key=self.secret_key, algorithm=self.algorithm)
 
-        #tạo refresh token
         refresh_exp = current_time + timedelta(days=self.refresh_token_expire_days)
         refresh_jti = hashlib.sha256(
             f"{subject}{current_time}{self.secret_key}refresh{token_version}".encode()
@@ -83,13 +69,10 @@ class JWTHandler:
     def create_access_token(
         self,
         subject: Union[str, int],
-        token_version: int = 0, 
-        expires_delta: Optional[timedelta] = None, 
+        token_version: int = 0,
+        expires_delta: Optional[timedelta] = None,
         additional_claims: Optional[Dict[str, Any]] = None
     ) -> str:
-        """
-        Tạo access token độc lập cho refresh endpoint 
-        """
         current_time = datetime.now(timezone.utc)
 
         expire = (
@@ -119,12 +102,9 @@ class JWTHandler:
     def create_refresh_token(
         self,
         subject: Union[str, int],
-        token_version: int = 0, 
+        token_version: int = 0,
         expires_delta: Optional[timedelta] = None
     ) -> str:
-        """
-        Tạo refresh token độc lập 
-        """
         current_time = datetime.now(timezone.utc)
 
         expire = (
@@ -153,9 +133,6 @@ class JWTHandler:
         token: str,
         verify_exp: bool = True
     ) -> Dict[str, Any]:
-        """
-        Giải mã JWT token
-        """
         try:
             options = {"verify_exp": verify_exp} if not verify_exp else {}
             
@@ -176,9 +153,6 @@ class JWTHandler:
             )
 
     def verify_token_type(self, payload: Dict[str, Any], expected_type: str) -> None:
-        """
-        Xác minh loại token
-        """
         actual_type = payload.get("type")
         if actual_type != expected_type:
             raise HTTPException(

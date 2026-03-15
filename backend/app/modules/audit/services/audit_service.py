@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 from app.modules.audit.models.audit_log import AuditLog
-from app.modules.audit.repository import AuditRepository
+from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.schemas.api import AuditLogFilterParams
 
 logger = logging.getLogger(__name__)

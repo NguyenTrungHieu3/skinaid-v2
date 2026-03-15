@@ -4,12 +4,13 @@ import {
   getDashboardOverview,
   getWoundTypeDistribution,
   getSeverityStats,
+  getWeeklyActivity,
 } from "../../services/adminService";
 import { getAuditLogs } from "../../services/auditService";
 import type {
   DashboardOverview,
   WoundTypeItem,
-  SeverityStatsItem,
+  DailyActivityItem,
 } from "../../types/admin";
 import type { AuditLog } from "../../services/auditService";
 import DashboardStats from "./components/DashboardStats";
@@ -25,7 +26,8 @@ export default function AdminDashboard() {
   const [period, setPeriod] = useState("month");
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [woundTypeData, setWoundTypeData] = useState<WoundTypeItem[]>([]);
-  const [severityStats, setSeverityStats] = useState<SeverityStatsItem[]>([]);
+  const [severityStats, setSeverityStats] = useState<Record<string, number>>({});
+  const [weeklyActivity, setWeeklyActivity] = useState<DailyActivityItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,11 +47,12 @@ export default function AdminDashboard() {
 
     // Gọi hàm lấy data từ API
     try {
-      const [overviewRes, woundTypeRes, severityRes, logsRes] =
+      const [overviewRes, woundTypeRes, severityRes, activityRes, logsRes] =
         await Promise.all([
           getDashboardOverview(period),
           getWoundTypeDistribution(period),
           getSeverityStats(period),
+          getWeeklyActivity(),
           getAuditLogs({ limit: 5, page: 1 }),
         ]);
 
@@ -62,11 +65,20 @@ export default function AdminDashboard() {
       }
 
       if (severityRes.success && severityRes.data) {
-        setSeverityStats(severityRes.data.stats);
+        // Backend changed: stats array → distribution object
+        setSeverityStats(severityRes.data.distribution);
       }
 
+      if (activityRes.success && activityRes.data) {
+        setWeeklyActivity(activityRes.data.daily_stats);
+      }
+
+      // Handle new response format from /dashboard/logs/recent
       if (logsRes.success && logsRes.data) {
-        setAuditLogs(logsRes.data.logs);
+        // New format: { logs: [...], total_logs: number, unresolved_errors: number }
+        if ('logs' in logsRes.data) {
+          setAuditLogs(logsRes.data.logs);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);

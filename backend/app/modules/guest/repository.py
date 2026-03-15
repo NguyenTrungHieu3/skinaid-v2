@@ -15,21 +15,17 @@ class GuestRepository(BaseRepository[GuestSession]):
         super().__init__(GuestSession, db)
 
     async def get_stats(self) -> Dict[str, Any]:
-        """Lấy thống kê guest session."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
 
-        # Total
         total_stmt = select(func.count(GuestSession.session_id))
         total = (await self.db.execute(total_stmt)).scalar() or 0
 
-        # Active (is_active=True AND expires_at >= now)
         active_stmt = select(func.count(GuestSession.session_id)).where(
             GuestSession.is_active == True,
             GuestSession.expires_at >= now
         )
         active = (await self.db.execute(active_stmt)).scalar() or 0
 
-        # Uploads & Analyses
         sum_stmt = select(
             func.coalesce(func.sum(GuestSession.upload_count), 0),
             func.coalesce(func.sum(GuestSession.analysis_count), 0)
@@ -38,17 +34,11 @@ class GuestRepository(BaseRepository[GuestSession]):
         total_uploads = int(sums[0])
         total_analyses = int(sums[1])
 
-        # Converted users
         converted_stmt = select(func.count(GuestSession.session_id)).where(
             GuestSession.is_converted_to_user == True
         )
         converted = (await self.db.execute(converted_stmt)).scalar() or 0
 
-        # Avg Duration (last_activity - created_at)
-        # Using raw SQL for duration extraction is easier across DBs often,
-        # or SQLAlchemy func.extract('epoch', ...)
-        # The old service used raw SQL. Let's try SQLAlchemy expression.
-        # Postgres: EXTRACT(EPOCH FROM (last_activity_at - created_at))
         avg_stmt = select(
             func.avg(
                 func.extract('epoch', func.coalesce(
@@ -68,8 +58,6 @@ class GuestRepository(BaseRepository[GuestSession]):
         }
 
     async def claim_analysis(self, analysis_id: uuid.UUID, user_id: uuid.UUID) -> bool:
-        """Link guest analysis to user."""
-        # Update WoundAnalysis where session_id is not null AND user_id is null
         stmt = (
             update(WoundAnalysis)
             .where(
@@ -84,5 +72,5 @@ class GuestRepository(BaseRepository[GuestSession]):
             )
         )
         result = await self.db.execute(stmt)
-        await self.db.flush()  # or commit in service
+        await self.db.flush()
         return result.rowcount > 0

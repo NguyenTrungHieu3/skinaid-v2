@@ -16,7 +16,6 @@ class GuestSessionResponse(GuestSessionBase):
     analysis_count: int
     is_active: bool
 
-    # Computed properties
     is_expired: bool
     can_upload: bool
     can_analyze: bool

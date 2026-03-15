@@ -137,6 +137,7 @@ backend/*.log
 backend/migrations/versions/
 backend/.pytest_cache/
 backend/User_Guidelines.md
+backend/tests/
 
 
 # Database files
@@ -281,4 +282,3 @@ pids/
 *.p12
 *.pfx
 
-.agent/

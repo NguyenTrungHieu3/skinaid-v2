@@ -1,15 +1,9 @@
-"""
-UserRepository — Truy vấn database cho User entity.
-
-Thay thế toàn bộ raw SQL trong UserService + _helpers.load_user_roles().
-"""
-
 import uuid
 import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func, true, false
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,29 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 class UserRepository(BaseRepository[User]):
-    """Repository cho User entity — tất cả truy vấn database liên quan user."""
-
     def __init__(self, db: AsyncSession) -> None:
         super().__init__(User, db)
 
-    # ── QUERY ─────────────────────────────────────────────
-
     async def get_by_email(self, email: str) -> Optional[User]:
-        """Lấy user chưa bị xóa theo email."""
         return await self.get_one(
             User.email == email,
-            User.is_deleted == False,  # noqa: E712
+            User.is_deleted == false(),
         )
 
     async def get_by_username(self, user_name: str) -> Optional[User]:
-        """
-        Lấy user chưa bị xóa theo username, kèm roles.
-
-        Eager load user_roles → role để tránh N+1 query.
-        """
         statement = (
             select(User)
-            .where(User.user_name == user_name, User.is_deleted == False)  # noqa: E712
+            .where(User.user_name == user_name, User.is_deleted == false())
             .options(
                 selectinload(User.user_roles).selectinload(UserRole.role),
             )
@@ -65,7 +49,7 @@ class UserRepository(BaseRepository[User]):
         """
         statement = (
             select(User)
-            .where(User.user_id == user_id, User.is_deleted == False)  # noqa: E712
+            .where(User.user_id == user_id, User.is_deleted == false())
             .options(
                 selectinload(User.profile),
                 selectinload(User.user_roles).selectinload(UserRole.role),
@@ -84,41 +68,21 @@ class UserRepository(BaseRepository[User]):
         user = await self.get_one(User.user_name == user_name)
         return user is not None
 
-    # ── CREATE ────────────────────────────────────────────
-
     async def create_with_profile(
         self,
         user: User,
         profile: UserProfile,
         default_role_name: str = "user",
     ) -> User:
-        """
-        Tạo user mới kèm profile + gán role mặc định.
-
-        Transaction flow:
-        1. Add user → flush (để có user_id FK)
-        2. Add profile → flush
-        3. Gán role mặc định → flush
-        4. Refresh user để load relationships
-
-        Args:
-            user: User entity đã khởi tạo (chưa persist)
-            profile: UserProfile entity đã khởi tạo
-            default_role_name: Tên role mặc định (default: "user")
-
-        Returns:
-            User với profile + roles đã load
-        """
-        # 1. Persist user
+        from sqlalchemy.orm import selectinload
+        
         self.db.add(user)
         await self.db.flush()
 
-        # 2. Persist profile (FK = user_id)
         profile.user_id = user.user_id
         self.db.add(profile)
         await self.db.flush()
 
-        # 3. Gán role mặc định
         role = await self._get_active_role_by_name(default_role_name)
         if role:
             user_role = UserRole(
@@ -134,25 +98,29 @@ class UserRepository(BaseRepository[User]):
                 user.user_id,
             )
 
-        # 4. Refresh để load relationships
+        # Refresh with eager loading of relationships
         await self.db.refresh(user, ["profile", "user_roles"])
+        
+        # Explicitly load roles with selectinload to avoid lazy loading in async context
+        from sqlmodel import select
+        stmt = select(UserRole).options(
+            selectinload(UserRole.role)
+        ).where(UserRole.user_id == user.user_id)
+        result = await self.db.execute(stmt)
+        user_roles = result.scalars().all()
+        
+        # Attach loaded roles to user object
+        user.user_roles = user_roles
+        
         return user
-
-    # ── UPDATE ────────────────────────────────────────────
 
     async def increment_token_version(
         self,
         user_id: uuid.UUID,
     ) -> Optional[tuple[int, int]]:
-        """
-        Tăng token_version (+1) để thu hồi tất cả tokens.
-
-        Returns:
-            Tuple (old_version, new_version) hoặc None nếu không tìm thấy user
-        """
         user = await self.get_one(
             User.user_id == user_id,
-            User.is_deleted == False,  # noqa: E712
+            User.is_deleted == False,
         )
         if not user:
             return None
@@ -168,33 +136,28 @@ class UserRepository(BaseRepository[User]):
         self,
         user_id: uuid.UUID,
     ) -> Optional[int]:
-        """Lấy token_version hiện tại của user."""
         user = await self.get_one(
             User.user_id == user_id,
-            User.is_deleted == False,  # noqa: E712
+            User.is_deleted == False,
         )
         return user.token_version if user else None
 
     async def update_last_activity(self, user_id: uuid.UUID) -> None:
-        """Cập nhật updated_at (last activity time)."""
         user = await self.get_one(
             User.user_id == user_id,
-            User.is_deleted == False,  # noqa: E712
+            User.is_deleted == False,
         )
         if user:
             user.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             await self.db.flush()
 
-    # ── PRIVATE ───────────────────────────────────────────
-
     async def _get_active_role_by_name(
         self,
         role_name: str,
     ) -> Optional[Role]:
-        """Lấy role đang active theo tên."""
         statement = select(Role).where(
             Role.role_name == role_name,
-            Role.is_active == True,  # noqa: E712
+            Role.is_active == True,
         )
         result = await self.db.execute(statement)
         return result.scalar_one_or_none()

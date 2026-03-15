@@ -4,7 +4,6 @@ from app.core.config import settings
 
 
 def setup_cors(app: FastAPI) -> None:
-    """Cấu hình middleware CORS"""
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,

@@ -1,30 +1,27 @@
-from app.shared.exceptions.base import AppException
+from app.shared.exceptions.base import NotFoundError, ConflictError, BadRequestError
 
 
-class FirstAidGuideNotFoundError(AppException):
+class FirstAidGuideNotFoundError(NotFoundError):
     def __init__(self, guide_id: str = None, message: str = None):
         if not message:
             message = f"Không tìm thấy hướng dẫn sơ cứu{f' với ID {guide_id}' if guide_id else ''}"
         super().__init__(
             message=message,
-            error_code="GUIDE_NOT_FOUND",
-            status_code=404,
         )
+        self.error_code = "GUIDE_NOT_FOUND"
 
 
-class GuideAlreadyExistsError(AppException):
+class GuideAlreadyExistsError(ConflictError):
     def __init__(self, message: str):
         super().__init__(
             message=message,
-            error_code="GUIDE_ALREADY_EXISTS",
-            status_code=409,
         )
+        self.error_code = "GUIDE_ALREADY_EXISTS"
 
 
-class InvalidGuideDataError(AppException):
+class InvalidGuideDataError(BadRequestError):
     def __init__(self, message: str):
         super().__init__(
             message=message,
-            error_code="INVALID_GUIDE_DATA",
-            status_code=400,
         )
+        self.error_code = "INVALID_GUIDE_DATA"

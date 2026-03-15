@@ -1,10 +1,3 @@
-"""
-Auth Exceptions — Exception chuyên biệt cho auth module.
-
-Kế thừa từ shared/exceptions/base.py AppException hierarchy.
-Mỗi exception tự chứa status_code + error_code → không cần ErrorCode constants.
-"""
-
 from app.shared.exceptions.base import (
     BadRequestError,
     ConflictError,
@@ -14,142 +7,116 @@ from app.shared.exceptions.base import (
 )
 
 
-# ── User ──────────────────────────────────────────────────
-
-
 class UserNotFoundError(NotFoundError):
-    """Không tìm thấy user."""
 
     error_code = "AUTH_USER_NOT_FOUND"
 
     def __init__(self, identifier: str = "") -> None:
         detail = f" ({identifier})" if identifier else ""
         super().__init__(
-            resource="User",
-            resource_id=identifier,
-            message=f"Không tìm thấy người dùng{detail}",
+            message=f"User not found{detail}",
+            details={"user_id": identifier} if identifier else None,
         )
 
 
 class EmailExistsError(ConflictError):
-    """Email đã được sử dụng."""
 
     error_code = "AUTH_EMAIL_EXISTS"
 
     def __init__(self, email: str = "") -> None:
         super().__init__(
-            message="Email đã được sử dụng",
+            message="Email already registered",
             details={"email": email} if email else None,
         )
 
 
 class UsernameExistsError(ConflictError):
-    """Username đã tồn tại."""
 
     error_code = "AUTH_USERNAME_EXISTS"
 
     def __init__(self, user_name: str = "") -> None:
         super().__init__(
-            message="Tên người dùng đã tồn tại",
+            message="Username already taken",
             details={"user_name": user_name} if user_name else None,
         )
 
 
-# ── Authentication ────────────────────────────────────────
-
-
 class InvalidCredentialsError(UnauthorizedError):
-    """Thông tin đăng nhập không hợp lệ."""
 
     error_code = "AUTH_INVALID_CREDENTIALS"
 
     def __init__(self) -> None:
         super().__init__(
-            message="Tên người dùng hoặc mật khẩu không hợp lệ",
+            message="Invalid username or password",
         )
 
 
 class AccountInactiveError(ForbiddenError):
-    """Tài khoản đã bị vô hiệu hóa."""
 
     error_code = "AUTH_ACCOUNT_INACTIVE"
 
     def __init__(self) -> None:
-        super().__init__(message="Tài khoản đã bị vô hiệu hóa")
+        super().__init__(message="Account has been deactivated")
 
 
 class AccountUnverifiedError(ForbiddenError):
-    """Tài khoản chưa xác minh."""
 
     error_code = "AUTH_ACCOUNT_UNVERIFIED"
 
     def __init__(self) -> None:
-        super().__init__(message="Yêu cầu xác minh tài khoản")
-
-
-# ── Token ─────────────────────────────────────────────────
+        super().__init__(message="Account verification required")
 
 
 class InvalidTokenError(UnauthorizedError):
-    """Token không hợp lệ."""
 
     error_code = "AUTH_INVALID_TOKEN"
 
-    def __init__(self, message: str = "Token không hợp lệ") -> None:
+    def __init__(self, message: str = "Invalid token") -> None:
         super().__init__(message=message)
 
 
 class TokenRevokedError(UnauthorizedError):
-    """Token đã bị thu hồi."""
 
     error_code = "AUTH_TOKEN_REVOKED"
 
     def __init__(self) -> None:
-        super().__init__(message="Token đã bị thu hồi")
+        super().__init__(message="Token has been revoked")
 
 
 class TokenReuseError(UnauthorizedError):
-    """Phát hiện tái sử dụng token (security threat)."""
 
     error_code = "AUTH_TOKEN_REUSE"
 
     def __init__(self) -> None:
         super().__init__(
-            message="Phát hiện tái sử dụng token. "
-            "Tất cả phiên đã bị vô hiệu hóa vì lý do bảo mật.",
+            message="Token reuse detected. All sessions have been revoked for security.",
         )
 
 
-# ── Password ──────────────────────────────────────────────
-
-
 class WeakPasswordError(BadRequestError):
-    """Mật khẩu không đạt yêu cầu bảo mật."""
 
     error_code = "AUTH_WEAK_PASSWORD"
 
     def __init__(self, reason: str = "") -> None:
-        message = "Mật khẩu không đạt yêu cầu bảo mật"
+        message = "Password does not meet security requirements"
         if reason:
             message = reason
         super().__init__(message=message)
 
 
 class InvalidCurrentPasswordError(BadRequestError):
-    """Mật khẩu hiện tại không đúng."""
 
     error_code = "AUTH_INVALID_CURRENT_PASSWORD"
 
     def __init__(self) -> None:
-        super().__init__(message="Mật khẩu hiện tại không đúng")
+        super().__init__(message="Current password is incorrect")
 
 
 class InvalidResetTokenError(BadRequestError):
-    """Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn."""
 
     error_code = "AUTH_INVALID_RESET_TOKEN"
 
     def __init__(self) -> None:
         super().__init__(
-            message="Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
+            message="Password reset token is invalid or expired",
         )

@@ -158,7 +158,25 @@ const UserManagement: FC = () => {
     } catch (err: unknown) {
       const error = err as ApiError;
       console.error("Error creating user:", error);
-      toast.error(error.response?.data?.error || "Failed to create user");
+      
+      // Handle validation errors (422) and other errors
+      let errorMessage = "Failed to create user";
+      
+      if (error.response?.data?.error) {
+        errorMessage = typeof error.response.data.error === 'string' 
+          ? error.response.data.error 
+          : JSON.stringify(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        errorMessage = typeof error.response.data.message === 'string' 
+          ? error.response.data.message 
+          : JSON.stringify(error.response.data.message);
+      } else if (error.response?.data?.detail) {
+        errorMessage = typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : JSON.stringify(error.response.data.detail);
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -191,7 +209,25 @@ const UserManagement: FC = () => {
     } catch (err: unknown) {
       const error = err as ApiError;
       console.error("Error updating user:", error);
-      toast.error(error.response?.data?.error || "Failed to update user");
+      
+      // Handle validation errors (422) and other errors
+      let errorMessage = "Failed to update user";
+      
+      if (error.response?.data?.error) {
+        errorMessage = typeof error.response.data.error === 'string' 
+          ? error.response.data.error 
+          : JSON.stringify(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        errorMessage = typeof error.response.data.message === 'string' 
+          ? error.response.data.message 
+          : JSON.stringify(error.response.data.message);
+      } else if (error.response?.data?.detail) {
+        errorMessage = typeof error.response.data.detail === 'string' 
+          ? error.response.data.detail 
+          : JSON.stringify(error.response.data.detail);
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

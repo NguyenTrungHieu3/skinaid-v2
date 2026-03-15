@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .database import get_db
 from .token import extract_token, decode_and_verify_token
 from .user import (
-    get_user_by_id, 
+    get_user_by_id,
     check_email_verified,
     check_user_has_role,
     check_user_has_permission
@@ -12,12 +12,6 @@ from .user import (
 from app.modules.auth.models.user import User
 
 async def get_token(authorization: Optional[str] = Header(None)) -> str:
-    """
-    Dependency: Extract token từ Authorization header
-    
-    Raises:
-        HTTPException: Nếu không có header
-    """
     token = await extract_token(authorization)
     if token is None:
         raise HTTPException(
@@ -32,18 +26,8 @@ async def get_current_user(
     token: str = Depends(get_token),
     db: AsyncSession = Depends(get_db)
 ) -> User:
-    """
-    Dependency: Lấy user hiện tại từ access token
-    
-    Returns:
-        User object
-        
-    Raises:
-        HTTPException: Nếu token invalid/revoked hoặc user không tồn tại
-    """
-    # Giải mã và xác thực token
     payload = await decode_and_verify_token(token, db, token_type="access")
-    
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -72,15 +56,6 @@ async def get_current_active_user(
 async def get_current_verified_user(
     current_user: User = Depends(get_current_user)
 ) -> Optional[Dict[str, Any]]:
-    """
-    Dependency: Lấy user hiện tại đã verified dưới dạng dict
-
-    Returns:
-        Dict chứa thông tin user hoặc None nếu chưa verified
-
-    Raises:
-        HTTPException: Nếu user chưa verified
-    """
     await check_email_verified(current_user, required=True)
 
     return {
@@ -93,37 +68,11 @@ async def get_current_verified_user(
     }
 
 
-# ==================== FLEXIBLE ACCESS CONTROL ====================
-
 def allow_access(
     require_auth: bool = False,
     require_verified: bool = False,
     allow_guest_only: bool = False,
 ):
-    """
-    Factory function tạo flexible access control dependency
-    
-    Args:
-        require_auth: Bắt buộc đăng nhập (reject nếu không có token)
-        require_verified: Bắt buộc email verified (cần require_auth=True)
-        allow_guest_only: Chỉ cho guest (reject nếu có token hợp lệ)
-    
-    Returns:
-        Dependency function trả về User object hoặc None
-        
-    Examples:
-        # Route công khai, xác thực tùy chọn
-        @app.get("/posts", dependencies=[Depends(allow_access())])
-        
-        # Yêu cầu đăng nhập
-        @app.get("/profile", dependencies=[Depends(allow_access(require_auth=True))])
-        
-        # Yêu cầu đăng nhập + email đã xác thực
-        @app.post("/upload", dependencies=[Depends(allow_access(require_auth=True, require_verified=True))])
-        
-        # Chỉ khách (register, login)
-        @app.post("/register", dependencies=[Depends(allow_access(allow_guest_only=True))])
-    """
     async def dependency(
         authorization: Optional[str] = Header(None),
         db: AsyncSession = Depends(get_db),
@@ -131,14 +80,12 @@ def allow_access(
 
         token = await extract_token(authorization)
 
-        # Các route chỉ dành cho khách (register, login, etc.)
         if allow_guest_only and token:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Authenticated users cannot access this route",
             )
 
-        # Không có token được cung cấp
         if not token:
             if require_auth:
                 raise HTTPException(
@@ -148,7 +95,6 @@ def allow_access(
                 )
             return None
 
-        # Xác thực token (với kiểm tra blacklist)
         try:
             payload = await decode_and_verify_token(token, db, token_type="access")
         except HTTPException:
@@ -166,7 +112,6 @@ def allow_access(
                 )
             return None
 
-        # Lấy người dùng
         user = await get_user_by_id(db, user_id)
         if not user:
             if require_auth:
@@ -177,7 +122,6 @@ def allow_access(
                 )
             return None
 
-        # Kiểm tra xác thực email
         if require_verified:
             await check_email_verified(user, required=True)
 
@@ -186,23 +130,7 @@ def allow_access(
     return dependency
 
 
-# ==================== ROLE-BASED ACCESS CONTROL ====================
-
 def require_role(allowed_roles: List[str], require_verified: bool = True):
-    """
-    Factory function: Yêu cầu user có ít nhất 1 role trong danh sách
-    
-    Args:
-        allowed_roles: Danh sách role được phép (OR logic)
-        require_verified: Có yêu cầu email verified không
-        
-    Returns:
-        Dependency function trả về User object
-        
-    Example:
-        @app.get("/admin", dependencies=[Depends(require_role(["admin"]))])
-        @app.get("/content", dependencies=[Depends(require_role(["admin", "moderator"]))])
-    """
     async def dependency(
         user: User = Depends(allow_access(require_auth=True, require_verified=require_verified)),
         db: AsyncSession = Depends(get_db),
@@ -220,22 +148,7 @@ def require_role(allowed_roles: List[str], require_verified: bool = True):
     return dependency
 
 
-# ==================== PERMISSION-BASED ACCESS CONTROL ====================
-
 def require_permission(permission_name: str, require_verified: bool = True):
-    """
-    Factory function: Yêu cầu user có 1 permission cụ thể
-    
-    Args:
-        permission_name: Tên permission cần có
-        require_verified: Có yêu cầu email verified không
-        
-    Returns:
-        Dependency function trả về User object
-        
-    Example:
-        @app.post("/upload", dependencies=[Depends(require_permission("upload_image"))])
-    """
     async def dependency(
         user: User = Depends(allow_access(require_auth=True, require_verified=require_verified)),
         db: AsyncSession = Depends(get_db),
@@ -253,19 +166,6 @@ def require_permission(permission_name: str, require_verified: bool = True):
 
 
 def require_any_permissions(allowed_permissions: List[str], require_verified: bool = True):
-    """
-    Factory function: User có ÍT NHẤT 1 permission trong danh sách
-    
-    Args:
-        allowed_permissions: Danh sách permissions (OR logic)
-        require_verified: Có yêu cầu email verified không
-        
-    Returns:
-        Dependency function trả về User object
-        
-    Example:
-        @app.post("/moderate", dependencies=[Depends(require_any_permissions(["edit_post", "delete_post"]))])
-    """
     async def dependency(
         user: User = Depends(allow_access(require_auth=True, require_verified=require_verified)),
         db: AsyncSession = Depends(get_db),
@@ -284,19 +184,6 @@ def require_any_permissions(allowed_permissions: List[str], require_verified: bo
 
 
 def require_all_permissions(required_permissions: List[str], require_verified: bool = True):
-    """
-    Factory function: User có TẤT CẢ permissions trong danh sách
-    
-    Args:
-        required_permissions: Danh sách permissions (AND logic)
-        require_verified: Có yêu cầu email verified không
-        
-    Returns:
-        Dependency function trả về User object
-        
-    Example:
-        @app.delete("/user/{id}", dependencies=[Depends(require_all_permissions(["manage_users", "delete_users"]))])
-    """
     async def dependency(
         user: User = Depends(allow_access(require_auth=True, require_verified=require_verified)),
         db: AsyncSession = Depends(get_db),
@@ -314,20 +201,15 @@ def require_all_permissions(required_permissions: List[str], require_verified: b
     return dependency
 
 
-# ==================== COMMON SHORTCUTS ====================
-
-# Phím tắt mức độ truy cập
 allow_guest = allow_access(require_auth=False, require_verified=False)
 require_auth = allow_access(require_auth=True, require_verified=False)
 require_verified = allow_access(require_auth=True, require_verified=True)
 guest_only = allow_access(allow_guest_only=True)
 
-# Phím tắt vai trò
 require_admin = require_role(["admin"])
 require_user = require_role(["user"])
 require_admin_or_moderator = require_role(["admin", "moderator"])
 
-# Phím tắt quyền
 require_upload = require_permission("upload_image")
 require_ai_analyze = require_permission("ai_analyze")
 require_manage_users = require_permission("manage_users")

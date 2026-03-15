@@ -24,7 +24,6 @@ class UserProfile(SQLModel, table=True):
 
     @property
     def age(self) -> Optional[int]:
-        """Tính tuổi dựa trên ngày sinh."""
         if not self.date_of_birth:
             return None
         from datetime import date as date_type
@@ -35,7 +34,6 @@ class UserProfile(SQLModel, table=True):
 
     @property
     def gender_display(self) -> str:
-        """Lấy giới tính ở định dạng hiển thị tiếng Việt."""
         gender_map = {
             "male": "Nam",
             "female": "Nữ",
@@ -45,7 +43,6 @@ class UserProfile(SQLModel, table=True):
 
     @property
     def has_complete_profile(self) -> bool:
-        """Kiểm tra xem profile có đầy đủ thông tin cần thiết hay không."""
         return bool(
             self.full_name and
             self.phone and
@@ -55,7 +52,6 @@ class UserProfile(SQLModel, table=True):
 
     @property
     def profile_completion_percentage(self) -> int:
-        """Tính phần trăm hoàn thành profile."""
         fields = [self.full_name, self.phone, self.date_of_birth, self.gender, self.address, self.avatar_url]
         completed_fields = sum(1 for field in fields if field is not None)
         return int((completed_fields / len(fields)) * 100)
@@ -71,7 +67,6 @@ class UserProfile(SQLModel, table=True):
         address: Optional[str] = None,
         avatar_url: Optional[str] = None
     ) -> "UserProfile":
-        """Tạo profile mới cho user."""
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
         return cls(
             user_id=user_id,
@@ -94,7 +89,6 @@ class UserProfile(SQLModel, table=True):
         address: Optional[str] = None,
         avatar_url: Optional[str] = None
     ) -> None:
-        """Cập nhật thông tin profile."""
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
         if full_name is not None:
@@ -113,7 +107,6 @@ class UserProfile(SQLModel, table=True):
         self.updated_at = current_time
 
     def to_response_dict(self) -> dict:
-        """Chuyển đổi profile thành dictionary response."""
         return {
             "user_id": self.user_id,
             "full_name": self.full_name,

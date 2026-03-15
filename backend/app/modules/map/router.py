@@ -15,6 +15,7 @@ from app.modules.map.schemas.api import (
     GeocodeResponse,
     ReverseGeocodeResponse
 )
+from app.modules.map.exceptions import MapServiceUnavailableError, LocationNotFoundError
 from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,7 @@ async def get_user_location_from_ip(
         )
     except httpx.HTTPError as e:
         logger.error(f"[MAP] Error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Dịch vụ định vị tạm thời không khả dụng"
-        )
+        raise MapServiceUnavailableError("Dịch vụ định vị tạm thời không khả dụng")
 
 
 @router.post(
@@ -90,10 +88,7 @@ async def find_nearby_places(
             data=places
         )
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Dịch vụ tìm kiếm địa điểm lỗi"
-        )
+        raise MapServiceUnavailableError("Dịch vụ tìm kiếm địa điểm lỗi")
 
 
 @router.post(
@@ -115,10 +110,7 @@ async def calculate_route(
         )
 
         if not route_data.get("geometry"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Không tìm thấy đường đi"
-            )
+            raise LocationNotFoundError("Không tìm thấy đường đi")
 
         # Format details
         distance = route_data["distance"]
@@ -157,13 +149,10 @@ async def calculate_route(
                 steps=steps
             )
         )
-    except HTTPException:
+    except LocationNotFoundError:
         raise
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Dịch vụ dẫn đường lỗi"
-        )
+        raise MapServiceUnavailableError("Dịch vụ dẫn đường lỗi")
 
 
 @router.get(
@@ -178,15 +167,14 @@ async def geocode_address(
     try:
         result = await service.geocode_address(address)
         if not result:
-            raise HTTPException(status_code=404, detail="Address not found")
+            raise LocationNotFoundError("Address not found")
 
         return SuccessResponse(
             message="Tìm tọa độ thành công",
             data=GeocodeResponse(**result)
         )
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=503, detail="Geocoding service unavailable")
+        raise MapServiceUnavailableError("Geocoding service unavailable")
 
 
 @router.get(
@@ -202,15 +190,14 @@ async def reverse_geocode(
     try:
         result = await service.reverse_geocode(latitude, longitude)
         if not result:
-            raise HTTPException(status_code=404, detail="Location not found")
+            raise LocationNotFoundError("Location not found")
 
         return SuccessResponse(
             message="Tìm địa chỉ thành công",
             data=ReverseGeocodeResponse(**result)
         )
     except httpx.HTTPError:
-        raise HTTPException(
-            status_code=503, detail="Reverse geocoding service unavailable")
+        raise MapServiceUnavailableError("Reverse geocoding service unavailable")
 
 
 def _get_icon_for_category(service: MapService, category: str) -> str:

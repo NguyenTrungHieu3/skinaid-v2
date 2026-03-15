@@ -26,7 +26,7 @@ class WoundDetection(SQLModel, table=True):
     sub_type: Optional[str] = Field(max_length=100, default=None)
     confidence_score: float = Field(ge=0.0, le=1.0)
 
-    bounding_box: dict = Field(sa_column=Column(JSONB, nullable=False))
+    bounding_box: Optional[dict] = Field(default=None, sa_column=Column(JSONB, nullable=True))
 
     detection_index: int = Field(default=0, ge=0)
 

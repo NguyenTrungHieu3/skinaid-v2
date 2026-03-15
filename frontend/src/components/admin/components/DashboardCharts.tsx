@@ -2,15 +2,29 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { useTranslation } from 'react-i18next';
 import styles from './DashboardCharts.module.css';
 
-import type { WoundTypeItem, SeverityStatsItem } from '../../../types/admin';
+import type { WoundTypeItem } from '../../../types/admin';
 
 interface DashboardChartsProps {
   woundTypeData: WoundTypeItem[];
-  severityStats: SeverityStatsItem[];
+  severityStats: Record<string, number>;
 }
 
 export default function DashboardCharts({ woundTypeData, severityStats }: DashboardChartsProps) {
   const { t } = useTranslation();
+
+  // Convert severity stats object to array for chart
+  const severityData = Object.entries(severityStats).map(([name, value]) => {
+    const colorMap: Record<string, string> = {
+      'mild': '#10b981',
+      'moderate': '#f59e0b',
+      'severe': '#ef4444'
+    };
+    return {
+      name: name.toLowerCase(),
+      value: value,
+      color: colorMap[name.toLowerCase()] || '#64748b'
+    };
+  });
 
   // Function to translate severity labels
   const translateSeverity = (severity: string) => {
@@ -73,7 +87,7 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
         </div>
         <div className={styles.adminChartContent}>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={severityStats}>
+            <BarChart data={severityData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis
                 dataKey="name"
@@ -105,7 +119,7 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
                 labelFormatter={(label: string) => `${t('admin.dashboard.charts.severity_label')}: ${translateSeverity(label)}`}
               />
               <Bar dataKey="value" fill="#1E9378" radius={[8, 8, 0, 0]}>
-                {severityStats.map((entry, index) => (
+                {severityData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Bar>
@@ -120,7 +134,7 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
             marginTop: '20px',
             flexWrap: 'wrap'
           }}>
-            {severityStats.map((item) => (
+            {severityData.map((item) => (
               <div key={item.name} className={styles.woundLegendItem} style={{
                 display: 'flex',
                 alignItems: 'center',
