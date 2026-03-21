@@ -1,12 +1,12 @@
 from typing import List, Optional, Sequence, Any, Tuple, Dict
 from uuid import UUID
 from datetime import datetime
-from sqlalchemy import select, func, or_, desc, true, false
+from sqlalchemy import select, func, or_, desc, true, false, case
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.shared.base_repository import BaseRepository
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.roles import Role
 
@@ -23,10 +23,6 @@ class UserRepository(BaseRepository[User]):
         role: Optional[str] = None,
         status: Optional[str] = None
     ) -> Tuple[Sequence[User], int]:
-        """
-        Get users with pagination and filters.
-        Returns (users, total_count).
-        """
         # Base query
         query = select(self.model).where(self.model.is_deleted == false())
 
@@ -71,7 +67,6 @@ class UserRepository(BaseRepository[User]):
         return result.scalars().all(), total
 
     async def get_user_with_details(self, user_id: UUID) -> Optional[User]:
-        """Get user by ID with all relationships eagerly loaded."""
         query = select(self.model).where(
             self.model.user_id == user_id,
             self.model.is_deleted == false()
@@ -83,7 +78,6 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def get_user_stats(self) -> Dict[str, Any]:
-        """Get overall user statistics."""
         # Total users
         total_query = select(func.count(self.model.user_id)).where(
             self.model.is_deleted == false())
@@ -113,7 +107,7 @@ class UserRepository(BaseRepository[User]):
                 func.count(
                     func.distinct(
                         case(
-                            [(User.is_deleted == false(), UserRole.user_id)],
+                            (User.is_deleted == false(), UserRole.user_id),
                             else_=None
                         )
                     )
@@ -135,12 +129,10 @@ class UserRepository(BaseRepository[User]):
         }
 
     async def get_user_upload_count(self, user_id: UUID) -> int:
-        """Get total uploads for a user."""
-        from app.modules.ai.models.wound_analysis import WoundAnalysis
+        from app.modules.ai.models.analysis import Analysis
         
-        query = select(func.count(WoundAnalysis.analysis_id)).where(
-            WoundAnalysis.user_id == user_id,
-            WoundAnalysis.is_deleted == false()
+        query = select(func.count(Analysis.analysis_id)).where(
+            Analysis.user_id == user_id
         )
         try:
             result = await self.db.execute(query)
@@ -150,45 +142,37 @@ class UserRepository(BaseRepository[User]):
             return 0
 
     async def get_role_by_name(self, role_name: str) -> Optional[Role]:
-        """Get role by name."""
         query = select(Role).where(Role.role_name == role_name.lower())
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_email(self, email: str) -> Optional[User]:
-        """Get user by email (override/helper)."""
         return await self.get_one(self.model.email == email)
 
     async def email_exists(self, email: str) -> bool:
-        """Check if email exists."""
         user = await self.get_by_email(email)
         return user is not None
 
     async def get_by_username(self, user_name: str) -> Optional[User]:
-        """Get user by username (override/helper)."""
         return await self.get_one(self.model.user_name == user_name)
 
     async def username_exists(self, username: str) -> bool:
-        """Check if username exists."""
         user = await self.get_by_username(username)
         return user is not None
 
     async def remove_all_user_roles(self, user_id: UUID) -> None:
-        """Remove all roles for a user."""
         from sqlalchemy import delete
         query = delete(UserRole).where(UserRole.user_id == user_id)
         await self.db.execute(query)
         await self.db.flush()
 
     async def create_profile(self, user_id: UUID, full_name: str) -> None:
-        """Create a user profile."""
-        from app.modules.profile.models.user_profile import UserProfile
+        from app.modules.users.models.user_profile import UserProfile
         profile = UserProfile(user_id=user_id, full_name=full_name)
         self.db.add(profile)
         await self.db.flush()
 
     async def assign_role(self, user_id: UUID, role_id: int) -> None:
-        """Assign a role to a user."""
         user_role = UserRole(user_id=user_id, role_id=role_id)
         self.db.add(user_role)
         await self.db.flush()

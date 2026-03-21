@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4, UUID
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
@@ -23,9 +23,13 @@ class GuideContentMixin(BaseModel):
     @field_validator("steps", "dos", "donts", "supplies_needed", mode="before")
     @classmethod
     def flatten_jsonb_list(cls, v):
+        if v is None:
+            return []
         if isinstance(v, dict):
             return v.get("items", [])
-        return v
+        if isinstance(v, list):
+            return v
+        return []
 
     @field_validator("source", mode="before")
     @classmethod
@@ -48,7 +52,7 @@ class GuideContentMixin(BaseModel):
 
 
 class FirstAidGuideResponse(FirstAidGuideBase, GuideContentMixin):
-    firstaidguide_id: uuid.UUID
+    firstaidguide_id: UUID
     version: int
     created_by: Optional[str] = None
     created_at: datetime
@@ -60,7 +64,7 @@ class FirstAidGuideResponse(FirstAidGuideBase, GuideContentMixin):
     def convert_created_by(cls, v):
         if v is None:
             return None
-        if isinstance(v, uuid.UUID):
+        if isinstance(v, UUID):
             return str(v)
         return v
 

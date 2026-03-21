@@ -1,5 +1,5 @@
 import logging
-import uuid
+from uuid import uuid4, UUID
 from typing import Annotated, Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
@@ -9,9 +9,9 @@ from app.core.dependencies import (
     get_current_user,
     require_admin,
 )
-from app.modules.auth.models.user import User
-from app.modules.profile.dependencies import get_profile_service
-from app.modules.profile.schemas.user_profile_schemas import (
+from app.modules.users.models.user import User
+from app.modules.users.dependencies import get_profile_service
+from app.modules.users.schemas.profile_schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,
@@ -19,12 +19,12 @@ from app.modules.profile.schemas.user_profile_schemas import (
     UserProfileResponse,
     UserProfileUpdate,
 )
-from app.modules.profile.service import ProfileService
+from app.modules.users.services.profile_service import ProfileService
 from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/profile", tags=["User Profile Management"])
+router = APIRouter(prefix="/profile")
 
 
 @router.put(
@@ -162,7 +162,7 @@ async def delete_avatar(
     summary="Get public avatar",
 )
 async def get_user_avatar(
-    user_id: uuid.UUID,
+    user_id: UUID,
     service: ProfileService = Depends(get_profile_service),
 ) -> SuccessResponse:
     result = await service.get_public_avatar(user_id)

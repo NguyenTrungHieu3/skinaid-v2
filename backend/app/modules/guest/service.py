@@ -1,5 +1,4 @@
-import logging
-import uuid
+from uuid import uuid4, UUID
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -10,7 +9,6 @@ from app.modules.guest.repository import GuestRepository
 from app.modules.guest.exceptions import GuestSessionNotFoundError, AnalysisClaimError
 from app.modules.guest.schemas.api import CreateGuestSessionRequest, GuestStatsResponse
 
-logger = logging.getLogger(__name__)
 
 
 class GuestService:
@@ -38,7 +36,7 @@ class GuestService:
         await self.db.refresh(created)
         return created
 
-    async def get_session(self, session_id: uuid.UUID) -> GuestSession:
+    async def get_session(self, session_id: UUID) -> GuestSession:
         session = await self.repository.get_by_id(session_id)
         if not session:
             raise GuestSessionNotFoundError(str(session_id))
@@ -49,7 +47,7 @@ class GuestService:
         stats = await self.repository.get_stats()
         return GuestStatsResponse(**stats)
 
-    async def claim_analysis(self, analysis_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    async def claim_analysis(self, analysis_id: UUID, user_id: UUID) -> bool:
         success = await self.repository.claim_analysis(analysis_id, user_id)
         if not success:
             raise AnalysisClaimError("Analysis not found or already claimed")

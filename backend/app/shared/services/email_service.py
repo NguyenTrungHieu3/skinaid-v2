@@ -263,43 +263,52 @@ class EmailService:
             logger.error(f"Failed to queue password changed notification email for {email}: {str(e)}")
             raise
 
-    def _send_password_changed_notification_sync(self, email: str, display_name: str):
+    async def send_password_reset_success_notification_async(self, email: str, display_name: str) -> None:
         try:
-            subject = "SkinAid - Mật khẩu đã được thay đổi"
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None,
+                self._send_password_reset_success_notification_sync,
+                email,
+                display_name
+            )
+            logger.info(f"Password reset success notification email queued for {email}")
+        except Exception as e:
+            logger.error(f"Failed to queue password reset success notification email for {email}: {str(e)}")
+            raise
+
+    def _send_password_reset_success_notification_sync(self, email: str, display_name: str):
+        try:
+            subject = "SkinAid - Mật khẩu đã được đặt lại thành công"
 
             html_body = f"""
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="UTF-8">
-                <title>Mật khẩu đã được thay đổi - SkinAid</title>
+                <title>Mật khẩu đã được đặt lại - SkinAid</title>
             </head>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                     <div style="text-align: center; margin-bottom: 30px;">
                         <h1 style="color: #4CAF50;">🩹 SkinAid</h1>
-                        <h2 style="color: #666;">Mật khẩu đã được thay đổi</h2>
+                        <h2 style="color: #666;">Mật khẩu đã được đặt lại</h2>
                     </div>
 
                     <div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px;">
                         <p>Xin chào <strong>{display_name}</strong>,</p>
-                        <p>Chúng tôi muốn thông báo rằng mật khẩu tài khoản SkinAid của bạn đã được thay đổi thành công.</p>
+                        <p>Chúng tôi muốn thông báo rằng mật khẩu tài khoản SkinAid của bạn đã được đặt lại thành công.</p>
 
                         <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                            <p style="margin: 0;"><strong>Thời gian thay đổi:</strong> {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+                            <p style="margin: 0;"><strong>Thời gian đặt lại:</strong> {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
                         </div>
 
-                        <p><strong>Nếu bạn không thực hiện thay đổi này:</strong></p>
-                        <ul>
-                            <li>Vui lòng liên hệ ngay với chúng tôi</li>
-                            <li>Đổi mật khẩu để bảo vệ tài khoản</li>
-                            <li>Kiểm tra các hoạt động đăng nhập gần đây</li>
-                        </ul>
+                        <p>Bây giờ bạn có thể đăng nhập bằng mật khẩu mới của mình.</p>
 
                         <div style="text-align: center; margin: 30px 0;">
                             <a href="http://localhost:3000/signin"
                                style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                                Đăng nhập tài khoản
+                                Đăng nhập ngay
                             </a>
                         </div>
                     </div>

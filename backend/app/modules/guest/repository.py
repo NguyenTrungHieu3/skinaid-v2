@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-import uuid
+from uuid import uuid4, UUID
 
 from sqlalchemy import func, select, text, update, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.guest.models.guest_session import GuestSession
-from app.modules.ai.models.wound_analysis import WoundAnalysis
+from app.modules.ai.models.analysis import Analysis
 from app.shared.base_repository import BaseRepository
 
 
@@ -46,7 +46,7 @@ class GuestRepository(BaseRepository[GuestSession]):
             )
         )
         avg_seconds = (await self.db.execute(avg_stmt)).scalar() or 0.0
-        avg_hours = avg_seconds / 3600.0
+        avg_hours = float(avg_seconds) / 3600.0
 
         return {
             "total_sessions": total,
@@ -57,13 +57,13 @@ class GuestRepository(BaseRepository[GuestSession]):
             "average_session_duration": round(avg_hours, 2)
         }
 
-    async def claim_analysis(self, analysis_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    async def claim_analysis(self, analysis_id: UUID, user_id: UUID) -> bool:
         stmt = (
-            update(WoundAnalysis)
+            update(Analysis)
             .where(
-                WoundAnalysis.analysis_id == analysis_id,
-                WoundAnalysis.session_id.is_not(None),
-                WoundAnalysis.user_id.is_(None)
+                Analysis.analysis_id == analysis_id,
+                Analysis.session_id.is_not(None),
+                Analysis.user_id.is_(None)
             )
             .values(
                 user_id=user_id,

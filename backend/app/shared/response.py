@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, Optional, TypeVar, Dict
 
 from pydantic import BaseModel
 
@@ -11,6 +11,7 @@ class SuccessResponse(BaseModel, Generic[T]):
     success: bool = True
     message: str = "Thành công"
     data: Optional[T] = None
+    extra: Optional[Dict[str, Any]] = None  # Added for pagination metadata
     timestamp: datetime = None
     status_code: int = 200
 

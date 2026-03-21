@@ -1,7 +1,7 @@
-from .wound_analysis import WoundAnalysis
-from .wound_detection import WoundDetection
+from .analysis import Analysis
+from .detection import Detection
 
 __all__ = [
-    "WoundAnalysis",
-    "WoundDetection"
+    "Analysis",
+    "Detection"
 ]

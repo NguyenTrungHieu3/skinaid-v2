@@ -1,4 +1,3 @@
-import logging
 import json
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -7,8 +6,6 @@ from uuid import UUID, uuid4
 from app.modules.audit.models.audit_log import AuditLog
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.schemas.api import AuditLogFilterParams
-
-logger = logging.getLogger(__name__)
 
 
 class AuditService:
@@ -29,31 +26,26 @@ class AuditService:
         guest_session_id: Optional[UUID] = None,
         details: Optional[Dict[str, Any]] = None
     ) -> AuditLog:
-        try:
-            if error_message and len(error_message) > 500:
-                error_message = error_message[:497] + "..."
-            if user_agent and len(user_agent) > 500:
-                user_agent = user_agent[:497] + "..."
+        if error_message and len(error_message) > 500:
+            error_message = error_message[:497] + "..."
+        if user_agent and len(user_agent) > 500:
+            user_agent = user_agent[:497] + "..."
 
-            audit_log = AuditLog(
-                user_id=user_id,
-                action=action,
-                resource_type=resource_type,
-                resource_id=resource_id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                success=success,
-                error_message=error_message,
-                is_guest=is_guest,
-                guest_session_id=guest_session_id,
-                details=details
-            )
+        audit_log = AuditLog(
+            user_id=user_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=success,
+            error_message=error_message,
+            is_guest=is_guest,
+            guest_session_id=guest_session_id,
+            details=details
+        )
 
-            return await self.repository.create(audit_log)
-
-        except Exception as e:
-            logger.error(f"Failed to create audit log: {e}")
-            raise e
+        return await self.repository.create(audit_log)
 
     async def get_audit_logs(
         self,

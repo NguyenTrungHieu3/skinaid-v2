@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
-import uuid
+from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
     from app.modules.auth.models.user_roles import UserRole
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class Role(SQLModel, table=True):
     __tablename__ = "roles"
 
-    role_id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    role_id: UUID = Field(
+        default_factory=uuid4,
         primary_key=True
     )
 

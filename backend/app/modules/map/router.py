@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -18,9 +17,8 @@ from app.modules.map.schemas.api import (
 from app.modules.map.exceptions import MapServiceUnavailableError, LocationNotFoundError
 from app.shared.response import SuccessResponse
 
-logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/map", tags=["Map Services"])
+router = APIRouter(prefix="/map")
 
 
 @router.get(
@@ -38,12 +36,11 @@ async def get_user_location_from_ip(
             data=LocationResponse(**location_data)
         )
     except httpx.HTTPError as e:
-        logger.error(f"[MAP] Error: {e}")
         raise MapServiceUnavailableError("Dịch vụ định vị tạm thời không khả dụng")
 
 
 @router.post(
-    "/places/nearby",
+    "/nearby-places",
     response_model=SuccessResponse[List[PlaceResponse]],
     summary="Tìm địa điểm lân cận"
 )
@@ -62,7 +59,6 @@ async def find_nearby_places(
 
         places = []
         for p in places_data:
-            # Calculate icon URL
             icon_url = _get_icon_for_category(service, p["category"])
 
             places.append(PlaceResponse(
@@ -209,7 +205,6 @@ def _get_icon_for_category(service: MapService, category: str) -> str:
         "healthcare.dentist": ("tooth", "8b5cf6"),
         "healthcare.doctors": ("user-md", "0ea5e9"),
     }
-    # Check simple substring match if exact match fails
     icon_name, color = ("hospital", "dc2626")  # Default
 
     if category in icon_map:

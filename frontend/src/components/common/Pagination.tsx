@@ -72,8 +72,8 @@ export default function Pagination({
     const indexOfFirstItem = (currentPage - 1) * itemsPerPage + 1;
     const indexOfLastItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-    // Don't render if no pages
-    if (totalPages <= 0) return null;
+    // Don't render if no items
+    if (totalItems <= 0) return null;
 
     return (
         <div className={`${styles.pagination} ${className}`}>
@@ -84,21 +84,21 @@ export default function Pagination({
                 </div>
             )}
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-                <div className={styles.paginationControls}>
-                    {/* Previous Button */}
-                    <button
-                        className={styles.paginationBtn}
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        aria-label="Previous page"
-                    >
-                        <ChevronLeft size={16} />
-                        Previous
-                    </button>
+            {/* Pagination Controls - Always show if we have items */}
+            <div className={styles.paginationControls}>
+                {/* Previous Button */}
+                <button
+                    className={styles.paginationBtn}
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="Previous page"
+                >
+                    <ChevronLeft size={16} />
+                    Previous
+                </button>
 
-                    {/* Page Numbers */}
+                {/* Page Numbers - Only show if more than 1 page */}
+                {totalPages > 1 && (
                     <div className={styles.paginationNumbers}>
                         {getPageNumbers().map((page, index) =>
                             page === '...' ? (
@@ -123,19 +123,19 @@ export default function Pagination({
                             )
                         )}
                     </div>
+                )}
 
-                    {/* Next Button */}
-                    <button
-                        className={styles.paginationBtn}
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        aria-label="Next page"
-                    >
-                        Next
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            )}
+                {/* Next Button */}
+                <button
+                    className={styles.paginationBtn}
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Next page"
+                >
+                    Next
+                    <ChevronRight size={16} />
+                </button>
+            </div>
         </div>
     );
 }

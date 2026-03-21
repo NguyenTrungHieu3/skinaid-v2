@@ -1,15 +1,11 @@
 from typing import List, Optional, Tuple, Dict, Any
-from uuid import UUID
-import uuid
-import logging
+from uuid import UUID, uuid4
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.models.verification_token import VerificationToken
-from app.modules.audit.models.audit_log import AuditLog
 from app.core.Security.password import hash_password
 from app.modules.users.schemas.api import (
     CreateUserRequest,
@@ -26,8 +22,9 @@ from app.modules.users.exceptions import (
     UserActionFailedError
 )
 from app.shared.exceptions import ConflictError, BadRequestError
-
-logger = logging.getLogger(__name__)
+from app.modules.audit.services.audit_service import AuditService
+from app.modules.audit.audit_repository import AuditRepository
+from app.modules.users.services.user_mapper import UserMapper
 
 
 class UserService:
@@ -35,48 +32,19 @@ class UserService:
         self.repository = UserRepository(db)
         self.token_repository = TokenRepository(db)
         self.db = db
+        audit_repo = AuditRepository(db)
+        self.audit_service = AuditService(audit_repo)
 
-    def _get_admin_role(self, admin: User) -> str:
-        """Trích xuất tên role từ user_roles relationship."""
-        if admin.user_roles:
-            for ur in admin.user_roles:
-                if ur.role:
-                    return ur.role.role_name
-        return "admin"
+    async def _get_user_or_raise(self, user_id: UUID) -> User:
+        """Get user by ID or raise UserManagementNotFoundError."""
+        user = await self.repository.get_by_id(user_id)
+        if not user or user.is_deleted:
+            raise UserManagementNotFoundError(message=f"User {user_id} not found")
+        return user
 
-    async def _log_admin_action(
-        self,
-        admin: User,
-        action: str,
-        resource_type: str,
-        resource_id: str,
-        details: Optional[Dict[str, Any]] = None,
-        success: bool = True,
-        error_message: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-    ):
-        """Log admin action to AuditLog."""
-        admin_email = admin.email
-        admin_role = self._get_admin_role(admin)
-
-        audit_log = AuditLog(
-            user_id=admin.user_id,
-            action=action,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            success=success,
-            error_message=error_message,
-            is_guest=False,
-            details={
-                "admin_email": admin_email,
-                "admin_role": admin_role,
-                **(details or {})
-            }
-        )
-        self.db.add(audit_log)
+    async def _get_timestamp(self) -> int:
+        """Get current timestamp for renaming deleted users."""
+        return int(datetime.now().timestamp())
 
     async def get_users(
         self,
@@ -92,32 +60,10 @@ class UserService:
             skip=skip, limit=limit, search=search, role=role, status=status
         )
 
-        user_list = []
-        for user in users:
-            roles = []
-            if user.user_roles:
-                for ur in user.user_roles:
-                    if ur.role and (not ur.expires_at or ur.expires_at > datetime.now()):
-                        roles.append(ur.role.role_name)
-
-            upload_count = await self.repository.get_user_upload_count(user.user_id)
-
-            display_name = user.user_name
-            if hasattr(user, 'profile') and user.profile:
-                display_name = user.profile.full_name or user.user_name
-
-            user_info = UserBasicInfo(
-                user_id=user.user_id,
-                email=user.email,
-                user_name=user.user_name,
-                display_name=display_name,
-                is_active=user.is_active,
-                is_verified=user.is_verified,
-                created_at=user.created_at,
-                roles=roles,
-                upload_count=upload_count
-            )
-            user_list.append(user_info)
+        user_list = [
+            UserMapper.to_basic_info(user, await self.repository.get_user_upload_count(user.user_id))
+            for user in users
+        ]
 
         total_pages = (total + limit - 1) // limit if total > 0 else 1
 
@@ -136,31 +82,8 @@ class UserService:
         if not user:
             return None
 
-        roles = []
-        if user.user_roles:
-            for ur in user.user_roles:
-                if ur.role and (not ur.expires_at or ur.expires_at > datetime.now()):
-                    roles.append(ur.role.role_name)
-
         upload_count = await self.repository.get_user_upload_count(user.user_id)
-
-        display_name = user.user_name
-        if hasattr(user, 'profile') and user.profile:
-            display_name = user.profile.full_name or user.user_name
-
-        return UserDetailInfo(
-            user_id=user.user_id,
-            email=user.email,
-            user_name=user.user_name,
-            display_name=display_name,
-            is_active=user.is_active,
-            is_verified=user.is_verified,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-            roles=roles,
-            upload_count=upload_count,
-            last_login=None
-        )
+        return UserMapper.to_detail_info(user, upload_count)
 
     async def create_user(
         self,
@@ -170,75 +93,39 @@ class UserService:
         user_agent: Optional[str] = None
     ) -> UserDetailInfo:
         """Create a new user with transaction and audit logging."""
-        logger.info(f"Starting user creation for {user_data.email}")
-
-        # Sanitize sensitive data for logging
-        from app.core.logging_utils import sanitize_user_data
-        sanitized_data = sanitize_user_data(user_data.dict())
-
         try:
-            # 1. Check existence & handle conflicts (including soft-deleted users)
             await self._check_and_handle_conflicts(user_data.email, user_data.user_name)
-
-            # 2. Create User Entity & Profile
             new_user_id = await self._create_new_user_with_profile(user_data)
-
-            # 3. Assign Role
             await self._assign_role(new_user_id, user_data.role)
-
             await self.db.commit()
 
             new_user = await self.repository.get_by_id(new_user_id)
-
-            # 4. Success Audit Log
-            await self._log_admin_action(
-                admin=current_admin,
-                action="CREATE_USER",
-                resource_type="user",
-                resource_id=str(new_user_id),
-                details={"description": f"Created user {user_data.email}", "changes": sanitized_data},
-                success=True,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-
-            # 5. Send Email (async, catch error)
             if new_user:
                 await self._try_send_verification_email(new_user)
 
             user_detail = await self.get_user_detail(new_user_id)
             if not user_detail:
                 raise UserManagementNotFoundError(f"User {new_user_id} not found after creation")
+
+            await self.audit_service.log_event(
+                action="CREATE_USER",
+                user_id=current_admin.user_id,
+                success=True,
+                resource_type="user",
+                resource_id=str(new_user_id),
+                ip_address=ip_address,
+                user_agent=user_agent,
+                details={"email": user_data.email},
+            )
+
             return user_detail
 
         except (ConflictError, BadRequestError, UserManagementNotFoundError) as e:
             await self.db.rollback()
-            await self._log_admin_action(
-                admin=current_admin,
-                action="CREATE_USER",
-                resource_type="user",
-                details={"description": f"Failed to create user {user_data.email}"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
             raise
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Error creating user: {e}", exc_info=True)
-            await self._log_admin_action(
-                admin=current_admin,
-                action="CREATE_USER",
-                resource_type="user",
-                details={"description": f"Error creating user {user_data.email}"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-            raise UserActionFailedError(
-                message=f"Failed to create user: {str(e)}")
+            raise UserActionFailedError(message=f"Failed to create user: {str(e)}")
 
     # ══════════════════════════════════════════════════════
     # HELPER METHODS FOR CREATE_USER
@@ -269,7 +156,7 @@ class UserService:
 
     async def _rename_deleted_user(self, user: User) -> None:
         """Rename a deleted user's unique fields to prevent conflicts."""
-        timestamp = int(datetime.now().timestamp())
+        timestamp = await self._get_timestamp()
         if ".deleted." not in user.email:
             user.email = f"{user.email}.deleted.{timestamp}"
         if ".deleted." not in user.user_name:
@@ -285,7 +172,7 @@ class UserService:
                 message="Display name must be at least 2 characters")
 
         hashed_pw = hash_password(user_data.password)
-        new_user_id = uuid.uuid4()
+        new_user_id = uuid4()
 
         new_user = User(
             user_id=new_user_id,
@@ -314,11 +201,11 @@ class UserService:
         await self.repository.assign_role(user_id, role.role_id)
 
     async def _try_send_verification_email(self, user: User) -> None:
-        """Try to send verification email, log warning on failure."""
+        """Try to send verification email, silently ignore failures."""
         try:
             await self._send_verification_email(user)
-        except Exception as e:
-            logger.warning(f"Failed to send email to {user.email}: {e}")
+        except Exception:
+            pass
 
     async def update_user(
         self,
@@ -329,16 +216,9 @@ class UserService:
         user_agent: Optional[str] = None
     ) -> Optional[UserDetailInfo]:
         """Update user details with audit logging."""
-        user = await self.repository.get_by_id(user_id)
-        if not user or user.is_deleted:
-            raise UserManagementNotFoundError(message=f"User {user_id} not found")
-
-        from app.core.logging_utils import sanitize_user_data
-        sanitized_changes = sanitize_user_data(
-            user_data.dict(exclude_unset=True))
+        user = await self._get_user_or_raise(user_id)
 
         try:
-            # Update Username
             if user_data.user_name and user_data.user_name != user.user_name:
                 if await self.repository.username_exists(user_data.user_name):
                     existing = await self.repository.get_by_username(user_data.user_name)
@@ -347,7 +227,6 @@ class UserService:
                             message=f"Username '{user_data.user_name}' already exists")
                 user.user_name = user_data.user_name
 
-            # Update Profile (Display Name)
             if user_data.display_name is not None:
                 user_with_details = await self.repository.get_user_with_details(user_id)
                 if user_with_details and user_with_details.profile:
@@ -356,7 +235,6 @@ class UserService:
                 else:
                     await self.repository.create_profile(user_id, user_data.display_name.strip())
 
-            # Update Email
             if user_data.email and user_data.email != user.email:
                 if await self.repository.email_exists(user_data.email):
                     existing = await self.repository.get_by_email(user_data.email)
@@ -365,15 +243,12 @@ class UserService:
                 user.email = user_data.email
                 await self.token_repository.delete_tokens_by_email(user.email)
 
-            # Update Active Status
             if user_data.is_active is not None:
                 user.is_active = user_data.is_active
 
-            # Update Password
             if user_data.password:
                 user.hashed_password = hash_password(user_data.password)
 
-            # Update Role
             if user_data.role:
                 await self.repository.remove_all_user_roles(user_id)
                 role = await self.repository.get_role_by_name(user_data.role)
@@ -384,40 +259,24 @@ class UserService:
 
             await self.db.commit()
 
-            # Success Audit Log
-            await self._log_admin_action(
-                admin=current_admin,
+            await self.audit_service.log_event(
                 action="UPDATE_USER",
+                user_id=current_admin.user_id,
+                success=True,
                 resource_type="user",
                 resource_id=str(user_id),
-                details={"description": f"Updated user {user_id}", "changes": sanitized_changes},
-                success=True,
                 ip_address=ip_address,
                 user_agent=user_agent,
+                details={"email": user.email},
             )
 
-            user_detail = await self.get_user_detail(user_id)
-            if not user_detail:
-                raise UserManagementNotFoundError(f"User {user_id} not found after update")
-            return user_detail
+            return await self.get_user_detail(user_id)
 
         except (ConflictError, UserManagementNotFoundError) as e:
             await self.db.rollback()
             raise
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Error updating user {user_id}: {e}")
-            await self._log_admin_action(
-                admin=current_admin,
-                action="UPDATE_USER",
-                resource_type="user",
-                resource_id=str(user_id),
-                details={"description": f"Error updating user {user_id}"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
             raise UserActionFailedError(message=f"Update failed: {str(e)}")
 
     async def delete_user(
@@ -428,31 +287,22 @@ class UserService:
         user_agent: Optional[str] = None
     ) -> bool:
         """Soft delete user with audit logging."""
-        user = await self.repository.get_by_id(user_id)
-        if not user or user.is_deleted:
-            raise UserManagementNotFoundError(message=f"User {user_id} not found")
+        user = await self._get_user_or_raise(user_id)
 
         try:
             await self.repository.soft_delete(user)
-
-            # Rename unique fields
-            timestamp = int(datetime.now().timestamp())
-            user.email = f"{user.email}.deleted.{timestamp}"
-            user.user_name = f"{user.user_name}.deleted.{timestamp}"
-            self.db.add(user)
-
+            await self._rename_deleted_user(user)
             await self.db.commit()
 
-            # Success Audit Log
-            await self._log_admin_action(
-                admin=current_admin,
+            await self.audit_service.log_event(
                 action="DELETE_USER",
+                user_id=current_admin.user_id,
+                success=True,
                 resource_type="user",
                 resource_id=str(user_id),
-                details={"description": f"Soft deleted user {user_id}"},
-                success=True,
                 ip_address=ip_address,
                 user_agent=user_agent,
+                details={"deleted_email": user.email},
             )
 
             return True
@@ -461,18 +311,6 @@ class UserService:
             raise
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Error deleting user {user_id}: {e}")
-            await self._log_admin_action(
-                admin=current_admin,
-                action="DELETE_USER",
-                resource_type="user",
-                resource_id=str(user_id),
-                details={"description": f"Error deleting user {user_id}"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
             raise UserActionFailedError(message=f"Delete failed: {str(e)}")
 
     async def update_user_status(
@@ -484,44 +322,26 @@ class UserService:
         user_agent: Optional[str] = None
     ) -> Optional[UserDetailInfo]:
         """Update user active status with audit logging."""
-        user = await self.repository.get_by_id(user_id)
-        if not user or user.is_deleted:
-            raise UserManagementNotFoundError(message=f"User {user_id} not found")
+        user = await self._get_user_or_raise(user_id)
 
         try:
             user.is_active = is_active
             await self.db.commit()
 
-            status_text = "active" if is_active else "inactive"
-            await self._log_admin_action(
-                admin=current_admin,
+            await self.audit_service.log_event(
                 action="UPDATE_USER_STATUS",
+                user_id=current_admin.user_id,
+                success=True,
                 resource_type="user",
                 resource_id=str(user_id),
-                details={"description": f"Changed user status to {status_text}", "changes": {"is_active": is_active}},
-                success=True,
                 ip_address=ip_address,
                 user_agent=user_agent,
+                details={"is_active": is_active},
             )
 
-            user_detail = await self.get_user_detail(user_id)
-            if not user_detail:
-                raise UserManagementNotFoundError(f"User {user_id} not found after status update")
-            return user_detail
+            return await self.get_user_detail(user_id)
         except Exception as e:
             await self.db.rollback()
-            logger.error(f"Error updating user status {user_id}: {e}")
-            await self._log_admin_action(
-                admin=current_admin,
-                action="UPDATE_USER_STATUS",
-                resource_type="user",
-                resource_id=str(user_id),
-                details={"description": "Error updating user status"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
             raise UserActionFailedError(message="Status update failed")
 
     async def get_user_stats(self) -> UserStatsResponse:
@@ -544,7 +364,7 @@ class UserService:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         verification_token = VerificationToken(
-            token_id=uuid.uuid4(),
+            token_id=uuid4(),
             email=user.email,
             token=token_str,
             token_type="email_verification",
@@ -566,9 +386,7 @@ class UserService:
         user_agent: Optional[str] = None
     ) -> bool:
         """Resend verification email with audit logging."""
-        user = await self.repository.get_by_id(user_id)
-        if not user or user.is_deleted:
-            raise UserManagementNotFoundError(message=f"User {user_id} not found")
+        user = await self._get_user_or_raise(user_id)
 
         if user.is_verified:
             raise BadRequestError(message="User already verified")
@@ -576,28 +394,16 @@ class UserService:
         try:
             await self._send_verification_email(user)
 
-            await self._log_admin_action(
-                admin=current_admin,
+            await self.audit_service.log_event(
                 action="RESEND_VERIFICATION",
+                user_id=current_admin.user_id,
+                success=True,
                 resource_type="user",
                 resource_id=str(user_id),
-                details={"description": f"Resent verification email to user {user_id}"},
-                success=True,
                 ip_address=ip_address,
                 user_agent=user_agent,
+                details={"email": user.email},
             )
             return True
-        except Exception as e:
-            logger.error(f"Error resending email: {e}")
-            await self._log_admin_action(
-                admin=current_admin,
-                action="RESEND_VERIFICATION",
-                resource_type="user",
-                resource_id=str(user_id),
-                details={"description": "Error resending verification email"},
-                success=False,
-                error_message=str(e),
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
+        except Exception:
             return False

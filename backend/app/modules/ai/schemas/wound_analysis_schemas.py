@@ -14,7 +14,7 @@ class WoundDetectionResponse(BaseModel):
 class WoundAnalysisResponse(BaseModel):
     analysis_id: UUID
     user_id: Optional[UUID] = None
-    session_id: Optional[UUID] = None
+    guest_session_id: Optional[UUID] = None
     image_url: str
     file_name: str
     total_detections: int

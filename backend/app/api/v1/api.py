@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.modules.auth.router import router as auth_router
-from app.modules.profile.router import router as profile_router
+from app.modules.users.routes.profile_router import router as profile_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.ai.routes.model_management_router import router as model_management_router
 from app.modules.firstaid.router import router as first_aid_router
@@ -27,8 +27,6 @@ router.include_router(dashboard_router, tags=["Dashboard Analytics"])
 router.include_router(user_list_router, tags=["User Management"])
 router.include_router(user_ops_router, tags=["User Management"])
 router.include_router(map_router, tags=["Map"])
-
-# ⭐ NEW - B4 Modules (Sprint 3 Stub Endpoints)
 router.include_router(chatbot_router, tags=["Chatbot"])
 router.include_router(rag_router, tags=["RAG - Knowledge Retrieval"])
 router.include_router(llm_router, tags=["LLM - Response Synthesis"])

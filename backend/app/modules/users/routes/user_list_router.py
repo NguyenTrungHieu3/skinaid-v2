@@ -9,9 +9,9 @@ from app.modules.users.schemas.api import (
     UserStatsResponse
 )
 from app.core.dependencies import get_db, require_admin
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 
-router = APIRouter(prefix="/admin/users", tags=["Admin - User Management"])
+router = APIRouter(prefix="/admin/users")
 
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:

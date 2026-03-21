@@ -101,7 +101,7 @@ export default function FirstAidManagement() {
 
   // Pagination state
   const [page, setPage] = useState(1);
-  const [limit] = useState(6);
+  const [limit] = useState(6); // Keep limit at 6 as requested
   const [totalCount, setTotalCount] = useState(0);
 
   // Confirm dialog state
@@ -187,18 +187,22 @@ export default function FirstAidManagement() {
       setError(null);
 
       const params: any = {
-        wound_type: selectedWoundType,
-        severity: selectedSeverity,
         limit,
         offset: (page - 1) * limit,
       };
 
+      // Only add params if they have actual values (not empty strings)
+      if (selectedWoundType && selectedWoundType.trim()) {
+        params.wound_type = selectedWoundType.trim();
+      }
+      if (selectedSeverity && selectedSeverity.trim()) {
+        params.severity = selectedSeverity.trim();
+      }
       if (selectedActiveStatus !== "all") {
         params.is_active = selectedActiveStatus === "true";
       }
-
-      if (searchTerm) {
-        params.search = searchTerm;
+      if (searchTerm && searchTerm.trim()) {
+        params.search = searchTerm.trim();
       }
 
       const response = await searchFirstAidGuides(params);
@@ -206,7 +210,8 @@ export default function FirstAidManagement() {
       if (response.success && response.data) {
         setGuides(response.data);
         // Total is in extra.total from backend SuccessResponse
-        setTotalCount(response.extra?.total || response.data.length);
+        const total = response.extra?.total || response.data.length;
+        setTotalCount(total);
       } else if (Array.isArray(response)) {
         setGuides(response);
         setTotalCount(response.length);
@@ -998,7 +1003,7 @@ export default function FirstAidManagement() {
           totalItems={totalCount}
           itemsPerPage={limit}
           onPageChange={setPage}
-          showInfo={false}
+          showInfo={true}
           className={styles.centeredPagination}
         />
       )}

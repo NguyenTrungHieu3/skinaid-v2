@@ -1,5 +1,5 @@
 # Models
-from .models.user import User
+from app.modules.users.models.user import User
 from .models.verification_token import VerificationToken
 from .models.roles import Role
 from .models.permissions import Permission
@@ -9,8 +9,7 @@ from .models.role_permissions import RolePermission
 # Dịch vụ
 from .service import AuthService
 
-# Router
-from .router import router as auth_router
+
 
 # Schemas
 from .schemas.api import (
@@ -35,7 +34,6 @@ __all__ = [
     "UserRole",
     "RolePermission",
     "AuthService",
-    "auth_router",
     "UserBase",
     "UserCreate",
     "UserLogin",

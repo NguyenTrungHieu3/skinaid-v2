@@ -6,22 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, func, update, delete, false
 from sqlalchemy.orm import selectinload
 
-from app.modules.ai.models.wound_analysis import WoundAnalysis
-from app.modules.ai.models.wound_detection import WoundDetection
+from app.modules.ai.models.analysis import Analysis
+from app.modules.ai.models.detection import Detection
 from app.shared.base_repository import BaseRepository
 from app.modules.ai.exceptions import WoundAnalysisNotFoundError
 
 
-class WoundAnalysisRepository(BaseRepository[WoundAnalysis]):
+class WoundAnalysisRepository(BaseRepository[Analysis]):
     def __init__(self, db: AsyncSession):
-        super().__init__(model=WoundAnalysis, db=db)
+        super().__init__(model=Analysis, db=db)
 
-    async def get_analysis_by_id(self, analysis_id: UUID) -> Optional[WoundAnalysis]:
-        query = select(WoundAnalysis).where(
-            WoundAnalysis.analysis_id == analysis_id,
-            WoundAnalysis.is_deleted == false()
+    async def get_analysis_by_id(self, analysis_id: UUID) -> Optional[Analysis]:
+        query = select(Analysis).where(
+            Analysis.analysis_id == analysis_id
         ).options(
-            selectinload(WoundAnalysis.wound_detections)
+            selectinload(Analysis.wound_detections)
         )
         result = await self.db.execute(query)
         return result.scalars().first()
@@ -29,18 +28,17 @@ class WoundAnalysisRepository(BaseRepository[WoundAnalysis]):
     async def get_history(
         self,
         user_id: Optional[UUID] = None,
-        session_id: Optional[UUID] = None,
+        guest_session_id: Optional[UUID] = None,
         limit: int = 20,
         offset: int = 0
-    ) -> Tuple[List[WoundAnalysis], int]:
-        base_query = select(WoundAnalysis).where(
-            WoundAnalysis.is_deleted == false())
+    ) -> Tuple[List[Analysis], int]:
+        base_query = select(Analysis)
 
         if user_id:
-            base_query = base_query.where(WoundAnalysis.user_id == user_id)
-        elif session_id:
+            base_query = base_query.where(Analysis.user_id == user_id)
+        elif guest_session_id:
             base_query = base_query.where(
-                WoundAnalysis.session_id == session_id)
+                Analysis.guest_session_id == guest_session_id)
         else:
             return [], 0
 
@@ -51,9 +49,9 @@ class WoundAnalysisRepository(BaseRepository[WoundAnalysis]):
 
         # Get items
         query = base_query.options(
-            selectinload(WoundAnalysis.wound_detections)
+            selectinload(Analysis.wound_detections)
         ).order_by(
-            desc(WoundAnalysis.created_at)
+            desc(Analysis.created_at)
         ).limit(limit).offset(offset)
 
         result = await self.db.execute(query)
@@ -61,35 +59,30 @@ class WoundAnalysisRepository(BaseRepository[WoundAnalysis]):
 
         return list(analyses), total
 
-    async def create_analysis(self, analysis_data: WoundAnalysis) -> WoundAnalysis:
+    async def create_analysis(self, analysis_data: Analysis) -> Analysis:
         self.db.add(analysis_data)
         await self.db.flush()
         await self.db.refresh(analysis_data)
         return analysis_data
 
-    async def add_detections(self, detections: List[WoundDetection]) -> None:
+    async def add_detections(self, detections: List[Detection]) -> None:
         self.db.add_all(detections)
         await self.db.flush()
 
     async def soft_delete_analysis(self, analysis_id: UUID) -> bool:
-        stmt = update(WoundAnalysis).where(
-            WoundAnalysis.analysis_id == analysis_id
-        ).values(
-            is_deleted=True,
-            updated_at=datetime.now(timezone.utc).replace(tzinfo=None)
+        stmt = delete(Analysis).where(
+            Analysis.analysis_id == analysis_id
         )
         result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount > 0
 
-    async def get_recent_analyses(self, limit: int = 5) -> List[WoundAnalysis]:
+    async def get_recent_analyses(self, limit: int = 5) -> List[Analysis]:
         """Get most recent analyses (for admin dashboard etc)."""
-        query = select(WoundAnalysis).where(
-            WoundAnalysis.is_deleted == False
-        ).order_by(
-            desc(WoundAnalysis.created_at)
+        query = select(Analysis).order_by(
+            desc(Analysis.created_at)
         ).limit(limit).options(
-            selectinload(WoundAnalysis.wound_detections)
+            selectinload(Analysis.wound_detections)
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())

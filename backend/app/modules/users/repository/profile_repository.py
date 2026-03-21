@@ -1,12 +1,12 @@
-import uuid
+from uuid import uuid4, UUID
 from datetime import date, datetime, timezone
 from typing import Any
 
 from sqlalchemy import func, select
 from sqlmodel import select as sqlmodel_select
 
-from app.modules.auth.models.user import User
-from app.modules.profile.models.user_profile import UserProfile
+from app.modules.users.models.user import User
+from app.modules.users.models.user_profile import UserProfile
 from app.shared.base_repository import BaseRepository
 
 
@@ -15,7 +15,7 @@ class ProfileRepository(BaseRepository[UserProfile]):
     def __init__(self, session):
         super().__init__(UserProfile, session)
 
-    async def get_by_user_id(self, user_id: uuid.UUID) -> UserProfile | None:
+    async def get_by_user_id(self, user_id: UUID) -> UserProfile | None:
         stmt = sqlmodel_select(UserProfile).where(
             UserProfile.user_id == user_id
         )
@@ -23,7 +23,7 @@ class ProfileRepository(BaseRepository[UserProfile]):
         return result.scalars().first()
 
     async def create_or_update(
-        self, user_id: uuid.UUID, profile_data: dict[str, Any]
+        self, user_id: UUID, profile_data: dict[str, Any]
     ) -> UserProfile:
         profile = await self.get_by_user_id(user_id)
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)

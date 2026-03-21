@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from typing import List, Optional
 from uuid import UUID
@@ -23,8 +22,6 @@ from app.shared.validators.file_validator import FileValidator
 from app.shared.constants import error_codes as ErrorCode
 from app.shared.constants import messages as Message
 
-logger = logging.getLogger(__name__)
-
 
 class ImageProcessingService:
 
@@ -40,38 +37,27 @@ class ImageProcessingService:
         self,
         file: UploadFile,
         user_id: Optional[UUID] = None,
-        session_id: Optional[UUID] = None,
+        guest_session_id: Optional[UUID] = None,
     ) -> SuccessResponse:
-        logger.debug(f"[PROCESS_SINGLE] Processing file: {file.filename}")
-
         validation = await self.validator.validate_upload_file(file)
         if not validation["valid"]:
-            logger.warning(
-                f"[PROCESS_SINGLE] File '{file.filename}' validation failed: "
-                f"{validation['error']}"
-            )
             raise BadRequestError(
                 message=Message.AI_INVALID_FILE_MSG,
                 details={"validation_error": validation["error"]},
             )
 
-        subfolder = f"user/{user_id}" if user_id else f"guest/{session_id}"
+        subfolder = f"user/{user_id}" if user_id else f"guest/{guest_session_id}"
         save_result = await self.file_service.save_file(
             file_content=validation["content"],
             filename=file.filename,
             subfolder=subfolder,
         )
-        logger.debug(f"[PROCESS_SINGLE] File saved: {save_result['file_url']}")
 
         ai_result = await self.ai_service.analyze_wound(
             image_path=save_result["file_path"]
         )
 
         if not ai_result.get("success", False):
-            logger.error(
-                f"[PROCESS_SINGLE] AI analysis failed for '{file.filename}': "
-                f"{ai_result.get('error', 'Unknown error')}"
-            )
             raise AIProcessFailedError(
                 message="AI Analysis Failed",
                 details={"ai_error": ai_result.get("error")},
@@ -85,15 +71,9 @@ class ImageProcessingService:
 
         analysis = await self.analysis_service.create_analysis(
             user_id=user_id,
-            session_id=session_id,
+            guest_session_id=guest_session_id,
             image_url=save_result["file_url"],
-            file_name=save_result["filename"],
-            file_size=validation["size"],
-            ai_model_version=ai_result.get(
-                "model_version", "YOLOv11_EfficientNetV2_1.0"
-            ),
-            total_detections=len(ai_result.get("detections", [])),
-            processing_time_ms=processing_time_ms,
+            image_size_bytes=validation["size"],
         )
 
         if ai_result.get("detections"):
@@ -107,11 +87,6 @@ class ImageProcessingService:
 
         response_data = self.response_mapper.map_wound_analysis_basic(analysis)
 
-        logger.debug(
-            f"[PROCESS_SINGLE] Success for '{file.filename}': "
-            f"{analysis.analysis_id}"
-        )
-
         return SuccessResponse(
             message=Message.AI_ANALYSIS_SUCCESS_MSG,
             data=response_data,
@@ -121,23 +96,16 @@ class ImageProcessingService:
         self,
         files: List[UploadFile],
         user_id: Optional[UUID] = None,
-        session_id: Optional[UUID] = None
+        guest_session_id: Optional[UUID] = None
     ) -> BatchAnalysisResponse:
-        """
-        Process multiple images.
-        """
+        """Process multiple images."""
         start_time = time.time()
-
-        logger.info(
-            f"[BATCH_PROCESS] Starting batch - "
-            f"files: {len(files)}, user: {user_id}, session: {session_id}"
-        )
 
         tasks = [
             self.process_single_image(
                 file=file,
                 user_id=user_id,
-                session_id=session_id
+                guest_session_id=guest_session_id
             )
             for file in files
         ]
@@ -152,9 +120,6 @@ class ImageProcessingService:
             file_name = files[idx].filename
 
             if isinstance(result, Exception):
-                logger.error(
-                    f"[BATCH_PROCESS] File '{file_name}' failed: {result}"
-                )
                 error_msg = getattr(result, "message", str(result))
                 batch_results.append(
                     BatchAnalysisItemResult(
@@ -168,9 +133,6 @@ class ImageProcessingService:
                 continue
 
             if isinstance(result, SuccessResponse):
-                logger.info(
-                    f"[BATCH_PROCESS] File '{file_name}' analyzed successfully"
-                )
                 batch_results.append(
                     BatchAnalysisItemResult(
                         success=True,
@@ -181,12 +143,6 @@ class ImageProcessingService:
                 successful_count += 1
 
         processing_time_ms = int((time.time() - start_time) * 1000)
-
-        logger.info(
-            f"[BATCH_PROCESS] Completed - "
-            f"Total: {len(files)}, Success: {successful_count}, "
-            f"Failed: {failed_count}, Time: {processing_time_ms}ms"
-        )
 
         return BatchAnalysisResponse(
             total_files=len(files),

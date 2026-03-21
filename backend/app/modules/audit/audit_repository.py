@@ -7,7 +7,7 @@ from sqlalchemy import func, case, desc, or_
 from sqlmodel import select
 
 from app.modules.audit.models.audit_log import AuditLog
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.user_roles import UserRole
 from app.shared.base_repository import BaseRepository

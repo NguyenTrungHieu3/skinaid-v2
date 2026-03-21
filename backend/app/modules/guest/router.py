@@ -1,11 +1,10 @@
-import logging
-import uuid
+from uuid import uuid4, UUID
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.core.dependencies import get_db, require_admin, require_user
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.guest.dependencies import get_guest_service
 from app.modules.guest.schemas.api import (
     CreateGuestSessionRequest,
@@ -15,7 +14,6 @@ from app.modules.guest.schemas.api import (
 from app.modules.guest.service import GuestService
 from app.shared.response import SuccessResponse
 
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/guest", tags=["Guest Management"])
 
@@ -54,7 +52,7 @@ async def create_guest_session(
     summary="Lấy chi tiết phiên khách",
 )
 async def get_guest_session(
-    session_id: uuid.UUID,
+    session_id: UUID,
     service: GuestService = Depends(get_guest_service),
 ) -> SuccessResponse:
     session = await service.get_session(session_id)
@@ -86,7 +84,7 @@ async def get_guest_statistics(
     summary="Nhận analysis từ Guest Session",
 )
 async def claim_analysis(
-    analysis_id: uuid.UUID,
+    analysis_id: UUID,
     service: GuestService = Depends(get_guest_service),
     current_user: User = Depends(require_user),
 ) -> SuccessResponse:

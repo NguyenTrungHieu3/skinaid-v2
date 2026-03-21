@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4, UUID
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -7,7 +7,7 @@ from app.modules.guest.schemas.domain import GuestSessionBase
 
 
 class GuestSessionResponse(GuestSessionBase):
-    session_id: uuid.UUID
+    session_id: UUID
     created_at: datetime
     expires_at: datetime
     last_activity_at: datetime
@@ -41,4 +41,4 @@ class GuestStatsResponse(BaseModel):
 
 
 class ClaimAnalysisRequest(BaseModel):
-    analysis_id: uuid.UUID
+    analysis_id: UUID

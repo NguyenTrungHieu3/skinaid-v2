@@ -1,22 +1,22 @@
 from pydantic import BaseModel, Field, computed_field
 from typing import Optional, Dict, Any
 from datetime import datetime
-import uuid
+from uuid import uuid4, UUID
 
 
 class WoundDetectionBase(BaseModel):
-    analysis_id: uuid.UUID
+    analysis_id: UUID
     wound_type: str
     severity: str
     sub_type: Optional[str] = None
     confidence_score: float = Field(ge=0.0, le=1.0)
     bounding_box: Dict[str, Any]
     detection_index: int = 0
-    firstaidguide_id: Optional[uuid.UUID] = None
+    firstaidguide_id: Optional[UUID] = None
     firstaid_snapshot: Optional[Dict[str, Any]] = None
 
 class WoundDetectionResponse(WoundDetectionBase):
-    detection_id: uuid.UUID
+    detection_id: UUID
     created_at: datetime
 
     @computed_field

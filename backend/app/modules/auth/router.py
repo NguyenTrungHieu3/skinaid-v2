@@ -1,15 +1,8 @@
 from fastapi import APIRouter, Depends, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime, timezone
-import logging
-import uuid
 
-from app.core.Security.jwt import JWTHandler
-from app.core.dependencies import get_current_active_user, get_db, get_token
-from app.modules.audit.audit_repository import AuditRepository
-from app.modules.audit.services.audit_service import AuditService
+from app.core.dependencies import get_current_active_user, get_token
 from app.modules.auth.dependencies import get_auth_service
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.schemas.api import (
     ChangePasswordRequest,
     ChangePasswordResponse,
@@ -24,10 +17,6 @@ from app.modules.auth.schemas.api import (
 )
 from app.modules.auth.service import AuthService
 from app.shared.response import SuccessResponse
-
-logger = logging.getLogger(__name__)
-
-jwt_handler = JWTHandler()
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -57,35 +46,6 @@ async def _build_user_response(user: User) -> UserResponse:
     )
 
 
-async def _audit(
-    db: AsyncSession,
-    request: Request,
-    *,
-    action: str,
-    success: bool,
-    user_id: uuid.UUID | str | None = None,
-    resource_id: str | None = None,
-    error_message: str | None = None,
-    details: dict | None = None,
-) -> None:
-    try:
-        audit_repo = AuditRepository(db)
-        audit_service = AuditService(audit_repo)
-        await audit_service.log_event(
-            action=action,
-            user_id=user_id,
-            success=success,
-            resource_type="user",
-            resource_id=resource_id or (str(user_id) if user_id else None),
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("User-Agent"),
-            error_message=error_message,
-            details=details,
-        )
-    except Exception as e:
-        logger.warning("Audit log failed: %s", str(e))
-
-
 @router.post(
     "/signup",
     response_model=SuccessResponse[UserResponse],
@@ -96,19 +56,13 @@ async def register_user(
     request: Request,
     user_data: UserCreate,
     service: AuthService = Depends(get_auth_service),
-    db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    user = await service.register_user(user_data)
-    user_response = await _build_user_response(user)
-
-    await _audit(
-        db,
-        request,
-        action="register",
-        success=True,
-        user_id=user.user_id,
-        details={"email": user_data.email, "user_name": user_data.user_name},
+    user = await service.register_user(
+        user_data=user_data,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
+    user_response = await _build_user_response(user)
 
     return SuccessResponse(
         message="Đăng ký tài khoản thành công",
@@ -125,20 +79,13 @@ async def login_user(
     request: Request,
     credentials: UserLogin,
     service: AuthService = Depends(get_auth_service),
-    db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    result = await service.login(credentials)
-    user = result["user"]
-
-    await _audit(
-        db,
-        request,
-        action="login",
-        success=True,
-        user_id=user.user_id,
-        details={"user_name": credentials.user_name},
+    result = await service.login(
+        form_data=credentials,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
-
+    user = result["user"]
     user_response = await _build_user_response(user)
 
     return SuccessResponse(
@@ -203,18 +150,13 @@ async def confirm_password_reset(
     request: Request,
     reset_data: PasswordResetConfirm,
     service: AuthService = Depends(get_auth_service),
-    db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
     await service.reset_password(
-        reset_data.email, reset_data.token, reset_data.new_password
-    )
-
-    await _audit(
-        db,
-        request,
-        action="password_reset",
-        success=True,
-        details={"email": reset_data.email},
+        email=reset_data.email,
+        token=reset_data.token,
+        new_password=reset_data.new_password,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
 
     return SuccessResponse(
@@ -258,39 +200,16 @@ async def logout_user(
     request: Request,
     token: str = Depends(get_token),
     service: AuthService = Depends(get_auth_service),
-    db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
-    now_iso = datetime.now(timezone.utc).isoformat()
-    revoked_count = 0
-    user_id = None
-
-    try:
-        payload = jwt_handler.decode_token(token, verify_exp=False)
-        jti = payload.get("jti")
-        user_id = payload.get("sub")
-
-        if jti:
-            revoked_count = await service.revoke_token_family(jti)
-    except Exception:
-        pass
-
-    await _audit(
-        db,
-        request,
-        action="logout",
-        success=True,
-        user_id=user_id,
+    result = await service.logout(
+        token=token,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
 
     return SuccessResponse(
         message="Đăng xuất thành công",
-        data={
-            "logout_time": now_iso,
-            "tokens_revoked": revoked_count,
-            "message": f"Đã thu hồi {revoked_count} token"
-            if revoked_count
-            else "Phiên đã kết thúc",
-        },
+        data=result,
     )
 
 
@@ -326,23 +245,16 @@ async def change_password(
     password_data: ChangePasswordRequest,
     current_user: User = Depends(get_current_active_user),
     service: AuthService = Depends(get_auth_service),
-    db: AsyncSession = Depends(get_db),
 ) -> SuccessResponse:
     await service.change_password(
         user_id=current_user.user_id,
         old_password=password_data.old_password,
         new_password=password_data.new_password,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
 
     await service.revoke_all_user_tokens(current_user.user_id)
-
-    await _audit(
-        db,
-        request,
-        action="change_password",
-        success=True,
-        user_id=current_user.user_id,
-    )
 
     return SuccessResponse(
         message="Mật khẩu đã được thay đổi. Tất cả thiết bị đã đăng xuất.",
@@ -359,6 +271,7 @@ async def change_password(
     summary="Health check",
 )
 async def health_check() -> SuccessResponse:
+    from datetime import datetime, timezone
     return SuccessResponse(
         message="Auth service đang hoạt động",
         data={

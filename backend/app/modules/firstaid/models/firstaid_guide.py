@@ -1,14 +1,11 @@
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import UUID, UniqueConstraint
-import uuid
+from uuid import uuid4, UUID
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
-import logging
 
 from app.modules.firstaid.utils import unwrap_jsonb_list
-
-logger = logging.getLogger(__name__)
 
 VALID_WOUND_TYPES = ["abrasion", "bruise", "burn", "cut"]
 VALID_SEVERITIES = ["mild", "moderate", "severe"]
@@ -30,8 +27,8 @@ class FirstAidGuide(SQLModel, table=True):
         ),
     )
 
-    firstaidguide_id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
+    firstaidguide_id: UUID = Field(
+        default_factory=uuid4,
         primary_key=True
     )
 
@@ -51,7 +48,13 @@ class FirstAidGuide(SQLModel, table=True):
     is_active: bool = Field(default=True, index=True)
     is_deleted: bool = Field(default=False, index=True)
     version: int = Field(default=1)
-    created_by: Optional[uuid.UUID] = Field(default=None, foreign_key="users.user_id")
+    superseded_by: Optional[UUID] = Field(default=None, foreign_key="firstaid_guides.firstaidguide_id")
+    reviewed_by: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
+    reviewed_at: Optional[datetime] = None
+    usage_count: int = Field(default=0)
+    helpful_count: int = Field(default=0)
+    keywords: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
+    created_by: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
 
     created_at: datetime = Field(default_factory=_current_timestamp)
     updated_at: datetime = Field(default_factory=_current_timestamp)
@@ -70,7 +73,7 @@ class FirstAidGuide(SQLModel, table=True):
         estimated_healing_time: Optional[str] = None,
         source: Optional[Dict[str, Any]] = None,
         is_active: bool = True,
-        created_by: Optional[uuid.UUID] = None
+        created_by: Optional[UUID] = None
     ) -> "FirstAidGuide":
         current_time = _current_timestamp()
 
@@ -94,16 +97,13 @@ class FirstAidGuide(SQLModel, table=True):
         if not guide.validate():
             raise ValueError(f"Hướng dẫn không hợp lệ: {guide.wound_type}/{guide.severity}")
 
-        logger.info(f"[FIRSTAID_MODEL] Đã tạo hướng dẫn: {guide.wound_type}/{guide.severity}")
         return guide
 
     def validate(self) -> bool:
         if self.wound_type.lower() not in VALID_WOUND_TYPES:
-            logger.error(f"[FIRSTAID_MODEL] Loại vết thương không hợp lệ: {self.wound_type}")
             return False
 
         if self.severity.lower() not in VALID_SEVERITIES:
-            logger.error(f"[FIRSTAID_MODEL] Mức độ nghiêm trọng không hợp lệ: {self.severity}")
             return False
 
         return True

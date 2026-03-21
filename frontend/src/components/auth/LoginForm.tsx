@@ -123,11 +123,13 @@ const LoginForm = () => {
       .then(async (response) => {
         // Đăng nhập thành công, API trả về token
         const token = response.data.data.access_token;
+        const refreshToken = response.data.data.refresh_token;
         const userObject = response.data.data.user;
 
         // Gọi hàm login từ context
         login(
           token,
+          refreshToken,
           { ...userObject, created_at: new Date().toISOString() },
           rememberMe
         );

@@ -1,5 +1,4 @@
-import uuid
-import logging
+from uuid import uuid4, UUID
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -9,8 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.auth.models.token_blacklist import TokenBlacklist
 from app.modules.auth.models.token_family import TokenFamily
 from app.modules.auth.models.verification_token import VerificationToken
-
-logger = logging.getLogger(__name__)
 
 
 class TokenRepository:
@@ -43,7 +40,7 @@ class TokenRepository:
         result = await self.db.execute(statement)
         return result.scalar_one_or_none()
 
-    async def mark_token_used(self, token_id: uuid.UUID) -> None:
+    async def mark_token_used(self, token_id: UUID) -> None:
         statement = select(VerificationToken).where(
             VerificationToken.token_id == token_id,
         )
@@ -96,7 +93,7 @@ class TokenRepository:
     async def create_token_family(
         self,
         *,
-        user_id: uuid.UUID,
+        user_id: UUID,
         refresh_jti: str,
         access_jti: Optional[str] = None,
         expires_at: datetime,
@@ -138,7 +135,6 @@ class TokenRepository:
     async def revoke_family(self, jti: str) -> int:
         family = await self.get_family_by_jti(jti)
         if not family:
-            logger.warning("Không tìm thấy token family: jti=%s", jti)
             return 0
 
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -171,9 +167,6 @@ class TokenRepository:
         family.is_revoked = True
         await self.db.flush()
 
-        logger.info(
-            "Đã thu hồi token family: %d tokens", len(jtis_to_revoke)
-        )
         return len(jtis_to_revoke)
 
     async def revoke_entire_chain(self, refresh_jti: str) -> int:
@@ -207,15 +200,6 @@ class TokenRepository:
             revoked = await self.revoke_family(chain_jti)
             total_revoked += revoked
 
-        if total_revoked > 0:
-            logger.warning(
-                "BẢO MẬT: Đã thu hồi chuỗi - %d families, "
-                "%d tokens (phát hiện tái sử dụng: %s)",
-                len(chain_jtis),
-                total_revoked,
-                refresh_jti,
-            )
-
         return len(chain_jtis)
 
     async def is_token_blacklisted(self, jti: str) -> bool:
@@ -230,7 +214,7 @@ class TokenRepository:
         jti: str,
         token_type: str = "access",
         expires_at: datetime,
-        user_id: Optional[uuid.UUID] = None,
+        user_id: Optional[UUID] = None,
     ) -> None:
         if expires_at.tzinfo is not None:
             expires_at = expires_at.astimezone(timezone.utc).replace(
@@ -254,9 +238,7 @@ class TokenRepository:
         )
         result = await self.db.execute(statement)
         await self.db.flush()
-        deleted = result.rowcount
-        logger.info("[Cleanup] Đã xóa %d verification tokens", deleted)
-        return deleted
+        return result.rowcount
 
     async def cleanup_expired_blacklist(self) -> int:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -265,11 +247,7 @@ class TokenRepository:
         )
         result = await self.db.execute(statement)
         await self.db.flush()
-        deleted = result.rowcount
-        logger.info(
-            "[Cleanup] Đã xóa %d token blacklist đã hết hạn", deleted
-        )
-        return deleted
+        return result.rowcount
 
     async def cleanup_expired_families(self) -> int:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -278,9 +256,7 @@ class TokenRepository:
         )
         result = await self.db.execute(statement)
         await self.db.flush()
-        deleted = result.rowcount
-        logger.info("[Cleanup] Đã xóa %d token families", deleted)
-        return deleted
+        return result.rowcount
 
     async def cleanup_all(self) -> dict[str, int]:
         blacklist_count = await self.cleanup_expired_blacklist()
@@ -288,13 +264,6 @@ class TokenRepository:
             await self.cleanup_expired_verification_tokens()
         )
         families_count = await self.cleanup_expired_families()
-
-        logger.info(
-            "Cleanup hoàn tất: %d blacklist, %d verifications, %d families",
-            blacklist_count,
-            verification_count,
-            families_count,
-        )
 
         return {
             "blacklist_tokens": blacklist_count,

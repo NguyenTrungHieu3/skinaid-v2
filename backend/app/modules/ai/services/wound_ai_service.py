@@ -2,14 +2,11 @@ import os
 import cv2
 import numpy as np
 from typing import Dict, Any
-import logging
 import aiofiles
 from app.core.config import settings
 from app.core.clients.http_client import HTTPClient
 from app.modules.ai.utils.wound_parser import WoundParser
 from app.modules.ai.constants import WoundConstants
-
-logger = logging.getLogger(__name__)
 
 
 class WoundAIService:
@@ -39,17 +36,14 @@ class WoundAIService:
         Xác thực xem sự kết hợp wound_type và severity có hợp lệ không.
         """
         if wound_type.lower() not in WoundConstants.WOUND_TYPES:
-            logger.warning(f"wound_type không hợp lệ từ AI: {wound_type}")
             return False
 
         if wound_type.lower() == "burn" and "_" in severity:
-            base_severity = severity.split("_")[0]  
+            base_severity = severity.split("_")[0]
             if base_severity.lower() not in WoundConstants.SEVERITIES:
-                logger.warning(f"Mức độ nghiêm trọng cơ bản không hợp lệ từ AI: {base_severity} (từ {severity})")
                 return False
         else:
             if severity.lower() not in WoundConstants.SEVERITIES:
-                logger.warning(f"Mức độ nghiêm trọng không hợp lệ từ AI: {severity}")
                 return False
 
         return True
@@ -58,12 +52,11 @@ class WoundAIService:
     def validate_burn_subtype(cls, sub_type: str) -> bool:
         """Xác thực loại bỏng phụ."""
         if not sub_type:
-            return True  
-        
+            return True
+
         if sub_type.lower() not in WoundConstants.BURN_SUBTYPES:
-            logger.warning(f"Loại bỏng phụ không hợp lệ từ AI: {sub_type}")
             return False
-        
+
         return True
 
     async def call_ai_service(self, image_path: str) -> Dict[str, Any]:
@@ -73,8 +66,6 @@ class WoundAIService:
                 image_data = await f.read()
 
             endpoint = f"{self.ai_service_url}/analyze/"
-            
-            logger.info(f"[AI] Calling: {endpoint}")
 
             headers = {}
             if self.ai_api_key:
@@ -88,39 +79,17 @@ class WoundAIService:
             )
 
             if response.status_code == 200:
-                result = response.json()
-                
-                logger.info(
-                    f"[AI] Response: {result.get('total_detections', 0)} detections, "
-                    f"model: {result.get('ai_model_version', 'unknown')}"
-                )
-                
-                for i, det in enumerate(result.get("detections", [])):
-                    wound_type = det.get('wound_type', 'unknown')
-                    severity = det.get('severity', 'unknown')
-                    confidence = det.get('confidence_score', 0)
-                    
-                    is_valid = self.validate_ai_class(wound_type, severity)
-                    validation_status = "VALID" if is_valid else "INVALID"
-                    
-                    logger.info(
-                        f"  [{i}] {validation_status} - {wound_type}/{severity} "
-                        f"(confidence: {confidence:.2%})"
-                    )
-                
-                return result
+                return response.json()
             else:
-                logger.error(f"[AI] Lỗi: {response.status_code} - {response.text}")
                 return {
                     "success": False,
-                    "error": f"Lỗi dịch vụ AI: {response.status_code}",
+                    "error": f"AI service error: {response.status_code}",
                     "error_code": "AI_SERVICE_ERROR",
                     "total_detections": 0,
                     "detections": []
                 }
 
         except Exception as e:
-            logger.error(f"[AI] Failed: {e}", exc_info=True)
             return {
                 "success": False,
                 "error": str(e),
@@ -152,13 +121,12 @@ class WoundAIService:
 
             primary_wound_type = ai_result.get("primary_wound_type", "")
             if primary_wound_type and "normal" in primary_wound_type.lower() and "skin" in primary_wound_type.lower():
-                logger.info(f"[ANALYZE] Loại vết thương chính là '{primary_wound_type}', coi như không phát hiện vết thương")
                 return {
                     "success": True,
                     "num_detections": 0,
                     "detections": [],
                     "processing_time": processing_time,
-                    "processing_time_ms": max(1, processing_time_ms),  
+                    "processing_time_ms": max(1, processing_time_ms),
                     "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
                     "message": "Không phát hiện vết thương nào - ảnh chứa da bình thường"
                 }
@@ -208,27 +176,14 @@ class WoundAIService:
                     sub_type = parsed["sub_type"]
                     
                     if not self.validate_ai_class(wound_type, severity):
-                        logger.warning(
-                            f"[VALIDATE] Bỏ qua detection không hợp lệ: "
-                            f"{wound_type}/{severity} (không trong các lớp được hỗ trợ)"
-                        )
                         invalid_count += 1
                         continue
 
                     if sub_type and wound_type.lower() == "burn":
                         primary_subtype = sub_type.split("_")[0]
                         if not self.validate_burn_subtype(primary_subtype):
-                            logger.warning(
-                                f"[VALIDATE] Loại bỏng phụ không hợp lệ: {primary_subtype}"
-                            )
                             invalid_count += 1
                             continue
-                    
-                    logger.debug(
-                        f"[VALIDATE] Detection {i}: {wound_type}/{severity}"
-                        f"{f'/{sub_type}' if sub_type else ''} "
-                        f"(confidence: {confidence:.2%})"
-                    )
 
                     final_detection = {
                         "wound_type": wound_type,
@@ -244,25 +199,13 @@ class WoundAIService:
 
                     final_detections.append(final_detection)
 
-                except Exception as e:
-                    logger.error(f"Failed to process detection {i}: {e}", exc_info=True)
+                except Exception:
                     continue
 
-            if invalid_count > 0:
-                logger.warning(
-                    f"[VALIDATE] Đã lọc ra {invalid_count} detections không hợp lệ "
-                    f"(không trong các lớp được hỗ trợ)"
-                )
-
             reliable_detections = [
-                d for d in final_detections 
+                d for d in final_detections
                 if d.get("confidence", 0) >= self.min_accuracy_threshold
             ]
-
-            logger.info(
-                f"[ANALYZE] Đã xử lý: {len(final_detections)} detections hợp lệ, "
-                f"{len(reliable_detections)} đạt ngưỡng (>={self.min_accuracy_threshold:.0%})"
-            )
 
             result = {
                 "success": True,
@@ -270,7 +213,7 @@ class WoundAIService:
                 "reliable_detections": len(reliable_detections),
                 "detections": final_detections,
                 "processing_time": processing_time,
-                "processing_time_ms": max(1, processing_time_ms), 
+                "processing_time_ms": max(1, processing_time_ms),
                 "ai_model_version": ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0"),
                 "meets_accuracy_threshold": len(reliable_detections) > 0,
                 "average_confidence": (
@@ -279,20 +222,12 @@ class WoundAIService:
                 )
             }
 
-            logger.info(
-                f"[ANALYZE] Hoàn thành: {result['num_detections']} detections, "
-                f"{result['reliable_detections']} đáng tin cậy, "
-                f"confidence trung bình: {result['average_confidence']:.2%}, "
-                f"thời gian: {processing_time:.3f}s"
-            )
-
             return result
 
-        except Exception as e:
-            logger.error(f"[ANALYZE] Failed: {e}", exc_info=True)
+        except Exception:
             return {
                 "success": False,
-                "error": str(e),
+                "error": "AI processing failed",
                 "error_code": "AI_PROCESSING_ERROR",
                 "num_detections": 0,
                 "detections": []
@@ -304,11 +239,11 @@ class WoundAIService:
             headers = {}
             if self.ai_api_key:
                 headers["X-API-Key"] = self.ai_api_key
-            
+
             response = await HTTPClient.get_with_retry(
                 f"{self.ai_service_url}/health",
                 headers=headers,
-                timeout=10.0 
+                timeout=10.0
             )
             healthy = response.status_code == 200
 
@@ -317,8 +252,7 @@ class WoundAIService:
                 "status": "healthy" if healthy else "unhealthy"
             }
 
-        except Exception as e:
-            logger.error(f"Kiểm tra sức khỏe AI thất bại: {e}")
+        except Exception:
             return {
                 "overall_health": False,
                 "status": "unhealthy"

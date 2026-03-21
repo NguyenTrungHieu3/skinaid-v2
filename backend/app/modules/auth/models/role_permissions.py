@@ -2,7 +2,7 @@ from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import ForeignKey, UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
-import uuid
+from uuid import uuid4, UUID
 if TYPE_CHECKING:
     from app.modules.auth.models.roles import Role
     from app.modules.auth.models.permissions import Permission
@@ -10,21 +10,21 @@ if TYPE_CHECKING:
 
 class RolePermission(SQLModel, table=True):
     __tablename__ = "role_permissions"
-    role_id: uuid.UUID = Field(
+    role_id: UUID = Field(
         sa_column=Column(
             ForeignKey("roles.role_id", ondelete="CASCADE"),
             primary_key=True
         )
     )
     
-    permission_id: uuid.UUID = Field(
+    permission_id: UUID = Field(
         sa_column=Column(
             ForeignKey("permissions.permission_id", ondelete="CASCADE"),
             primary_key=True
         )
     )
     
-    granted_by: Optional[uuid.UUID] = Field(
+    granted_by: Optional[UUID] = Field(
         default=None,
         sa_column=Column(
             ForeignKey("users.user_id", ondelete="SET NULL")

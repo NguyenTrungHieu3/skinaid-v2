@@ -1,5 +1,4 @@
-import logging
-import uuid
+from uuid import uuid4, UUID
 from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,8 +18,6 @@ from app.modules.firstaid.schemas.api import (
     UpdateGuideRequest,
 )
 
-logger = logging.getLogger(__name__)
-
 
 class FirstAidService:
     def __init__(self, repository: FirstAidRepository, db: AsyncSession):
@@ -33,36 +30,20 @@ class FirstAidService:
         severity: str,
         sub_type: Optional[str] = None,
     ) -> Optional[FirstAidGuide]:
-        logger.info(
-            f"[FIRSTAID_SERVICE] Looking for guide: wound_type='{wound_type}', "
-            f"severity='{severity}', sub_type='{sub_type}'"
-        )
-
         if sub_type:
             guide = await self.repository.get_specific_guide(
                 wound_type, severity, sub_type
             )
             if guide:
-                logger.info(
-                    f"[FIRSTAID_SERVICE] Found specific guide: {guide.title}"
-                )
                 return guide
-            logger.info(
-                f"Không tìm thấy guide cụ thể cho {sub_type}, thử tìm guide chung"
-            )
+
+            guide = await self.repository.get_general_guide(wound_type, severity)
+            return guide
 
         guide = await self.repository.get_general_guide(wound_type, severity)
-        if guide:
-            logger.info(
-                f"[FIRSTAID_SERVICE] Found general guide: {guide.title}"
-            )
-        else:
-            logger.warning(
-                f"[FIRSTAID_SERVICE] No guide found for wound_type='{wound_type}', severity='{severity}'"
-            )
         return guide
 
-    async def get_guide_by_id(self, guide_id: uuid.UUID) -> FirstAidGuide:
+    async def get_guide_by_id(self, guide_id: UUID) -> FirstAidGuide:
         guide = await self.repository.get_by_id(guide_id)
         if not guide or guide.is_deleted:
             raise FirstAidGuideNotFoundError(str(guide_id))
@@ -88,7 +69,7 @@ class FirstAidService:
         )
 
     async def create_guide(
-        self, request: CreateGuideRequest, created_by: Optional[uuid.UUID]
+        self, request: CreateGuideRequest, created_by: Optional[UUID]
     ) -> FirstAidGuide:
         if request.is_active:
             exists = await self.repository.check_duplicate_active(
@@ -141,7 +122,7 @@ class FirstAidService:
         return guide
 
     async def update_guide(
-        self, guide_id: uuid.UUID, request: UpdateGuideRequest
+        self, guide_id: UUID, request: UpdateGuideRequest
     ) -> FirstAidGuide:
         guide = await self.repository.get_by_id(guide_id)
         if not guide or guide.is_deleted:
@@ -197,7 +178,7 @@ class FirstAidService:
         await self.db.refresh(guide)
         return guide
 
-    async def delete_guide(self, guide_id: uuid.UUID, hard_delete: bool = False) -> bool:
+    async def delete_guide(self, guide_id: UUID, hard_delete: bool = False) -> bool:
         guide = await self.repository.get_by_id(guide_id)
         if not guide:
             raise FirstAidGuideNotFoundError(str(guide_id))
@@ -205,7 +186,8 @@ class FirstAidService:
         if hard_delete:
             await self.repository.delete(guide_id)
         else:
-            await self.repository.soft_delete(guide_id)
+            # Pass entity to soft_delete, not ID
+            await self.repository.soft_delete(guide)
 
         return True
 

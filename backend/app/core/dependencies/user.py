@@ -1,44 +1,44 @@
 from typing import Optional, List
+from datetime import datetime, timezone
 from fastapi import HTTPException, status
+from sqlalchemy import select, func, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import text
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
+from app.modules.auth.models.user_roles import UserRole
+from app.modules.auth.models.roles import Role
+from app.modules.auth.models.role_permissions import RolePermission
+from app.modules.auth.models.permissions import Permission
+
 
 async def get_user_by_id(db: AsyncSession, user_id: str) -> Optional[User]:
     """
     Lấy user từ database theo ID
-    
+
     Args:
         db: Database session
         user_id: User UUID string
-        
+
     Returns:
         User object hoặc None nếu không tìm thấy/inactive
     """
-    query = text("""
-        SELECT * FROM users
-        WHERE user_id = CAST(:user_id AS UUID)
-        AND is_active = true
-        AND is_deleted = false
-    """)
-    
-    result = await db.execute(query, {"user_id": user_id})
-    user_row = result.mappings().first()
-    
-    if user_row is None:
-        return None
-    
-    return User.model_validate(dict(user_row))
+    result = await db.execute(
+        select(User)
+        .where(User.user_id == user_id)
+        .where(User.is_active == True)
+        .where(User.is_deleted == False)
+    )
+
+    return result.scalar_one_or_none()
 
 
 async def check_email_verified(user: User, required: bool = True) -> None:
     """
     Kiểm tra email đã verified chưa
-    
+
     Args:
         user: User object
         required: Có bắt buộc verified không
-        
+
     Raises:
         HTTPException: Nếu email chưa verified mà required=True
     """
@@ -52,31 +52,29 @@ async def check_email_verified(user: User, required: bool = True) -> None:
 async def check_user_has_role(db: AsyncSession, user_id: str, role_name: str) -> bool:
     """
     Kiểm tra user có role cụ thể không
-    
+
     Args:
         db: Database session
         user_id: User UUID string
         role_name: Tên role cần check
-        
+
     Returns:
         True nếu user có role
     """
-    query = text("""
-        SELECT EXISTS(
-            SELECT 1
-            FROM user_roles ur
-            JOIN roles r ON ur.role_id = r.role_id
-            WHERE ur.user_id = CAST(:user_id AS UUID)
-            AND r.role_name = :role_name
-            AND r.is_active = true
-            AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-        ) AS has_role
-    """)
-    
-    result = await db.execute(query, {"user_id": user_id, "role_name": role_name})
-    row = result.first()
-    
-    return row[0] if row else False
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    result = await db.execute(
+        select(UserRole)
+        .join(Role, UserRole.role_id == Role.role_id)
+        .where(UserRole.user_id == user_id)
+        .where(Role.role_name == role_name)
+        .where(Role.is_active == True)
+        .where(
+            (UserRole.expires_at.is_(None)) | (UserRole.expires_at > now)
+        )
+    )
+
+    return result.scalar_one_or_none() is not None
 
 
 async def check_user_has_permission(
@@ -84,82 +82,82 @@ async def check_user_has_permission(
 ) -> bool:
     """
     Kiểm tra user có permission cụ thể không
-    
+
     Args:
         db: Database session
         user_id: User UUID string
         permission_name: Tên permission cần check
-        
+
     Returns:
         True nếu user có permission
     """
-    query = text("""
-        SELECT EXISTS(
-            SELECT 1
-            FROM permissions p
-            JOIN role_permissions rp ON p.permission_id = rp.permission_id
-            JOIN user_roles ur ON rp.role_id = ur.role_id
-            WHERE ur.user_id = CAST(:user_id AS UUID)
-            AND p.permission_name = :permission_name
-            AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-        ) AS has_permission
-    """)
-    
-    result = await db.execute(query, {"user_id": user_id, "permission_name": permission_name})
-    row = result.first()
-    
-    return row[0] if row else False
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    result = await db.execute(
+        select(Permission)
+        .join(RolePermission, Permission.permission_id == RolePermission.permission_id)
+        .join(UserRole, RolePermission.role_id == UserRole.role_id)
+        .where(UserRole.user_id == user_id)
+        .where(Permission.permission_name == permission_name)
+        .where(
+            (UserRole.expires_at.is_(None)) | (UserRole.expires_at > now)
+        )
+    )
+
+    return result.scalar_one_or_none() is not None
 
 
 async def get_user_roles(db: AsyncSession, user_id: str) -> List[str]:
     """
     Lấy tất cả roles của user
-    
+
     Args:
         db: Database session
         user_id: User UUID string
-        
+
     Returns:
         List tên roles
     """
-    query = text("""
-        SELECT r.role_name
-        FROM user_roles ur
-        JOIN roles r ON ur.role_id = r.role_id
-        WHERE ur.user_id = CAST(:user_id AS UUID)
-        AND r.is_active = true
-        AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-        ORDER BY r.role_name
-    """)
-    
-    result = await db.execute(query, {"user_id": user_id})
-    rows = result.fetchall()
-    
-    return [row[0] for row in rows]
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    result = await db.execute(
+        select(Role.role_name)
+        .join(UserRole, Role.role_id == UserRole.role_id)
+        .where(UserRole.user_id == user_id)
+        .where(Role.is_active == True)
+        .where(
+            (UserRole.expires_at.is_(None)) | (UserRole.expires_at > now)
+        )
+        .order_by(Role.role_name)
+    )
+
+    rows = result.scalars().all()
+    return list(rows)
 
 
 async def get_user_permissions(db: AsyncSession, user_id: str) -> List[str]:
     """
     Lấy tất cả permissions của user
-    
+
     Args:
         db: Database session
         user_id: User UUID string
-        
+
     Returns:
         List tên permissions (unique)
     """
-    query = text("""
-        SELECT DISTINCT p.permission_name
-        FROM permissions p
-        JOIN role_permissions rp ON p.permission_id = rp.permission_id
-        JOIN user_roles ur ON rp.role_id = ur.role_id
-        WHERE ur.user_id = CAST(:user_id AS UUID)
-        AND (ur.expires_at IS NULL OR ur.expires_at > NOW())
-        ORDER BY p.permission_name
-    """)
-    
-    result = await db.execute(query, {"user_id": user_id})
-    rows = result.fetchall()
-    
-    return [row[0] for row in rows]
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    result = await db.execute(
+        select(distinct(Permission.permission_name))
+        .join(RolePermission, Permission.permission_id == RolePermission.permission_id)
+        .join(UserRole, RolePermission.role_id == UserRole.role_id)
+        .where(UserRole.user_id == user_id)
+        .where(
+            (UserRole.expires_at.is_(None)) | (UserRole.expires_at > now)
+        )
+        .order_by(Permission.permission_name)
+    )
+
+    rows = result.scalars().all()
+    return list(rows)

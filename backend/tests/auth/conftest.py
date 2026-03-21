@@ -19,11 +19,11 @@ from app.modules.auth.models.role_permissions import RolePermission  # noqa: F40
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.modules.auth.models.token_family import TokenFamily
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole  # noqa: F401
 from app.modules.auth.models.verification_token import VerificationToken  # noqa: F401
-from app.modules.profile.models.user_profile import UserProfile
-from app.utils.mock_email_service import mock_email_service
+from app.modules.users.models.user_profile import UserProfile
+from app.shared.services.mock_email_service import mock_email_service
 from tests.auth.helpers import (
     build_profile,
     build_role,

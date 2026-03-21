@@ -3,10 +3,10 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select, desc, and_, or_, cast, Date, true, false
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.audit.models.audit_log import AuditLog
-from app.modules.ai.models.wound_analysis import WoundAnalysis
-from app.modules.ai.models.wound_detection import WoundDetection
+from app.modules.ai.models.analysis import Analysis
+from app.modules.ai.models.detection import Detection
 
 
 class StatisticsRepository:
@@ -50,80 +50,75 @@ class StatisticsRepository:
         return result.scalar() or 0
 
     async def get_analyzed_images(self, start_date: datetime) -> int:
-        query = select(func.count()).select_from(WoundAnalysis).where(
-            WoundAnalysis.is_deleted == false()
-        )
+        query = select(func.count()).select_from(Analysis)
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.scalar() or 0
 
     async def get_total_detections(self, start_date: datetime) -> int:
-        query = select(func.count()).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
-        ).where(WoundAnalysis.is_deleted == false())
+        query = select(func.count()).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
+        )
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.scalar() or 0
 
     async def get_detections_in_range(self, start_date: datetime, end_date: datetime) -> int:
-        query = select(func.count()).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
+        query = select(func.count()).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
         ).where(
-            WoundAnalysis.is_deleted == false(),
-            WoundAnalysis.analyzed_at >= start_date,
-            WoundAnalysis.analyzed_at < end_date
+            Analysis.created_at >= start_date,
+            Analysis.created_at < end_date
         )
         result = await self.db.execute(query)
         return result.scalar() or 0
 
     async def get_severe_detections(self, start_date: datetime) -> int:
-        query = select(func.count()).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
+        query = select(func.count()).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
         ).where(
-            WoundAnalysis.is_deleted == false(),
-            func.lower(WoundDetection.severity) == 'severe'
+            func.lower(Detection.severity) == 'severe'
         )
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.scalar() or 0
 
     async def get_avg_confidence(self, start_date: datetime, end_date: datetime = None) -> float:
-        query = select(func.avg(WoundDetection.confidence_score)).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
-        ).where(WoundAnalysis.is_deleted == false())
+        query = select(func.avg(Detection.confidence)).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
+        )
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         if end_date:
-            query = query.where(WoundAnalysis.analyzed_at < end_date)
+            query = query.where(Analysis.created_at < end_date)
         result = await self.db.execute(query)
         return result.scalar() or 0.0
 
     async def get_high_confidence_count(self, start_date: datetime, threshold: float = 0.8) -> int:
-        query = select(func.count()).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
+        query = select(func.count()).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
         ).where(
-            WoundAnalysis.is_deleted == false(),
-            WoundDetection.confidence_score > threshold
+            Detection.confidence > threshold
         )
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.scalar() or 0
 
     async def get_wound_type_distribution(self, start_date: datetime) -> List[Tuple[str, int]]:
         query = select(
-            WoundDetection.wound_type,
+            Detection.wound_type,
             func.count().label('count')
-        ).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
-        ).where(WoundAnalysis.is_deleted == false()).group_by(
-            WoundDetection.wound_type
+        ).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
+        ).group_by(
+            Detection.wound_type
         ).order_by(desc('count'))
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.fetchall()
 
@@ -138,10 +133,9 @@ class StatisticsRepository:
         return result.fetchall()
 
     async def get_daily_analyses(self, start_date: datetime) -> List[Tuple[Any, int]]:
-        date_col = cast(WoundAnalysis.analyzed_at, Date).label('date')
-        query = select(date_col, func.count().label('analyses')).select_from(WoundAnalysis).where(
-            WoundAnalysis.analyzed_at >= start_date,
-            WoundAnalysis.is_deleted == false()
+        date_col = cast(Analysis.created_at, Date).label('date')
+        query = select(date_col, func.count().label('analyses')).select_from(Analysis).where(
+            Analysis.created_at >= start_date
         ).group_by(date_col).order_by(date_col.asc())
         result = await self.db.execute(query)
         return result.fetchall()
@@ -176,11 +170,14 @@ class StatisticsRepository:
 
     async def get_recent_analyses(self, limit: int) -> List[Any]:
         query = select(
-            WoundAnalysis.analyzed_at,
-            WoundAnalysis.ai_model_version,
-            WoundAnalysis.total_detections
-        ).where(WoundAnalysis.is_deleted == False).order_by(
-            WoundAnalysis.analyzed_at.desc()
+            Analysis.created_at,
+            func.count(Detection.detection_id).label('total_detections')
+        ).outerjoin(
+            Detection, Detection.analysis_id == Analysis.analysis_id
+        ).group_by(
+            Analysis.analysis_id, Analysis.created_at
+        ).order_by(
+            Analysis.created_at.desc()
         ).limit(limit)
         result = await self.db.execute(query)
         return result.fetchall()
@@ -203,14 +200,14 @@ class StatisticsRepository:
 
     async def get_severity_distribution(self, start_date: datetime) -> List[Tuple[str, int]]:
         query = select(
-            func.lower(WoundDetection.severity).label('severity_level'),
+            func.lower(Detection.severity).label('severity_level'),
             func.count().label('count')
-        ).select_from(WoundDetection).join(
-            WoundAnalysis, WoundDetection.analysis_id == WoundAnalysis.analysis_id
-        ).where(WoundAnalysis.is_deleted == false()).group_by(
-            func.lower(WoundDetection.severity)
+        ).select_from(Detection).join(
+            Analysis, Detection.analysis_id == Analysis.analysis_id
+        ).group_by(
+            func.lower(Detection.severity)
         ).order_by(desc('count'))
         if start_date != datetime.min:
-            query = query.where(WoundAnalysis.analyzed_at >= start_date)
+            query = query.where(Analysis.created_at >= start_date)
         result = await self.db.execute(query)
         return result.fetchall()

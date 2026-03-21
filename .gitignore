@@ -283,4 +283,5 @@ pids/
 *.pfx
 .agent/
 .kilocode/
+.claude/
 

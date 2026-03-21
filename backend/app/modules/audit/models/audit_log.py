@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Column, Field, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgresUUID
-import uuid
+from uuid import uuid4, UUID
 from typing import Optional, Dict, Any
 from datetime import datetime, timezone
 import json
@@ -8,8 +8,8 @@ import json
 class AuditLog(SQLModel, table=True): 
     __tablename__ =  "audit_logs"
 
-    audit_action_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: Optional[uuid.UUID] = Field(
+    audit_action_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: Optional[UUID] = Field(
         default=None,
         sa_column=Column(
             PostgresUUID(as_uuid=True),
@@ -19,6 +19,7 @@ class AuditLog(SQLModel, table=True):
         ),
     )
     action: str = Field(max_length=100, nullable=False, index=True)
+    action_category: Optional[str] = Field(default=None, max_length=50, index=True)
 
     resource_type: Optional[str] = Field(default=None, max_length=50, index=True) 
 
@@ -26,9 +27,12 @@ class AuditLog(SQLModel, table=True):
     ip_address: Optional[str] = Field(default=None, max_length=45) 
     user_agent: Optional[str] = Field(default=None, max_length=500) 
     success: bool = Field(default=True, nullable=False)
+    response_status: Optional[int] = None
+    error_code: Optional[str] = Field(default=None, max_length=50)
     error_message:Optional[str] =Field(default=None, max_length=500)
+    request_body: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     is_guest: bool = Field(default=False, nullable=False)
-    guest_session_id: Optional[uuid.UUID] = Field(
+    guest_session_id: Optional[UUID] = Field(
         default=None,
         sa_column=Column(
             PostgresUUID(as_uuid=True),

@@ -74,23 +74,112 @@ apiClient.interceptors.request.use(
 );
 // --- HẾT PHẦN SỬA ---
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Add response interceptor to handle errors properly
 apiClient.interceptors.response.use(
   (response) => {
     // If response is successful, just return it
     return response;
   },
-  (error) => {
-    // If there's an error response from the server, preserve it
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Check if the error is 401 and the request wasn't already retried
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      originalRequest.url !== "/auth/refresh"
+    ) {
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers["Authorization"] = "Bearer " + token;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken =
+        localStorage.getItem("refreshToken") ||
+        sessionStorage.getItem("refreshToken");
+
+      if (!refreshToken) {
+        processQueue(error, null);
+        isRefreshing = false;
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("userToken");
+        sessionStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
+      try {
+        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        const newAccessToken = data.data.access_token;
+        const newRefreshToken = data.data.refresh_token;
+
+        // Determine which storage to update based on where the refresh token was found,
+        // not the (possibly expired/cleared) access token.
+        if (localStorage.getItem("refreshToken")) {
+          localStorage.setItem("userToken", newAccessToken);
+          localStorage.setItem("refreshToken", newRefreshToken);
+        } else {
+          sessionStorage.setItem("userToken", newAccessToken);
+          sessionStorage.setItem("refreshToken", newRefreshToken);
+        }
+
+        apiClient.defaults.headers.common["Authorization"] = "Bearer " + newAccessToken;
+        originalRequest.headers["Authorization"] = "Bearer " + newAccessToken;
+
+        processQueue(null, newAccessToken);
+        isRefreshing = false;
+
+        return apiClient(originalRequest);
+      } catch (err: any) {
+        processQueue(err, null);
+        isRefreshing = false;
+
+        localStorage.removeItem("userToken");
+        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("userToken");
+        sessionStorage.removeItem("refreshToken");
+
+        window.location.href = "/login";
+        return Promise.reject(err);
+      }
+    }
+
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
       return Promise.reject(error);
     } else if (error.request) {
-      // The request was made but no response was received
-      return Promise.reject(new Error('Network Error: Unable to reach the server'));
+      return Promise.reject(new Error("Network Error: Unable to reach the server"));
     } else {
-      // Something happened in setting up the request that triggered an Error
       return Promise.reject(error);
     }
   }

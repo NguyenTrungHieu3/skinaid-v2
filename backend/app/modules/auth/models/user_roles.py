@@ -2,31 +2,31 @@ from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import ForeignKey, UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
-import uuid
+from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
-    from app.modules.auth.models.user import User
+    from app.modules.users.models.user import User
     from app.modules.auth.models.roles import Role
 
 
 class UserRole(SQLModel, table=True):
     __tablename__ = "user_roles"
     
-    user_id: uuid.UUID = Field(
+    user_id: UUID = Field(
         sa_column=Column(
             ForeignKey("users.user_id", ondelete="CASCADE"),
             primary_key=True
         )
     )
     
-    role_id: uuid.UUID = Field(
+    role_id: UUID = Field(
         sa_column=Column(
             ForeignKey("roles.role_id", ondelete="CASCADE"),
             primary_key=True
         )
     )
     
-    assigned_by: Optional[uuid.UUID] = Field(
+    assigned_by: Optional[UUID] = Field(
         default=None,
         sa_column=Column(
             ForeignKey("users.user_id", ondelete="SET NULL")

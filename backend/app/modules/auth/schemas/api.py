@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4, UUID
 from datetime import datetime
 from typing import List, Optional
 
@@ -9,7 +9,7 @@ from app.modules.auth.schemas.domain import Token, UserBase
 
 class UserResponse(BaseModel):
 
-    user_id: uuid.UUID
+    user_id: UUID
     user_name: str
     email: EmailStr
 

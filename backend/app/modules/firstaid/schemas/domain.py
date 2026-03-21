@@ -17,3 +17,4 @@ class FirstAidGuideBase(BaseModel):
 
     estimated_healing_time: Optional[str] = None
     is_active: bool = True
+    is_deleted: bool = False

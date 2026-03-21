@@ -1,11 +1,10 @@
-import logging
-import uuid
+from uuid import uuid4, UUID
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import allow_guest, require_admin
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.firstaid.dependencies import get_firstaid_service
 from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,
@@ -16,8 +15,6 @@ from app.modules.firstaid.schemas.api import (
 )
 from app.modules.firstaid.service import FirstAidService
 from app.shared.response import SuccessResponse
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/first-aid", tags=["First Aid"])
 
@@ -155,7 +152,7 @@ async def create_guide(
     summary="Lấy chi tiết hướng dẫn",
 )
 async def get_guide_by_id(
-    guide_id: uuid.UUID,
+    guide_id: UUID,
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
@@ -172,7 +169,7 @@ async def get_guide_by_id(
     summary="Cập nhật hướng dẫn (Admin)",
 )
 async def update_guide(
-    guide_id: uuid.UUID,
+    guide_id: UUID,
     request: UpdateGuideRequest,
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),
@@ -190,7 +187,7 @@ async def update_guide(
     summary="Xóa hướng dẫn (Admin)",
 )
 async def delete_guide(
-    guide_id: uuid.UUID,
+    guide_id: UUID,
     hard_delete: bool = False,
     service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),

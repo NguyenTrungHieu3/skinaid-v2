@@ -69,6 +69,15 @@ class MockEmailService:
         logger.info(f"Mock: Sending password changed notification to {email}")
         self.sent_emails.append(email_data)
 
+    async def send_password_reset_success_notification_async(self, email: str, display_name: str) -> None:
+        email_data = {
+            "type": "password_reset_success",
+            "email": email,
+            "display_name": display_name
+        }
+        logger.info(f"Mock: Sending password reset success notification to {email}")
+        self.sent_emails.append(email_data)
+
     def get_sent_emails(self):
         return self.sent_emails
 

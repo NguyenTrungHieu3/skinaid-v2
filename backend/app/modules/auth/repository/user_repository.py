@@ -1,5 +1,4 @@
-import uuid
-import logging
+from uuid import uuid4, UUID
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -8,12 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.modules.auth.models.roles import Role
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole
-from app.modules.profile.models.user_profile import UserProfile
+from app.modules.users.models.user_profile import UserProfile
 from app.shared.base_repository import BaseRepository
-
-logger = logging.getLogger(__name__)
 
 
 class UserRepository(BaseRepository[User]):
@@ -39,7 +36,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_by_id_with_details(
         self,
-        user_id: uuid.UUID,
+        user_id: UUID,
     ) -> Optional[User]:
         """
         Lấy user theo ID, kèm profile + roles.
@@ -91,12 +88,6 @@ class UserRepository(BaseRepository[User]):
             )
             self.db.add(user_role)
             await self.db.flush()
-        else:
-            logger.warning(
-                "Không tìm thấy role '%s' để gán cho user %s",
-                default_role_name,
-                user.user_id,
-            )
 
         # Refresh with eager loading of relationships
         await self.db.refresh(user, ["profile", "user_roles"])
@@ -116,7 +107,7 @@ class UserRepository(BaseRepository[User]):
 
     async def increment_token_version(
         self,
-        user_id: uuid.UUID,
+        user_id: UUID,
     ) -> Optional[tuple[int, int]]:
         user = await self.get_one(
             User.user_id == user_id,
@@ -134,7 +125,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_token_version(
         self,
-        user_id: uuid.UUID,
+        user_id: UUID,
     ) -> Optional[int]:
         user = await self.get_one(
             User.user_id == user_id,
@@ -142,7 +133,7 @@ class UserRepository(BaseRepository[User]):
         )
         return user.token_version if user else None
 
-    async def update_last_activity(self, user_id: uuid.UUID) -> None:
+    async def update_last_activity(self, user_id: UUID) -> None:
         user = await self.get_one(
             User.user_id == user_id,
             User.is_deleted == False,

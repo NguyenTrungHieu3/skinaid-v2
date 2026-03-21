@@ -1,9 +1,7 @@
 import httpx
-import logging
 from typing import Dict, Any, List, Optional
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
 
 
 class MapService:
@@ -15,8 +13,7 @@ class MapService:
     async def get_ip_location(self) -> Dict[str, Any]:
         url = f"{self.base_url}/v1/ipinfo"
         params = {"apiKey": self.api_key}
-
-        logger.info("[MAP_SERVICE] Đang lấy vị trí từ IP...")
+    
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
@@ -32,12 +29,6 @@ class MapService:
             "source": "ip",
             "raw_data": data
         }
-
-        logger.info(
-            f"[MAP_SERVICE] Tìm thấy vị trí IP: "
-            f"{result['city']}, {result['country']} "
-            f"({result['latitude']}, {result['longitude']})"
-        )
 
         return result
 
@@ -64,13 +55,6 @@ class MapService:
             "apiKey": self.api_key
         }
 
-        logger.info(
-            f"[MAP_SERVICE] Tìm địa điểm: "
-            f"category={category} (mapped to {geoapify_category}), "
-            f"center=({latitude}, {longitude}), "
-            f"radius={radius}m"
-        )
-
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
@@ -96,8 +80,6 @@ class MapService:
             }
             places.append(place)
 
-        logger.info(f"[MAP_SERVICE] Tìm thấy {len(places)} địa điểm")
-
         return places
 
     async def calculate_route(
@@ -112,20 +94,13 @@ class MapService:
 
         waypoints = f"{start_lat},{start_lon}|{end_lat},{end_lon}"
 
+        geoapify_mode = "bicycle" if mode == "bike" else mode
+
         params = {
             "waypoints": waypoints,
-            "mode": mode,
+            "mode": geoapify_mode,
             "apiKey": self.api_key
         }
-
-        # Request schemas already mapped the mode, but good to be safe
-        params["mode"] = mode
-
-        logger.info(
-            f"[MAP_SERVICE] Tính route: "
-            f"({start_lat},{start_lon}) → ({end_lat},{end_lon}), "
-            f"mode={mode}"
-        )
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
@@ -135,7 +110,6 @@ class MapService:
         # Extract thông tin route
         features = data.get("features", [])
         if not features:
-            logger.warning("[MAP_SERVICE] Không tìm thấy đường đi")
             return {
                 "distance": 0,
                 "duration": 0,
@@ -152,16 +126,11 @@ class MapService:
 
         geometry_points = []
         if coordinates:
-            # Kiểm tra xem có phải MultiLineString không (nested 3 levels)
             if isinstance(coordinates[0][0], list):
-                # MultiLineString: [[[lon, lat], ...], ...]
-                # Lấy LineString đầu tiên
                 coords_list = coordinates[0]
             else:
-                # LineString: [[lon, lat], ...]
                 coords_list = coordinates
 
-            # Convert [lon, lat] -> [lat, lon]
             geometry_points = [[coord[1], coord[0]] for coord in coords_list]
 
         steps = []
@@ -181,12 +150,6 @@ class MapService:
             "mode": mode
         }
 
-        logger.info(
-            f"[MAP_SERVICE] Route tìm thấy: "
-            f"{result['distance']}m, {result['duration']}s, "
-            f"{len(geometry_points)} points"
-        )
-
         return result
 
     async def geocode_address(self, address: str) -> Optional[Dict[str, Any]]:
@@ -198,8 +161,6 @@ class MapService:
             "limit": 1
         }
 
-        logger.info(f"[MAP_SERVICE] Geocoding địa chỉ: {address}")
-
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
@@ -207,7 +168,6 @@ class MapService:
 
         features = data.get("features", [])
         if not features:
-            logger.warning(f"[MAP_SERVICE] Không tìm thấy địa chỉ: {address}")
             return None
 
         feature = features[0]
@@ -222,11 +182,6 @@ class MapService:
             "city": props.get("city", ""),
             "country": props.get("country", "")
         }
-
-        logger.info(
-            f"[MAP_SERVICE] Tìm thấy tọa độ: "
-            f"({result['latitude']}, {result['longitude']})"
-        )
 
         return result
 
@@ -243,10 +198,6 @@ class MapService:
             "apiKey": self.api_key
         }
 
-        logger.info(
-            f"[MAP_SERVICE] Reverse geocoding: ({latitude}, {longitude})"
-        )
-
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
             response.raise_for_status()
@@ -254,11 +205,6 @@ class MapService:
 
         features = data.get("features", [])
         if not features:
-            # Try finding ANY feature if address not found
-            logger.warning(
-                f"[MAP_SERVICE] Không tìm thấy địa chỉ chính xác. Tọa độ: "
-                f"({latitude}, {longitude})"
-            )
             return None
 
         props = features[0].get("properties", {})
@@ -270,10 +216,6 @@ class MapService:
             "country": props.get("country", ""),
             "postcode": props.get("postcode", "")
         }
-
-        logger.info(
-            f"[MAP_SERVICE] Địa chỉ tìm thấy: {result['formatted_address']}"
-        )
 
         return result
 

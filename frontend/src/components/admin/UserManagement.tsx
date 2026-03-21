@@ -37,6 +37,8 @@ interface ApiError {
   response?: {
     data?: {
       error?: string;
+      message?: string;
+      detail?: string;
     };
   };
 }
@@ -82,7 +84,7 @@ const UserManagement: FC = () => {
         limit: 10,
         search: searchTerm,
         role: selectedRole,
-        is_active: selectedStatus,
+        status: selectedStatus,
       });
 
       if (response.success && response.data) {

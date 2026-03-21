@@ -2,21 +2,24 @@ from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import UUID
 from typing import Optional, TYPE_CHECKING
 from datetime import date, datetime, timezone
-import uuid
+from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
-    from app.modules.auth.models.user import User
+    from app.modules.users.models.user import User
 
 class UserProfile(SQLModel, table=True):
     __tablename__ = "user_profiles"  # type: ignore
 
-    user_id: uuid.UUID = Field(primary_key=True, foreign_key="users.user_id")
+    user_id: UUID = Field(primary_key=True, foreign_key="users.user_id")
     full_name: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None  # Enum(male, female, other)
     address: Optional[str] = None
     avatar_url: Optional[str] = None
+    language: str = Field(default="vi", max_length=10)
+    timezone: str = Field(default="Asia/Ho_Chi_Minh", max_length=50)
+    notification_enabled: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
@@ -59,7 +62,7 @@ class UserProfile(SQLModel, table=True):
     @classmethod
     def create_profile(
         cls,
-        user_id: uuid.UUID,
+        user_id: UUID,
         full_name: Optional[str] = None,
         phone: Optional[str] = None,
         date_of_birth: Optional[date] = None,

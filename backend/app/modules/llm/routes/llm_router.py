@@ -6,7 +6,7 @@ from app.modules.llm.schemas.llm_schemas import (
 )
 from app.shared.response import SuccessResponse
 
-router = APIRouter(tags=["LLM - Response Synthesis"])
+router = APIRouter()
 
 
 @router.post(

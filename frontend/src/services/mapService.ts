@@ -74,34 +74,40 @@ export interface ReverseGeocodeResponse {
     postcode?: string;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    message: string;
+    data: T;
+}
+
 const mapService = {
     getIpLocation: async (): Promise<LocationResponse> => {
-        const response = await apiClient.get<LocationResponse>("/map/ip-location");
-        return response.data;
+        const response = await apiClient.get<ApiResponse<LocationResponse>>("/map/location/ip");
+        return response.data.data;
     },
 
     findNearbyPlaces: async (request: NearbyPlacesRequest): Promise<PlaceResponse[]> => {
-        const response = await apiClient.post<PlaceResponse[]>("/map/nearby-places", request);
-        return response.data;
+        const response = await apiClient.post<ApiResponse<PlaceResponse[]>>("/map/nearby-places", request);
+        return response.data.data;
     },
 
     calculateRoute: async (request: RouteRequest): Promise<RouteResponse> => {
-        const response = await apiClient.post<RouteResponse>("/map/route", request);
-        return response.data;
+        const response = await apiClient.post<ApiResponse<RouteResponse>>("/map/route", request);
+        return response.data.data;
     },
 
     geocodeAddress: async (address: string): Promise<GeocodeResponse> => {
-        const response = await apiClient.get<GeocodeResponse>("/map/geocode", {
+        const response = await apiClient.get<ApiResponse<GeocodeResponse>>("/map/geocode", {
             params: { address },
         });
-        return response.data;
+        return response.data.data;
     },
 
     reverseGeocode: async (latitude: number, longitude: number): Promise<ReverseGeocodeResponse> => {
-        const response = await apiClient.get<ReverseGeocodeResponse>("/map/reverse-geocode", {
+        const response = await apiClient.get<ApiResponse<ReverseGeocodeResponse>>("/map/reverse-geocode", {
             params: { latitude, longitude },
         });
-        return response.data;
+        return response.data.data;
     },
 };
 

@@ -1,17 +1,17 @@
-import uuid
+from uuid import uuid4, UUID
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from fastapi import UploadFile
 
 from app.core.config import settings
-from app.modules.profile.exceptions import (
+from app.modules.users.exceptions import (
     AvatarUploadError,
     ProfileNotFoundError,
 )
-from app.modules.profile.models.user_profile import UserProfile
-from app.modules.profile.repository import ProfileRepository
-from app.modules.profile.schemas.user_profile_schemas import (
+from app.modules.users.models.user_profile import UserProfile
+from app.modules.users.repository.profile_repository import ProfileRepository
+from app.modules.users.schemas.profile_schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,
@@ -29,7 +29,7 @@ class ProfileService:
         self.file_service = FileService()
 
     async def get_profile(
-        self, user_id: uuid.UUID
+        self, user_id: UUID
     ) -> UserProfileResponse:
         profile = await self.repository.get_by_user_id(user_id)
         if not profile:
@@ -38,7 +38,7 @@ class ProfileService:
         return UserProfileResponse(**profile.to_response_dict())
 
     async def update_profile(
-        self, user_id: uuid.UUID, data: UserProfileUpdate
+        self, user_id: UUID, data: UserProfileUpdate
     ) -> UserProfileResponse:
         update_data = data.model_dump(exclude_unset=True)
         if not update_data:
@@ -50,7 +50,7 @@ class ProfileService:
         return UserProfileResponse(**profile.to_response_dict())
 
     async def upload_avatar(
-        self, user_id: uuid.UUID, file: UploadFile
+        self, user_id: UUID, file: UploadFile
     ) -> AvatarUploadResponse:
         await FileValidator.validate_upload_file(
             file=file,
@@ -83,7 +83,7 @@ class ProfileService:
         )
 
     async def delete_avatar(
-        self, user_id: uuid.UUID
+        self, user_id: UUID
     ) -> AvatarDeleteResponse:
         profile = await self.repository.get_by_user_id(user_id)
         if not profile or not profile.avatar_url:
@@ -102,7 +102,7 @@ class ProfileService:
         )
 
     async def get_public_avatar(
-        self, user_id: uuid.UUID
+        self, user_id: UUID
     ) -> PublicAvatarResponse:
         profile = await self.repository.get_by_user_id(user_id)
         has_avatar = bool(profile and profile.avatar_url)
@@ -149,7 +149,7 @@ class ProfileService:
         ]
 
     async def get_completion_suggestions(
-        self, user_id: uuid.UUID
+        self, user_id: UUID
     ) -> Dict[str, Any]:
         profile = await self.repository.get_by_user_id(user_id)
         if not profile:

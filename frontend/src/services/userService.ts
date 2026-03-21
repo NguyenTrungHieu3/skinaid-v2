@@ -4,7 +4,7 @@ import apiClient from './api';
 export interface UserSearchParams {
   search?: string;
   role?: string;
-  is_active?: boolean | string;
+  status?: boolean | string;
   page?: number;
   limit?: number;
 }

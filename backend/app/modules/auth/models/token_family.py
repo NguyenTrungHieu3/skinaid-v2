@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 from datetime import datetime, timezone
-import uuid 
+from uuid import uuid4, UUID
 
 # Refresh Token Rotation
 class TokenFamily(SQLModel, table=True): 
@@ -14,8 +14,8 @@ class TokenFamily(SQLModel, table=True):
     """
     __tablename__ ="token_families"
 
-    family_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(foreign_key="users.user_id", nullable=False, index= True)
+    family_id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.user_id", nullable=False, index= True)
 
     # JTIs
     refresh_token_jti: str = Field(unique=True, index=True, nullable=False)

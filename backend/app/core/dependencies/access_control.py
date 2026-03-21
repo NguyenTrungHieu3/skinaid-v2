@@ -9,7 +9,7 @@ from .user import (
     check_user_has_role,
     check_user_has_permission
 )
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 
 async def get_token(authorization: Optional[str] = Header(None)) -> str:
     token = await extract_token(authorization)

@@ -2,12 +2,12 @@ from sqlmodel import SQLModel, Field
 from sqlalchemy import UUID
 from typing import Optional
 from datetime import datetime, timedelta, timezone
-import uuid
+from uuid import uuid4, UUID
 
 class GuestSession(SQLModel, table=True):
     __tablename__ = "guest_sessions"
 
-    session_id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    session_id: UUID = Field(default_factory=uuid4, primary_key=True)
     ip_address: Optional[str] = Field(default=None, max_length=45)
     user_agent: Optional[str] = None
 
@@ -20,7 +20,12 @@ class GuestSession(SQLModel, table=True):
 
     is_active: bool = Field(default=True)
     is_converted_to_user: bool = Field(default=False)
-    converted_user_id: Optional[uuid.UUID] = Field(default=None, foreign_key="users.user_id")
+    converted_user_id: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
+    converted_at: Optional[datetime] = None
+    daily_upload_limit: int = Field(default=5)
+    platform: Optional[str] = Field(default=None, max_length=20)
+    app_version: Optional[str] = Field(default=None, max_length=20)
+    os_version: Optional[str] = Field(default=None, max_length=20)
 
     @property
     def is_expired(self) -> bool:

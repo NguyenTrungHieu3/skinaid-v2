@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Optional
 from datetime import date, datetime
-import uuid
+from uuid import uuid4, UUID
 
 class UserProfileBase(BaseModel):
     full_name: Optional[str] = Field(None, max_length=255, description="Họ tên đầy đủ")
@@ -59,7 +59,7 @@ class UserProfileUpdate(UserProfileBase):
     pass
 
 class UserProfileResponse(UserProfileBase):
-    user_id: uuid.UUID = Field(..., description="ID người dùng")
+    user_id: UUID = Field(..., description="ID người dùng")
     age: Optional[int] = Field(None, description="Tuổi tính từ ngày sinh")
     gender_display: str = Field(..., description="Giới tính hiển thị tiếng Việt")
     has_complete_profile: bool = Field(..., description="Profile có đầy đủ thông tin")
@@ -119,7 +119,7 @@ class AvatarDeleteResponse(BaseModel):
     )
 
 class PublicAvatarResponse(BaseModel): 
-    user_id: uuid.UUID = Field(..., description="ID của user")
+    user_id: UUID = Field(..., description="ID của user")
     avatar_url: Optional[str] = Field(default= None, description="Đường dẫn ảnh đại diện")
     has_avatar: bool = Field(..., description="User đã có avatar chưa")
 
@@ -132,4 +132,3 @@ class PublicAvatarResponse(BaseModel):
             }
         }
     )
-    

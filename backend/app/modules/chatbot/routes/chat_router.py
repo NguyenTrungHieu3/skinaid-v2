@@ -8,7 +8,7 @@ from app.modules.chatbot.schemas.chat_schemas import (
 )
 from app.shared.response import SuccessResponse
 
-router = APIRouter(tags=["Chatbot"])
+router = APIRouter()
 
 
 @router.post(

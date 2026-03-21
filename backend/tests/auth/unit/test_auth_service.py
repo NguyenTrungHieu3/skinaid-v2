@@ -19,7 +19,7 @@ from app.modules.auth.exceptions import (
     UsernameExistsError,
     WeakPasswordError,
 )
-from app.modules.auth.models.user import User
+from app.modules.users.models.user import User
 from app.modules.auth.schemas.api import UserCreate
 from app.modules.auth.service import AuthService
 
