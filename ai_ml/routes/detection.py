@@ -17,7 +17,7 @@ sys.path.insert(0, str(ai_ml_root))
 from models.detection.wound_detector import WoundDetector
 from schemas.detection_schema import DetectionBox, YOLODetectionResponse
 
-detector = WoundDetector(str(ai_ml_root / "models/detection/weights/model_2_class_v1.pt"))
+detector = WoundDetector(str(ai_ml_root / "models/detection/weights/best_v2.pt"))
 
 @router.post("/", response_model=YOLODetectionResponse)
 async def detect_wound(file: UploadFile = File(...), x_api_key: str = Header(None, alias="X-API-Key")):

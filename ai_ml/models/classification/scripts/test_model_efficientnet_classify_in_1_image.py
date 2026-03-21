@@ -7,8 +7,10 @@ import torch.nn.functional as F
 num_classes = 7
 model = timm.create_model("efficientnet_b0", pretrained=False, num_classes=num_classes)
 
-model_path = "../models/final_model.pth"
-state_dict = torch.load(model_path, map_location='cpu')
+model_path = "../models/final_model_v2.pth"
+checkpoint = torch.load(model_path, map_location='cpu')
+# Support both raw state_dict and full checkpoint formats
+state_dict = checkpoint.get("model_state", checkpoint)
 
 model.load_state_dict(state_dict)
 model.eval()

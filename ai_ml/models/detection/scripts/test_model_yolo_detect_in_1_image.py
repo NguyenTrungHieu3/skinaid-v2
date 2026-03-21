@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import cv2
 
-model = YOLO("..\models\model_2_class_v1.pt")
+model = YOLO(r"..\models\best_v2.pt")
 img_path = r"D:\NCKH\C1SE.24_SkinAid_Capstone1\ai_ml\data\raw_dataset\yolo_dataset\yolo_dataset_1_class_wound\test\images\istockphoto-1473174152-612x612_jpg.rf.36d17646cadbbab6b0a250aa7a71f5f1.jpg"
 results = model.predict(source=img_path, conf = 0.25, save = False)
 

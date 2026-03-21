@@ -30,7 +30,7 @@ import { useTranslation } from "react-i18next";
 
 // --- Types ---
 type Severity = "Mild" | "Moderate" | "Severe" | string;
-type WoundType = "abrasion" | "burn" | "bruise";
+type WoundType = "abrasion" | "burn" | "bruise" | "cut" | "acne" | "fungal" | "psoriasis";
 
 interface Tab {
   id: string;
@@ -44,6 +44,10 @@ interface SummaryCounts {
   abrasion: number;
   burn: number;
   bruise: number;
+  cut: number;
+  acne: number;
+  fungal: number;
+  psoriasis: number;
 }
 
 // --- Helper function to check if wound severity requires medical attention ---
@@ -67,17 +71,29 @@ const getHighestSeverity = (wounds: SignificantWound[]): string => {
 
 // --- HÀM HELPER: Chuyển dữ liệu API sang cho Sidebar ---
 const transformApiData = (apiData: AnalysisGetResponse) => {
-  // ... (Giữ nguyên logic cũ của bạn)
-  const counts: SummaryCounts = { total: 0, abrasion: 0, burn: 0, bruise: 0 };
+  const counts: SummaryCounts = {
+    total: 0,
+    abrasion: 0,
+    burn: 0,
+    bruise: 0,
+    cut: 0,
+    acne: 0,
+    fungal: 0,
+    psoriasis: 0,
+  };
   const tabs: Tab[] = [];
   const typeIndices: { [key in WoundType]: number } = {
     abrasion: 1,
     burn: 1,
     bruise: 1,
+    cut: 1,
+    acne: 1,
+    fungal: 1,
+    psoriasis: 1,
   };
   apiData.significant_wounds.forEach((wound) => {
     const woundType = wound.wound_type as WoundType;
-    if (!counts.hasOwnProperty(woundType)) return;
+    if (!Object.prototype.hasOwnProperty.call(counts, woundType)) return;
 
     counts.total++;
     counts[woundType]++;
@@ -91,7 +107,6 @@ const transformApiData = (apiData: AnalysisGetResponse) => {
       woundType.charAt(0).toUpperCase() + woundType.slice(1);
 
     // 2. Xử lý Subtype: Nếu có thì thêm dấu gạch ngang, nếu null thì chuỗi rỗng
-    // Ví dụ kết quả: " - Scrape" hoặc ""
     const subTypeDisplay = wound.sub_type ? ` - ${wound.sub_type}` : "";
 
     tabs.push({
@@ -129,6 +144,10 @@ const AnalysisResultPage = () => {
     abrasion: 0,
     burn: 0,
     bruise: 0,
+    cut: 0,
+    acne: 0,
+    fungal: 0,
+    psoriasis: 0,
   });
   const [tabData, setTabData] = useState<Tab[]>([]);
 

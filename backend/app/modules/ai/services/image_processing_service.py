@@ -81,9 +81,10 @@ class ImageProcessingService:
                 analysis_id=analysis.analysis_id,
                 detections=ai_result.get("detections", []),
             )
-            analysis = await self.analysis_service.get_analysis_by_id(
-                analysis.analysis_id
-            )
+
+        analysis = await self.analysis_service.get_analysis_by_id(
+            analysis.analysis_id
+        )
 
         response_data = self.response_mapper.map_wound_analysis_basic(analysis)
 

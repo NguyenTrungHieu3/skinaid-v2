@@ -20,14 +20,36 @@ class SeverityClassifier:
         if not model_path.exists():
             raise FileNotFoundError(f"Efficientnet model not found: {model_path}")
         
-        self.model_name = settings.EFFICIENTNET_MODEL_NAME
-        self.num_classes = settings.EFFICIENTNET_NUM_CLASSES
         self.device = settings.EFFICIENTNET_DEVICE
-        self.classes = settings.WOUND_CLASSES
         self.pretrained = settings.EFFICIENTNET_PRETRAINED
 
+        checkpoint = torch.load(str(model_path), map_location=self.device)
+        # Support both raw state_dict and full checkpoint formats
+        state_dict = checkpoint.get("model_state", checkpoint)
+
+        # Auto-detect model variant and classes from checkpoint when available
+        if isinstance(checkpoint, dict) and "classes" in checkpoint:
+            self.classes = checkpoint["classes"]
+            self.num_classes = len(self.classes)
+        else:
+            self.num_classes = settings.EFFICIENTNET_NUM_CLASSES
+            self.classes = settings.WOUND_CLASSES
+
+        # Detect model name: infer from conv_stem width if not stored in checkpoint
+        if isinstance(checkpoint, dict) and "model_name" in checkpoint:
+            self.model_name = checkpoint["model_name"]
+        else:
+            stem_out = state_dict.get("conv_stem.weight", None)
+            if stem_out is not None:
+                stem_channels = stem_out.shape[0]
+                _variant_map = {32: "efficientnet_b0",
+                                40: "efficientnet_b3",
+                                48: "efficientnet_b4"}
+                self.model_name = _variant_map.get(stem_channels, settings.EFFICIENTNET_MODEL_NAME)
+            else:
+                self.model_name = settings.EFFICIENTNET_MODEL_NAME
+
         self.model = timm.create_model(self.model_name, pretrained=self.pretrained, num_classes=self.num_classes)
-        state_dict = torch.load(str(model_path), map_location=self.device)
         self.model.load_state_dict(state_dict)
         self.model.eval()
 

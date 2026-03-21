@@ -1,19 +1,24 @@
 # EfficientNet Classification Configuration
 model:
-  name: "efficientnet_b0"
+  name: "efficientnet_b3"
   type: "classification"
-  weights_path: "../classification/models/final_model.pth"
-  num_classes: 7
+  weights_path: "../classification/models/final_model_v2.pth"
+  num_classes: 12
   pretrained: false
-  
+
 classes:
   - "abrasion_mild"
   - "abrasion_moderate"
+  - "acne_mild"
+  - "acne_moderate"
+  - "acne_severe"
   - "bruise_mild"
   - "bruise_moderate"
   - "burn_mild"
   - "burn_moderate_blister"
   - "burn_moderate_skintear"
+  - "psoriasis"
+  - "ringworm"
 
 inference:
   device: "cpu"  # or "cuda" for GPU

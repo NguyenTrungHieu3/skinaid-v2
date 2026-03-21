@@ -2,7 +2,7 @@
 model:
   name: "yolov11"
   type: "detection"
-  weights_path: "../detection/models/model_2_class_v1.pt"
+  weights_path: "../detection/models/best_v2.pt"
   
 inference:
   conf_threshold: 0.25

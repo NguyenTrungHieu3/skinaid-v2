@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO("../models/model_2_class_v1.pt")
+model = YOLO("../models/best_v2.pt")
 
 results = model.predict(
     source=r"D:\NCKH\C1SE.24_SkinAid_Capstone1\ai_ml\data\raw_dataset\yolo_dataset\wound_dataset_1_class_1489_images\test\images",

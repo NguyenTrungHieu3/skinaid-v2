@@ -47,13 +47,20 @@ class ResponseMapper:
 
     @staticmethod
     def map_wound_analysis_basic(analysis: Any) -> Dict:
+        insp = inspect(analysis)
+        wound_detections_attr = insp.attrs.wound_detections
+        if wound_detections_attr.loaded_value is not NO_VALUE:
+            total_detections = len(analysis.wound_detections) if analysis.wound_detections else 0
+        else:
+            total_detections = 0
+
         return {
             'analysis_id': str(analysis.analysis_id),
             'image_url': analysis.image_url,
             'file_name': analysis.image_url.split('/')[-1] if analysis.image_url else '',
             'file_size': analysis.image_size_bytes or 0,
             'ai_model_version': analysis.model_version or '',
-            'total_detections': len(analysis.wound_detections) if hasattr(analysis, 'wound_detections') and analysis.wound_detections else 0,
+            'total_detections': total_detections,
             'processing_time_ms': 0,
             'analyzed_at': analysis.completed_at.isoformat() if analysis.completed_at else analysis.created_at.isoformat(),
             'is_guest_analysis': analysis.is_guest_analysis

@@ -34,11 +34,13 @@ class WoundAIService:
     def validate_ai_class(cls, wound_type: str, severity: str) -> bool:
         """
         Xác thực xem sự kết hợp wound_type và severity có hợp lệ không.
+        Dermatological types (acne, fungal, psoriasis) only require a valid severity.
         """
-        if wound_type.lower() not in WoundConstants.WOUND_TYPES:
+        wt = wound_type.lower()
+        if wt not in WoundConstants.WOUND_TYPES:
             return False
 
-        if wound_type.lower() == "burn" and "_" in severity:
+        if wt == "burn" and "_" in severity:
             base_severity = severity.split("_")[0]
             if base_severity.lower() not in WoundConstants.SEVERITIES:
                 return False

@@ -86,10 +86,16 @@ async def analyze_wound(
         # (Đoạn code này giờ đã an toàn vì results_raw không thể là None)
         for det in results_raw:
             try:
-                severity_label = det.get("severity", "") # burn_moderate
-                parts = severity_label.split("_", 1) # parts = [burn, moderate]
+                severity_label = det.get("severity", "") # e.g. "burn_moderate" or "ringworm" or "acne_mild"
+                parts = severity_label.split("_", 1)     # ["burn", "moderate"] or ["ringworm"] or ["acne", "mild"]
                 wound_type = parts[0] if len(parts) > 0 else det.get("class_name", "wound")
-                severity = parts[1] if len(parts) > 1 else "unknown"
+
+                # For single-word dermatological classes (ringworm, psoriasis) there is no
+                # severity suffix — default to "mild" so the backend can process them.
+                if len(parts) > 1:
+                    severity = parts[1]
+                else:
+                    severity = "mild"
 
                 detection = WoundDetectionAndClassification(
                     wound_type=wound_type,

@@ -16,9 +16,13 @@ interface SummaryCounts {
   abrasion: number;
   burn: number;
   bruise: number;
+  cut: number;
+  acne: number;
+  fungal: number;
+  psoriasis: number;
 }
 type Severity = "Mild" | "Moderate" | "Severe" | string;
-type WoundType = "abrasion" | "burn" | "bruise";
+type WoundType = "abrasion" | "burn" | "bruise" | "cut" | "acne" | "fungal" | "psoriasis";
 
 interface Tab {
   id: string;
@@ -104,11 +108,35 @@ const AnalysisSidebar = ({
     .sort(
       (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
     );
+  const cutTabs = tabData
+    .filter((tab) => tab.type === "cut")
+    .sort(
+      (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
+    );
+  const acneTabs = tabData
+    .filter((tab) => tab.type === "acne")
+    .sort(
+      (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
+    );
+  const fungalTabs = tabData
+    .filter((tab) => tab.type === "fungal")
+    .sort(
+      (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
+    );
+  const psoriasisTabs = tabData
+    .filter((tab) => tab.type === "psoriasis")
+    .sort(
+      (a, b) => getSeverityWeight(b.severity) - getSeverityWeight(a.severity)
+    );
 
   const allTabs = [
     { type: "abrasion" as WoundType, tabs: abrasionTabs, label: "Abrasion" },
     { type: "burn" as WoundType, tabs: burnTabs, label: "Burn" },
     { type: "bruise" as WoundType, tabs: bruiseTabs, label: "Bruise" },
+    { type: "cut" as WoundType, tabs: cutTabs, label: "Cut" },
+    { type: "acne" as WoundType, tabs: acneTabs, label: "Acne" },
+    { type: "fungal" as WoundType, tabs: fungalTabs, label: "Fungal" },
+    { type: "psoriasis" as WoundType, tabs: psoriasisTabs, label: "Psoriasis" },
   ];
 
   const sortedMainTabs = [
@@ -120,6 +148,10 @@ const AnalysisSidebar = ({
   if (activeMainTab === "abrasion") tabsToDisplay = abrasionTabs;
   else if (activeMainTab === "burn") tabsToDisplay = burnTabs;
   else if (activeMainTab === "bruise") tabsToDisplay = bruiseTabs;
+  else if (activeMainTab === "cut") tabsToDisplay = cutTabs;
+  else if (activeMainTab === "acne") tabsToDisplay = acneTabs;
+  else if (activeMainTab === "fungal") tabsToDisplay = fungalTabs;
+  else if (activeMainTab === "psoriasis") tabsToDisplay = psoriasisTabs;
 
   return (
     <aside
@@ -190,6 +222,30 @@ const AnalysisSidebar = ({
                 <strong>{summaryCounts.bruise}</strong>
                 <span>{t("analysis.sidebar_summary_bruise")}</span>
               </div>
+              {summaryCounts.cut > 0 && (
+                <div className={styles.breakdownItem}>
+                  <strong>{summaryCounts.cut}</strong>
+                  <span>{t("analysis.sidebar_summary_cut")}</span>
+                </div>
+              )}
+              {summaryCounts.acne > 0 && (
+                <div className={styles.breakdownItem}>
+                  <strong>{summaryCounts.acne}</strong>
+                  <span>{t("analysis.sidebar_summary_acne")}</span>
+                </div>
+              )}
+              {summaryCounts.fungal > 0 && (
+                <div className={styles.breakdownItem}>
+                  <strong>{summaryCounts.fungal}</strong>
+                  <span>{t("analysis.sidebar_summary_fungal")}</span>
+                </div>
+              )}
+              {summaryCounts.psoriasis > 0 && (
+                <div className={styles.breakdownItem}>
+                  <strong>{summaryCounts.psoriasis}</strong>
+                  <span>{t("analysis.sidebar_summary_psoriasis")}</span>
+                </div>
+              )}
             </div>
           </div>
 

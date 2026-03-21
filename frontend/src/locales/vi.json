@@ -267,6 +267,10 @@
     "sidebar_summary_burn": "Vết bỏng",
     "sidebar_summary_abrasion": "Vết trầy xước",
     "sidebar_summary_bruise": "Vết bầm tím",
+    "sidebar_summary_cut": "Vết cắt",
+    "sidebar_summary_acne": "Mụn trứng cá",
+    "sidebar_summary_fungal": "Nhiễm nấm",
+    "sidebar_summary_psoriasis": "Vảy nến",
     "sidebar_details": "Chi tiết",
     "sidebar_details_desc": "Danh sách từng loại vết thương",
     "sidebar_no_wounds_found": "Không tìm thấy vết thương nào cho loại này.",
@@ -293,12 +297,20 @@
     "wound_type": {
       "abrasion": "Trầy xước",
       "burn": "Bỏng",
-      "bruise": "Bầm tím"
+      "bruise": "Bầm tím",
+      "cut": "Vết cắt",
+      "acne": "Mụn trứng cá",
+      "fungal": "Nhiễm nấm",
+      "psoriasis": "Vảy nến"
     },
     "wound_type_uppercase": {
       "Abrasion": "Trầy xước",
       "Burn": "Bỏng",
-      "Bruise": "Bầm tím"
+      "Bruise": "Bầm tím",
+      "Cut": "Vết cắt",
+      "Acne": "Mụn trứng cá",
+      "Fungal": "Nhiễm nấm",
+      "Psoriasis": "Vảy nến"
     },
     "wound_sub": {
       "blister": "Phồng rộp",

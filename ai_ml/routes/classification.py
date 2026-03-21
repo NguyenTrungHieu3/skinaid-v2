@@ -17,7 +17,7 @@ sys.path.insert(0, str(ai_ml_root))
 from models.classification.wound_classifier import SeverityClassifier
 from schemas.classification_schema import ClassificationResult, EfficientNetResponse
 
-classifier = SeverityClassifier(str(ai_ml_root / "models/classification/weights/final_model.pth"))
+classifier = SeverityClassifier(str(ai_ml_root / "models/classification/weights/final_model_v2.pth"))
 
 @router.post("/", response_model=EfficientNetResponse)
 async def classify_wound(

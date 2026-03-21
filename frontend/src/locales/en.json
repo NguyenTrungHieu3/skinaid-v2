@@ -273,6 +273,10 @@
     "sidebar_summary_burn": "Burns",
     "sidebar_summary_abrasion": "Abrasions",
     "sidebar_summary_bruise": "Bruise",
+    "sidebar_summary_cut": "Cuts",
+    "sidebar_summary_acne": "Acne",
+    "sidebar_summary_fungal": "Fungal Infection",
+    "sidebar_summary_psoriasis": "Psoriasis",
     "sidebar_details": "Details",
     "sidebar_details_desc": "List of each type of wound",
     "sidebar_no_wounds_found": "No wounds found for this category.",
@@ -299,12 +303,20 @@
     "wound_type": {
       "abrasion": "Abrasion",
       "burn": "Burn",
-      "bruise": "Bruise"
+      "bruise": "Bruise",
+      "cut": "Cut",
+      "acne": "Acne",
+      "fungal": "Fungal Infection",
+      "psoriasis": "Psoriasis"
     },
     "wound_type_uppercase": {
       "Abrasion": "Abrasion",
       "Burn": "Burn",
-      "Bruise": "Bruise"
+      "Bruise": "Bruise",
+      "Cut": "Cut",
+      "Acne": "Acne",
+      "Fungal": "Fungal Infection",
+      "Psoriasis": "Psoriasis"
     },
     "wound_sub": {
       "blister": "Blister",
