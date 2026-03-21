@@ -5,8 +5,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { jwtDecode } from "jwt-decode";
-import axios from "axios";
+import apiClient from "../services/api";
 import { getMe, logoutUser } from "../services/authService"; // API /auth/me
 // 1. IMPORT THÊM profileService
 import { getMyProfile } from "../services/profileService";
@@ -140,78 +139,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // useEffect (Giữ nguyên, nó sẽ gọi 'fetchUser' đã được sửa)
   useEffect(() => {
-    const token =
-      localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
-    const refreshToken =
-      localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
-
     const initializeAuth = async () => {
       try {
-        if (token) {
-          try {
-            const decoded: { exp: number } = jwtDecode(token);
+        const token =
+          localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        const refreshToken =
+          localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
 
-            // 2. KIỂM TRA HẾT HẠN
-            if (decoded.exp * 1000 > Date.now()) {
-              // Token còn hạn, fetch user bình thường
-              console.log("ℹ️ [AuthContext] Token still valid, fetching user...");
-              await fetchUser(token);
-            } else {
-              console.log("⚠️ [AuthContext] Access token expired, attempting refresh...");
-              // Token hết hạn, thử refresh trước khi logout
-              
-              if (refreshToken) {
-                try {
-                  // Gọi API refresh
-                  console.log("🔄 [AuthContext] Calling refresh API...");
-                  const { data } = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/auth/refresh`, {
-                    refresh_token: refreshToken,
-                  });
-                  
-                  console.log("✅ [AuthContext] Refresh successful!");
-                  const newAccessToken = data.data.access_token;
-                  const newRefreshToken = data.data.refresh_token;
-                  console.log("🔑 [AuthContext] New tokens received");
-
-                  // Determine which storage to use based on where the refresh token was found,
-                  // not the (expired) access token which may still linger in localStorage.
-                  if (localStorage.getItem("refreshToken")) {
-                    localStorage.setItem("userToken", newAccessToken);
-                    localStorage.setItem("refreshToken", newRefreshToken);
-                    console.log("💾 [AuthContext] Tokens saved to Local Storage");
-                  } else {
-                    sessionStorage.setItem("userToken", newAccessToken);
-                    sessionStorage.setItem("refreshToken", newRefreshToken);
-                    console.log("💾 [AuthContext] Tokens saved to Session Storage");
-                  }
-                  
-                  // Fetch user với token mới
-                  console.log("👤 [AuthContext] Fetching user with new token...");
-                  await fetchUser(newAccessToken);
-                  console.log("✅ [AuthContext] User fetched successfully!");
-                } catch (refreshError: any) {
-                  console.error("❌ [AuthContext] Refresh or fetchUser failed:", refreshError.response?.data || refreshError.message);
-                  // Lưu lỗi vào sessionStorage trước khi logout
-                  sessionStorage.setItem('logout_reason', JSON.stringify({
-                    error: refreshError.response?.data?.message || refreshError.message,
-                    details: refreshError.response?.data,
-                    timestamp: new Date().toISOString()
-                  }));
-                  // Refresh thất bại, logout
-                  performLogout();
-                }
-              } else {
-                console.log("❌ [AuthContext] No refresh token, logging out");
-                performLogout();
-              }
-            }
-          } catch (error) {
-            console.error("Token invalid:", error);
-            performLogout(); // Token rác thì logout luôn
-          }
+        if (!token && !refreshToken) {
+          // No credentials at all — stay logged out
+          return;
         }
+
+        if (token) {
+          // fetchUser calls /auth/me via apiClient.
+          // The request interceptor in api.ts will proactively refresh
+          // the access token if it is expired before the request fires.
+          console.log("ℹ️ [AuthContext] Initialising session, fetching user...");
+          await fetchUser(token);
+        }
+      } catch (error) {
+        console.error("❌ [AuthContext] initializeAuth failed:", error);
+        performLogout();
       } finally {
         setIsLoading(false);
       }

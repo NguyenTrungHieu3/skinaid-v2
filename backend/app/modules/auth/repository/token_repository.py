@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import delete, func, select, true, false
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.auth.models.token_blacklist import TokenBlacklist
@@ -152,17 +153,13 @@ class TokenRepository:
             )
 
         for token_jti, token_type in jtis_to_revoke:
-            existing = await self.db.execute(
-                select(TokenBlacklist).where(TokenBlacklist.jti == token_jti)
-            )
-            if existing.scalar_one_or_none() is None:
-                blacklist_entry = TokenBlacklist(
-                    jti=token_jti,
-                    token_type=token_type,
-                    revoked_at=now,
-                    expires_at=expires_at,
-                )
-                self.db.add(blacklist_entry)
+            stmt = pg_insert(TokenBlacklist).values(
+                jti=token_jti,
+                token_type=token_type,
+                revoked_at=now,
+                expires_at=expires_at,
+            ).on_conflict_do_nothing(index_elements=["jti"])
+            await self.db.execute(stmt)
 
         family.is_revoked = True
         await self.db.flush()
@@ -221,13 +218,13 @@ class TokenRepository:
                 tzinfo=None
             )
 
-        entry = TokenBlacklist(
+        stmt = pg_insert(TokenBlacklist).values(
             jti=jti,
             user_id=user_id,
             token_type=token_type,
             expires_at=expires_at,
-        )
-        self.db.add(entry)
+        ).on_conflict_do_nothing(index_elements=["jti"])
+        await self.db.execute(stmt)
         await self.db.flush()
 
     async def cleanup_expired_verification_tokens(self) -> int:
