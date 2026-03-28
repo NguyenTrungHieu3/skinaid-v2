@@ -4,9 +4,12 @@ from typing import Optional
 import sys
 import cv2
 import numpy as np
+import logging
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from configs.config import settings
+
+logger = logging.getLogger(__name__)
 
 class WoundDetector:
     def __init__(self, model_path: Optional[str] = None):
@@ -18,8 +21,47 @@ class WoundDetector:
         if not model_path.exists():
             raise FileNotFoundError(f"YOLO model not found: {model_path}")
 
+        self.model_path = model_path
         self.model = YOLO(str(model_path))
         self.default_conf_threshold = settings.YOLO_CONF_THRESHOLD
+        self._current_version: Optional[str] = None
+    
+    def get_current_version(self) -> Optional[str]:
+        """Get the current model version tag."""
+        return self._current_version
+    
+    def set_version(self, version_tag: str):
+        """Set the current model version tag."""
+        self._current_version = version_tag
+    
+    def reload_model(self, model_path: str) -> bool:
+        """
+        Reload the model from a new file path.
+        
+        Args:
+            model_path: Path to the new model file
+            
+        Returns:
+            True if reload successful
+        """
+        try:
+            logger.info(f"Reloading YOLO model from: {model_path}")
+            
+            new_path = Path(model_path)
+            if not new_path.exists():
+                logger.error(f"Model file not found: {model_path}")
+                return False
+            
+            # Load new model
+            self.model = YOLO(str(new_path))
+            self.model_path = new_path
+            
+            logger.info(f"YOLO model reloaded successfully from: {model_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reload YOLO model: {e}")
+            return False
 
     def refine_bounding_box(self, image: np.ndarray, bbox: list) -> list:
         """

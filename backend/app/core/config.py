@@ -50,6 +50,18 @@ class Settings(BaseSettings):
     AI_MAX_RETRIES: int = 1
     AI_API_KEY: str = ""
 
+    # Model Upload Configuration (PBI-27)
+    MODEL_UPLOAD_MAX_SIZE: int = 500 * 1024 * 1024  # 500MB
+    MODEL_UPLOAD_MIN_SIZE: int = 1024  # 1KB minimum
+    MODEL_UPLOAD_ALLOWED_EXTENSIONS: str = ".pt,.pth,.h5,.onnx,.safetensors"
+    MODEL_UPLOAD_ALLOWED_TYPES: str = "detection,classification,segmentation,severity_scoring"
+    MODEL_STORAGE_DIR: str = "models"
+    MODEL_STORAGE_BACKUP_DIR: str = "models_backup"
+    MODEL_STORAGE_TEMP_DIR: str = "models_temp"
+    MODEL_HASH_ALGORITHM: str = "sha256"
+    MODEL_VALIDATE_ON_UPLOAD: bool = True
+    MODEL_AUTO_ACTIVATE_ON_UPLOAD: bool = False  # Don't auto-activate on upload
+
     # Map Service
     GEOAPIFY_API_KEY: str = ""
 

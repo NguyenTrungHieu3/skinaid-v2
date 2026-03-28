@@ -6,9 +6,12 @@ from PIL import Image
 import sys
 from pathlib import Path
 from typing import Optional, Tuple
+import logging
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from configs.config import settings
+
+logger = logging.getLogger(__name__)
 
 class SeverityClassifier:
     def __init__(self, model_path: Optional[str] = None):
@@ -19,10 +22,24 @@ class SeverityClassifier:
 
         if not model_path.exists():
             raise FileNotFoundError(f"Efficientnet model not found: {model_path}")
-        
+
+        self.model_path = model_path
         self.device = settings.EFFICIENTNET_DEVICE
         self.pretrained = settings.EFFICIENTNET_PRETRAINED
+        self._current_version: Optional[str] = None
 
+        self._load_model(str(model_path))
+    
+    def get_current_version(self) -> Optional[str]:
+        """Get the current model version tag."""
+        return self._current_version
+    
+    def set_version(self, version_tag: str):
+        """Set the current model version tag."""
+        self._current_version = version_tag
+    
+    def _load_model(self, model_path: str):
+        """Load model from checkpoint."""
         checkpoint = torch.load(str(model_path), map_location=self.device)
         # Support both raw state_dict and full checkpoint formats
         state_dict = checkpoint.get("model_state", checkpoint)
@@ -62,6 +79,35 @@ class SeverityClassifier:
             transforms.ToTensor(),
             transforms.Normalize(mean=img_mean, std=img_std)
         ])
+    
+    def reload_model(self, model_path: str) -> bool:
+        """
+        Reload the model from a new file path.
+        
+        Args:
+            model_path: Path to the new model file
+            
+        Returns:
+            True if reload successful
+        """
+        try:
+            logger.info(f"Reloading EfficientNet model from: {model_path}")
+            
+            new_path = Path(model_path)
+            if not new_path.exists():
+                logger.error(f"Model file not found: {model_path}")
+                return False
+            
+            # Reload model
+            self._load_model(str(new_path))
+            self.model_path = new_path
+            
+            logger.info(f"EfficientNet model reloaded successfully from: {model_path}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reload EfficientNet model: {e}")
+            return False
 
     def classify(self, cropped_image):
         try:
@@ -75,7 +121,7 @@ class SeverityClassifier:
                 confidence, predicted = torch.max(probs, dim=1)
 
             severity_class = self.classes[predicted.item()]
-            confidence_score = round(confidence.item(), 2)    
+            confidence_score = round(confidence.item(), 2)
             return severity_class, confidence_score
         except Exception:
             return "unknown", 0.0
