@@ -53,6 +53,7 @@ export default function TabLayout() {
         name="scan"
         options={{
           title: "",
+          tabBarStyle: { display: "none" },
           tabBarIcon: ({ focused }) => (
             <View style={[styles.scanBtn, focused && styles.scanBtnFocused]}>
               <Feather name="camera" size={26} color="#FFFFFF" />
