@@ -1,7 +1,7 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import field_validator, ValidationError
-from typing import List, Union
+from typing import List, Union, Optional
 from urllib.parse import urlparse
 
 
@@ -52,6 +52,20 @@ class Settings(BaseSettings):
 
     # Map Service
     GEOAPIFY_API_KEY: str = ""
+
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    QDRANT: str = "http://localhost:6333/"
+    RAG_COLLECTION_NAME: str = "skinaid_knowledge_base"
+    RAG_EMBEDDING_DIMENSION: int = 3072          # text-embedding-3-large
+
+    OPEN_API_KEY: str = ""
+    OPEN_EMBEDDING_MODEL: str = "text-embedding-3-large"
+
+    RAG_DOCS_PATH: str = "docs/RAGDocumentation"
+    RAG_SCORE_THRESHOLD: float = 0.5
+    RAG_SPARSE_MODEL: str = "Qdrant/bm25"
 
     # CORS
     CORS_ORIGINS: Union[List[str], str] = [

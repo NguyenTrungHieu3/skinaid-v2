@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.Security.jwt import JWTHandler
-from app.core.Security.password import hash_password, verify_password
+from app.core.security.jwt import JWTHandler
+from app.core.security.password import hash_password, verify_password
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.services.audit_service import AuditService
 from app.modules.auth.exceptions import (
@@ -552,6 +552,10 @@ class AuthService:
 
 
     async def cleanup_expired_tokens(self) -> dict[str, int]:
+        """
+        Dọn verification_tokens và token_families hết hạn.
+        JWT blacklist không cần cleanup — Redis tự xóa khi TTL hết.
+        """
         result = await self.token_repo.cleanup_all()
         await self.db.flush()
         return result

@@ -44,6 +44,14 @@ class TokenResponse(Token):
     user: UserResponse
 
 
+class OAuth2TokenResponse(BaseModel):
+    """Response chuẩn OAuth2 — dùng cho POST /auth/token (Swagger Authorize)."""
+
+    access_token: str
+    token_type: str = "bearer"
+    refresh_token: str
+
+
 class PasswordResetResponse(BaseModel):
     message: str
     success: bool

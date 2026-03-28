@@ -19,11 +19,11 @@ class SeverityClassifier:
 
         if not model_path.exists():
             raise FileNotFoundError(f"Efficientnet model not found: {model_path}")
-        
+
         self.device = settings.EFFICIENTNET_DEVICE
         self.pretrained = settings.EFFICIENTNET_PRETRAINED
 
-        checkpoint = torch.load(str(model_path), map_location=self.device)
+        checkpoint = torch.load(str(model_path), map_location=self.device, weights_only=False)
         # Support both raw state_dict and full checkpoint formats
         state_dict = checkpoint.get("model_state", checkpoint)
 

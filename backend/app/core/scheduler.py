@@ -34,18 +34,3 @@ def shutdown_scheduler():
 
 def get_scheduler() -> Optional[AsyncIOScheduler]:
     return _scheduler
-
-
-async def cleanup_expired_guest_sessions():
-    logger.info("Cleanup task: Expired guest sessions (stub)")
-    print("🧹 Running cleanup: Expired guest sessions (stub)")
-
-
-async def cleanup_expired_tokens():
-    logger.info("Cleanup task: Expired tokens (stub)")
-    print("🧹 Running cleanup: Expired tokens (stub)")
-
-
-async def cleanup_old_chat_sessions():
-    logger.info("Cleanup task: Old chat sessions (stub)")
-    print("🧹 Running cleanup: Old chat sessions (stub)")

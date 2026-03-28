@@ -1,4 +1,5 @@
 from .database import get_db
+from .oauth2 import oauth2_scheme, oauth2_scheme_optional
 from .token import (
     extract_token,
     decode_and_verify_token,
@@ -42,11 +43,14 @@ from .access_control import (
 __all__ = [
     # Database
     "get_db",
+    # OAuth2
+    "oauth2_scheme",
+    "oauth2_scheme_optional",
     # Token
     "extract_token",
     "decode_and_verify_token",
-    "is_token_blacklisted",
-    "revoke_token",
+    "is_token_blacklisted",   # (jti: str) → bool  [Redis]
+    "revoke_token",           # (token: str, user_id?) → bool  [Redis]
     # User
     "get_user_by_id",
     "check_email_verified",
