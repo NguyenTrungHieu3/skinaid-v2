@@ -1,0 +1,70 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - deployment
+    paths:
+      - 'backend/**'
+      - 'docker-compose.prod.yml'
+      - 'nginx/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 300s
+          script: |
+            set -e
+            echo "=== Pull code mới ==="
+            cd ~/skinaid
+            git pull origin deployment
+
+            echo "=== Ghi file .env.prod từ GitHub Secrets ==="
+            cat > .env.prod << EOF
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            ALGORITHM=HS256
+            ACCESS_TOKEN_EXPIRE_MINUTES=30
+            REFRESH_TOKEN_EXPIRE_DAYS=7
+            SMTP_SERVER=${{ secrets.SMTP_SERVER }}
+            SMTP_PORT=587
+            SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+            SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+            USE_MOCK_EMAIL=false
+            AI_SERVICE_URL=${{ secrets.AI_SERVICE_URL }}
+            AI_API_KEY=${{ secrets.AI_API_KEY }}
+            AI_SERVICE_TIMEOUT=30
+            AI_MAX_RETRIES=3
+            CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+            BASE_URL=http://${{ secrets.EC2_HOST }}
+            GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY }}
+            EOF
+
+            echo "=== Build và khởi động containers ==="
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+
+            echo "=== Chờ backend sẵn sàng rồi chạy migration ==="
+            sleep 15
+            docker exec skinaid_backend alembic upgrade head
+
+            echo "=== Dọn dẹp image cũ ==="
+            docker image prune -f
+
+            echo "=== Deploy xong! ==="
+            docker compose -f docker-compose.prod.yml ps

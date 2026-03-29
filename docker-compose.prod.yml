@@ -1,0 +1,83 @@
+services:
+  backend:
+    container_name: skinaid_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Database → trỏ về RDS
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
+
+      # JWT & Security
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+
+      # Email
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-false}
+
+      # AI Service (Hugging Face — giữ nguyên)
+      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-30}
+      - AI_MAX_RETRIES=${AI_MAX_RETRIES:-3}
+
+      # Application
+      - APP_NAME=SkinAid Wound Detection API
+      - VERSION=0.1.0
+      - DEBUG=false
+      - TESTING=false
+      - UPLOAD_DIR=/app/uploads
+
+      # CORS & URL
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - BASE_URL=${BASE_URL}
+
+      # Geoapify
+      - GEOAPIFY_API_KEY=${GEOAPIFY_API_KEY}
+
+    expose:
+      - "8000"          # chỉ expose nội bộ cho nginx, không ra ngoài internet
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - skinaid_net
+
+  nginx:
+    container_name: skinaid_nginx
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"         # port duy nhất mở ra internet
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - uploads_data:/app/uploads:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - skinaid_net
+
+volumes:
+  uploads_data:
+
+networks:
+  skinaid_net:
+    driver: bridge

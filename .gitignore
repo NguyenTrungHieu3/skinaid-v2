@@ -288,4 +288,7 @@ pids/
 .claude/
 .qwen/
 
-
+# Production secrets — KHÔNG BAO GIỜ commit
+.env.prod
+*.pem
+*.key
