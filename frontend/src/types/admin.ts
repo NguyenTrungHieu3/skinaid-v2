@@ -119,3 +119,131 @@ export interface SeverityStatsResponse {
   distribution: Record<string, number>;
   total: number;
 }
+
+// ============== Model Management Types ==============
+
+/**
+ * Model performance metrics
+ */
+export interface ModelMetrics {
+  accuracy?: number;
+  precision?: number;
+  recall?: number;
+  f1_score?: number;
+  [key: string]: number | undefined;
+}
+
+/**
+ * AI Model information
+ */
+export interface AIModel {
+  model_id: string;
+  model_type: 'detection' | 'classification' | 'segmentation' | 'severity_scoring';
+  name: string;
+  description?: string;
+  current_version?: string;
+  is_active: boolean;
+  total_versions: number;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  metrics?: ModelMetrics;
+  version_tag?: string;
+  versions?: ModelVersion[];
+}
+
+/**
+ * Model version information
+ */
+export interface ModelVersion {
+  version_id: string;
+  model_id: string;
+  version_tag: string;
+  version_number: number;
+  is_active: boolean;
+  is_beta: boolean;
+  created_at: string;
+  deployed_at?: string;
+  deployed_by?: string;
+  metrics?: ModelMetrics;
+}
+
+/**
+ * Model list response
+ */
+export interface ModelListResponse {
+  models: AIModel[];
+  active_version?: string;
+  total: number;
+  filters_applied: any;
+}
+
+/**
+ * Model detail response
+ */
+export interface ModelDetailResponse {
+  model: AIModel;
+  versions: ModelVersion[];
+  active_version?: ModelVersion;
+  version_history: any[];
+}
+
+/**
+ * Model upload request
+ */
+export interface ModelUploadRequest {
+  model_type: string;
+  version_tag: string;
+  description?: string;
+  is_beta: boolean;
+  metrics?: ModelMetrics;
+}
+
+/**
+ * Model upload response
+ */
+export interface ModelUploadResponse {
+  success: boolean;
+  model_id: string;
+  version_id: string;
+  version_tag: string;
+  file_size_bytes: number;
+  file_path: string;
+  uploaded_at: string;
+  message: string;
+}
+
+/**
+ * Model activate response
+ */
+export interface ModelActivateResponse {
+  success: boolean;
+  active_version: string;
+  previous_version?: string;
+  activated_at: string;
+  model_id: string;
+  message: string;
+}
+
+/**
+ * Model rollback response
+ */
+export interface ModelRollbackResponse {
+  success: boolean;
+  previous_version: string;
+  rolled_back_version: string;
+  rolled_back_at: string;
+  model_id: string;
+  message: string;
+}
+
+/**
+ * Model delete response
+ */
+export interface ModelDeleteResponse {
+  success: boolean;
+  deleted_version: string;
+  deleted_at: string;
+  is_permanent: boolean;
+  message: string;
+}
