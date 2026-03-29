@@ -13,10 +13,10 @@ def start_scheduler():
         _scheduler = AsyncIOScheduler()
         _scheduler.start()
         logger.info("Scheduler started successfully")
-        print("✅ Scheduler started")
+        print("[OK] Scheduler started")
     except Exception as e:
         logger.error(f"Failed to start scheduler: {e}")
-        print(f"⚠️  Scheduler warning: {e}")
+        print(f"[WARN] Scheduler warning: {e}")
 
 
 def shutdown_scheduler():
@@ -25,7 +25,7 @@ def shutdown_scheduler():
         try:
             _scheduler.shutdown(wait=True)
             logger.info("Scheduler shutdown complete")
-            print("✅ Scheduler stopped")
+            print("[OK] Scheduler stopped")
         except Exception as e:
             logger.error(f"Error during scheduler shutdown: {e}")
         finally:
