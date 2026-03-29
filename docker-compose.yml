@@ -1,4 +1,4 @@
-cpdservices:
+services:
   api:
     build: ./backend
     ports:
