@@ -138,6 +138,7 @@ backend/migrations/versions/
 backend/.pytest_cache/
 backend/User_Guidelines.md
 backend/tests/
+CLAUDE.md
 
 
 # Database files
@@ -284,4 +285,6 @@ pids/
 .agent/
 .kilocode/
 .claude/
+.qwen/
+
 

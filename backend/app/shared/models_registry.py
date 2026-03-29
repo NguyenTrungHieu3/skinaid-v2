@@ -4,7 +4,6 @@ from app.modules.auth.models.permissions import Permission
 from app.modules.auth.models.role_permissions import RolePermission
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.user_roles import UserRole
-from app.modules.auth.models.token_blacklist import TokenBlacklist
 from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user_profile import UserProfile
 from app.modules.guest.models.guest_session import GuestSession
@@ -19,14 +18,14 @@ from app.modules.ai.models.model_performance import ModelPerformance
 from app.modules.chatbot.models.chat_sessions import ChatSession
 from app.modules.chatbot.models.chat_messages import ChatMessage
 from app.modules.users.models.device_sessions import DeviceSession
-from app.modules.audit.models.rate_limits import RateLimit
-from app.modules.firstaid.models.guide_analytics import GuideAnalytics
 from app.modules.notifications.models.notification import Notification
+from app.modules.rag.models.rag_document import RagDocument
 
 __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
-    "UserRole", "TokenBlacklist", "TokenFamily", "UserProfile",
+    "UserRole", "TokenFamily", "UserProfile",
     "GuestSession", "AuditLog", "FirstAidGuide", "Analysis", "Detection",
     "AIResult", "UserInput", "AIModel", "ModelPerformance", "ChatSession",
-    "ChatMessage", "DeviceSession", "RateLimit", "GuideAnalytics", "Notification"
+    "ChatMessage", "DeviceSession", "Notification",
+    "RagDocument",
 ]

@@ -1,8 +1,9 @@
 from typing import Optional, List, Dict, Any
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import get_db
 from .token import extract_token, decode_and_verify_token
+from .oauth2 import oauth2_scheme, oauth2_scheme_optional
 from .user import (
     get_user_by_id,
     check_email_verified,
@@ -11,14 +12,8 @@ from .user import (
 )
 from app.modules.users.models.user import User
 
-async def get_token(authorization: Optional[str] = Header(None)) -> str:
-    token = await extract_token(authorization)
-    if token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization header missing",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+
+async def get_token(token: str = Depends(oauth2_scheme)) -> str:
     return token
 
 
@@ -74,11 +69,9 @@ def allow_access(
     allow_guest_only: bool = False,
 ):
     async def dependency(
-        authorization: Optional[str] = Header(None),
+        token: Optional[str] = Depends(oauth2_scheme_optional),
         db: AsyncSession = Depends(get_db),
     ) -> Optional[User]:
-
-        token = await extract_token(authorization)
 
         if allow_guest_only and token:
             raise HTTPException(
