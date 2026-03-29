@@ -1,0 +1,255 @@
+/* --- Container chính của Sidebar (Flex DỌC) --- */
+
+.sidebarContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0.5rem;
+  gap: 1.5rem;
+}
+
+/* --- Wrapper cho các thanh điều khiển --- */
+.topControlsWrapper {
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+/* --- 1. Search Bar --- */
+.searchBar {
+  position: relative;
+  /* flex: 1 1 100%; */
+  min-width: 0;
+}
+
+.searchBar input {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  transition: all 0.2s ease;
+}
+
+.searchBar input:focus {
+  outline: none;
+  border-color: #00897b;
+  box-shadow: 0 0 0 3px rgba(0, 137, 123, 0.1);
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  color: #6b7280;
+  cursor: pointer;
+}
+
+/* --- 2. Filter Section --- */
+.filterSection {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  /* flex: 1 0 auto; */
+  min-width: 120px;
+  position: relative;
+  overflow: visible;
+  z-index: 5;
+}
+
+.activeLabel {
+  color: #00897b; /* Màu xanh chủ đạo */
+  font-weight: 700;
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #d1d5db;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.85rem;
+  cursor: default;
+  border-radius: 8px;
+  position: relative;
+  z-index: 11;
+  user-select: none;
+}
+
+/* Icons trong header (Filter, SlidersHorizontal) */
+.filterIcon,
+.accuracyIcon {
+  cursor: pointer; /* CHỈ icon mới click được */
+  transition: opacity 0.2s ease;
+}
+.filterIcon:hover,
+.accuracyIcon:hover {
+  opacity: 0.7; /* Hiệu ứng hover cho icon */
+}
+
+.filterOptions {
+  /* THAY ĐỔI LỚN Ở ĐÂY - Biến thành dropdown */
+  position: absolute; /* 1. Nhấc ra khỏi luồng */
+  z-index: 10; /* 2. Nổi lên trên logo */
+  top: 100%; /* 3. Đặt ngay dưới .filterSection (cha) */
+  left: -1px; /* 4. Căn chỉnh với border của cha */
+  right: -1px; /* 5. Căn chỉnh với border của cha */
+
+  /* 6. Thêm style cho dropdown */
+  border: 1px solid #d1d5db;
+  border-top: none; /* Vì header đã có border-bottom */
+  border-radius: 0 0 8px 8px; /* Bo góc dưới */
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.05); /* Thêm bóng đổ */
+
+  /* (Giữ nguyên các thuộc tính khác) */
+  display: flex;
+  flex-direction: column;
+}
+
+.filterButton {
+  padding: 12px 12px;
+  text-align: left;
+  border: none;
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #374151;
+  transition: all 0.2s ease;
+  font-family: "Inter", sans-serif;
+}
+
+.filterButton:last-child {
+  border-bottom: none;
+}
+
+.filterButton:hover {
+  background-color: #f0f9f8;
+  color: #00897b;
+}
+
+.activeFilter {
+  background-color: #e0f2f1;
+  color: #00796b;
+  font-weight: 600;
+  border-left: 3px solid #00796b;
+  padding-left: 9px;
+}
+
+/* --- Logo Wrapper --- */
+.logoWrapper {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 1.5rem;
+  min-height: 120px;
+}
+
+/* --- Logo Image --- */
+.realLogo {
+  max-width: 150px;
+  height: auto;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.realLogo:hover {
+  opacity: 0.8;
+}
+
+/* TABLET: 768px - 1024px */
+/* @media (max-width: 1024px) {
+  .sidebarContainer {
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+
+  .topControlsWrapper {
+    gap: 0.75rem;
+  }
+
+  .logoWrapper {
+    padding-top: 1rem;
+    min-height: 100px;
+  }
+
+  .realLogo {
+    max-width: 130px;
+  }
+} */
+
+/* ... Code desktop giữ nguyên ... */
+
+/* MOBILE: Below 768px */
+@media (max-width: 1024px) {
+  .sidebarContainer {
+    /* --- QUAN TRỌNG: BỎ FIXED ĐỂ NÓ NẰM TRONG LUỒNG TRANG --- */
+    position: static; /* Hoặc relative */
+    height: auto; /* Chiều cao tự động */
+    width: 100%; /* Full chiều rộng */
+
+    /* Padding xung quanh nội dung sidebar */
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+
+    /* Xóa các thuộc tính cũ gây lỗi */
+    top: auto;
+    left: auto;
+    background-color: #fff; /* Nền trắng */
+  }
+
+  /* Wrapper chứa Search và Filter */
+  .topControlsWrapper {
+    display: flex; /* Dùng flex để search và filter nằm ngang hoặc dọc tùy ý */
+    flex-direction: row; /* Để nằm ngang hàng nhau cho gọn */
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* Thanh tìm kiếm: Chiếm phần lớn diện tích */
+  .searchBar {
+    flex: 1; /* Tự động giãn hết khoảng trống */
+  }
+
+  /* Nút lọc: Nằm gọn bên cạnh */
+  .filterSection {
+    flex: 0 0 auto; /* Không co giãn, giữ kích thước nội dung */
+    min-width: auto; /* Bỏ min-width cũ */
+  }
+
+  /* Chỉnh lại dropdown filter để không bị tràn màn hình */
+  .filterOptions {
+    right: 0;
+    left: auto; /* Căn phải để không bị mất menu bên trái */
+    width: 200px; /* Độ rộng cố định cho menu dropdown */
+    max-height: 50vh;
+  }
+
+  /* Ẩn logo trên mobile để tiết kiệm diện tích */
+  .logoWrapper {
+    display: none;
+  }
+}
+
+/* SMALL MOBILE: Below 480px */
+@media (max-width: 480px) {
+  /* Nếu màn hình quá nhỏ thì cho search và filter xuống dòng */
+  .topControlsWrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterOptions {
+    width: 100%; /* Dropdown full width */
+  }
+}

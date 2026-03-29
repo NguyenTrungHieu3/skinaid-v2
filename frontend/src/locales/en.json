@@ -1,0 +1,881 @@
+{
+  "title": {
+    "home_page": "Home page - SkinAid",
+    "upload_page": "Upload page - SkinAid",
+    "map_page": "Medical facility map - SkinAid",
+    "about_page": "About - SkinAid",
+    "login_page": "Login",
+    "register_page": "Register",
+    "forgot_password_page": "Forgot Password",
+    "reset_password_page": "Reset Password",
+    "analysis_result": "Analyzed Result - SkinAid",
+    "history_page": "History - {{fullname}}",
+    "admin_dashboard": "Dashboard - Admin",
+    "admin_logs": "Admin Logs",
+    "admin_user_management": "User Management",
+    "admin_first_aid": "Fist-Aid Management"
+  },
+  "auth_page": {
+    "left_title": "Welcome to SkinAid",
+    "left_desc": "Smart Wound Detection & Classification Support System",
+    "login_tab": "LOGIN",
+    "register_tab": "REGISTER",
+    "username": "Username",
+    "username_placeholder": "Enter your username",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot Password?",
+    "email": "Email",
+    "confirm_password": "Confirm Password",
+    "confirm_password_placeholder": "Re-enter your password",
+    "male": "Male",
+    "female": "Female",
+    "term": "I agree to the Terms and Conditions",
+    "login_button": "Login",
+    "register_button": "Register",
+    "forgot_password_title": "Forgot Your Password?",
+    "forgot_password_subtitle": "No worries! Enter your email address and we'll send you a link to reset your password.",
+    "forgot_password_email": "Email Address",
+    "forgot_password_button": "Send Reset Link",
+    "forgot_password_back_to_login": "Back to Login",
+    "forgot_password_tip": "Tip: ",
+    "forgot_password_tip_desc": "Make sure to use the email address associated with your account.",
+    "reset_password_title": "Reset Your Password",
+    "reset_password_subtitle": "Please enter your new password below.",
+    "reset_password_new": "New Password",
+    "reset_password_confirm": "Confirm New Password",
+    "reset_new_password_placeholder": "Enter new password",
+    "reset_confirm_password_placeholder": "Confirm new password",
+    "reset_password_button": "Reset Password",
+    "reset_password_button_sub": "Update!",
+    "reset_password_back_to_login": "Back to Login",
+
+    "session_expired": {
+      "title": "Session expired",
+      "message": "Your session has ended. Please log in again to continue.",
+      "button": "Log in again"
+    },
+    "loading": "Loading SkinAid..."
+  },
+  "validation": {
+    "error_username_required": "Username is required.",
+    "error_username_less_than_3": "Username must be at least 3 characters.",
+    "error_username_more_than_50": "Username cannot exceed 50 characters.",
+    "error_username_format": "Username can only contain letters, numbers, underscores (_), and hyphens (-). No spaces or diacritics allowed.",
+    "error_password_required": "Password is required.",
+    "error_password_less_than_8": "Password must be at least 8 characters.",
+    "error_password_uppercase": "Password must contain at least one uppercase letter.",
+    "error_password_one_number": "Password must contain at least one number.",
+    "error_password__special_character": "Password must contain at least one special character (!@#$%^&*).",
+    "error_confirm_password_required": "Please confirm your password.",
+    "error_confirm_passwords_not_match": "Passwords do not match.",
+    "error_email_required": "Email is required.",
+    "error_email_invalid": "Please enter a valid email address.",
+    "error_terms_required": "You must agree to the Terms and Conditions."
+  },
+  "header": {
+    "home": "Home",
+    "upload_image": "Upload Image",
+    "wound_history": "Wound History",
+    "about": "About",
+    "hi": "Hi",
+    "sign_out": "Sign out",
+    "sign_in": "Sign in",
+    "sign_up": "Sign up",
+    "features": "Features",
+    "how_it_works": "How It Works",
+    "map": "Nearby Medical Facility",
+    "why_skinaid": "Why SkinAid?",
+    "trust_safety": "Trust & Safety",
+    "medical_disclaimer": "Medical Disclaimer",
+    "explore": "Explore"
+  },
+  "footer": {
+    "title_desc": "AI web application to recognize, classify and support first aid for wounds.",
+    "column_1": "Platform",
+    "column_1_uploadIMG": "Upload Image",
+    "column_1_history": "History",
+    "column_1_security": "Security",
+    "column_2": "Support",
+    "column_2_contact": "Contact",
+    "column_2_support_center": "Support Center",
+    "column_2_api": "API",
+    "column_3": "Company",
+    "column_3_about": "About",
+    "column_3_careers": "Careers",
+    "column_3_privacy": "Privacy",
+    "bottom_bar": "© 2025 SkinAid. All rights reserved."
+  },
+  "home_page": {
+    "title": "Home page",
+    "hero_desc": "SkinAid supports everyday users by combining wound detection, tailored first aid guidance, and easy-to-use wound history tracking into a user-friendly web application, designed to make healthcare more accessible and practical in everyday life.",
+    "hero_analysis_button": "Start Analysis",
+    "hero_demo_button": "Watch Demo",
+    "feature_title": "SkinAid – Smart Wound Support Platform",
+    "feature_title_desc": "A simple tool to help users detect wounds, receive first-aid guidance, and track wound history.",
+    "feature_card1_title": "Wound Detection & Classification",
+    "feature_card1_desc": "Upload and manage wound images with detailed information.",
+    "feature_card1_item1": "Detect and categorize different wound types",
+    "feature_card1_item2": "Provide simple results in user-friendly format",
+    "feature_card1_item3": "Store and organize your wound images",
+    "feature_card2_title": "First-Aid Guidance",
+    "feature_card2_desc": "Offer standardized first-aid steps tailored to wound type.",
+    "feature_card2_item1": "Cleaning and disinfection instructions",
+    "feature_card2_item2": "Bleeding control and bandaging guidance",
+    "feature_card2_item3": "Highlight warning signs for infection",
+    "feature_card3_title": "Wound History Tracking",
+    "feature_card3_desc": "Enable users to track and review their wound images.",
+    "feature_card3_item1": "Upload multiple images",
+    "feature_card3_item2": "View past results",
+    "feature_card3_item3": "Monitor wound progression",
+    "stats_item1_desc": "Healthcare Professionals",
+    "stats_item2_desc": "Images Processed",
+    "stats_item3_desc": "Accuracy Rate",
+    "stats_item4_desc": "Platform Availability",
+    "how_work_title": "How SkinAid Works",
+    "how_work_desc": "From image capture to AI analysis and treatment recommendations, see how SkinAid transforms wound care documentation in three simple steps.",
+    "how_work_step1_title": "Upload Your Wound Image",
+    "how_work_step1_desc": "Upload high-resolution wound images using standardized imaging protocols for unified documentation.",
+    "how_work_step1_item1": "Wound_Image01.jpg",
+    "how_work_step1_item1_status": "Uploaded",
+    "how_work_step2_title": "AI Detection & Classification",
+    "how_work_step2_desc": "Advanced AI algorithms will analyze the wound, provide measurements, classify and assess the extent of the wound.",
+    "how_work_step2_item1": "Type",
+    "how_work_step2_item1_result": "Abrasion",
+    "how_work_step2_item2": "Level",
+    "how_work_step2_item2_result": "Mild",
+    "how_work_step2_item3": "Accuracy",
+    "how_work_step2_item3_result": "90%",
+    "how_work_step3_title": "First Aid Guide",
+    "how_work_step3_desc": "Get standardized treatment recommendations and first aid guidance from reputable medical sources.",
+    "how_work_step3_item1": "First-Aid guide",
+    "how_work_step3_item1_desc": "Standardized by WHO",
+    "how_work_step3_item2": "Wash your hands with soap and water.",
+    "how_work_step3_item3": "Use a clean gauze/cloth to apply direct pressure to stop the bleeding.",
+    "how_work_step3_item4": "Wash the wound with clean water or saline solution.",
+    "how_work_step3_item5": "Lightly disinfect the wound, avoid deep penetration.",
+    "how_work_step3_item6": "Let dry, cover with sterile gauze or medical tape.",
+    "how_work_step3_item7": "Rest, avoid impact on the injured area.",
+    "why_skinaid_title": "Why Choose SkinAid?",
+    "why_skinaid_item1_title": "Smart AI",
+    "why_skinaid_item1_desc": "Identifies >3 common wound types (Burns, Abrasions, Cuts...).",
+    "why_skinaid_item2_title": "Medical Standard",
+    "why_skinaid_item2_desc": "First aid process based on WHO/Ministry of Health data.",
+    "why_skinaid_item3_title": "Easy to Use",
+    "why_skinaid_item3_desc": "No medical knowledge required, accessible to everyone.",
+    "why_skinaid_item4_title": "Tracking",
+    "why_skinaid_item4_desc": "Save wound history for easy progress monitoring.",
+    "medical_disclaimer": "SkinAid is a first aid support tool and does not replace diagnosis and treatment by a specialist. In case of emergency, please visit a medical facility immediately."
+  },
+  "map": {
+    "title": "Nearby Medical Facility",
+    "subtitle": "Find hospitals, clinics near you",
+    "list_view": "List",
+    "map_view": "Map",
+    "search_placeholder": "Search hospitals, clinics, pharmacies...",
+    "filter": "Filters",
+    "filter_all": "All",
+    "filter_hospital": "Hospitals",
+    "filter_clinic": "Clinics",
+    "filter_pharmacy": "Pharmacies",
+    "radius_label": "Search radius",
+    "min": "MIN",
+    "current": "CURRENT",
+    "max": "MAX",
+    "results": "Results",
+    "facilities": "facilities",
+    "loading": "Loading...",
+    "no_results": "No matching medical facilities found",
+    "call": "Call",
+    "directions": "Directions",
+    "website": "Website",
+    "share": "Share",
+    "your_location": "Your location",
+    "start_point": "Choose starting point",
+    "end_point": "Choose destination",
+    "mode_drive": "Drive",
+    "mode_bike": "Motorbike/Bike",
+    "mode_walk": "Walk",
+    "fastest_route": "Fastest route available",
+    "route_details": "Route details",
+    "start_at": "Start at:",
+    "arrive_at": "Arrive at:",
+    "tooltip_directions": "Directions",
+    "tooltip_call": "Call",
+    "tooltip_website": "Website",
+    "tooltip_share": "Share",
+    "alert_route_error": "Cannot find route",
+    "alert_location_required": "Please allow location access to use directions",
+    "alert_copied": "Information copied to clipboard",
+    "share_text": "Medical facility: {{name}}\\n{{address}}",
+    "back_to_list": "Back to list",
+    "geolocation_not_supported": "Your browser does not support location services",
+    "location_error": "Could not get your location",
+    "location_permission_denied": "Location access denied. Please allow location in browser settings.",
+    "location_unavailable": "Location information unavailable",
+    "location_timeout": "Location request timed out",
+    "getting_location": "Getting location...",
+    "retry_location": "Get my location"
+  },
+  "upload_page": {
+    "title": "Upload Skin Wound Image",
+    "desc": "Drag and drop your medical images here, or click to browse your device",
+    "condition": "Maximum file size: 5MB per image",
+    "loading": "Analyzing...",
+    "drop": "Drop your file anywhere to upload",
+    "error": {
+      "file_too_large": "File is too large. Maximum file size is {{size}}MB per image.",
+      "invalid_type": "Invalid file type. Please upload JPEG, PNG, JPG",
+      "dimensions": "Image dimensions must be between {{minW}}x{{minH}}px and {{maxW}}x{{maxH}}px.",
+      "corrupted": "Could not read image file (It might be corrupted).",
+      "resize_needed": "Image adjustment needed for better results."
+    }
+  },
+  "upload": {
+    "issue": {
+      "blur": "Image is blurry",
+      "dark": "Image is too dark",
+      "bright": "Overexposure detected"
+    },
+    "warning": {
+      "resize": "Resize required",
+      "quality": "Quality Issues Detected"
+    },
+    "label": {
+      "zoom": "Zoom"
+    },
+    "btn": {
+      "confirm_crop": "Confirm Crop",
+      "retake": "Retake",
+      "ignore": "Ignore & Continue",
+      "enhance": "Auto-Enhance",
+      "enhancing": "Enhancing...",
+      "analyze": "Start Analysis"
+    },
+    "status": {
+      "ready": "Image looks good!",
+      "scanning": "Please wait..."
+    },
+    "note": {
+      "enhance_tip": "We can try to fix this automatically.",
+      "ready_tip": "Ready to send to AI for wound analysis."
+    }
+  },
+  "analysis": {
+    "sidebar_complete": "Analysis Complete",
+    "sidebar_complete_desc": "Analysis Complete",
+    "sidebar_summary": "Summary",
+    "sidebar_summary_desc": "Detect the total number of wounds in your image",
+    "sidebar_wound_count_one": "{{count}} wound",
+    "sidebar_wound_count_other": "{{count}} wounds",
+    "sidebar_summary_total": "Total Wounds",
+    "sidebar_summary_burn": "Burns",
+    "sidebar_summary_abrasion": "Abrasions",
+    "sidebar_summary_bruise": "Bruise",
+    "sidebar_summary_cut": "Cuts",
+    "sidebar_summary_acne": "Acne",
+    "sidebar_summary_fungal": "Fungal Infection",
+    "sidebar_summary_psoriasis": "Psoriasis",
+    "sidebar_details": "Details",
+    "sidebar_details_desc": "List of each type of wound",
+    "sidebar_no_wounds_found": "No wounds found for this category.",
+    "header_upload_button": "Upload image",
+    "header_save_button": "Save",
+    "header_download_button": "Download",
+    "medical_title": "Important Medical Information Notice",
+    "medical_desc": "AI analysis is for informational purposes only and is not a substitute for professional medical advice. The purpose of this analysis is to help people gain a more accurate view of the wound condition, but it cannot replace actual clinical assessment. Always consult a doctor or medical professional for safe and appropriate diagnosis and treatment.",
+    "image_title": "Analyzed Image",
+    "detail_title": "WOUND DETECTION LIKELIHOOD",
+    "detail_wound": "Wound",
+    "detail_severity": "Severity",
+    "detail_healing_time": "Est. Healing Time",
+    "detail_items": "Support Items Identified",
+    "treatment_title": "Treatment Recommendations",
+    "treatment_desc": "Follow these evidence-based care guidelines for optimal healing",
+    "treatment_immediate_label": "First aid steps",
+    "treatment_immediate_sub_label": "Steps to take now - {{step_length}} steps",
+    "treatment_ongoing_label": "Ongoing Care (Daily Care)",
+    "treatment_ongoing_sub_label": "Things you should do - {{item_length}} items",
+    "treatment_not_recommended_label": "Not recommended",
+    "treatment_not_recommended_sub_label": "Things to avoid - {{item_length}} items",
+    "treatment_not_step": "There are no specific instructions.",
+    "wound_type": {
+      "abrasion": "Abrasion",
+      "burn": "Burn",
+      "bruise": "Bruise",
+      "cut": "Cut",
+      "acne": "Acne",
+      "fungal": "Fungal Infection",
+      "psoriasis": "Psoriasis"
+    },
+    "wound_type_uppercase": {
+      "Abrasion": "Abrasion",
+      "Burn": "Burn",
+      "Bruise": "Bruise",
+      "Cut": "Cut",
+      "Acne": "Acne",
+      "Fungal": "Fungal Infection",
+      "Psoriasis": "Psoriasis"
+    },
+    "wound_sub": {
+      "blister": "Blister",
+      "skintear": "Skintear"
+    },
+    "severity": {
+      "Mild": "Mild",
+      "Moderate": "Moderate",
+      "Severe": "Severe"
+    }
+  },
+  "download": {
+    "title": "Download Report",
+    "subtitle": "Select the format you want to export:",
+    "format_pdf_title": "PDF Document",
+    "format_pdf_desc": "Best for sharing and printing.",
+    "format_csv_title": "CSV File",
+    "format_csv_desc": "Useful for spreadsheets and data analysis.",
+    "select_wounds": "Select wounds to include:",
+    "full_report": "Full report will be generated.",
+    "custom_report": "Custom report with selected wounds.",
+    "button_cancel": "Cancel",
+    "button_download": "Download ",
+    "severity_label": "Severity",
+    "confidence": "Confidence"
+  },
+  "history": {
+    "loading": {
+      "timeline": "Loading timeline...",
+      "detail": "Loading details..."
+    },
+    "error": {
+      "load": "Unable to load data.",
+      "detail": "Errors : {{errors}}"
+    },
+    "empty": {
+      "history": "No analysis history available.",
+      "detail": "No detail available."
+    },
+    "auth": {
+      "not_logged_in": "You must log in to view history."
+    },
+    "sidebar": {
+      "search_placeholder": "Search history..."
+    },
+    "timeline": {
+      "title": "Analysis Timeline",
+      "default_label": "Timeline"
+    },
+    "view": "View",
+    "analysis": "Analysis",
+    "detail": {
+      "title": "Analysis Details"
+    },
+    "search_placeholder": "Search events...",
+    "filter_label": "Filter",
+    "date_filters": {
+      "1_day": "1 day",
+      "3_days": "3 days",
+      "7_days": "7 days",
+      "1_month": "1 month",
+      "newest": "Newest → Oldest",
+      "oldest": "Oldest → Newest",
+      "all": "Remove filter"
+    },
+    "no_logo_fallback": "Logo",
+    "upload_button": "Upload Image / Data",
+    "service": {
+      "analysis_title": "Analysis",
+      "no_wounds": "No wounds detected",
+      "error_load_history": "Error loading history",
+      "error_load_detail": "Error loading details",
+      "error_delete": "Error deleting analysis"
+    },
+    "detail": {
+      "back_button": "Back",
+      "confirm_delete": "Confirm Delete",
+      "delete_message": "Are you sure you want to delete this analysis record? This action cannot be undone.",
+      "cancel_button": "No, keep it",
+      "confirm_delete_button": "Yes, delete record",
+      "deleting": "Deleting...",
+      "no_detail": "No analysis details available for this event.",
+      "analysis_details": "Analysis Details",
+      "accuracy": "Accuracy",
+      "healing_time": "Estimated Healing Time (Expected)",
+      "supplies_needed": "Supplies Needed",
+      "first_aid": "First Aid Tips",
+      "should_do": "Should Do",
+      "should_not_do": "Should Not Do",
+      "no_info": "No information."
+    }
+  },
+  "profile": {
+    "banner_date": "Member since",
+    "delete_avatar": "Delete avatar",
+    "delete_avatar_confirm_title": "Confirm deletion",
+    "delete_avatar_confirm_desc": "Are you sure you want to delete the current avatar? This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete avatar"
+  },
+  "settings": {
+    "title": "Settings",
+    "notifications": "Notifications",
+    "email_title": "Email Notifications",
+    "email_desc": "Receive email updates about wound progress",
+    "push_nofi_title": "Push Notifications",
+    "push_nofi_desc": "Get real-time alerts on your mobile device",
+    "security_title": "Security",
+    "password_title": "Change Password",
+    "password_old": "Old password",
+    "password_new": "New password",
+    "password_confirmNew": "Confirm new password",
+    "password_desc": "We recommend updating your password regularly for added security.",
+    "password_button": "Change",
+    "appearance": "Appearance",
+    "language_title": "Language",
+    "language_desc": "Set your preferred language",
+    "mode_title": "Dark mode",
+    "mode_desc": "Toggle between light and dark theme"
+  },
+  "overview": {
+    "title": "Overview",
+    "recent_analyses": "Recent Analyses",
+    "view_all": "View All",
+    "no_data": "No recent analyses found.",
+    "view": "View",
+    "quick_actions": "Quick Actions",
+    "upload_new_image": "Upload New Image",
+    "export_report": "Export Report"
+  },
+  "personalInfo": {
+    "title": "Personal Info",
+    "basic_info": "Basic Information",
+    "full_name": "Full Name",
+    "email": "Email",
+    "phone": "Phone number",
+    "dob": "Day of birth",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "address": "Address",
+    "cancel_button": "Cancel",
+    "save_button": "Save",
+    "medical_info": "Medical Information",
+    "blood_type": "Blood Type",
+    "known_allergies": "Known Allergies",
+    "current_medications": "Current Medications",
+    "emergency_contact": "Emergency Contact",
+    "crop_title": "Edit profile picture",
+    "crop_zoom": "Zoom",
+
+    "validation": {
+      "fullName_invalid": "Full name must not contain numbers or special characters.",
+      "fullName_too_short": "Full name is too short.",
+      "phone_invalid": "Phone numbers must only contain numbers.",
+      "phone_format": "Phone numbers must have 10 digits and start with 0.",
+      "dob_future": "Date of birth is invalid.",
+      "gender_invalid": "Gender is invalid.",
+      "address_too_short": "Address is too short."
+    }
+  },
+  "button": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "upload_image": "Upload Image",
+    "update_password": "Update password"
+  },
+  "placeholder": {
+    "old_password": "Enter your current password",
+    "new_password": "Enter new password (min. 8 chars)",
+    "confirmNew_password": "Confirm your new password"
+  },
+  "about": {
+    "hero_title": "Welcome to <strong>SkinAid</strong>",
+    "hero_subtitle": "Your intelligent companion for wound care, powered by artificial intelligence to provide instant detection, accurate assessment, and personalized guidance.",
+    "hero_button": "Get Started",
+    "what_is_title": "What is SkinAid?",
+    "what_is_p1": "SkinAid is a revolutionary AI-powered platform designed to make professional-grade wound care accessible to everyone. Using advanced machine learning technology, we help you detect, monitor, and manage wounds with confidence.",
+    "what_is_p2": "Whether you're dealing with a minor cut, burn, or chronic wound, SkinAid provides instant analysis and evidence-based treatment recommendations—anytime, anywhere.",
+    "what_is_p3": "Founded in 2024, we've already helped thousands of users better understand and care for their wounds, bridging the gap between everyday injuries and professional medical care.",
+    "how_title": "How SkinAid Works",
+    "how_subtitle": "Get professional wound assessment in three simple steps",
+    "step_1_label": "Step 1",
+    "step_1_title": "Upload Photo",
+    "step_1_desc": "Take a clear photo of the wound using your smartphone or camera and upload it to SkinAid.",
+    "step_2_label": "Step 2",
+    "step_2_title": "AI Analysis",
+    "step_2_desc": "Our advanced AI instantly analyzes the image to detect wound type, size, and severity.",
+    "step_3_label": "Step 3",
+    "step_3_title": "Get Guidance",
+    "step_3_desc": "Receive personalized care recommendations and track healing progress over time.",
+    "features_title": "Why Choose SkinAid?",
+    "features_subtitle": "Combining cutting-edge technology with medical expertise to deliver exceptional wound care support",
+    "f_ai_title": "AI-Powered Accuracy",
+    "f_ai_desc": "94% accuracy rate with AI trained on thousands of medical images and validated by healthcare professionals.",
+    "f_instant_title": "Instant Results",
+    "f_instant_desc": "Get comprehensive wound analysis in seconds, available 24/7 whenever you need it.",
+    "f_security_title": "HIPAA Compliant",
+    "f_security_desc": "Your health data is protected with enterprise-grade security and end-to-end encryption.",
+    "f_evidence_title": "Evidence-Based Care",
+    "f_evidence_desc": "Treatment recommendations based on the latest medical research and clinical guidelines.",
+    "f_mobile_title": "Mobile Friendly",
+    "f_mobile_desc": "Access SkinAid anywhere, anytime on your smartphone, tablet, or computer with our responsive design.",
+    "f_easy_title": "Easy to Use",
+    "f_easy_desc": "Simple, intuitive interface designed for everyone—no medical knowledge required."
+  },
+  "admin": {
+    "top_bar": {
+      "logout_confirm_title": "Confirm logout",
+      "logout_confirm": "Are you sure you want to logout?",
+      "logout": "Logout",
+      "cancel": "Cancel",
+      "roles": {
+        "admin": "Administrator",
+        "moderator": "Moderator",
+        "user": "User"
+      }
+    },
+    "sidebar": {
+      "portal_title": "Admin Portal",
+      "dashboard": "Dashboard",
+      "user_management": "User Management",
+      "first_aid_guidance": "First Aid Guidance",
+      "admin_logs": "Admin Logs",
+      "system_status": "System Status",
+      "operational": "All systems operational",
+      "active": "Active"
+    },
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "subtitle": "Overview of system performance and statistics",
+      "refresh": "Refresh Data",
+      "refreshing": "Refresh...",
+      "loading": "Loading dashboard...",
+      "retry": "Retry",
+      "periods": {
+        "today": "Today",
+        "last_7_days": "Last 7 Days",
+        "last_30_days": "Last 30 Days",
+        "last_year": "Last Year",
+        "all_time": "All Time",
+        "yesterday": "yesterday",
+        "last_week": "last week",
+        "last_month": "last month",
+        "previous_period": "previous period",
+        "last_period": "last period"
+      },
+      "stats": {
+        "total_users": "Total Users",
+        "new_users": "New users",
+        "total_uploads": "Total Uploads",
+        "new_uploads": "New uploads",
+        "total_detections": "Total Detections",
+        "new_detection": "New detections",
+        "model_accuracy": "Model Accuracy",
+        "high_confidence": "High confidence",
+        "from": "from"
+      },
+      "charts": {
+        "wound_distribution_title": "Wound Type Distribution",
+        "wound_distribution_desc": "Breakdown of wound classifications",
+        "severity_stats_title": "Severity Level Stats",
+        "severity_stats_desc": "Distribution of wound severity",
+        "number_of_cases": "Number of Cases",
+        "cases": "cases",
+        "severity_label": "Severity"
+      },
+      "logs": {
+        "recent_logs_title": "Recent Logs",
+        "recent_logs_desc": "System notifications and alerts",
+        "severity": {
+          "high": "High",
+          "medium": "Medium",
+          "low": "Low"
+        },
+        "actions": {
+          "login": "Login",
+          "logout": "Logout",
+          "create_guest_session": "Create guest session",
+          "guest_session_created": "Guest session created",
+          "create_user": "Create user",
+          "update_user": "Update user",
+          "delete_user": "Delete user",
+          "upload_image": "Upload image",
+          "detect_wound": "Detect wound",
+          "view_firstaid": "View first aid",
+          "create_firstaid": "Create first aid guide",
+          "update_firstaid": "Update first aid guide",
+          "delete_firstaid": "Delete first aid guide"
+        },
+        "resources": {
+          "user": "User",
+          "guest_session": "Guest session",
+          "image": "Image",
+          "wound_analysis": "Wound analysis",
+          "firstaid_guide": "First aid guide",
+          "system": "System"
+        }
+      }
+    },
+    "user_management": {
+      "title": "User Management",
+      "subtitle": "Manage users and permissions",
+      "add_user": "Add New User",
+      "total_users": "Total Users",
+      "showing": "Showing {{start}}-{{end}} of {{total}}",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "table": {
+        "loading": "Loading users...",
+        "no_users": "No users found",
+        "adjust_filters": "Try adjusting your filters",
+        "headers": {
+          "name": "Name",
+          "email": "Email",
+          "role": "Role",
+          "status": "Status",
+          "uploads": "Uploads",
+          "join_date": "Join Date",
+          "actions": "Actions"
+        },
+        "no_name": "No Name",
+        "status_active": "Active",
+        "status_inactive": "Inactive",
+        "actions": {
+          "edit": "Edit",
+          "deactivate": "Deactivate",
+          "activate": "Activate",
+          "processing": "Processing...",
+          "delete": "Delete",
+          "deleting": "Deleting..."
+        }
+      },
+      "form": {
+        "title_edit": "Edit User",
+        "title_add": "Add New User",
+        "labels": {
+          "email": "Email",
+          "username": "Username",
+          "password": "Password",
+          "password_optional": "(Leave blank to keep unchanged)",
+          "role": "Role"
+        },
+        "password_hint": "At least 8 characters with 1 uppercase, 1 lowercase, and 1 number",
+        "buttons": {
+          "cancel": "Cancel",
+          "update": "Update User",
+          "create": "Create User",
+          "updating": "Updating...",
+          "creating": "Creating..."
+        },
+        "errors": {
+          "email_required": "Email is required",
+          "email_invalid": "Invalid email format",
+          "name_required": "Display name is required",
+          "name_min": "Display name must be at least 2 characters",
+          "name_max": "Display name must not exceed 50 characters",
+          "password_required": "Password is required",
+          "password_invalid": "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number",
+          "role_required": "Role is required"
+        }
+      }
+    },
+    "first_aid": {
+      "title": "First Aid Guidance Management",
+      "subtitle": "Manage wound care and first aid content",
+      "add_guidance": "Add New Guidance",
+      "total_guides": "Total Guides",
+      "active_guides": "Active Guides",
+      "wound_types": "Wound Types",
+      "search_placeholder": "Search by title...",
+      "filter_wound_type": "Wound Type",
+      "filter_wound_type_all": "All Types",
+      "filter_severity": "Severity",
+      "filter_severity_all": "All Severities",
+      "filter_status": "Active Status",
+      "filter_status_all": "All",
+      "filter_status_active": "Active",
+      "filter_status_inactive": "Inactive",
+      "no_guides": "No first aid guides found",
+      "try_adjusting": "Try adjusting your filters",
+      "view_details": "View Details",
+      "more_steps": "more steps",
+      "loading": "Loading first aid guides..."
+    },
+    "logs": {
+      "title": "System Logs",
+      "subtitle": "View and manage system logs",
+      "security_notice": "Security Notice",
+      "security_desc": "This system is monitored. Unauthorized access or misuse will be logged and reported.",
+      "table": {
+        "loading": "Loading logs...",
+        "try_again": "Try Again",
+        "no_logs": "No logs found matching your criteria",
+        "title": "System Activity",
+        "showing": "Showing {{start}}-{{end}} of {{total}}",
+        "headers": {
+          "time": "Time",
+          "type": "Type",
+          "username": "Username",
+          "role": "Role",
+          "action": "Action",
+          "details": "Details",
+          "view_details": "View Details"
+        }
+      },
+      "details": {
+        "title": "Log Details",
+        "summary": "Summary",
+        "timestamp": "Timestamp:",
+        "action": "Action:",
+        "severity": "Severity:",
+        "user": "User:",
+        "full_details": "Full Details",
+        "close": "Close"
+      },
+      "filters": {
+        "search_placeholder": "Search logs...",
+        "all_types": "All Types",
+        "success": "Success",
+        "error": "Error",
+        "all_roles": "All Roles",
+        "refresh": "Refresh",
+        "roles": {
+          "user": "User",
+          "admin": "Admin",
+          "guest": "Guest"
+        }
+      },
+      "types": {
+        "success": "Success",
+        "error": "Error",
+        "info": "Info",
+        "warning": "Warning"
+      }
+    },
+    "user_filters": {
+      "search_placeholder": "Search users...",
+      "all_roles": "All Roles",
+      "all_status": "All Status",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "first_aid_form": {
+      "title_add": "Create New Guide",
+      "title_edit": "Edit Guide",
+      "medical_warning_title": "Medical Content Warning",
+      "medical_warning_desc": "Please ensure all medical information is accurate and verified by professionals. Incorrect first aid advice can lead to serious harm.",
+      "labels": {
+        "wound_type": "Wound Type",
+        "severity": "Severity",
+        "sub_type": "Sub Type (Optional)",
+        "sub_type_placeholder": "e.g., Blister",
+        "title": "Title",
+        "title_placeholder": "e.g., Basic treatment for abrasion",
+        "description": "Description",
+        "steps": "Steps",
+        "step_placeholder": "Step {{index}}",
+        "dos": "Do's",
+        "do_placeholder": "Do...",
+        "donts": "Don'ts",
+        "dont_placeholder": "Don't...",
+        "supplies": "Supplies Needed",
+        "supply_placeholder": "Supply item",
+        "source": "Source",
+        "source_name": "Source Name",
+        "source_url": "Source URL",
+        "source_name_placeholder": "e.g., WHO, Ministry of Health",
+        "source_url_placeholder": "e.g., https://www.who.int/...",
+        "estimated_healing_time": "Estimated Healing Time",
+        "healing_time_placeholder": "e.g., 7-10 days"
+      },
+      "buttons": {
+        "add_step": "Add Step",
+        "add_do": "Add Do",
+        "add_dont": "Add Don't",
+        "add_supply": "Add Supply",
+        "cancel": "Cancel",
+        "create": "Create Guide",
+        "creating": "Creating...",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      },
+      "options": {
+        "abrasion": "Scratch / Abrasion",
+        "bruise": "Bruise / Contusion",
+        "burn": "Burn",
+        "cut": "Cut / Laceration",
+        "mild": "Mild",
+        "moderate": "Moderate",
+        "severe": "Severe"
+      }
+    },
+    "first_aid_view": {
+      "labels": {
+        "wound_type": "Wound Type",
+        "severity": "Severity",
+        "sub_type": "Sub Type",
+        "healing_time": "Healing Time",
+        "description": "Description",
+        "steps": "First Aid Steps",
+        "dos": "Do's",
+        "donts": "Don'ts",
+        "supplies": "Supplies Needed",
+        "source": "Source",
+        "version": "Version",
+        "last_updated": "Last Updated"
+      },
+      "close": "Close"
+    }
+  },
+  "severity_alert": {
+    "title": "Wound Severity Warning",
+    "moderate_message": "Your wound has been assessed as MODERATE severity. We recommend visiting the nearest medical facility for proper examination and treatment.",
+    "severe_message": "Your wound has been assessed as SEVERE. Please visit the nearest medical facility IMMEDIATELY for professional medical care.",
+    "find_facility": "Find nearby medical facility"
+  },
+  "map_modal": {
+    "title": "Medical Facilities Near You",
+    "subtitle": "Find the nearest hospital or clinic for wound treatment",
+    "nearby_facilities": "Nearby Facilities",
+    "loading_location": "Getting your location...",
+    "location_error": "Unable to determine your location. Please allow location access or try again."
+  },
+  "analysis_result": {
+    "loading": "Loading analysis result...",
+    "error_title": "An error occurred",
+    "retry": "Retry",
+    "access_denied_title": "Access Denied",
+    "access_denied_message": "You do not have permission to view this analysis result.",
+    "access_denied_hint": "This analysis result belongs to another account. Please log in with the account that performed the analysis.",
+    "login_button": "Login",
+    "go_home": "Go to Home",
+    "new_analysis": "New Analysis"
+  },
+  "save_modal": {
+    "title_guest": "Save Analysis Result",
+    "title_authenticated": "Save Analysis Result",
+    "guest_message": "To save this analysis to your history, you need to login or register an account.",
+    "login_button": "Login",
+    "register_button": "Register Account",
+    "cancel_guest": "Maybe Later",
+    "confirm_save": "Do you want to save this result to your analysis history?",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "success": "Successfully saved to your history!",
+    "error_generic": "Could not save the result. Please try again."
+  }
+}

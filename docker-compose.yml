@@ -1,31 +1,108 @@
 services:
-  api:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
-    volumes:
-      - ./backend:/app
-
-  db:
-    image: postgres:15
+  database-postgresql:
+    container_name: my_postgres_container
+    image: postgres:18-alpine
     environment:
-      POSTGRES_DB: skinaid
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+    - skinaid_net
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
+  backend:
+    container_name: skinaid_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Database
+      - DB_HOST=database-postgresql
+      - DB_PORT=5432
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@database-postgresql:5432/${DB_NAME}
+      
+      # JWT & Security
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
 
+      # Email
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-true}
+
+      # AI Service (deployed on Hugging Face)
+      - AI_SERVICE_URL=${AI_SERVICE_URL}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-30}
+      - AI_MAX_RETRIES=${AI_MAX_RETRIES:-3}
+      
+      # Application
+      - APP_NAME=SkinAid Wound Detection API
+      - VERSION=0.1.0
+      - DEBUG=${DEBUG:-false}
+      - TESTING=${TESTING:-false}
+      - UPLOAD_DIR=/app/uploads
+
+      # CORS Origins
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      
+      # Base URL
+      - BASE_URL=${BASE_URL}
+      
+      # Geoapify
+      - GEOAPIFY_API_KEY=${GEOAPIFY_API_KEY}
+
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      database-postgresql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+    - skinaid_net
+
+  frontend: 
+    container_name: skinaid_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - skinaid_net
 volumes:
   postgres_data:
+
+networks:
+  skinaid_net:
+    driver: bridge

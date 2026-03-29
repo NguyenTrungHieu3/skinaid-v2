@@ -1,0 +1,874 @@
+{
+  "title": {
+    "home_page": "Trang chủ - SkinAid",
+    "upload_page": "Tải ảnh lên - SkinAid",
+    "map_page": "Bản đồ cơ sở y tế - SkinAid",
+    "about_page": "Giới thiệu - SkinAid",
+    "login_page": "Đăng nhập",
+    "register_page": "Đăng ký",
+    "forgot_password_page": "Quên mật khẩu",
+    "reset_password_page": "Đặt lại mật khẩu",
+    "analysis_result": "Kết quả phân tích - SkinAid",
+    "history_page": "Lịch sử - {{fullname}}",
+    "admin_dashboard": "Bảng điều khiển - Quản trị viên",
+    "admin_logs": "Nhật ký quản trị viên",
+    "admin_user_management": "Quản lý người dùng",
+    "admin_first_aid": "Quản lý sơ cứu"
+  },
+  "auth_page": {
+    "left_title": "Chào mừng bạn đến với SkinAid",
+    "left_desc": "Hệ thống hỗ trợ phát hiện và phân loại vết thương thông minh",
+    "login_tab": "ĐĂNG NHẬP",
+    "register_tab": "ĐĂNG KÝ",
+    "username": "Tên người dùng",
+    "username_placeholder": "Nhập tên người dùng của bạn",
+    "password": "Mật khẩu",
+    "password_placeholder": "Nhập mật khẩu của bạn",
+    "remember_me": "Ghi nhớ tôi",
+    "forgot_password": "Quên mật khẩu?",
+    "email": "Email",
+    "confirm_password": "Xác nhận mật khẩu",
+    "confirm_password_placeholder": "Xác nhận lại mật khẩu",
+    "male": "Nam",
+    "female": "Nữ",
+    "term": "Tôi đồng ý với Điều khoản và Điều kiện",
+    "login_button": "Đăng nhập",
+    "register_button": "Đăng ký",
+    "forgot_password_title": "Quên mật khẩu?",
+    "forgot_password_subtitle": "Đừng lo! Hãy nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn liên kết để đặt lại mật khẩu.",
+    "forgot_password_email": "Địa chỉ email",
+    "forgot_password_button": "Gửi liên kết đặt lại mật khẩu",
+    "forgot_password_back_to_login": "Quay lại trang đăng nhập",
+    "forgot_password_tip": "Lời khuyên: ",
+    "forgot_password_tip_desc": "Hãy đảm bảo sử dụng địa chỉ email được liên kết với tài khoản của bạn.",
+    "reset_password_title": "Đặt lại mật khẩu",
+    "reset_password_subtitle": "Vui lòng nhập mật khẩu mới của bạn bên dưới.",
+    "reset_password_new": "Mật khẩu mới",
+    "reset_password_confirm": "Xác nhận mật khẩu mới",
+    "reset_new_password_placeholder": "Nhập mật khẩu mới",
+    "reset_confirm_password_placeholder": "Xác nhận mật khẩu mới",
+    "reset_password_button": "Đặt lại mật khẩu",
+    "reset_password_button_sub": "Cập nhật!",
+    "reset_password_back_to_login": "Quay lại Đăng nhập",
+
+    "session_expired": {
+      "title": "Phiên đăng nhập hết hạn",
+      "message": "Phiên làm việc của bạn đã kết thúc. Vui lòng đăng nhập lại để tiếp tục.",
+      "button": "Đăng nhập lại"
+    },
+    "loading": "Đang tải SkinAid..."
+  },
+  "validation": {
+    "error_username_required": "Tên người dùng là bắt buộc.",
+    "error_password_required": "Mật khẩu là bắt buộc.",
+    "error_email_required": "Email là bắt buộc.",
+    "error_email_invalid": "Vui lòng nhập địa chỉ email hợp lệ.",
+    "error_confirm_password_required": "Vui lòng xác nhận mật khẩu của bạn.",
+    "error_passwords_not_match": "Mật khẩu không khớp.",
+    "error_terms_required": "Bạn phải đồng ý với Điều khoản và Điều kiện."
+  },
+  "header": {
+    "home": "Trang chủ",
+    "upload_image": "Tải ảnh lên",
+    "wound_history": "Lịch sử vết thương",
+    "about": "Giới thiệu",
+    "hi": "Xin chào",
+    "sign_out": "Đăng xuất",
+    "sign_in": "Đăng nhập",
+    "sign_up": "Đăng ký",
+    "features": "Tính năng",
+    "how_it_works": "Cách hoạt động",
+    "map": "Cơ sở Y tế Gần đây",
+    "why_skinaid": "Tại sao chọn SkinAid?",
+    "trust_safety": "Tin cậy & An toàn",
+    "medical_disclaimer": "Miễn trừ trách nhiệm y tế",
+    "explore": "Khám phá"
+  },
+  "footer": {
+    "title_desc": "Ứng dụng web AI nhận diện, phân loại và hỗ trợ sơ cứu vết thương.",
+    "column_1": "Nền tảng",
+    "column_1_uploadIMG": "Tải ảnh lên",
+    "column_1_history": "Lịch sử",
+    "column_1_security": "Bảo mật",
+    "column_2": "Hỗ trợ",
+    "column_2_contact": "Liên hệ",
+    "column_2_support_center": "Trung tâm hỗ trợ",
+    "column_2_api": "API",
+    "column_3": "Công ty",
+    "column_3_about": "Giới thiệu",
+    "column_3_careers": "Sự nghiệp",
+    "column_3_privacy": "Riêng tư",
+    "bottom_bar": "© 2025 SkinAid. Bảo lưu mọi quyền."
+  },
+  "home_page": {
+    "hero_desc": "SkinAid hỗ trợ người dùng hàng ngày bằng cách kết hợp tính năng phát hiện vết thương, hướng dẫn sơ cứu phù hợp và theo dõi lịch sử vết thương dễ sử dụng vào một ứng dụng web thân thiện với người dùng, được thiết kế để giúp việc chăm sóc sức khỏe trở nên dễ tiếp cận và thiết thực hơn trong cuộc sống hàng ngày.",
+    "hero_analysis_button": "Bắt đầu phân tích",
+    "hero_demo_button": "Xem bản demo",
+    "feature_title": "SkinAid – Nền tảng hỗ trợ vết thương thông minh",
+    "feature_title_desc": "Một công cụ đơn giản giúp người dùng phát hiện vết thương, nhận hướng dẫn sơ cứu và theo dõi lịch sử vết thương.",
+    "feature_card1_title": "Phát hiện và phân loại vết thương",
+    "feature_card1_desc": "Tải lên và quản lý hình ảnh vết thương với thông tin chi tiết.",
+    "feature_card1_item1": "Phát hiện và phân loại các loại vết thương khác nhau",
+    "feature_card1_item2": "Cung cấp kết quả đơn giản ở định dạng thân thiện với người dùng",
+    "feature_card1_item3": "Lưu trữ và sắp xếp hình ảnh vết thương của bạn",
+    "feature_card2_title": "Hướng dẫn sơ cứu",
+    "feature_card2_desc": "Cung cấp các bước sơ cứu chuẩn hóa phù hợp với loại vết thương.",
+    "feature_card2_item1": "Hướng dẫn vệ sinh và khử trùng",
+    "feature_card2_item2": "Hướng dẫn cầm máu và băng bó",
+    "feature_card2_item3": "Làm nổi bật các dấu hiệu cảnh báo nhiễm trùng",
+    "feature_card3_title": "Theo dõi lịch sử vết thương",
+    "feature_card3_desc": "Cho phép người dùng theo dõi và xem lại hình ảnh vết thương của họ.",
+    "feature_card3_item1": "Tải lên nhiều hình ảnh",
+    "feature_card3_item2": "Xem kết quả trước đó",
+    "feature_card3_item3": "Theo dõi tiến triển của vết thương",
+    "stats_item1_desc": "Chuyên gia chăm sóc sức khỏe",
+    "stats_item2_desc": "Hình ảnh đã được xử lý",
+    "stats_item3_desc": "Tỷ lệ chính xác",
+    "stats_item4_desc": "Tính khả dụng của nền tảng",
+    "how_work_title": "Cách thức hoạt động của SkinAid",
+    "how_work_desc": "Từ chụp ảnh đến phân tích AI và đề xuất điều trị, hãy xem cách SkinAid chuyển đổi tài liệu chăm sóc vết thương chỉ trong ba bước đơn giản.",
+    "how_work_step1_title": "Tải lên hình ảnh vết thương của bạn",
+    "how_work_step1_desc": "Tải lên hình ảnh vết thương có độ phân giải cao bằng giao thức hình ảnh chuẩn hóa để ghi chép thống nhất.",
+    "how_work_step1_item1": "Wound_Image01.jpg",
+    "how_work_step1_item1_status": "Đã tải lên",
+    "how_work_step2_title": "Phát hiện & Phân loại AI",
+    "how_work_step2_desc": "Các thuật toán AI tiên tiến sẽ phân tích vết thương, cung cấp các phép đo, phân loại và đánh giá mức độ của vết thương.",
+    "how_work_step2_item1": "Loại",
+    "how_work_step2_item1_result": "Trầy xước",
+    "how_work_step2_item2": "Mức độ",
+    "how_work_step2_item2_result": "Nhẹ",
+    "how_work_step2_item3": "Độ chính xác",
+    "how_work_step2_item3_result": "90%",
+    "how_work_step3_title": "Hướng dẫn sơ cứu",
+    "how_work_step3_desc": "Nhận các khuyến nghị điều trị chuẩn hóa và hướng dẫn sơ cứu từ các nguồn y tế uy tín.",
+    "how_work_step3_item1": "Hướng dẫn sơ cứu",
+    "how_work_step3_item1_desc": "Được WHO chuẩn hóa",
+    "how_work_step3_item2": "Rửa tay bằng xà phòng và nước.",
+    "how_work_step3_item3": "Dùng gạc/vải sạch ấn trực tiếp để cầm máu.",
+    "how_work_step3_item4": "Rửa vết thương bằng nước sạch hoặc dung dịch muối sinh lý.",
+    "how_work_step3_item5": "Khử trùng nhẹ vết thương, tránh để vết thương sâu.",
+    "how_work_step3_item6": "Để khô, băng lại bằng gạc vô trùng hoặc băng y tế.",
+    "how_work_step3_item7": "Nghỉ ngơi, tránh tác động lên vùng bị thương.",
+    "why_skinaid_title": "Tại sao chọn SkinAid?",
+    "why_skinaid_item1_title": "AI Thông minh",
+    "why_skinaid_item1_desc": "Nhận diện >3 loại vết thương phổ biến (Bỏng, Trầy xước, Vết cắt...).",
+    "why_skinaid_item2_title": "Chuẩn Y khoa",
+    "why_skinaid_item2_desc": "Quy trình sơ cứu dựa trên dữ liệu WHO/Bộ Y tế.",
+    "why_skinaid_item3_title": "Dễ sử dụng",
+    "why_skinaid_item3_desc": "Không cần kiến thức y khoa, ai cũng dùng được.",
+    "why_skinaid_item4_title": "Theo dõi",
+    "why_skinaid_item4_desc": "Lưu lịch sử vết thương để người chăm sóc dễ quan sát tiến triển.",
+    "medical_disclaimer": "SkinAid là công cụ hỗ trợ sơ cứu ban đầu, không thay thế chẩn đoán và điều trị của bác sĩ chuyên khoa. Trong trường hợp khẩn cấp, vui lòng đến cơ sở y tế ngay lập tức.",
+    "map_title": "Tìm kiếm Bệnh viện & Nhà thuốc",
+    "map_desc": "Nhanh chóng tìm thấy các cơ sở y tế gần nhất dựa trên vị trí hiện tại của bạn."
+  },
+  "map": {
+    "title": "Cơ sở Y tế Gần đây",
+    "subtitle": "Tìm kiếm bệnh viện, phòng khám gần bạn",
+    "list_view": "Danh sách",
+    "map_view": "Bản đồ",
+    "search_placeholder": "Tìm kiếm bệnh viện, phòng khám, nhà thuốc...",
+    "filter": "Bộ lọc",
+    "filter_all": "Tất cả",
+    "filter_hospital": "Bệnh viện",
+    "filter_clinic": "Phòng khám",
+    "filter_pharmacy": "Nhà thuốc",
+    "radius_label": "Bán kính tìm kiếm",
+    "min": "MIN",
+    "current": "HIỆN TẠI",
+    "max": "MAX",
+    "results": "Kết quả",
+    "facilities": "cơ sở",
+    "loading": "Đang tải...",
+    "no_results": "Không tìm thấy cơ sở y tế phù hợp",
+    "call": "Gọi",
+    "directions": "Chỉ đường",
+    "website": "Website",
+    "share": "Chia sẻ",
+    "your_location": "Vị trí của bạn",
+    "start_point": "Chọn điểm đi",
+    "end_point": "Chọn điểm đến",
+    "mode_drive": "Lái xe",
+    "mode_bike": "Xe máy/Đạp",
+    "mode_walk": "Đi bộ",
+    "fastest_route": "Tuyến đường nhanh nhất hiện tại",
+    "route_details": "Chi tiết đường đi",
+    "start_at": "Bắt đầu tại:",
+    "arrive_at": "Đến nơi:",
+    "tooltip_directions": "Chỉ đường",
+    "tooltip_call": "Gọi điện",
+    "tooltip_website": "Website",
+    "tooltip_share": "Chia sẻ",
+    "alert_route_error": "Không thể tìm thấy đường đi",
+    "alert_location_required": "Vui lòng cho phép truy cập vị trí để sử dụng tính năng chỉ đường",
+    "alert_copied": "Đã sao chép thông tin vào clipboard",
+    "share_text": "Cơ sở y tế: {{name}}\\n{{address}}",
+    "back_to_list": "Quay lại danh sách",
+    "geolocation_not_supported": "Trình duyệt của bạn không hỗ trợ dịch vụ vị trí",
+    "location_error": "Không thể lấy vị trí của bạn",
+    "location_permission_denied": "Quyền truy cập vị trí bị từ chối. Vui lòng cho phép trong cài đặt trình duyệt.",
+    "location_unavailable": "Thông tin vị trí không khả dụng",
+    "location_timeout": "Yêu cầu vị trí đã hết thời gian",
+    "getting_location": "Đang lấy vị trí...",
+    "retry_location": "Lấy vị trí của tôi"
+  },
+  "upload_page": {
+    "title": "Tải lên hình ảnh vết thương ngoài da",
+    "desc": "Kéo và thả hình ảnh y tế của bạn vào đây hoặc nhấp để duyệt thiết bị của bạn",
+    "condition": "Kích thước tệp tối đa: 5MB/hình ảnh",
+    "loading": "Đang phân tích...",
+    "drop": "Thả tệp của bạn vào bất kỳ đâu để tải lên",
+    "error": {
+      "file_too_large": "File quá lớn. Kích thước file tối đa là {{size}}MB mỗi ảnh.",
+      "invalid_type": "Loại file không hợp lệ. Vui lòng tải lên file JPEG, PNG, JPG",
+      "dimensions": "Kích thước ảnh phải trong khoảng từ {{minW}}x{{minH}}px đến {{maxW}}x{{maxH}}px.",
+      "corrupted": "Không thể đọc file ảnh (File có thể đã bị hỏng)",
+      "resize_needed": "Cần điều chỉnh ảnh để có kết quả tốt hơn."
+    }
+  },
+  "upload": {
+    "issue": {
+      "blur": "Ảnh bị mờ",
+      "dark": "Ảnh quá tối",
+      "bright": "Ảnh bị cháy sáng"
+    },
+    "warning": {
+      "resize": "Cần cắt ảnh",
+      "quality": "Phát hiện vấn đề chất lượng"
+    },
+    "label": {
+      "zoom": "Phóng to"
+    },
+    "btn": {
+      "confirm_crop": "Xác nhận cắt",
+      "retake": "Chụp lại",
+      "ignore": "Bỏ qua & Tiếp tục",
+      "enhance": "Tự động sửa",
+      "enhancing": "Đang sửa...",
+      "analyze": "Bắt đầu phân tích"
+    },
+    "status": {
+      "ready": "Ảnh đạt chuẩn!",
+      "scanning": "Vui lòng chờ..."
+    },
+    "note": {
+      "enhance_tip": "Chúng tôi có thể thử sửa lỗi này tự động.",
+      "ready_tip": "Sẵn sàng gửi tới AI để phân tích."
+    }
+  },
+  "analysis": {
+    "sidebar_complete": "Phân tích hoàn tất",
+    "sidebar_complete_desc": "Phân tích hoàn tất",
+    "sidebar_summary": "Tổng quan",
+    "sidebar_summary_desc": "Phát hiện tổng số vết thương trong ảnh của bạn",
+    "sidebar_wound_count_one": "{{count}} vết thương",
+    "sidebar_wound_count_other": "{{count}} vết thương",
+    "sidebar_summary_total": "Tổng số vết thương",
+    "sidebar_summary_burn": "Vết bỏng",
+    "sidebar_summary_abrasion": "Vết trầy xước",
+    "sidebar_summary_bruise": "Vết bầm tím",
+    "sidebar_summary_cut": "Vết cắt",
+    "sidebar_summary_acne": "Mụn trứng cá",
+    "sidebar_summary_fungal": "Nhiễm nấm",
+    "sidebar_summary_psoriasis": "Vảy nến",
+    "sidebar_details": "Chi tiết",
+    "sidebar_details_desc": "Danh sách từng loại vết thương",
+    "sidebar_no_wounds_found": "Không tìm thấy vết thương nào cho loại này.",
+    "header_upload_button": "Tải ảnh mới",
+    "header_save_button": "Lưu",
+    "header_download_button": "Tải báo cáo",
+    "medical_title": "Lưu ý quan trọng về thông tin y tế",
+    "medical_desc": "Phân tích AI chỉ nhằm mục đích cung cấp thông tin và không thay thế cho lời khuyên y tế chuyên nghiệp. Mục đích của phân tích này là giúp mọi người có cái nhìn chính xác hơn về tình trạng vết thương, nhưng không thể thay thế đánh giá lâm sàng thực tế. Luôn tham khảo ý kiến ​​bác sĩ hoặc chuyên gia y tế để được chẩn đoán và điều trị an toàn và phù hợp.",
+    "image_title": "Hình ảnh đã phân tích",
+    "detail_title": "KHẢ NĂNG PHÁT HIỆN VẾT THƯƠNG",
+    "detail_wound": "Loại vết thương",
+    "detail_severity": "Mức độ nghiêm trọng",
+    "detail_healing_time": "Thời gian hồi phục ước tính",
+    "detail_items": "Đã xác định được vật phẩm hỗ trợ",
+    "treatment_title": "Khuyến nghị điều trị",
+    "treatment_desc": "Thực hiện theo các hướng dẫn chăm sóc dựa trên phân tích này để đạt hiệu quả chữa lành tối ưu",
+    "treatment_immediate_label": "Các bước sơ cứu",
+    "treatment_immediate_sub_label": "Các bước cần thực hiện ngay - {{step_length}} bước",
+    "treatment_ongoing_label": "Chăm sóc hằng ngày",
+    "treatment_ongoing_sub_label": "Những điều nên làm - {{item_length}} mục",
+    "treatment_not_recommended_label": "Không được khuyến nghị",
+    "treatment_not_recommended_sub_label": "Những điều cần tránh - {{item_length}} mục",
+    "treatment_not_step": "Không có hướng dẫn cụ thể nào.",
+    "wound_type": {
+      "abrasion": "Trầy xước",
+      "burn": "Bỏng",
+      "bruise": "Bầm tím",
+      "cut": "Vết cắt",
+      "acne": "Mụn trứng cá",
+      "fungal": "Nhiễm nấm",
+      "psoriasis": "Vảy nến"
+    },
+    "wound_type_uppercase": {
+      "Abrasion": "Trầy xước",
+      "Burn": "Bỏng",
+      "Bruise": "Bầm tím",
+      "Cut": "Vết cắt",
+      "Acne": "Mụn trứng cá",
+      "Fungal": "Nhiễm nấm",
+      "Psoriasis": "Vảy nến"
+    },
+    "wound_sub": {
+      "blister": "Phồng rộp",
+      "skintear": "Rách da"
+    },
+    "severity": {
+      "Mild": "Nhẹ",
+      "Moderate": "Trung bình",
+      "Severe": "Nặng"
+    }
+  },
+  "download": {
+    "title": "Tải báo cáo",
+    "subtitle": "Chọn định dạng bạn muốn xuất:",
+    "format_pdf_title": "Tài liệu PDF",
+    "format_pdf_desc": "Phù hợp để chia sẻ và in ấn.",
+    "format_csv_title": "Tệp CSV",
+    "format_csv_desc": "Hữu ích cho bảng tính và phân tích dữ liệu.",
+    "select_wounds": "Chọn các vết thương muốn xuất:",
+    "full_report": "Sẽ tạo báo cáo đầy đủ.",
+    "custom_report": "Sẽ tạo báo cáo theo các mục đã chọn.",
+    "button_cancel": "Hủy",
+    "button_download": "Tải xuống ",
+    "severity_label": "Mức độ",
+    "confidence": "Độ tin cậy"
+  },
+  "history": {
+    "title": "Lịch sử - {{fullname}}",
+    "loading": {
+      "timeline": "Đang tải timeline...",
+      "detail": "Đang tải chi tiết..."
+    },
+    "error": {
+      "load": "Không thể tải dữ liệu."
+    },
+    "empty": {
+      "history": "Không có lịch sử phân tích.",
+      "detail": "Không có dữ liệu chi tiết."
+    },
+    "auth": {
+      "not_logged_in": "Bạn cần đăng nhập để xem lịch sử."
+    },
+    "sidebar": {
+      "search_placeholder": "Tìm kiếm lịch sử..."
+    },
+    "timeline": {
+      "title": "Dòng thời gian phân tích"
+    },
+    "view": "Xem",
+    "analysis": "Phân tích",
+    "detail": {
+      "title": "Chi tiết phân tích"
+    },
+    "search_placeholder": "Tìm kiếm sự kiện...",
+    "filter_label": "Lọc",
+    "date_filters": {
+      "1_day": "1 ngày",
+      "3_days": "3 ngày",
+      "7_days": "7 ngày",
+      "1_month": "1 tháng",
+      "newest": "Mới → Cũ",
+      "oldest": "Cũ → Mới",
+      "all": "Bỏ lọc"
+    },
+    "no_logo_fallback": "Logo",
+    "upload_button": "Tải ảnh để phân tích",
+    "service": {
+      "analysis_title": "Phân tích",
+      "no_wounds": "Không có vết thương",
+      "error_load_history": "Không thể tải lịch sử",
+      "error_load_detail": "Không thể tải chi tiết",
+      "error_delete": "Không thể xóa phân tích"
+    },
+    "detail": {
+      "back_button": "Quay lại",
+      "confirm_delete": "Xác nhận xóa",
+      "delete_message": "Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này không thể hoàn tác.",
+      "cancel_button": "Không, giữ lại",
+      "confirm_delete_button": "Có, xóa bản ghi",
+      "deleting": "Đang xóa...",
+      "no_detail": "Không có chi tiết phân tích cho sự kiện này.",
+      "analysis_details": "Chi tiết Phân tích",
+      "accuracy": "Độ chính xác",
+      "healing_time": "Thời gian hồi phục (dự kiến)",
+      "supplies_needed": "Vật tư cần thiết",
+      "first_aid": "Gợi ý sơ cứu",
+      "should_do": "Nên làm",
+      "should_not_do": "Không nên làm",
+      "no_info": "Không có thông tin."
+    }
+  },
+  "profile": {
+    "banner_date": "Thành viên từ",
+    "delete_avatar": "Xóa hình đại diện",
+    "delete_avatar_confirm_title": "Xác nhận xóa",
+    "delete_avatar_confirm_desc": "Bạn có chắc chắn muốn xóa ảnh đại diện hiện tại? Hành động này không thể hoàn tác.",
+    "cancel": "Hủy bỏ",
+    "delete": "Xóa ảnh"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "notifications": "Thông báo",
+    "email_title": "Thông báo Email",
+    "email_desc": "Nhận cập nhật qua email về tiến độ vết thương",
+    "push_nofi_title": "Thông báo đẩy",
+    "push_nofi_desc": "Nhận thông báo theo thời gian thực trên thiết bị di động của bạn",
+    "security_title": "Bảo mật",
+    "password_title": "Đổi mật khẩu",
+    "password_old": "Mật khẩu cũ",
+    "password_new": "Mật khẩu mới",
+    "password_confirmNew": "Xác nhận mật khẩu mới",
+    "password_desc": "Bạn nên cập nhật mật khẩu thường xuyên để tăng cường bảo mật.",
+    "password_button": "Thay đổi",
+    "appearance": "Giao diện",
+    "language_title": "Ngôn ngữ",
+    "language_desc": "Đặt ngôn ngữ ưu tiên của bạn",
+    "mode_title": "Chế độ tối",
+    "mode_desc": "Chuyển đổi giữa giao diện sáng và tối"
+  },
+  "overview": {
+    "title": "Tổng quan",
+    "recent_analyses": "Phân tích gần đây",
+    "view_all": "Xem tất cả",
+    "no_data": "Không tìm thấy phân tích gần đây nào.",
+    "view": "Xem",
+    "quick_actions": "Hành động nhanh",
+    "upload_new_image": "Tải lên hình ảnh mới",
+    "export_report": "Xuất báo cáo"
+  },
+  "personalInfo": {
+    "title": "Thông tin cá nhân",
+    "basic_info": "Thông tin cơ bản",
+    "full_name": "Họ và tên",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "dob": "Ngày sinh",
+    "gender": "Giới tính",
+    "male": "Nam",
+    "female": "Nữ",
+    "address": "Địa chỉ",
+    "cancel_button": "Hủy",
+    "save_button": "Lưu",
+    "medical_info": "Thông tin y tế",
+    "blood_type": "Nhóm máu",
+    "known_allergies": "Các loại dị ứng đã biết",
+    "current_medications": "Các loại thuốc hiện đang dùng",
+    "emergency_contact": "Liên hệ khẩn cấp",
+    "crop_title": "Chỉnh sửa ảnh đại diện",
+    "crop_zoom": "Zoom",
+
+    "validation": {
+      "fullName_invalid": "Họ tên không được chứa số hoặc ký tự đặc biệt.",
+      "fullName_too_short": "Họ tên quá ngắn.",
+      "phone_invalid": "Số điện thoại chỉ được chứa số.",
+      "phone_format": "Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0.",
+      "dob_future": "Ngày sinh không hợp lệ.",
+      "gender_invalid": "Giới tính không hợp lệ.",
+      "address_too_short": "Địa chỉ quá ngắn."
+    }
+  },
+  "button": {
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "upload_image": "Tải ảnh lên",
+    "update_password": "Đổi mật khẩu"
+  },
+  "placeholder": {
+    "old_password": "Nhập mật khẩu hiện tại của bạn",
+    "new_password": "Nhập mật khẩu mới (tối thiểu 8 ký tự)",
+    "confirmNew_password": "Xác nhận mật khẩu mới của bạn"
+  },
+  "about": {
+    "hero_title": "Chào mừng đến với <strong>SkinAid</strong>",
+    "hero_subtitle": "Người bạn đồng hành thông minh trong chăm sóc vết thương, sử dụng trí tuệ nhân tạo để cung cấp khả năng phát hiện nhanh chóng, đánh giá chính xác và hướng dẫn điều trị cá nhân hóa.",
+    "hero_button": "Bắt đầu ngay",
+    "what_is_title": "SkinAid là gì?",
+    "what_is_p1": "SkinAid là nền tảng ứng dụng AI đột phá giúp mọi người dễ dàng tiếp cận chăm sóc vết thương đạt chuẩn y tế. Với công nghệ máy học tiên tiến, chúng tôi hỗ trợ bạn phát hiện, theo dõi và xử lý vết thương một cách tự tin.",
+    "what_is_p2": "Dù bạn đang gặp phải vết xước nhẹ, bỏng hay vết thương mãn tính, SkinAid sẽ cung cấp phân tích tức thì và gợi ý điều trị dựa trên bằng chứng — mọi lúc, mọi nơi.",
+    "what_is_p3": "Được thành lập vào năm 2024, SkinAid đã hỗ trợ hàng nghìn người hiểu rõ hơn và chăm sóc tốt hơn cho vết thương của mình, thu hẹp khoảng cách giữa chấn thương hằng ngày và chăm sóc y tế chuyên nghiệp.",
+    "how_title": "SkinAid hoạt động như thế nào?",
+    "how_subtitle": "Đánh giá vết thương chuẩn y tế chỉ với 3 bước đơn giản",
+    "step_1_label": "Bước 1",
+    "step_1_title": "Tải ảnh lên",
+    "step_1_desc": "Chụp ảnh rõ nét vùng bị thương bằng điện thoại hoặc máy ảnh, sau đó tải lên SkinAid.",
+    "step_2_label": "Bước 2",
+    "step_2_title": "AI phân tích",
+    "step_2_desc": "AI của chúng tôi phân tích hình ảnh để phát hiện loại vết thương, kích thước và mức độ nghiêm trọng.",
+    "step_3_label": "Bước 3",
+    "step_3_title": "Nhận hướng dẫn",
+    "step_3_desc": "Nhận hướng dẫn chăm sóc cá nhân hóa và theo dõi tiến trình hồi phục theo thời gian.",
+    "features_title": "Tại sao chọn SkinAid?",
+    "features_subtitle": "Kết hợp công nghệ tiên tiến với kiến thức y khoa để mang lại hỗ trợ chăm sóc vết thương vượt trội",
+    "f_ai_title": "Độ chính xác cao nhờ AI",
+    "f_ai_desc": "Độ chính xác 94% với AI được huấn luyện trên hàng nghìn ảnh y khoa và kiểm chứng bởi chuyên gia.",
+    "f_instant_title": "Kết quả tức thì",
+    "f_instant_desc": "Phân tích vết thương chỉ trong vài giây — hoạt động 24/7 bất cứ khi nào bạn cần.",
+    "f_security_title": "Tuân thủ HIPAA",
+    "f_security_desc": "Dữ liệu sức khỏe của bạn được bảo mật bằng tiêu chuẩn doanh nghiệp và mã hóa đầu cuối.",
+    "f_evidence_title": "Hướng dẫn theo bằng chứng y khoa",
+    "f_evidence_desc": "Khuyến nghị điều trị dựa trên nghiên cứu mới nhất và hướng dẫn lâm sàng.",
+    "f_mobile_title": "Tương thích mọi thiết bị",
+    "f_mobile_desc": "Truy cập SkinAid mọi lúc mọi nơi qua điện thoại, máy tính bảng hoặc máy tính.",
+    "f_easy_title": "Dễ sử dụng",
+    "f_easy_desc": "Giao diện đơn giản, trực quan — không cần kiến thức y khoa."
+  },
+  "admin": {
+    "top_bar": {
+      "logout_confirm_title": "Xác nhận đăng xuất",
+      "logout_confirm": "Bạn có chắc chắn muốn đăng xuất?",
+      "logout": "Đăng xuất",
+      "cancel": "Hủy bỏ ",
+      "roles": {
+        "admin": "Quản trị viên",
+        "moderator": "Điều hành viên",
+        "user": "Người dùng"
+      }
+    },
+    "sidebar": {
+      "portal_title": "Cổng quản trị",
+      "dashboard": "Bảng điều khiển",
+      "user_management": "Quản lý người dùng",
+      "first_aid_guidance": "Hướng dẫn sơ cứu",
+      "admin_logs": "Nhật ký quản trị",
+      "system_status": "Trạng thái hệ thống",
+      "operational": "Tất cả hệ thống hoạt động bình thường",
+      "active": "Đang hoạt động"
+    },
+    "dashboard": {
+      "title": "Bảng điều khiển quản trị",
+      "subtitle": "Tổng quan về hiệu suất và thống kê hệ thống",
+      "refresh": "Làm mới dữ liệu",
+      "refreshing": "Đang làm mới...",
+      "loading": "Đang tải bảng điều khiển...",
+      "retry": "Thử lại",
+      "periods": {
+        "today": "Hôm nay",
+        "last_7_days": "7 ngày qua",
+        "last_30_days": "30 ngày qua",
+        "last_year": "Năm qua",
+        "all_time": "Tất cả thời gian",
+        "yesterday": "hôm qua",
+        "last_week": "tuần trước",
+        "last_month": "tháng trước",
+        "previous_period": "kỳ trước",
+        "last_period": "kỳ trước"
+      },
+      "stats": {
+        "total_users": "Tổng người dùng",
+        "new_users": "Người dùng mới",
+        "total_uploads": "Tổng lượt tải lên",
+        "new_uploads": "Lượt tải mới",
+        "total_detections": "Tổng lượt phát hiện",
+        "new_detection": "Phát hiện mới",
+        "model_accuracy": "Độ chính xác mô hình",
+        "high_confidence": "Độ tin cậy cao",
+        "from": "từ"
+      },
+      "charts": {
+        "wound_distribution_title": "Phân bố loại vết thương",
+        "wound_distribution_desc": "Phân loại các vết thương",
+        "severity_stats_title": "Thống kê mức độ nghiêm trọng",
+        "severity_stats_desc": "Phân bố mức độ nghiêm trọng của vết thương",
+        "number_of_cases": "Số lượng ca",
+        "cases": "ca",
+        "severity_label": "Mức độ"
+      },
+      "logs": {
+        "recent_logs_title": "Nhật ký gần đây",
+        "recent_logs_desc": "Thông báo và cảnh báo hệ thống",
+        "severity": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp"
+        },
+        "actions": {
+          "login": "Đăng nhập",
+          "logout": "Đăng xuất",
+          "create_guest_session": "Tạo phiên khách",
+          "guest_session_created": "Phiên khách đã tạo",
+          "create_user": "Tạo người dùng",
+          "update_user": "Cập nhật người dùng",
+          "delete_user": "Xóa người dùng",
+          "upload_image": "Tải ảnh lên",
+          "detect_wound": "Phát hiện vết thương",
+          "view_firstaid": "Xem sơ cứu",
+          "create_firstaid": "Tạo hướng dẫn sơ cứu",
+          "update_firstaid": "Cập nhật hướng dẫn sơ cứu",
+          "delete_firstaid": "Xóa hướng dẫn sơ cứu"
+        },
+        "resources": {
+          "user": "Người dùng",
+          "guest_session": "Phiên khách",
+          "image": "Ảnh",
+          "wound_analysis": "Phân tích vết thương",
+          "firstaid_guide": "Hướng dẫn sơ cứu",
+          "system": "Hệ thống"
+        }
+      }
+    },
+    "user_management": {
+      "title": "Quản lý người dùng",
+      "subtitle": "Quản lý người dùng và phân quyền",
+      "add_user": "Thêm người dùng mới",
+      "total_users": "Tổng người dùng",
+      "showing": "Hiển thị {{start}}-{{end}} trên tổng số {{total}}",
+      "roles": {
+        "user": "Người dùng",
+        "admin": "Quản trị viên"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động"
+      },
+      "table": {
+        "loading": "Đang tải danh sách người dùng...",
+        "no_users": "Không tìm thấy người dùng",
+        "adjust_filters": "Thử điều chỉnh bộ lọc của bạn",
+        "headers": {
+          "name": "Tên",
+          "email": "Email",
+          "role": "Vai trò",
+          "status": "Trạng thái",
+          "uploads": "Tải lên",
+          "join_date": "Ngày tham gia",
+          "actions": "Hành động"
+        },
+        "no_name": "Không tên",
+        "status_active": "Hoạt động",
+        "status_inactive": "Không hoạt động",
+        "actions": {
+          "edit": "Sửa",
+          "deactivate": "Vô hiệu hóa",
+          "activate": "Kích hoạt",
+          "processing": "Đang xử lý...",
+          "delete": "Xóa",
+          "deleting": "Đang xóa..."
+        }
+      },
+      "form": {
+        "title_add": "Thêm người dùng mới",
+        "title_edit": "Chỉnh sửa người dùng",
+        "labels": {
+          "email": "Email",
+          "username": "Tên đăng nhập",
+          "password": "Mật khẩu",
+          "password_optional": "(Để trống nếu giữ nguyên)",
+          "role": "Vai trò"
+        },
+        "password_hint": "Ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",
+        "buttons": {
+          "cancel": "Hủy",
+          "update": "Cập nhật",
+          "create": "Tạo mới",
+          "updating": "Đang cập nhật...",
+          "creating": "Đang tạo..."
+        },
+        "errors": {
+          "email_required": "Email là bắt buộc",
+          "email_invalid": "Định dạng email không hợp lệ",
+          "name_required": "Tên hiển thị là bắt buộc",
+          "name_min": "Tên hiển thị phải có ít nhất 2 ký tự",
+          "name_max": "Tên hiển thị không được vượt quá 50 ký tự",
+          "password_required": "Mật khẩu là bắt buộc",
+          "password_invalid": "Mật khẩu phải có ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",
+          "role_required": "Vai trò là bắt buộc"
+        }
+      }
+    },
+    "first_aid": {
+      "title": "Quản lý hướng dẫn sơ cứu",
+      "subtitle": "Quản lý nội dung chăm sóc vết thương và sơ cứu",
+      "add_guidance": "Thêm hướng dẫn mới",
+      "total_guides": "Tổng số hướng dẫn",
+      "active_guides": "Hướng dẫn đang hoạt động",
+      "wound_types": "Loại vết thương",
+      "search_placeholder": "Tìm kiếm theo tiêu đề...",
+      "filter_wound_type": "Loại vết thương",
+      "filter_wound_type_all": "Tất cả loại",
+      "filter_severity": "Mức độ nghiêm trọng",
+      "filter_severity_all": "Tất cả mức độ",
+      "filter_status": "Trạng thái hoạt động",
+      "filter_status_all": "Tất cả",
+      "filter_status_active": "Hoạt động",
+      "filter_status_inactive": "Không hoạt động",
+      "no_guides": "Không tìm thấy hướng dẫn sơ cứu nào",
+      "try_adjusting": "Thử điều chỉnh bộ lọc của bạn",
+      "view_details": "Xem chi tiết",
+      "more_steps": "bước nữa",
+      "loading": "Đang tải hướng dẫn sơ cứu..."
+    },
+    "logs": {
+      "title": "Nhật ký hệ thống",
+      "subtitle": "Xem và quản lý nhật ký hệ thống",
+      "security_notice": "Thông báo bảo mật",
+      "security_desc": "Hệ thống này được giám sát. Mọi truy cập trái phép hoặc lạm dụng sẽ được ghi lại và báo cáo.",
+      "table": {
+        "loading": "Đang tải nhật ký...",
+        "try_again": "Thử lại",
+        "no_logs": "Không tìm thấy nhật ký phù hợp",
+        "title": "Hoạt động hệ thống",
+        "showing": "Hiển thị {{start}}-{{end}} trên tổng số {{total}}",
+        "headers": {
+          "time": "Thời gian",
+          "type": "Loại",
+          "username": "Tên đăng nhập",
+          "role": "Vai trò",
+          "action": "Hành động",
+          "details": "Chi tiết",
+          "view_details": "Xem chi tiết"
+        }
+      },
+      "details": {
+        "title": "Chi tiết nhật ký",
+        "summary": "Tóm tắt",
+        "timestamp": "Thời gian:",
+        "action": "Hành động:",
+        "severity": "Mức độ:",
+        "user": "Người dùng:",
+        "full_details": "Chi tiết đầy đủ",
+        "close": "Đóng"
+      },
+      "filters": {
+        "search_placeholder": "Tìm kiếm nhật ký...",
+        "all_types": "Tất cả loại",
+        "success": "Thành công",
+        "error": "Lỗi",
+        "all_roles": "Tất cả vai trò",
+        "refresh": "Làm mới",
+        "roles": {
+          "user": "Người dùng",
+          "admin": "Quản trị viên",
+          "guest": "Khách"
+        }
+      },
+      "types": {
+        "success": "Thành công",
+        "error": "Lỗi",
+        "info": "Thông tin",
+        "warning": "Cảnh báo"
+      }
+    },
+    "user_filters": {
+      "search_placeholder": "Tìm kiếm người dùng...",
+      "all_roles": "Tất cả vai trò",
+      "all_status": "Tất cả trạng thái",
+      "roles": {
+        "user": "Người dùng",
+        "admin": "Quản trị viên"
+      },
+      "status": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động"
+      }
+    },
+    "first_aid_form": {
+      "title_add": "Tạo hướng dẫn mới",
+      "title_edit": "Chỉnh sửa hướng dẫn",
+      "medical_warning_title": "Cảnh báo nội dung y tế",
+      "medical_warning_desc": "Vui lòng đảm bảo tất cả thông tin y tế là chính xác và được xác minh bởi các chuyên gia. Lời khuyên sơ cứu không chính xác có thể dẫn đến hậu quả nghiêm trọng.",
+      "labels": {
+        "wound_type": "Loại vết thương",
+        "severity": "Mức độ nghiêm trọng",
+        "sub_type": "Loại phụ (Tùy chọn)",
+        "sub_type_placeholder": "ví dụ: Phồng rộp",
+        "title": "Tiêu đề",
+        "title_placeholder": "ví dụ: Sơ cứu cơ bản cho vết trầy xước",
+        "description": "Mô tả",
+        "steps": "Các bước thực hiện",
+        "step_placeholder": "Bước {{index}}",
+        "dos": "Nên làm",
+        "do_placeholder": "Nên...",
+        "donts": "Không nên làm",
+        "dont_placeholder": "Không nên...",
+        "supplies": "Dụng cụ cần thiết",
+        "supply_placeholder": "Tên dụng cụ",
+        "source": "Nguồn",
+        "source_name": "Tên nguồn",
+        "source_url": "Đường dẫn nguồn",
+        "source_name_placeholder": "ví dụ: WHO, Bộ Y tế Việt Nam",
+        "source_url_placeholder": "ví dụ: https://www.who.int/...",
+        "estimated_healing_time": "Thời gian phục hồi dự kiến",
+        "healing_time_placeholder": "ví dụ: 7-10 ngày"
+      },
+      "buttons": {
+        "add_step": "Thêm bước",
+        "add_do": "Thêm việc nên làm",
+        "add_dont": "Thêm việc không nên làm",
+        "add_supply": "Thêm dụng cụ",
+        "cancel": "Hủy",
+        "create": "Tạo hướng dẫn",
+        "creating": "Đang tạo...",
+        "save": "Lưu thay đổi",
+        "saving": "Đang lưu..."
+      },
+      "options": {
+        "abrasion": "Trầy xước / Mài mòn",
+        "bruise": "Bầm tím / Chấn thương phần mềm",
+        "burn": "Bỏng",
+        "cut": "Vết cắt / Vết rách",
+        "mild": "Nhẹ",
+        "moderate": "Trung bình",
+        "severe": "Nghiêm trọng"
+      }
+    },
+    "first_aid_view": {
+      "labels": {
+        "wound_type": "Loại vết thương",
+        "severity": "Mức độ nghiêm trọng",
+        "sub_type": "Loại phụ",
+        "healing_time": "Thời gian hồi phục",
+        "description": "Mô tả",
+        "steps": "Các bước sơ cứu",
+        "dos": "Nên làm",
+        "donts": "Không nên làm",
+        "supplies": "Dụng cụ cần thiết",
+        "source": "Nguồn",
+        "version": "Phiên bản",
+        "last_updated": "Cập nhật lần cuối"
+      },
+      "close": "Đóng"
+    }
+  },
+  "severity_alert": {
+    "title": "Cảnh báo mức độ vết thương",
+    "moderate_message": "Vết thương của bạn được đánh giá ở mức TRUNG BÌNH. Khuyến nghị bạn nên đến cơ sở y tế gần nhất để được kiểm tra và xử lý kịp thời.",
+    "severe_message": "Vết thương của bạn được đánh giá ở mức NGHIÊM TRỌNG. Vui lòng đến cơ sở y tế gần nhất NGAY LẬP TỨC để được chăm sóc y tế chuyên nghiệp.",
+    "find_facility": "Tìm cơ sở y tế gần đây"
+  },
+  "map_modal": {
+    "title": "Cơ sở y tế gần bạn",
+    "subtitle": "Tìm bệnh viện, phòng khám gần nhất để xử lý vết thương",
+    "nearby_facilities": "Cơ sở y tế gần đây",
+    "loading_location": "Đang xác định vị trí của bạn...",
+    "location_error": "Không thể xác định vị trí. Vui lòng cho phép truy cập vị trí hoặc thử lại."
+  },
+  "analysis_result": {
+    "loading": "Đang tải kết quả phân tích...",
+    "error_title": "Đã xảy ra lỗi",
+    "retry": "Thử lại",
+    "access_denied_title": "Truy cập bị từ chối",
+    "access_denied_message": "Bạn không có quyền xem kết quả phân tích này.",
+    "access_denied_hint": "Kết quả phân tích này thuộc về tài khoản khác. Vui lòng đăng nhập với tài khoản đã thực hiện phân tích.",
+    "login_button": "Đăng nhập",
+    "go_home": "Về trang chủ",
+    "new_analysis": "Phân tích mới"
+  },
+  "save_modal": {
+    "title_guest": "Lưu kết quả phân tích",
+    "title_authenticated": "Lưu kết quả phân tích",
+    "guest_message": "Để lưu kết quả phân tích vào lịch sử, bạn cần đăng nhập hoặc đăng ký tài khoản.",
+    "login_button": "Đăng nhập",
+    "register_button": "Đăng ký tài khoản",
+    "cancel_guest": "Để sau",
+    "confirm_save": "Bạn có muốn lưu kết quả này vào lịch sử phân tích?",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "success": "Đã lưu thành công vào lịch sử của bạn!",
+    "error_generic": "Không thể lưu kết quả. Vui lòng thử lại."
+  }
+}

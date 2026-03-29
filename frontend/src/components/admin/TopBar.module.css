@@ -1,0 +1,293 @@
+.adminTopbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 15px 30px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.adminTopbarContent {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
+.adminTopbarTitle h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1e9378 0%, #17805f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #0f172a;
+  /* Fallback */
+}
+
+.adminTopbarActions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.adminUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+  padding: 5px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.adminUserInfo:hover {
+  background-color: #f8fafc;
+}
+
+.adminUserText {
+  text-align: right;
+}
+
+.adminUserText p:first-child {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.adminUserText p:last-child {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.adminUserAvatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(to bottom right, #1e9378, #17805f);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.logoutMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  width: 200px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.logoutMenuHeader {
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logoutMenuName {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9rem;
+}
+
+.logoutMenuEmail {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoutMenuDivider {
+  height: 1px;
+  background-color: #e2e8f0;
+}
+
+.logoutMenuButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: #ef4444;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logoutMenuButton:hover {
+  background-color: #fef2f2;
+}
+
+/* Language Switcher */
+.languageSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background-color: #f8fafc;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.flagButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.flagButton:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.activeFlag {
+  opacity: 1;
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.divider {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+/* --- Logout Modal Styles --- */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Nền tối mờ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Đảm bảo nằm trên cùng */
+  backdrop-filter: blur(4px); /* Hiệu ứng mờ nền phía sau */
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modalContent {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+  text-align: center;
+}
+
+.modalIcon {
+  width: 48px;
+  height: 48px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+}
+
+.modalTitle {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modalMessage {
+  margin: 0 0 24px 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cancelBtn,
+.confirmBtn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.cancelBtn {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.cancelBtn:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.confirmBtn {
+  background-color: #dc2626;
+  border: 1px solid #dc2626;
+  color: white;
+}
+
+.confirmBtn:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

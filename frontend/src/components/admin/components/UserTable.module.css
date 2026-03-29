@@ -1,0 +1,283 @@
+.adminCard {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  border: none;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.adminCardContent {
+  padding: 1.5rem;
+}
+
+.tableContainer {
+  max-height: calc(100vh - 400px);
+  min-height: 400px;
+  overflow-x: auto;
+  overflow-y: auto;
+  position: relative;
+}
+
+.userTable {
+  width: 100%;
+  border-collapse: collapse;
+  position: relative;
+}
+
+.userTable thead {
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+}
+
+.userTable thead tr th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: white;
+}
+
+.userTable thead tr th:first-child {
+  padding-left: 1rem;
+}
+
+.userTable tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s;
+}
+
+.userTable tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.userTable tbody tr td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  vertical-align: middle;
+  background-color: white;
+}
+
+.userTable tbody tr td:first-child {
+  padding-left: 1rem;
+  text-align: left;
+}
+
+.userTable tbody tr td:last-child {
+  position: relative;
+  overflow: visible;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: flex-start;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(to bottom right, #1E9378, #17805f);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 500;
+  color: white;
+  font-size: 0.875rem;
+}
+
+.userInfo span {
+  font-weight: 500;
+  color: #0f172a;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badges */
+.adminBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.adminBadgePurple {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border-color: #e9d5ff;
+}
+
+.adminBadgeBlue {
+  background-color: #dbeafe;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.adminBadgeGray {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.adminBadgeSuccess {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+
+/* Actions Menu */
+.actionsMenu {
+  position: relative;
+  z-index: 1;
+}
+
+.actionsTrigger {
+  background: white;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: #64748b;
+  border-radius: 0.375rem;
+  transition: all 0.15s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.actionsTrigger:hover {
+  background-color: #f8fafc;
+  color: #1E9378;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.actionsTrigger:active {
+  transform: scale(0.95);
+}
+
+.actionsDropdown {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  margin-right: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  z-index: 99999;
+  overflow: visible;
+  animation: slideInFromRight 0.15s ease-out;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: white;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.actionItem svg {
+  flex-shrink: 0;
+}
+
+.actionItem:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+  padding-left: 1.25rem;
+}
+
+.actionItemDanger {
+  color: #ef4444;
+}
+
+.actionItemDanger:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyState p {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.emptySubtitle {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .tableContainer {
+    overflow-x: auto;
+  }
+
+  .userTable {
+    min-width: 600px;
+  }
+
+  .userTable th,
+  .userTable td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+}

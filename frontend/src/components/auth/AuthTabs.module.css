@@ -1,0 +1,20 @@
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  justify-content: space-evenly;
+}
+.tab {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  background-color: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #90a4ae;
+  border-radius: 20px;
+}
+.activeTab {
+  background-color: #009688;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 150, 136, 0.3);
+}

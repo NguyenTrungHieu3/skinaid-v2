@@ -1,0 +1,1247 @@
+/* src/pages/ProfilePage.module.css */
+
+/* 1. Layout chính */
+.profileContainer {
+  background-color: #f4f7f6;
+  min-height: 100vh;
+  padding-bottom: 2rem;
+  /* Bỏ overflow-y ở đây vì body đã handle scroll */
+}
+
+.profileMainWrapper {
+  /* Lấy các thuộc tính layout quan trọng từ .profileContent cũ */
+  margin: 1rem auto;
+  /* Kéo lên, đè lên Banner VÀ căn giữa */
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+}
+
+.profileContent {
+  background-color: #f4f7f6;
+  /* Bỏ: margin, position, z-index, max-width (đã chuyển lên wrapper) */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  /* THÊM: Tạo khoảng cách với TabBar (giờ đã ở bên trên) */
+  margin-top: 1.5rem;
+}
+
+/* 2. Banner Header */
+.profileBanner {
+  background: linear-gradient(135deg, #00796b 0%, #00968752 100%);
+  /* background-color: #f0fdf4; */
+  /* display: flex;
+  gap: 2rem; */
+  padding: 1rem 0rem 1rem 0rem;
+  color: #fff;
+}
+
+.bannerContentWrapper {
+  /* Các thuộc tính layout được chuyển từ .profileBanner sang đây */
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  /* <--- QUAN TRỌNG: Căn giữa tất cả theo chiều dọc (trục Y) */
+
+  /* Các thuộc tính căn giữa giống hệt .profileContent */
+  max-width: 1200px;
+  margin: 0 auto;
+
+  /* Thêm padding ngang để đảm bảo nội dung không dính sát viền
+     khi màn hình nhỏ hơn 1200px */
+  padding-left: 2rem;
+  padding-right: 2rem;
+  align-items: center;
+}
+
+/* --- DELETE CONFIRMATION MODAL (Soft UI) --- */
+.deleteModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4); /* Giảm độ tối nền một chút */
+  backdrop-filter: blur(2px); /* Làm mờ nền phía sau nhẹ */
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.deleteModalContent {
+  background-color: #fff;
+  border-radius: 16px; /* Bo góc tròn hơn */
+  width: 90%;
+  max-width: 360px; /* Thu nhỏ chiều rộng modal */
+  padding: 1.5rem; /* Giảm padding */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); /* Bóng đổ mềm hơn */
+  animation: scaleUp 0.2s ease-out;
+}
+
+.deleteModalContent h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333; /* Đổi sang màu xám đen thay vì đỏ */
+  font-size: 1.1rem; /* Chữ nhỏ hơn */
+  font-weight: 600;
+}
+
+.deleteModalContent p {
+  color: #666; /* Màu chữ nhạt hơn */
+  font-size: 0.9rem; /* Chữ nội dung nhỏ hơn */
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+.deleteActions {
+  display: flex;
+  gap: 0.75rem; /* Khoảng cách giữa 2 nút gần hơn */
+  width: 100%;
+  justify-content: center;
+}
+
+/* Nút Hủy */
+.btnCancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  color: #555;
+  border-radius: 8px;
+  font-size: 0.85rem; /* Chữ nút nhỏ hơn */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1; /* Chia đều chiều rộng */
+}
+
+.btnCancel:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+/* Nút Xóa (Màu đỏ dịu hơn) */
+.btnDeleteConfirm {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #ef5350; /* Màu đỏ nhẹ (Red 400) */
+  color: white;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1; /* Chia đều chiều rộng */
+  box-shadow: 0 2px 5px rgba(239, 83, 80, 0.3); /* Bóng đỏ nhẹ */
+}
+
+.btnDeleteConfirm:hover {
+  background-color: #e53935; /* Đậm hơn chút khi hover */
+  transform: translateY(-1px);
+}
+
+/* Animation giữ nguyên */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.profileLeft {
+  flex-shrink: 0;
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #e0f2f1;
+  color: #00796b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  border: 4px solid #fff;
+}
+
+/* Lớp phủ Loading khi đang upload */
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  /* Thay cho top:0, left:0, right:0, bottom:0 */
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+/* Ảnh Avatar chính */
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Cập nhật class .cameraIcon cũ để hỗ trợ trạng thái uploading */
+.cameraIcon {
+  /* ... Giữ nguyên các thuộc tính cũ ... */
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: #fff;
+  color: #009688;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  /* Mặc định là pointer */
+}
+
+/* .cameraIcon {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: #fff;
+  color: #009688;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+} */
+
+/* Khi đang upload thì đổi con trỏ chuột */
+.cameraIcon.uploading {
+  cursor: wait;
+}
+
+.cropModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  /* Nền tối mờ */
+  z-index: 1000;
+  /* Đè lên tất cả */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropModalContent {
+  background-color: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.cropModalContent h3 {
+  margin: 0;
+  text-align: center;
+  color: #333;
+}
+
+/* Container chứa thư viện Cropper - Cần set chiều cao cụ thể */
+.cropContainer {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  /* Chiều cao vùng cắt */
+  background-color: #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Slider Zoom */
+.sliderContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem;
+}
+
+.sliderContainer label {
+  font-weight: 600;
+  color: #555;
+}
+
+.zoomSlider {
+  flex: 1;
+  accent-color: #009688;
+  /* Màu thanh trượt */
+  cursor: pointer;
+}
+
+/* Buttons */
+.cropActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.btnCancel {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #555;
+}
+
+.btnCancel:hover {
+  background-color: #e0e0e0;
+}
+
+.btnSave {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background-color: #009688;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btnSave:hover {
+  background-color: #00796b;
+}
+
+.cameraIcon:hover {
+  background-color: #009688;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Avatar image styles */
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Loading overlay */
+.avatarLoadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.5rem;
+  z-index: 5;
+}
+
+/* Spinner animation */
+.spinnerIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Delete icon styles */
+.deleteIcon {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background-color: #fff;
+  color: #dc2626;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.deleteIcon:hover {
+  background-color: #dc2626;
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Khi đang xóa thì đổi con trỏ chuột */
+.deleteIcon.deleting {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.profileRight {
+  flex-grow: 1;
+  display: flex;
+  /* <-- Thêm */
+  align-items: center;
+  /* <-- Thêm */
+  justify-content: space-between;
+  /* <-- Thêm */
+  gap: 2rem;
+  /* <-- Thêm (tùy chỉnh khoảng cách) */
+}
+
+.profileInfo h1 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.profileInfo p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* THÊM CSS MỚI CHO PROFILE BADGES */
+.profileBadges {
+  display: flex;
+  gap: 1.5rem;
+  /* Khoảng cách giữa 2 badge */
+  flex-shrink: 0;
+  /* Không cho badge co lại */
+}
+
+.badgeCard {
+  background-color: #fff;
+  /* Nền trắng */
+  color: #333;
+  /* Chữ đen */
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 250px;
+  /* Độ rộng tối thiểu */
+  border-left: 5px solid transparent;
+  /* Viền màu bên trái */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+  /* Đổ bóng nhẹ */
+}
+
+.badgeContent span {
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+  /* Màu chữ xám */
+  font-weight: 500;
+}
+
+.badgeContent strong {
+  display: block;
+  font-size: 1.75rem;
+  /* Tăng kích cỡ số */
+  font-weight: 600;
+  color: #222;
+  margin-top: 0.25rem;
+}
+
+.badgeIcon {
+  font-size: 1.5rem;
+  /* Kích cỡ icon */
+  padding: 0.8rem;
+  /* Kích cỡ vòng tròn nền */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+}
+
+/* Màu cho Badge Green (Total Scans) */
+.badgeGreen {
+  border-left-color: #28a745;
+  /* Màu viền xanh lá */
+}
+
+.iconBgGreen {
+  background-color: #eaf7ec;
+  /* Nền icon xanh lá nhạt */
+  color: #28a745;
+  /* Màu icon xanh lá */
+}
+
+/* Màu cho Badge Blue (Last Analysis) */
+.badgeBlue {
+  border-left-color: #007bff;
+  /* Màu viền xanh dương */
+}
+
+.iconBgBlue {
+  background-color: #e6f2ff;
+  /* Nền icon xanh dương nhạt */
+  color: #007bff;
+  /* Màu icon xanh dương */
+}
+
+@media (max-width: 992px) {
+  /* Khối bên phải (Info + Badges) sẽ tự xếp chồng */
+  .profileRight {
+    flex-direction: column;
+    align-items: flex-start;
+    /* Căn lề trái cho khối info và badges */
+    gap: 1.5rem;
+    /* Khoảng cách giữa info và badges */
+  }
+
+  /* Trên tablet, 2 badge vẫn có thể nằm ngang */
+  .profileBadges {
+    width: 100%;
+  }
+}
+
+/* Mobile: < 768px */
+@media (max-width: 768px) {
+  /* Toàn bộ banner xếp chồng */
+  .bannerContentWrapper {
+    flex-direction: column;
+    align-items: center;
+    /* Căn giữa avatar */
+  }
+
+  /* Căn giữa cho khối info và badges */
+  .profileRight {
+    align-items: center;
+    width: 100%;
+  }
+
+  /* Căn giữa text trong info */
+  .profileInfo {
+    text-align: center;
+  }
+
+  .profileInfo p {
+    justify-content: center;
+    /* Căn giữa "Member since..." */
+  }
+
+  /* 2 badge xếp chồng lên nhau */
+  .profileBadges {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  /* Mỗi badge chiếm 100% chiều rộng */
+  .badgeCard {
+    width: 100%;
+    min-width: 0;
+    /* Ghi đè min-width cũ */
+  }
+}
+
+/* 3. Tabs */
+.tabsWrapper {
+  display: flex;
+  background-color: #dfe2e1;
+  /* Màu nền xám nhạt cho cả thanh */
+  border-radius: 999px;
+  /* Bo tròn để tạo hình con nhộng */
+  padding: 0.3rem;
+  /* Khoảng đệm nhỏ bên trong */
+  /* margin-bottom: 1.5rem; */
+  border: 1px solid #eee;
+  /* Thêm viền nhẹ */
+}
+
+.tabButton {
+  flex: 1;
+  /* Cả 3 nút chia đều không gian */
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+  /* Màu chữ khi không active */
+  cursor: pointer;
+  border-radius: 999px;
+  /* Bo tròn cho từng nút */
+  /* Hiệu ứng chuyển động mượt */
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.tabButton.active {
+  background-color: #fff;
+  /* Nền trắng cho tab active */
+  color: #009688;
+  /* Màu chữ primary (từ code cũ) */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  /* Đổ bóng nhẹ */
+}
+
+/* NÚT MŨI TÊN (CSS MỚI) */
+.tabArrow {
+  display: none;
+  /* Mặc định ẨN trên desktop */
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0 0.75rem;
+}
+
+.tabArrow:hover {
+  color: #000;
+}
+
+@media (max-width: 768px) {
+  .tabsWrapper {
+    position: relative;
+    /* Đảm bảo wrapper là flex để 'flex: 1' ở con hoạt động */
+    display: flex;
+    width: 100%;
+  }
+
+  /* 1. Ẩn tất cả các tab */
+  .tabButton {
+    display: none;
+  }
+
+  /* 2. Hiện LẠI DUY NHẤT tab .active */
+  .tabButton.active {
+    display: block;
+    /* Hiển thị nút */
+
+    /* THAY ĐỔI QUAN TRỌNG:
+      Bỏ 'width: 100%' và 'flex: 0'.
+      Dùng 'flex: 1' để nó tự động lấp đầy
+      không gian còn lại trong flex container (là 100% vì 2 mũi tên 
+      đã 'position: absolute')
+    */
+    flex: 1;
+
+    text-align: center;
+    /* Căn giữa chữ */
+  }
+
+  /* 3. Hiện các nút mũi tên (Giữ nguyên) */
+  .tabArrow {
+    display: block;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    color: #777;
+  }
+
+  .tabArrowPrev {
+    left: 0.8rem;
+  }
+
+  .tabArrowNext {
+    right: 0.8rem;
+  }
+}
+
+/* 4. Overview Tab */
+.overviewWrapper {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.recentAnalyses {
+  flex: 3;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sectionHeader .sectionHeaderIcon {
+  color: #009688;
+}
+
+.sectionHeader a {
+  text-decoration: none;
+  color: #009688;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.analysesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.analysisItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.itemInfo {
+  flex-grow: 1;
+}
+
+.itemInfo h4 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.itemInfo p {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+
+.itemStatus {
+  text-align: right;
+}
+
+.statusTag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+
+/* .healing {
+  background-color: #e0f2f1;
+  color: #00796b;
+}
+.healed {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+.improving {
+  background-color: #fff8e1;
+  color: #f57f17;
+} */
+
+/* "Nhẹ" - Màu xanh lá */
+.mild {
+  background-color: #e8f5e9;
+  /* Nền xanh nhạt */
+  color: #388e3c;
+  /* Chữ xanh đậm */
+}
+
+/* "Trung bình" - Màu vàng/cam */
+.medium {
+  background-color: #fff8e1;
+  /* Nền vàng nhạt */
+  color: #f57f17;
+  /* Chữ vàng đậm */
+}
+
+/* "Nặng" - Màu đỏ */
+.severe {
+  background-color: #ffebee;
+  /* Nền đỏ nhạt */
+  color: #d32f2f;
+  /* Chữ đỏ đậm */
+}
+
+.time {
+  font-size: 0.8rem;
+  color: #777;
+  display: block;
+}
+
+.viewLink {
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.quickActions {
+  flex: 1;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.quickActions h3 {
+  margin-top: 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.actionBtn {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.actionBtn.primary {
+  background-color: #009688;
+  color: #fff;
+  border-color: #009688;
+}
+
+.nextCheckup {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.nextCheckup p {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0.25rem 0;
+}
+
+.nextCheckup span {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+@media (max-width: 768px) {
+  .overviewWrapper {
+    /* Đổi từ xếp ngang (row) sang xếp chồng (column) */
+    flex-direction: column;
+  }
+
+  .recentAnalyses {
+    /* Reset lại thuộc tính flex để nó hoạt động tốt trong chế độ column và không chiếm 75% chiều cao */
+    flex: 1;
+  }
+
+  .quickActions {
+    flex: 1;
+  }
+}
+
+/* 5. Personal Info Tab */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.infoCard {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow: visible;
+  /* Đảm bảo nội dung không bị cắt */
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #eee;
+  background-color: #f9f9f9;
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.editBtn {
+  background: none;
+  border: none;
+  color: #009688;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.cardBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.infoField {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoField label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.infoIcon {
+  color: #009688;
+}
+
+.infoValue {
+  font-size: 1rem;
+  color: #333;
+}
+
+/* --- INPUT FIELD STYLES (Edit Mode) --- */
+.inlineInput {
+  font-size: 0.9rem; /* Chữ nhỏ hơn (từ 1rem -> 0.9rem) */
+  padding: 0.5rem 0.75rem; /* Tăng padding ngang để chữ không dính viền */
+  border: 1px solid #d1d5db; /* Viền xám nhạt bao quanh (thay vì chỉ border-bottom) */
+  border-radius: 6px; /* Bo tròn góc */
+  outline: none;
+  width: 100%;
+  color: #333;
+  background-color: #fff;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Bóng đổ rất nhẹ */
+}
+
+/* Hiệu ứng khi focus vào input */
+.inlineInput:focus {
+  border-color: #009688; /* Đổi màu viền sang xanh chủ đạo */
+  box-shadow: 0 0 0 3px rgba(0, 150, 136, 0.1); /* Hiệu ứng glow nhẹ */
+  background-color: #f0fdfa; /* Nền xanh rất nhạt */
+}
+
+/* Style riêng cho Select box để mũi tên không bị lệch */
+select.inlineInput {
+  appearance: none; /* Xóa style mặc định của trình duyệt */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem; /* Chừa chỗ cho icon mũi tên */
+}
+
+.action {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.btnCancel {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnSave {
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background-color: #009688;
+  color: #fff;
+  border: 1px solid #009688;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.errorText {
+  color: #d32f2f; /* Đỏ đậm dễ đọc */
+  font-size: 0.85rem;
+  margin-top: 4px;
+  margin-bottom: 8px; /* Tạo khoảng cách với input tiếp theo */
+  padding-left: 24px; /* Thụt vào để thẳng hàng với text của input (trừ icon) */
+  position: relative;
+
+  /* Hiệu ứng hiện ra nhẹ nhàng */
+  animation: slideInError 0.2s ease-out;
+}
+
+/* Thêm icon chấm than nhỏ trước lỗi (Optional) */
+.errorText::before {
+  content: "!";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 16px;
+  height: 16px;
+  background-color: #d32f2f;
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes slideInError {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .infoGrid {
+    /* Trên di động, chuyển từ 2 cột sang 1 cột */
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 6. Settings Tab */
+/* .settingsWrapper {
+  max-width: 800px;
+} */
+.settingsCard {
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.settingItem:last-child {
+  border-bottom: none;
+}
+
+.settingInfo h4 {
+  font-size: 1rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.settingInfo p {
+  font-size: 0.9rem;
+  color: #777;
+  margin: 0;
+}
+
+.cardHeader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  /* THÊM 3 DÒNG NÀY */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Tạo khoảng cách nhỏ giữa icon và chữ */
+}
+
+.cardHeader .cardHeaderIcon {
+  color: #00796b;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: #009688;
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.languageSelect {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #fff;
+  cursor: pointer;
+  /* Thêm dòng này để nó trông giống input */
+  outline-color: #009688;
+}
+
+/* src/components/auth/Form.module.css */
+
+.apiErrorMessage {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #d32f2f;
+  background-color: #ffebee;
+  color: #d32f2f;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  box-sizing: border-box;
+
+  /* --- THÊM DÒNG NÀY --- */
+  animation: fadeInAndOut 0.5s ease-out;
+  /* Giữ lại style của 100% (opacity: 0) khi animation kết thúc */
+  animation-fill-mode: forwards;
+}
+
+.apiSuccessMessage {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #1e8e3e;
+  background-color: #e6f4ea;
+  color: #1e8e3e;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  box-sizing: border-box;
+
+  /* --- THÊM DÒNG NÀY --- */
+  animation: fadeInAndOut 0.5s ease-out;
+  animation-fill-mode: forwards;
+}
+
+/* Thêm vào cuối file Form.module.css */
+
+@keyframes fadeInAndOut {
+  /* (0s -> 0.3s) Fade In */
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* (0.3s -> 1.2s) Stay */
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* (1.2s -> 1.5s) Fade Out */
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

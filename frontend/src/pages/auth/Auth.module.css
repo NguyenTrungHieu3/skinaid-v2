@@ -1,0 +1,185 @@
+/* src/pages/auth/Auth.module.css */
+
+/* .container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f0f4f8;
+  
+}*/
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* <-- THAY ĐỔI 1: Căn lề trên (để cuộn từ trên xuống) */
+  min-height: 100vh; /* <-- THAY ĐỔI 2: Đổi từ height sang min-height */
+  background-color: #f0f4f8;
+  padding: 2rem; /*  <-- THAY ĐỔI 3: Thêm padding để tạo khoảng hở */
+  box-sizing: border-box; /* Thêm vào để padding không làm vỡ layout */
+}
+
+.card {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  background-color: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 121, 107, 0.5);
+  overflow: hidden;
+  min-height: 520px;
+}
+
+/* Left Panel Styling */
+.leftPanel {
+  width: 50%;
+  padding: 2.8rem;
+  background: url(../../assets/images/auths/anhNen3.jpg) no-repeat;
+  background-size: cover;
+  text-align: center;
+}
+
+.leftPanel .leftPanelLogo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  text-decoration: none;
+}
+
+.leftPanel .leftPanelLogo img {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.leftPanel .leftPanelLogo h2 {
+  font-size: 1.5rem;
+  font-family: Poppins, sans-serif;
+  background: linear-gradient(
+    90deg,
+    black 0%,
+    black 45%,
+    #1e9378 67%,
+    #1e9378 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  text-align: center;
+}
+
+.promoImage {
+  max-width: 100%;
+  margin-bottom: 2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(30, 147, 120, 1);
+  box-shadow: 0 0 10px rgba(30, 147, 120, 0.8);
+}
+.promoTitle {
+  color: #00796b;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.promoText {
+  font-size: 0.8rem;
+  color: #004d40;
+}
+
+/* Right Panel Styling */
+/* .rightPanel {
+  width: 50%;
+  padding: 3rem;
+} */
+
+.rightPanel {
+  width: 50%;
+  padding: 3rem;
+
+  /* 1. Thêm 3 dòng này để biến nó thành flex container */
+  display: flex;
+  flex-direction: column;
+  /* (Mặc định nó sẽ tự căn lên trên) */
+  /* position: relative; */
+}
+
+/* 2. Thêm class mới để căn lề */
+.alignTop {
+  justify-content: flex-start; /* Căn lên trên (mặc định) */
+}
+
+.alignCenter {
+  justify-content: center; /* Căn vào giữa! */
+}
+
+/* --- THÊM CLASS MỚI CHO NÚT BACK --- */
+.mobileBackButton {
+  display: none; /* Mặc định ẩn trên Desktop */
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  font-size: 1.2rem;
+  color: #00796b; /* Màu xanh của theme */
+  z-index: 10;
+  transition: color 0.2s;
+}
+
+.mobileBackButton:hover {
+  color: #004d40;
+}
+
+/* Thêm vào cuối file Auth.module.css */
+.languageWrapper {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+
+  /* Tùy chọn: Thêm nền trắng mờ để dễ nhìn hơn nếu muốn */
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 20px;
+  z-index: 10; /* Đảm bảo nổi lên trên */
+}
+
+@media (max-width: 900px) {
+  .container {
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .card {
+    flex-direction: column;
+    max-width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Ẩn hoàn toàn cột bên trái */
+  .leftPanel {
+    display: none;
+  }
+
+  /* Cho cột form chiếm 100% */
+  .rightPanel {
+    width: 100%;
+    padding: 2rem;
+    box-sizing: border-box;
+    min-height: 100vh; /* Cho form chiếm toàn bộ chiều cao */
+    /* position: relative; */
+  }
+
+  /* --- THÊM DÒNG NÀY ĐỂ HIỆN NÚT BACK TRÊN MOBILE --- */
+  .mobileBackButton {
+    display: block; /* Hiện lên khi màn hình nhỏ */
+    top: 1.5rem; /* Căn chỉnh vị trí cho đẹp trên mobile */
+    left: 1.5rem;
+  }
+  
+  .languageWrapper {
+    top: 1rem;
+    right: 1rem;
+  }
+}

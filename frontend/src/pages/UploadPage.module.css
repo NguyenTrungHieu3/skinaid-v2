@@ -1,0 +1,631 @@
+/* src/pages/UploadPage.module.css */
+
+/* --- LAYOUT CHUNG --- */
+.pageContainer {
+  width: 100%;
+  /* Trừ đi Header chiều cao (60px) */
+  height: calc(100vh - 60px);
+  background-color: #d1eae54c;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; /* Ngăn cuộn trang chính */
+}
+
+/* src/pages/UploadPage.module.css */
+
+/* ERROR BANNER (Nổi trên cùng) */
+.topErrorBanner {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem 1.5rem;
+
+  display: flex;
+  align-items: center;
+  /* Thay justify-content: space-between thành gap để kiểm soát khoảng cách */
+  gap: 1rem;
+
+  border-bottom: 1px solid #fee2e2;
+  animation: slideDown 0.3s ease;
+  z-index: 50;
+  flex-shrink: 0;
+
+  /* Đảm bảo banner không bị đè bởi các thành phần khác */
+  position: relative;
+}
+
+/* Class mới cho thẻ span chứa text */
+.errorContent {
+  flex: 1; /* Chiếm toàn bộ không gian còn lại */
+  text-align: center; /* Căn giữa chữ */
+  font-weight: 500; /* In đậm nhẹ cho dễ đọc */
+  font-size: 0.95rem;
+}
+
+/* Style cho nút đóng */
+.errorExit {
+  /* Reset style mặc định của button */
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  /* Định dạng icon */
+  color: #dc2626; /* Cùng màu chữ đỏ */
+  font-size: 1.1rem;
+
+  /* Tạo vùng bấm rộng hơn chút cho dễ bấm */
+  width: 32px;
+  height: 32px;
+  border-radius: 50%; /* Bo tròn nút */
+
+  /* Căn icon vào giữa nút */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Hiệu ứng mượt mà */
+  transition: all 0.2s ease;
+
+  /* Đảm bảo nút không bị co lại khi màn hình nhỏ */
+  flex-shrink: 0;
+}
+
+/* Hiệu ứng khi di chuột vào nút đóng */
+.errorExit:hover {
+  background-color: rgba(220, 38, 38, 0.1); /* Nền đỏ nhạt */
+  transform: scale(1.1); /* Phóng to nhẹ */
+}
+
+.errorExit:active {
+  transform: scale(0.95); /* Nhấn xuống nhẹ */
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- GIAI ĐOẠN IDLE (Giống cũ) --- */
+.uploadBox {
+  margin: auto;
+  background: white;
+  border: 3px dashed #0d9488;
+  border-radius: 16px;
+  padding: 4rem 2rem;
+  text-align: center;
+  width: 90%;
+  max-width: 600px;
+  transition: all 0.3s;
+}
+.uploadBox.dragging {
+  transform: scale(1.02);
+  background: #f0fdfa;
+}
+.uploadDropzone {
+  cursor: pointer;
+}
+
+.uploadDropzone .uploadTitle {
+  margin-bottom: 1rem;
+}
+
+.uploadDropzone .uploadSubTitle {
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: gray;
+}
+
+.uploadDropzone .uploadCondition {
+  font-size: 0.85rem;
+  color: gray;
+  font-style: italic;
+}
+
+.uploadIcon {
+  width: 64px;
+  height: 64px;
+  background: #0d9488;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.5rem;
+  position: relative;
+}
+.subIcon {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  color: #0d9488;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.fileTypes {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+.fileTypes span {
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* --- GIAI ĐOẠN WORKSPACE (Layout 2 cột) --- */
+.workspace {
+  flex: 1;
+  display: grid;
+  /* Cột trái linh hoạt, Cột phải cố định 350px */
+  grid-template-columns: 1fr 380px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 1. LEFT COLUMN: VIEWER */
+.viewerPanel {
+  background-color: #e2e8f0; /* Màu tối hơn chút để nổi bật ảnh */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.imagePreviewWrapper,
+.cropperWrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1e293b; /* Nền tối sau ảnh */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.mainImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* SCANNING EFFECT */
+.scanningOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+.scanLine {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: #2dd4bf;
+  box-shadow: 0 0 15px #2dd4bf;
+  animation: scanMove 2s infinite ease-in-out alternate;
+}
+@keyframes scanMove {
+  from {
+    top: 0%;
+  }
+  to {
+    top: 100%;
+  }
+}
+
+.scanMessage {
+  background: rgba(0, 0, 0, 0.7);
+  color: #2dd4bf;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  z-index: 11;
+  border: 1px solid #2dd4bf;
+}
+
+/* 2. RIGHT COLUMN: CONTROLS */
+.controlsPanel {
+  background: white;
+  border-left: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  overflow-y: auto; /* Cho phép cuộn nếu content dài */
+}
+
+.controlHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.controlHeader h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #334155;
+}
+
+/* --- THÊM CLASS NÀY VÀO --- */
+.headerBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem; /* Khoảng cách giữa nút Crop và nút Reset */
+}
+/* Nút Icon hiện đại */
+.btnIcon {
+  /* 1. Layout & Kích thước */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; /* Kích thước cố định để nút vuông vức */
+  height: 40px;
+
+  /* 2. Màu sắc & Viền */
+  background-color: white;
+  border: 1px solid #e2e8f0; /* Viền xám nhạt tinh tế */
+  border-radius: 10px; /* Bo góc mềm mại (squircle) */
+  color: #64748b; /* Màu icon xám trung tính */
+
+  /* 3. Hiệu ứng & Con trỏ */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Chuyển động mượt */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Bóng đổ rất nhẹ */
+}
+
+/* Trạng thái Hover (Di chuột vào) */
+.btnIcon:hover {
+  background-color: #f8fafc; /* Nền sáng hơn chút */
+  border-color: #cbd5e1; /* Viền đậm hơn */
+  color: #0d9488; /* Icon đổi màu chủ đạo (Teal) */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Bóng nổi lên */
+  transform: translateY(-2px); /* Nút bay lên nhẹ */
+}
+
+/* Đặc biệt: Xoay icon FaRedo khi hover */
+.btnIcon:hover svg {
+  transform: rotate(180deg); /* Xoay 180 độ */
+  transition: transform 0.5s ease;
+}
+
+/* Trạng thái Active (Bấm xuống) */
+.btnIcon:active {
+  background-color: #f1f5f9;
+  transform: translateY(0) scale(0.95); /* Nút lún xuống */
+  box-shadow: none;
+}
+
+.suggestionBoxTip {
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  /* font-style: italic; */
+  color: #334155;
+}
+
+.controlBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.panelContent {
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* STATUS BOXES */
+.statusBoxWarning,
+.statusBoxDanger,
+.statusBoxSuccess {
+  padding: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+.statusBoxWarning {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+.statusBoxDanger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.statusBoxSuccess {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #ccfbf1;
+}
+
+.sliderGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.zoomLabel {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.95rem;
+  margin-left: 0.5rem;
+}
+
+.sliderWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem; /* Giảm gap chút cho gọn */
+  background-color: #f1f5f9;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+}
+
+/* NÚT ICON (MỚI) */
+.sliderIconBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.sliderIconBtn:hover {
+  color: #0d9488; /* Đổi màu xanh khi hover */
+  background-color: rgba(13, 148, 136, 0.1); /* Nền nhạt khi hover */
+  transform: scale(1.1);
+}
+
+.sliderIconBtn:active {
+  transform: scale(0.95);
+}
+
+/* --- THANH TRƯỢT (UPDATED) --- */
+.zoomBar {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+
+  /* QUAN TRỌNG: Xóa background tĩnh ở đây vì ta đã set inline style ở file TSX */
+  /* background: #cbd5e1;  <-- XÓA DÒNG NÀY */
+}
+
+/* Nút kéo (Thumb) - Chrome/Safari/Edge */
+.zoomBar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0d9488;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.zoomBar::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.2); /* Hiệu ứng tỏa sáng khi hover */
+}
+
+/* Firefox Thumb */
+.zoomBar::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #0d9488;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.issueList {
+  margin: 0 0 1.5rem 0;
+  padding-left: 1.2rem;
+  color: #ef4444;
+}
+.issueList li {
+  margin-bottom: 0.5rem;
+}
+
+/* BUTTONS & ACTIONS */
+.actionGroup {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.btnPrimary,
+.btnSecondary,
+.btnMagic,
+.btnPrimaryLarge {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+.btnPrimary {
+  background: #0d9488;
+  color: white;
+}
+.btnPrimary:hover {
+  background: #0f766e;
+}
+
+.btnSecondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+.btnSecondary:hover {
+  background: #e2e8f0;
+}
+
+.btnMagic {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  color: white;
+  margin-bottom: 1rem;
+}
+.btnMagic:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.btnPrimaryLarge {
+  background: #0d9488;
+  color: white;
+  font-size: 1.1rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.btnLink {
+  background: none;
+  border: none;
+  color: #64748b;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  display: block;
+  width: 100%;
+}
+
+.divider {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin: 1rem 0;
+  font-weight: 600;
+}
+.centerText {
+  text-align: center;
+  color: #64748b;
+  margin-top: 1rem;
+}
+
+.loaderSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #0d9488;
+  border-radius: 50%;
+  margin: 2rem auto 0;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.dragOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(13, 148, 136, 0.9);
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+  .viewerPanel {
+    padding: 1rem;
+  }
+  .controlsPanel {
+    height: auto;
+    max-height: 50vh;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+  }
+}
+
+.cropperWrapper {
+  /* ... giữ nguyên các thuộc tính cũ ... */
+  overflow: auto; /* Cho phép cuộn nếu ảnh quá to */
+  background: #1e293b;
+  display: flex; /* Để căn giữa ReactCrop */
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tùy chỉnh thêm cho ReactCrop nếu cần */
+.reactCropCustom {
+  max-width: 100%;
+  max-height: 100%;
+}

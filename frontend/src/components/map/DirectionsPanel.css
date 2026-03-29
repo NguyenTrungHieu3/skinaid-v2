@@ -1,0 +1,367 @@
+.directions-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.directions-header {
+    background-color: #009688;
+    padding: 0.875rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    color: white;
+}
+
+@media (min-width: 480px) {
+    .directions-header {
+        padding: 1rem;
+        gap: 1rem;
+    }
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.back-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.route-inputs-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.route-inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.625rem;
+    background-color: white;
+}
+
+@media (min-width: 480px) {
+    .input-row {
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+.drag-handle {
+    display: none;
+}
+
+.input-icon {
+    width: 1.5rem;
+    display: flex;
+    justify-content: center;
+    margin-right: 0.5rem;
+    color: #ef4444;
+}
+
+.circle-icon {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #666;
+    border-radius: 50%;
+}
+
+.connector-line {
+    display: flex;
+    align-items: center;
+    padding-left: 1.4rem;
+    height: 1px;
+    background-color: #e7e7e7;
+}
+
+.dots {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+}
+
+.dot {
+    width: 3px;
+    height: 3px;
+    background-color: #cbd5e1;
+    border-radius: 50%;
+}
+
+.route-input {
+    flex: 1;
+    border: none;
+    background: #f1f5f9;
+    padding: 0.6rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+}
+
+@media (min-width: 480px) {
+    .route-input {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+.route-input:focus {
+    outline: 2px solid #009688;
+    background: white;
+}
+
+.mode-selector {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #fff;
+    gap: 0.25rem;
+}
+
+@media (min-width: 480px) {
+    .mode-selector {
+        padding: 0.75rem 1rem;
+        gap: 0.5rem;
+    }
+}
+
+.mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    min-height: 44px;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+    flex: 1;
+}
+
+@media (min-width: 375px) {
+    .mode-btn {
+        padding: 0.5rem 1rem;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (min-width: 480px) {
+    .mode-btn {
+        padding: 0.5rem 1.5rem;
+        flex: initial;
+    }
+}
+
+.mode-btn:hover {
+    background-color: #f1f5f9;
+    color: #009688;
+}
+
+.mode-btn.active {
+    color: #009688;
+    background-color: rgba(0, 150, 136, 0.1);
+}
+
+.route-summary {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+@media (min-width: 480px) {
+    .route-summary {
+        padding: 1rem 1.25rem;
+    }
+}
+
+.primary-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.duration {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #009688;
+}
+
+@media (min-width: 480px) {
+    .duration {
+        font-size: 1.75rem;
+    }
+}
+
+.distance {
+    font-size: 1rem;
+    color: #64748b;
+}
+
+@media (min-width: 480px) {
+    .distance {
+        font-size: 1.1rem;
+    }
+}
+
+.route-via {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin: 0;
+}
+
+@media (min-width: 480px) {
+    .route-via {
+        font-size: 0.9rem;
+    }
+}
+
+.route-steps {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.875rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 480px) {
+    .route-steps {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .route-steps {
+        padding: 1rem 1.25rem;
+    }
+}
+
+.route-steps h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.875rem;
+    color: #0f172a;
+}
+
+@media (min-width: 480px) {
+    .route-steps h3 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+.steps-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.step-item {
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    position: relative;
+}
+
+.step-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    top: 1.5rem;
+    bottom: 0;
+    width: 2px;
+    background-color: #e2e8f0;
+}
+
+.step-icon {
+    width: 1.5rem;
+    display: flex;
+    justify-content: center;
+    padding-top: 0.25rem;
+    flex-shrink: 0;
+}
+
+.step-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #cbd5e1;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #cbd5e1;
+}
+
+/* Circle icon for starting location in steps */
+.step-circle-icon {
+    width: 10px;
+    height: 10px;
+    border: 2px solid #666;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Red marker for destination in steps */
+.destination-marker {
+    color: #ef4444;
+    /* red-500 */
+    width: 1rem;
+    height: 1rem;
+}
+
+.step-content {
+    flex: 1;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.step-item:last-child .step-content {
+    border-bottom: none;
+}
+
+.step-instruction {
+    font-size: 0.875rem;
+    color: #334155;
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+@media (min-width: 480px) {
+    .step-instruction {
+        font-size: 0.9rem;
+    }
+}
+
+.step-meta {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}

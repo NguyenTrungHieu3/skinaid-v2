@@ -1,30 +1,287 @@
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 .pytest_cache/
-.mypy_cache/
 
-# Environment
-.env
-.venv/
+# Translations
+*.mo
+*.pot
+
+# Django stuff (if applicable)
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff (if applicable)
+instance/
+.webassets-cache
+
+# Scrapy stuff (if applicable)
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.venv
+env/
 venv/
+ENV/
+env.bak/
+venv.bak/
 
-# AI model artifacts (ignore when large)
-*.pt
-*.onnx
+# Spyder project settings
+.spyderproject
+.spyproject
 
-# Node / Expo
-node_modules/
-.expo/
+GEMINI.md
 
-# OS / editor
-.DS_Store
-Thumbs.db
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+
+# Backend specific
+backend/image/
+backend/docs/
+backend/uploads/
+backend/logs/
+backend/*.log
+backend/migrations/versions/
+backend/.pytest_cache/
+backend/User_Guidelines.md
+backend/tests/
+
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# IDE and editors
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.vim/
+.netrwhist
+backend/tests/image_test
 
-# Logs
-*.log
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Node.js (for frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Docker
+.dockerignore
+
+# AI/ML specific - Ignore large model files but track folder structure
+models/*.pkl
+models/*.pickle
+models/*.joblib
+models/*.h5
+models/*.hdf5
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*.tflite
+models/*.bin
+models/*.safetensors
+models/*.tar.gz
+models/*.zip
+
+# Allow model metadata and configuration files
+!models/*.json
+!models/*.yaml
+!models/*.yml
+!models/*.txt
+!models/*.md
+!models/README*
+!models/.gitkeep
+
+# Other AI/ML artifacts
+checkpoints/
+wandb/
+datasets/
+data/raw/
+data/processed/
+notebooks/.ipynb_checkpoints
+data/
+
+# Media files (large files that shouldn't be in git)
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+*.3gp
+
+# Large image files
+*.psd
+*.ai
+*.eps
+*.raw
+*.cr2
+*.nef
+*.arw
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.bz2
+*.xz
+
+# Office documents (if not needed in repo)
+*.docx
+*.xlsx
+*.pptx
+*.pdf
+
+# Configuration files with sensitive data
+config.ini
+settings.ini
+secrets.json
+.secrets
+credentials.json
+
+# FastAPI specific
+app.db
+alembic.ini
+alembic/versions/*
+!alembic/versions/.gitkeep
+
+# Backup files
+*.backup
+*.bak
+*.old
+# Runtime directories
+runtime/
+pids/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+.agent/
+.kilocode/
+.claude/
+

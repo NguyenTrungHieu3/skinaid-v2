@@ -1,0 +1,150 @@
+/* Pagination Component Styles */
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    margin-top: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.paginationInfo {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.paginationControls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.paginationBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.paginationBtn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #1E9378;
+    color: #1E9378;
+    transform: translateY(-1px);
+}
+
+.paginationBtn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.paginationBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: #94a3b8;
+}
+
+.paginationBtn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.paginationNumbers {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.paginationNumber {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.5rem;
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.paginationNumber:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+
+.paginationNumber.active {
+    background: linear-gradient(135deg, #1E9378 0%, #17805f 100%);
+    color: white;
+    border-color: #1E9378;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(30, 147, 120, 0.2);
+}
+
+.paginationNumber.active:hover {
+    background: linear-gradient(135deg, #17805f 0%, #126d4f 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(30, 147, 120, 0.3);
+}
+
+.paginationEllipsis {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 600;
+    user-select: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .pagination {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .paginationInfo {
+        text-align: center;
+    }
+
+    .paginationControls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .paginationBtn {
+        flex: 1;
+        min-width: 100px;
+        justify-content: center;
+    }
+
+    .paginationNumbers {
+        order: -1;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
