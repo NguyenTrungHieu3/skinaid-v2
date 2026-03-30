@@ -150,8 +150,6 @@ tenacity
 tiktoken
 timm
 tokenizers
-torch
-torchvision
 tqdm
 typer
 typing-inspect

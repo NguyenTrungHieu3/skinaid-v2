@@ -19,6 +19,7 @@ COPY requirements_flexible.txt .
 # Cài đặt các thư viện Python cần thiết
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements_flexible.txt
+    && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
 # Copy source code
 COPY . .
