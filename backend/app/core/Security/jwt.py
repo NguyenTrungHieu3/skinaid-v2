@@ -13,57 +13,62 @@ class JWTHandler:
         self.access_token_expire_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
         self.refresh_token_expire_days = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
+    def _create_token(
+        self,
+        subject: Union[str, int],
+        token_type: str,
+        expires_delta: timedelta,
+        token_version: int = 0,
+        additional_claims: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[str, str, datetime]:
+        current_time = datetime.now(timezone.utc)
+        expire = current_time + expires_delta
+        jti = hashlib.sha256(
+            f"{subject}{current_time}{self.secret_key}{token_type}{token_version}".encode()
+        ).hexdigest()[:32]
+
+        payload = {
+            "sub": str(subject),
+            "exp": expire,
+            "iat": current_time,
+            "type": token_type,
+            "jti": jti,
+            "ver": token_version,
+        }
+
+        if additional_claims:
+            payload.update(additional_claims)
+
+        token = jwt.encode(payload, key=self.secret_key, algorithm=self.algorithm)
+        return token, jti, expire
+
     def create_token_pair(
         self,
         subject: Union[str, int],
         token_version: int = 0,
-        additional_claims: Optional[Dict[str, Any]] = None
+        additional_claims: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        current_time = datetime.now(timezone.utc)
-
-        access_exp = current_time + timedelta(minutes=self.access_token_expire_minutes)
-        access_jti = hashlib.sha256(
-            f"{subject}{current_time}{self.secret_key}access{token_version}".encode()
-        ).hexdigest()[:32]
-        
-        access_payload ={
-            "sub": str(subject),
-            "exp": access_exp,
-            "iat": current_time,
-            "type": "access",
-            "jti": access_jti,
-            "ver": token_version
-        }
-
-        if additional_claims:
-            access_payload.update(additional_claims)
-        
-        access_token = jwt.encode(access_payload, key=self.secret_key, algorithm=self.algorithm)
-
-        refresh_exp = current_time + timedelta(days=self.refresh_token_expire_days)
-        refresh_jti = hashlib.sha256(
-            f"{subject}{current_time}{self.secret_key}refresh{token_version}".encode()
-        ).hexdigest()[:32]
-
-        refresh_payload = {
-            "sub": str(subject),
-            "exp": refresh_exp,
-            "iat": current_time,
-            "type": "refresh",
-            "jti": refresh_jti,
-            "ver": token_version,
-            "access_jti": access_jti
-        }
-
-        refresh_token = jwt.encode(refresh_payload, key=self.secret_key, algorithm=self.algorithm)
-
+        access_token, access_jti, access_exp = self._create_token(
+            subject=subject,
+            token_type="access",
+            expires_delta=timedelta(minutes=self.access_token_expire_minutes),
+            token_version=token_version,
+            additional_claims=additional_claims,
+        )
+        refresh_token, refresh_jti, refresh_exp = self._create_token(
+            subject=subject,
+            token_type="refresh",
+            expires_delta=timedelta(days=self.refresh_token_expire_days),
+            token_version=token_version,
+            additional_claims={"access_jti": access_jti},
+        )
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
             "access_jti": access_jti,
             "refresh_jti": refresh_jti,
             "access_exp": access_exp,
-            "refresh_exp": refresh_exp
+            "refresh_exp": refresh_exp,
         }
 
     def create_access_token(
@@ -71,81 +76,51 @@ class JWTHandler:
         subject: Union[str, int],
         token_version: int = 0,
         expires_delta: Optional[timedelta] = None,
-        additional_claims: Optional[Dict[str, Any]] = None
+        additional_claims: Optional[Dict[str, Any]] = None,
     ) -> str:
-        current_time = datetime.now(timezone.utc)
-
-        expire = (
-            current_time + expires_delta
-            if expires_delta
-            else current_time + timedelta(minutes=self.access_token_expire_minutes)
+        delta = expires_delta or timedelta(minutes=self.access_token_expire_minutes)
+        token, _, _ = self._create_token(
+            subject=subject,
+            token_type="access",
+            expires_delta=delta,
+            token_version=token_version,
+            additional_claims=additional_claims,
         )
-
-        jti = hashlib.sha256(
-            f"{subject}{current_time}{self.secret_key}{token_version}".encode()
-        ).hexdigest()[:32]
-
-        payload = {
-            "sub": str(subject),
-            "exp": expire,
-            "iat": current_time,
-            "type": "access",
-            "jti": jti,
-            "ver": token_version
-        }
-
-        if additional_claims: 
-            payload.update(additional_claims)
-
-        return jwt.encode(payload, key=self.secret_key, algorithm=self.algorithm)
+        return token
 
     def create_refresh_token(
         self,
         subject: Union[str, int],
         token_version: int = 0,
-        expires_delta: Optional[timedelta] = None
+        expires_delta: Optional[timedelta] = None,
     ) -> str:
-        current_time = datetime.now(timezone.utc)
-
-        expire = (
-            current_time + expires_delta
-            if expires_delta
-            else current_time + timedelta(days=self.refresh_token_expire_days)
+        delta = expires_delta or timedelta(days=self.refresh_token_expire_days)
+        token, _, _ = self._create_token(
+            subject=subject,
+            token_type="refresh",
+            expires_delta=delta,
+            token_version=token_version,
         )
-
-        jti = hashlib.sha256(
-            f"{subject}{current_time}{self.secret_key}refresh{token_version}".encode()
-        ).hexdigest()[:32]
-
-        payload = {
-            "sub": str(subject),
-            "exp": expire,
-            "iat": current_time,
-            "type": "refresh",
-            "jti": jti,
-            "ver": token_version
-        }
-
-        return jwt.encode(payload, key=self.secret_key, algorithm=self.algorithm)
+        return token
 
     def decode_token(
         self,
         token: str,
-        verify_exp: bool = True
+        verify_exp: bool = True,
     ) -> Dict[str, Any]:
         try:
             options = {"verify_exp": verify_exp} if not verify_exp else {}
-            
+
             payload = jwt.decode(
                 token=token,
                 key=self.secret_key,
                 algorithms=[self.algorithm],
-                options=options
+                options=options,
             )
-            
+
             return payload
-            
-        except JWTError as e:
+
+        except JWTError:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token không hợp lệ hoặc đã hết hạn",

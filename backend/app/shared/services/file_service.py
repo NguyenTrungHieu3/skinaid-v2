@@ -1,8 +1,6 @@
 from pathlib import Path
 from uuid import uuid4
 from datetime import datetime
-from typing import Optional
-from fastapi import UploadFile
 import aiofiles
 import os
 

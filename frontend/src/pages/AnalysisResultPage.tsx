@@ -12,8 +12,10 @@ import SaveLoginModal from "../components/analysis/SaveLoginModal";
 import { isAxiosError } from "axios";
 import {
   getAnalysisResult,
+  synthesizeGuidance,
   type AnalysisGetResponse,
   type SignificantWound,
+  type StructuredGuidance,
 } from "../services/aiService";
 import { BACKEND_URL } from "../services/api";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -159,6 +161,12 @@ const AnalysisResultPage = () => {
   );
   const [woundsToExport, setWoundsToExport] = useState<SignificantWound[]>([]);
 
+  // LLM synthesis state
+  const [llmGuidance, setLlmGuidance] = useState<StructuredGuidance | null>(null);
+  const [isLlmLoading, setIsLlmLoading] = useState(false);
+  // Cache per detection_id để không gọi lại khi đổi tab về wound cũ
+  const llmCache = useState<Record<string, StructuredGuidance | null>>(() => ({}))[0];
+
   // State for MapModal
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
@@ -231,6 +239,49 @@ const AnalysisResultPage = () => {
     fetchResult();
   }, [analysis_id, t, isAuthenticated]);
 
+  // Gọi LLM synthesis khi active wound thay đổi
+  useEffect(() => {
+    if (!analysisData) return;
+    const parts = activeTab.split("_");
+    const type = parts[0];
+    const index = parseInt(parts[1] || "1") - 1;
+    const woundsOfType = analysisData.significant_wounds.filter(
+      (w) => w.wound_type === type
+    );
+    const wound = woundsOfType[index];
+    if (!wound) return;
+    const cacheKey = `${wound.wound_type}_${wound.severity}_${wound.sub_type ?? ""}`;
+    fetchLlmGuidance(wound, cacheKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, analysisData]);
+
+  // Fetch LLM guidance cho một wound cụ thể
+  const fetchLlmGuidance = async (wound: SignificantWound, cacheKey: string) => {
+    if (cacheKey in llmCache) {
+      setLlmGuidance(llmCache[cacheKey]);
+      return;
+    }
+    setIsLlmLoading(true);
+    setLlmGuidance(null);
+    try {
+      const res = await synthesizeGuidance({
+        wound_type: wound.wound_type,
+        severity: wound.severity,
+        sub_type: wound.sub_type ?? undefined,
+        // user_description không truyền — LLM vẫn hoạt động với kiến thức sẵn có
+      });
+      const structured = res.data.data.structured_guidance;
+      llmCache[cacheKey] = structured;
+      setLlmGuidance(structured);
+    } catch {
+      // Nếu LLM fail → fallback về firstaid_snapshot từ DB (xử lý ở render)
+      llmCache[cacheKey] = null;
+      setLlmGuidance(null);
+    } finally {
+      setIsLlmLoading(false);
+    }
+  };
+
   // --- Handlers ---
   // --- LOGIC ĐIỀU HƯỚNG MỚI ---
   // const handleMainTabClick = (type: WoundType) => {
@@ -261,6 +312,17 @@ const AnalysisResultPage = () => {
   };
 
   const currentWoundData = getActiveWoundData();
+
+  // Prefer LLM structured guidance; fall back to DB firstaid_snapshot.
+  // Normalise estimated_healing_time: null → undefined so it satisfies FirstAidSnapshot.
+  const activeSnapshot = currentWoundData
+    ? llmGuidance
+      ? {
+          ...llmGuidance,
+          estimated_healing_time: llmGuidance.estimated_healing_time ?? undefined,
+        }
+      : currentWoundData.firstaid_snapshot
+    : null;
 
   // --- PDF Generation Logic ---
   const generatePDF = async () => {
@@ -489,19 +551,27 @@ const AnalysisResultPage = () => {
                 subType={currentWoundData.sub_type}
                 severity={currentWoundData.severity}
                 healingTime={
+                  activeSnapshot?.estimated_healing_time ||
                   currentWoundData.firstaid_snapshot.estimated_healing_time ||
                   "N/A"
                 }
                 supportItems={
-                  currentWoundData.firstaid_snapshot.supplies_needed || []
+                  activeSnapshot?.supplies_needed ||
+                  currentWoundData.firstaid_snapshot.supplies_needed ||
+                  []
                 }
               />
             </div>
           </div>
         </div>
 
-        {currentWoundData.firstaid_snapshot ? (
-          <TreatmentSection snapshot={currentWoundData.firstaid_snapshot} />
+        {activeSnapshot ? (
+          <TreatmentSection snapshot={activeSnapshot} isLoading={isLlmLoading} />
+        ) : isLlmLoading ? (
+          <TreatmentSection
+            snapshot={{ steps: [], dos: [], donts: [] }}
+            isLoading={true}
+          />
         ) : (
           <div>No treatment data available.</div>
         )}

@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.core.database import init_db
+from app.core.redis import init_redis, close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
 from app.core.startup import run_startup_checks
+from app.modules.rag.services.qdrant_service import qdrant_service
 import logging
 import os
 
@@ -34,6 +36,10 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("Database ready")
 
+    print("Connecting to Redis...")
+    await init_redis()
+    print("Redis ready")
+
     print("Running seed data...")
     await run_seed_data()
     print("Seed data complete")
@@ -41,6 +47,10 @@ async def lifespan(app: FastAPI):
     print("Starting scheduler...")
     start_scheduler()
     print("Scheduler ready (cleanup: 3:00 AM daily)")
+
+    print("Initializing Qdrant (RAG vector store)...")
+    await qdrant_service.initialize()
+    print("Qdrant ready")
 
     print("=" * 50)
     print("Server started successfully!")
@@ -58,6 +68,14 @@ async def lifespan(app: FastAPI):
     print("Stopping scheduler...")
     shutdown_scheduler()
     print("Scheduler stopped")
+
+    print("Closing Redis connection...")
+    await close_redis()
+    print("Redis connection closed")
+
+    print("Closing Qdrant connection...")
+    await qdrant_service.close()
+    print("Qdrant connection closed")
 
     print("=" * 50)
     print("Server stopped")

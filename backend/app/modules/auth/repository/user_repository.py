@@ -38,12 +38,6 @@ class UserRepository(BaseRepository[User]):
         self,
         user_id: UUID,
     ) -> Optional[User]:
-        """
-        Lấy user theo ID, kèm profile + roles.
-
-        Eager load 3 relationship: profile, user_roles, role.
-        Thay thế raw SQL + _helpers.load_user_roles().
-        """
         statement = (
             select(User)
             .where(User.user_id == user_id, User.is_deleted == false())
@@ -56,12 +50,10 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def email_exists(self, email: str) -> bool:
-        """Kiểm tra email đã tồn tại chưa (bao gồm cả user đã xóa)."""
         user = await self.get_one(User.email == email)
         return user is not None
 
     async def username_exists(self, user_name: str) -> bool:
-        """Kiểm tra username đã tồn tại chưa (bao gồm cả user đã xóa)."""
         user = await self.get_one(User.user_name == user_name)
         return user is not None
 
@@ -89,10 +81,8 @@ class UserRepository(BaseRepository[User]):
             self.db.add(user_role)
             await self.db.flush()
 
-        # Refresh with eager loading of relationships
         await self.db.refresh(user, ["profile", "user_roles"])
         
-        # Explicitly load roles with selectinload to avoid lazy loading in async context
         from sqlmodel import select
         stmt = select(UserRole).options(
             selectinload(UserRole.role)
@@ -100,7 +90,6 @@ class UserRepository(BaseRepository[User]):
         result = await self.db.execute(stmt)
         user_roles = result.scalars().all()
         
-        # Attach loaded roles to user object
         user.user_roles = user_roles
         
         return user

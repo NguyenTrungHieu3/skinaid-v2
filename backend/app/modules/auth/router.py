@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_current_active_user, get_token
 from app.modules.auth.dependencies import get_auth_service
@@ -6,6 +7,7 @@ from app.modules.users.models.user import User
 from app.modules.auth.schemas.api import (
     ChangePasswordRequest,
     ChangePasswordResponse,
+    OAuth2TokenResponse,
     PasswordResetConfirm,
     PasswordResetRequest,
     PasswordResetResponse,
@@ -19,6 +21,29 @@ from app.modules.auth.service import AuthService
 from app.shared.response import SuccessResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.post(
+    "/token",
+    response_model=OAuth2TokenResponse,
+    summary="OAuth2 login (Swagger Authorize)",
+)
+async def oauth2_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    service: AuthService = Depends(get_auth_service),
+) -> OAuth2TokenResponse:
+    """OAuth2 Password flow — dung cho Swagger UI. Frontend dung /signin."""
+    result = await service.login(
+        # OAuth2PasswordRequestForm dùng field `username`, map sang `user_name`
+        form_data=UserLogin(user_name=form_data.username, password=form_data.password),
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+    )
+    return OAuth2TokenResponse(
+        access_token=result["access_token"],
+        refresh_token=result["refresh_token"],
+    )
 
 
 async def _build_user_response(user: User) -> UserResponse:

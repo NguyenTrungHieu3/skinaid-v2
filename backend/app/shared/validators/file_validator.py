@@ -1,6 +1,5 @@
-from pathlib import Path
 from typing import Optional
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 import filetype
 from PIL import Image
 from io import BytesIO
