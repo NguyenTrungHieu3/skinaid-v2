@@ -1,4 +1,31 @@
 services:
+  redis:
+    container_name: skinaid_redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skinaid_net
+
+  qdrant:
+    container_name: skinaid_qdrant
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    expose:
+      - "6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - skinaid_net
+
   backend:
     container_name: skinaid_backend
     build:
@@ -6,7 +33,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      # Database → trỏ về RDS
+      # Database → RDS PostgreSQL
       - DB_HOST=${DB_HOST}
       - DB_PORT=5432
       - DB_USER=${DB_USER}
@@ -27,7 +54,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-false}
 
-      # AI Service (Hugging Face — giữ nguyên)
+      # AI Service (Hugging Face)
       - AI_SERVICE_URL=${AI_SERVICE_URL}
       - AI_API_KEY=${AI_API_KEY}
       - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-30}
@@ -39,6 +66,9 @@ services:
       - DEBUG=false
       - TESTING=false
       - UPLOAD_DIR=/app/uploads
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-5242880}
+      - MIN_FILE_SIZE=${MIN_FILE_SIZE:-1024}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-.jpg,.jpeg,.png}
 
       # CORS & URL
       - CORS_ORIGINS=${CORS_ORIGINS}
@@ -47,10 +77,30 @@ services:
       # Geoapify
       - GEOAPIFY_API_KEY=${GEOAPIFY_API_KEY}
 
+      # Redis → trỏ về container redis nội bộ
+      - REDIS_URL=redis://redis:6379/0
+
+      # Qdrant → trỏ về container qdrant nội bộ
+      - QDRANT=http://qdrant:6333/
+      - RAG_COLLECTION_NAME=${RAG_COLLECTION_NAME:-skinaid_knowledge_base}
+      - RAG_EMBEDDING_DIMENSION=${RAG_EMBEDDING_DIMENSION:-3072}
+      - RAG_DOCS_PATH=${RAG_DOCS_PATH:-docs/RAGDocumentation}
+      - RAG_SCORE_THRESHOLD=${RAG_SCORE_THRESHOLD:-0.5}
+      - RAG_SPARSE_MODEL=${RAG_SPARSE_MODEL:-Qdrant/bm25}
+
+      # OpenAI (RAG embeddings & LLM)
+      - OPEN_API_KEY=${OPEN_API_KEY}
+      - OPEN_EMBEDDING_MODEL=${OPEN_EMBEDDING_MODEL:-text-embedding-3-small}
+
     expose:
-      - "8000"          # chỉ expose nội bộ cho nginx, không ra ngoài internet
+      - "8000"
     volumes:
       - uploads_data:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -65,7 +115,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     ports:
-      - "80:80"         # port duy nhất mở ra internet
+      - "80:80"
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
       - uploads_data:/app/uploads:ro
@@ -77,6 +127,8 @@ services:
 
 volumes:
   uploads_data:
+  redis_data:
+  qdrant_data:
 
 networks:
   skinaid_net:
