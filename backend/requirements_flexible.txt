@@ -122,7 +122,7 @@ python-dotenv
 python-jose
 python-multipart
 pytz
-pywin32
+pywin32; platform_system == "Windows"
 PyYAML
 qdrant-client
 redis
