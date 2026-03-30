@@ -6,19 +6,22 @@ import {
   getSeverityStats,
   getWeeklyActivity,
 } from "../../services/adminService";
-import { getAuditLogs } from "../../services/auditService";
+import { getDashboardRecentLogs } from "../../services/auditService";
 import type {
   DashboardOverview,
   WoundTypeItem,
-  DailyActivityItem,
 } from "../../types/admin";
-import type { AuditLog } from "../../services/auditService";
+
 import DashboardStats from "./components/DashboardStats";
 import DashboardCharts from "./components/DashboardCharts";
 import DashboardLogs from "./components/DashboardLogs";
 import styles from "./AdminDashboard.module.css";
 
-export default function AdminDashboard() {
+interface AdminDashboardProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
   const { t } = useTranslation();
   // State
   const [loading, setLoading] = useState(true);
@@ -27,8 +30,8 @@ export default function AdminDashboard() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [woundTypeData, setWoundTypeData] = useState<WoundTypeItem[]>([]);
   const [severityStats, setSeverityStats] = useState<Record<string, number>>({});
-  const [weeklyActivity, setWeeklyActivity] = useState<DailyActivityItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  const [dashboardLogs, setDashboardLogs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,13 +50,13 @@ export default function AdminDashboard() {
 
     // Gọi hàm lấy data từ API
     try {
-      const [overviewRes, woundTypeRes, severityRes, activityRes, logsRes] =
+      const [overviewRes, woundTypeRes, severityRes, _activityRes, logsRes] =
         await Promise.all([
           getDashboardOverview(period),
           getWoundTypeDistribution(period),
           getSeverityStats(period),
           getWeeklyActivity(),
-          getAuditLogs({ limit: 5, page: 1 }),
+          getDashboardRecentLogs(5),
         ]);
 
       if (overviewRes.success && overviewRes.data) {
@@ -69,15 +72,14 @@ export default function AdminDashboard() {
         setSeverityStats(severityRes.data.distribution);
       }
 
-      if (activityRes.success && activityRes.data) {
-        setWeeklyActivity(activityRes.data.daily_stats);
-      }
+      // Weekly activity data is fetched but only used internally by charts
+      // if (activityRes.success && activityRes.data) { }
 
-      // Handle new response format from /dashboard/logs/recent
+      // Handle response from /dashboard/logs/recent
+      // Format: { logs: [{ type, message, time, severity, source }], total_logs, unresolved_errors }
       if (logsRes.success && logsRes.data) {
-        // New format: { logs: [...], total_logs: number, unresolved_errors: number }
         if ('logs' in logsRes.data) {
-          setAuditLogs(logsRes.data.logs);
+          setDashboardLogs(logsRes.data.logs);
         }
       }
     } catch (err) {
@@ -93,41 +95,10 @@ export default function AdminDashboard() {
     fetchDashboardData(true);
   };
 
-  // Helper function to translate action names
-  const translateAction = (action: string) => {
-    const key = `admin.dashboard.logs.actions.${action}`;
-    const translated = t(key);
-    // If translation exists, return it; otherwise return original
-    return translated !== key ? translated : action;
-  };
 
-  // Helper function to translate resource types
-  const translateResource = (resource: string) => {
-    const key = `admin.dashboard.logs.resources.${resource}`;
-    const translated = t(key);
-    // If translation exists, return it; otherwise return original
-    return translated !== key ? translated : resource;
-  };
 
-  // Helper to map audit logs to dashboard log format
-  const mapAuditLogs = (logs: AuditLog[]) => {
-    return logs.map((log) => ({
-      type: log.success ? "success" : ("error" as "error" | "success" | "info"),
-      severity: log.success ? "low" : ("high" as "low" | "medium" | "high"),
-      message: `${translateAction(log.action)} - ${translateResource(
-        log.resource_type || "system"
-      )}`,
-      time: new Date(log.timestamp + "Z").toLocaleString("vi-VN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }),
-    }));
-  };
+  // Dashboard logs from /dashboard/logs/recent are already pre-formatted
+  // with { type, message, time, severity, source } — no mapping needed
 
   // Hiển thị giao diện loading khi chờ dữ liệu fetch API
   if (loading) {
@@ -204,7 +175,10 @@ export default function AdminDashboard() {
         severityStats={severityStats}
       />
 
-      <DashboardLogs logs={mapAuditLogs(auditLogs)} />
+      <DashboardLogs
+        logs={dashboardLogs}
+        onViewAll={onNavigate ? () => onNavigate('logs') : undefined}
+      />
     </div>
   );
 }

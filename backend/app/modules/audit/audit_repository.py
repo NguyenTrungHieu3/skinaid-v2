@@ -45,7 +45,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             UserRole, User.user_id == UserRole.user_id
         ).outerjoin(
             Role, UserRole.role_id == Role.role_id
-        ).group_by(AuditLog.log_id, User.user_name, User.email)
+        ).group_by(AuditLog.audit_action_id, User.user_name, User.email)
 
         # Filters
         if user_id:

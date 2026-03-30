@@ -66,10 +66,10 @@ const LogFilters: React.FC<LogFiltersProps> = ({
             onChange={(e) => onFilterChange('dateRange', e.target.value)}
             className={styles.filterSelect}
           >
-            <option value="Today">{t('admin.dashboard.periods.today')}</option>
-            <option value="Last 7 Days">{t('admin.dashboard.periods.last_7_days')}</option>
-            <option value="Last 30 Days">{t('admin.dashboard.periods.last_30_days')}</option>
             <option value="all">{t('admin.dashboard.periods.all_time')}</option>
+            <option value="today">{t('admin.dashboard.periods.today')}</option>
+            <option value="7days">{t('admin.dashboard.periods.last_7_days')}</option>
+            <option value="30days">{t('admin.dashboard.periods.last_30_days')}</option>
           </select>
         </div>
 

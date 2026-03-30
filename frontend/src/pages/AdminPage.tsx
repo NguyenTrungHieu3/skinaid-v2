@@ -25,7 +25,7 @@ export default function AdminPage() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <AdminDashboard />;
+        return <AdminDashboard onNavigate={setCurrentPage} />;
       case 'users':
         return <UserManagement />;
       case 'firstaid':

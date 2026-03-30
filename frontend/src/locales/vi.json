@@ -651,6 +651,7 @@
       "logs": {
         "recent_logs_title": "Nhật ký gần đây",
         "recent_logs_desc": "Thông báo và cảnh báo hệ thống",
+        "view_all": "Xem tất cả",
         "severity": {
           "high": "Cao",
           "medium": "Trung bình",
@@ -748,6 +749,16 @@
           "password_invalid": "Mật khẩu phải có ít nhất 8 ký tự bao gồm 1 chữ hoa, 1 chữ thường và 1 số",
           "role_required": "Vai trò là bắt buộc"
         }
+      },
+      "messages": {
+        "password_required": "Mật khẩu là bắt buộc",
+        "user_created": "Tạo người dùng thành công!",
+        "create_failed": "Không thể tạo người dùng",
+        "user_updated": "Cập nhật người dùng thành công!",
+        "update_failed": "Không thể cập nhật người dùng",
+        "delete_confirm": "Bạn có chắc chắn muốn xóa người dùng \"{{name}}\"?",
+        "user_deleted": "Xóa người dùng thành công!",
+        "delete_failed": "Không thể xóa người dùng"
       }
     },
     "first_aid": {

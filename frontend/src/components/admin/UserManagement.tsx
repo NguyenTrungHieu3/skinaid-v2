@@ -145,7 +145,7 @@ const UserManagement: FC = () => {
   const handleAddUser = async (data: UserFormData) => {
     if (isSubmitting) return;
     if (!data.password) {
-      toast.error("Password is required");
+      toast.error(t('admin.user_management.messages.password_required', 'Password is required'));
       return;
     }
 
@@ -155,14 +155,14 @@ const UserManagement: FC = () => {
       if (response.success) {
         setShowAddModal(false);
         fetchUsers();
-        toast.success("User created successfully!");
+        toast.success(t('admin.user_management.messages.user_created', 'User created successfully!'));
       }
     } catch (err: unknown) {
       const error = err as ApiError;
       console.error("Error creating user:", error);
       
       // Handle validation errors (422) and other errors
-      let errorMessage = "Failed to create user";
+      let errorMessage = t('admin.user_management.messages.create_failed', 'Failed to create user');
       
       if (error.response?.data?.error) {
         errorMessage = typeof error.response.data.error === 'string' 
@@ -206,14 +206,14 @@ const UserManagement: FC = () => {
         setShowEditModal(false);
         setSelectedUser(null);
         fetchUsers();
-        toast.success("User updated successfully!");
+        toast.success(t('admin.user_management.messages.user_updated', 'User updated successfully!'));
       }
     } catch (err: unknown) {
       const error = err as ApiError;
       console.error("Error updating user:", error);
       
       // Handle validation errors (422) and other errors
-      let errorMessage = "Failed to update user";
+      let errorMessage = t('admin.user_management.messages.update_failed', 'Failed to update user');
       
       if (error.response?.data?.error) {
         errorMessage = typeof error.response.data.error === 'string' 
@@ -238,7 +238,7 @@ const UserManagement: FC = () => {
   // Handle delete user
   const handleDeleteUser = async (userId: string, displayName: string) => {
     if (
-      window.confirm(`Are you sure you want to delete user "${displayName}"?`)
+      window.confirm(t('admin.user_management.messages.delete_confirm', { name: displayName, defaultValue: `Are you sure you want to delete user "${displayName}"?` }))
     ) {
       if (isDeletingUser) return;
 
@@ -247,12 +247,12 @@ const UserManagement: FC = () => {
         const response = await deleteUser(userId);
         if (response.success) {
           fetchUsers();
-          toast.success("User deleted successfully!");
+          toast.success(t('admin.user_management.messages.user_deleted', 'User deleted successfully!'));
         }
       } catch (err: unknown) {
         const error = err as ApiError;
         console.error("Error deleting user:", error);
-        toast.error(error.response?.data?.error || "Failed to delete user");
+        toast.error(error.response?.data?.error || t('admin.user_management.messages.delete_failed', 'Failed to delete user'));
       } finally {
         setIsDeletingUser(null);
       }

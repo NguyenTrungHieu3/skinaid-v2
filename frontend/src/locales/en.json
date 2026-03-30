@@ -658,6 +658,7 @@
       "logs": {
         "recent_logs_title": "Recent Logs",
         "recent_logs_desc": "System notifications and alerts",
+        "view_all": "View All",
         "severity": {
           "high": "High",
           "medium": "Medium",
@@ -755,6 +756,16 @@
           "password_invalid": "Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number",
           "role_required": "Role is required"
         }
+      },
+      "messages": {
+        "password_required": "Password is required",
+        "user_created": "User created successfully!",
+        "create_failed": "Failed to create user",
+        "user_updated": "User updated successfully!",
+        "update_failed": "Failed to update user",
+        "delete_confirm": "Are you sure you want to delete user \"{{name}}\"?",
+        "user_deleted": "User deleted successfully!",
+        "delete_failed": "Failed to delete user"
       }
     },
     "first_aid": {
