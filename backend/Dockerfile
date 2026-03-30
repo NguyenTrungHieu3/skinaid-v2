@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libglib2.0-0 \
     libmagic1 \
+    tesseract-ocr \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -17,9 +19,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements_flexible.txt .
 
 # Cài đặt các thư viện Python cần thiết
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements_flexible.txt \
-    && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# ✅ QUAN TRỌNG: Cài PyTorch CPU TRƯỚC khi cài ultralytics/timm
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        torch torchvision torchaudio \
+        --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements_flexible.txt
 
 # Copy source code
 COPY . .

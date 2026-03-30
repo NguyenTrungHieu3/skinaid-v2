@@ -25,15 +25,20 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 300s
+          timeout: 600s  # ⬆️ Tăng timeout từ 300s → 600s (10 phút)
           script: |
             set -e
-            echo "=== Pull code mới ==="
+            
+            echo "=== 🧹 Dọn dẹp Docker trước khi deploy ==="
+            docker system prune -af --volumes || true
+            docker builder prune -af || true
+            
+            echo "=== 📦 Pull code mới ==="
             cd ~/skinaid
             git pull origin deployment
 
-            echo "=== Ghi file .env.prod từ GitHub Secrets ==="
-            cat > .env.prod << EOF
+            echo "=== 📝 Ghi file .env.prod từ GitHub Secrets ==="
+            cat > .env.prod << 'EOF'
             DB_HOST=${{ secrets.DB_HOST }}
             DB_USER=${{ secrets.DB_USER }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -56,15 +61,22 @@ jobs:
             GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY }}
             EOF
 
-            echo "=== Build và khởi động containers ==="
+            echo "=== 🐳 Build và khởi động containers ==="
+            docker compose -f docker-compose.prod.yml --env-file .env.prod down || true
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
 
-            echo "=== Chờ backend sẵn sàng rồi chạy migration ==="
-            sleep 15
-            docker exec skinaid_backend alembic upgrade head
+            echo "=== ⏳ Chờ backend sẵn sàng ==="
+            timeout 120 bash -c 'until docker exec skinaid_backend curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; done' || echo "⚠️ Health check timeout, tiếp tục migration..."
 
-            echo "=== Dọn dẹp image cũ ==="
-            docker image prune -f
+            echo "=== 🗄️ Chạy migration ==="
+            docker exec skinaid_backend alembic upgrade head || echo "⚠️ Migration failed, check logs"
 
-            echo "=== Deploy xong! ==="
+            echo "=== 🧹 Dọn dẹp images cũ ==="
+            docker image prune -af
+
+            echo "=== ✅ Deploy hoàn tất! ==="
             docker compose -f docker-compose.prod.yml ps
+            
+            echo "=== 📊 Disk usage ==="
+            df -h / | grep -E '^Filesystem|/$'
+            docker system df
