@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Copy file requirements.txt vào trong image
-COPY requirements.txt .
+# Copy file requirements_flexible.txt vào trong image
+COPY requirements_flexible.txt .
 
 # Cài đặt các thư viện Python cần thiết
 RUN pip install --no-cache-dir --upgrade pip \
