@@ -10,10 +10,9 @@ from app.modules.users.routes.user_list_router import router as user_list_router
 from app.modules.users.routes.user_ops_router import router as user_ops_router
 from app.modules.map.router import router as map_router
 
-# ⭐ NEW - B4 Modules (Sprint 3 Stub Endpoints)
 from app.modules.chatbot.router import router as chatbot_router
 from app.modules.rag.routes.rag_router import router as rag_router
-from app.modules.llm.router import router as llm_router
+from app.modules.llm.routes.llm_router import router as llm_router
 
 router = APIRouter()
 
@@ -29,4 +28,4 @@ router.include_router(user_ops_router, tags=["User Management"])
 router.include_router(map_router, tags=["Map"])
 router.include_router(chatbot_router, tags=["Chatbot"])
 router.include_router(rag_router, prefix="/rag", tags=["RAG - Knowledge Retrieval"])
-router.include_router(llm_router, tags=["LLM - Response Synthesis"])
+router.include_router(llm_router, prefix="/llm", tags=["LLM - Response Synthesis"])

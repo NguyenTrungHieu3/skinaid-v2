@@ -48,6 +48,38 @@ export interface AnalysisGetResponse {
   // (Thêm các trường khác từ JSON nếu bạn cần)
 }
 
+// --- LLM Synthesis types ---
+
+export interface StructuredGuidance {
+  title: string;
+  steps: string[];
+  dos: string[];
+  donts: string[];
+  supplies_needed: string[];
+  estimated_healing_time: string | null;
+}
+
+export interface LLMSynthesizeRequest {
+  wound_type: string;
+  severity: string;
+  sub_type?: string | null;
+  user_description?: string;  // optional — không cần khi chưa có questionnaire
+  top_k_rag?: number;
+}
+
+export interface LLMSynthesizeResponse {
+  guidance: string;
+  source: "llm" | "db";
+  validated: boolean;
+  db_guide_available: boolean;
+  rag_chunks_used: number;
+  model_version: string;
+  tokens_used: number;
+  processing_time_ms: number;
+  confidence_score: number | null;
+  structured_guidance: StructuredGuidance | null;
+}
+
 // --- 2. HÀM GỌI API ---
 
 /**
@@ -55,21 +87,9 @@ export interface AnalysisGetResponse {
  * Gửi file ảnh lên để bắt đầu phân tích.
  */
 export const analyzeImage = (formData: FormData) => {
-  // return apiClient.post<SuccessResponse<AnalysisPostResponse>>(
-  //   "/ai/analyze", // (Giả sử apiClient có baseURL là /api/v1)
-  //   formData,
-  //   {
-  //     headers: {
-  //       // Axios cần header này khi gửi FormData
-  //       "Content-Type": "multipart/form-data",
-  //     },
-  //   }
-  // );
-
   return apiClient.post<SuccessResponse<AnalysisPostResponse>>(
-    "/ai/analyze", // (Giả sử apiClient có baseURL là /api/v1)
+    "/ai/analyze",
     formData
-    // Không cần khối config { headers: ... } ở đây nữa
   );
 };
 
@@ -80,5 +100,16 @@ export const analyzeImage = (formData: FormData) => {
 export const getAnalysisResult = (analysisId: string) => {
   return apiClient.get<SuccessResponse<AnalysisGetResponse>>(
     `/ai/analysis/${analysisId}`
+  );
+};
+
+/**
+ * 3. POST /llm/synthesize
+ * Tổng hợp hướng dẫn sơ cứu từ AI result — có thể gọi ngay mà không cần questionnaire.
+ */
+export const synthesizeGuidance = (payload: LLMSynthesizeRequest) => {
+  return apiClient.post<SuccessResponse<LLMSynthesizeResponse>>(
+    "/llm/synthesize",
+    payload
   );
 };

@@ -26,9 +26,50 @@ interface FirstAidSnapshot {
 }
 interface TreatmentSectionProps {
   snapshot: FirstAidSnapshot; // Nhận 'snapshot' làm prop
+  isLoading?: boolean;         // True → show skeleton while LLM is fetching
 }
 
-const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
+// ---------------------------------------------------------------------------
+// Skeleton row — renders a placeholder shimmer bar
+// ---------------------------------------------------------------------------
+const SkeletonRow = ({ width = "80%" }: { width?: string }) => (
+  <li
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      background: "#fff",
+      borderRadius: "5px",
+      padding: "8px 12px",
+      marginBottom: "6px",
+      border: "1px solid #e5e7eb",
+    }}
+  >
+    <div
+      style={{
+        width: "22px",
+        height: "22px",
+        borderRadius: "50%",
+        background: "linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.4s infinite",
+        flexShrink: 0,
+      }}
+    />
+    <div
+      style={{
+        height: "14px",
+        borderRadius: "4px",
+        width,
+        background: "linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.4s infinite",
+      }}
+    />
+  </li>
+);
+
+const TreatmentSection = ({ snapshot, isLoading = false }: TreatmentSectionProps) => {
   const { t } = useTranslation();
 
   // 2. State và logic được chuyển vào bên trong component này
@@ -84,9 +125,29 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
 
   return (
     <div className={styles.recommendations}>
+      {/* Shimmer keyframe injected inline once */}
+      <style>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+
       <div className={styles.sectionTitle}>
         <LuShieldPlus className={styles.titleIcon} />
         <h3>{t("analysis.treatment_title")}</h3>
+        {isLoading && (
+          <span
+            style={{
+              marginLeft: "8px",
+              fontSize: "12px",
+              color: "#6b7280",
+              fontWeight: 400,
+            }}
+          >
+            Đang tải hướng dẫn AI…
+          </span>
+        )}
       </div>
       <p className={styles.titleSub}>{t("analysis.treatment_desc")}</p>
 
@@ -127,37 +188,46 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
               className={styles.careContent}
               style={{ backgroundColor: section.color }}
             >
-              {section.steps.map((step, i) => (
-                <li
-                  key={i}
-                  style={{ border: `1px solid ${section.colorBorder}` }}
-                >
-                  {/* Icon động dựa trên 'num' */}
-                  {section.num === 1 ? (
-                    <span className={styles.stepNumberIcon}>{i + 1}</span>
-                  ) : section.num === 2 ? (
-                    <IoMdCheckmarkCircleOutline
-                      color="#2346dd"
-                      size={20}
-                      style={{ flexShrink: 0 }}
-                    />
-                  ) : (
-                    <TiWarningOutline
-                      color="#b61e1b"
-                      size={20}
-                      style={{ flexShrink: 0 }}
-                    />
-                  )}
-                  <span style={{ marginLeft: "8px" }}>{step}</span>
-                </li>
-              ))}
+              {isLoading ? (
+                // Skeleton rows while LLM is loading
+                <>
+                  <SkeletonRow width="90%" />
+                  <SkeletonRow width="75%" />
+                  <SkeletonRow width="82%" />
+                </>
+              ) : (
+                section.steps.map((step, i) => (
+                  <li
+                    key={i}
+                    style={{ border: `1px solid ${section.colorBorder}` }}
+                  >
+                    {/* Icon động dựa trên 'num' */}
+                    {section.num === 1 ? (
+                      <span className={styles.stepNumberIcon}>{i + 1}</span>
+                    ) : section.num === 2 ? (
+                      <IoMdCheckmarkCircleOutline
+                        color="#2346dd"
+                        size={20}
+                        style={{ flexShrink: 0 }}
+                      />
+                    ) : (
+                      <TiWarningOutline
+                        color="#b61e1b"
+                        size={20}
+                        style={{ flexShrink: 0 }}
+                      />
+                    )}
+                    <span style={{ marginLeft: "8px" }}>{step}</span>
+                  </li>
+                ))
+              )}
             </ul>
           )}
         </div>
       ))}
 
       {/* Source Information */}
-      {snapshot.source && (
+      {!isLoading && snapshot.source && (
         <div className={styles.sourceInfo} style={{
           marginTop: '1rem',
           padding: '0.75rem 1rem',
@@ -194,3 +264,4 @@ const TreatmentSection = ({ snapshot }: TreatmentSectionProps) => {
 };
 
 export default TreatmentSection;
+

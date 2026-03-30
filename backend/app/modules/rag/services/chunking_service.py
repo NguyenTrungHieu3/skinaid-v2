@@ -16,7 +16,7 @@ from app.modules.rag.exceptions import RAGIndexingError
 logger = logging.getLogger(__name__)
 
 _SEMANTIC_EMBEDDING_MODEL: Final[str] = "text-embedding-3-large"
-_CONTEXT_LLM_MODEL: Final[str] = "gpt-4o-mini"
+_CONTEXT_LLM_MODEL: Final[str] = "gpt-4.1-mini"
 _MAX_DOC_FOR_CONTEXT: Final[int] = 8_000
 _MAX_CONCURRENT_LLM: Final[int] = 5
 _MAX_RETRY: Final[int] = 3
@@ -264,7 +264,7 @@ class ChunkingService:
             self._context_llm = ChatOpenAI(
                 model=_CONTEXT_LLM_MODEL,
                 temperature=0.1,
-                max_tokens=150,
+                max_completion_tokens=150,
                 api_key=settings.OPEN_API_KEY,  # type: ignore[arg-type]
                 max_retries=0,
             )
