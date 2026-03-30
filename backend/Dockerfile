@@ -18,7 +18,7 @@ COPY requirements.txt .
 
 # Cài đặt các thư viện Python cần thiết
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r requirements_flexible.txt
 
 # Copy source code
 COPY . .
