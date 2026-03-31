@@ -1,7 +1,7 @@
 # ================================================================
 # SkinAid Backend — Optimized Dockerfile
 # ================================================================
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir \
         torchvision==0.23.0 \
         torchaudio==2.8.0 \
         --index-url https://download.pytorch.org/whl/cpu \
-    && find /usr/local/lib/python3.11/site-packages/torch -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+    && find /usr/local/lib/python3.13/site-packages/torch -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # ── 4. Các thư viện còn lại ──────────────────────────────────────
 # pywin32 và win32_setctime tự động bỏ qua trên Linux nhờ platform marker
