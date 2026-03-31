@@ -10,9 +10,10 @@
 
 .adminChartCard {
   background-color: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 5px 10px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
 }
 
 .adminChartHeader {
@@ -50,6 +51,16 @@
   gap: 8px;
   font-size: 0.875rem;
   color: #475569;
+  padding: 4px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.woundLegendItem:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .woundLegendColor {
@@ -60,4 +71,10 @@
 
 .woundLegendName {
   font-weight: 500;
+  text-transform: capitalize;
+}
+
+.woundLegendValue {
+  font-weight: 600;
+  color: #1e293b;
 }
