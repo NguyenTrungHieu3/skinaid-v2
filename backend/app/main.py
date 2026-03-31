@@ -19,6 +19,7 @@ from app.shared.exceptions import (
 
 
 
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.VERSION,
