@@ -1,0 +1,50 @@
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Secrets & env files ──────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ── Uploads & data (mount qua volume, không bake vào image) ─────
+uploads/
+.cache/
+
+# ── Test & dev ───────────────────────────────────────────────────
+tests/
+test_*
+*_test.py
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── IDE & OS ─────────────────────────────────────────────────────
+.git/
+.gitignore
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# ── Docs ─────────────────────────────────────────────────────────
+README*
+CHANGELOG*
+docs/
+*.md
