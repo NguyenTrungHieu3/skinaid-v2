@@ -21,12 +21,12 @@ class AIModel(SQLModel, table=True):
     # Model Identification
     model_type: str = Field(
         max_length=50, 
-        index=True,
+        # index=True,
         description="Model type: 'detection', 'classification', 'segmentation', 'severity_scoring'"
     )
     version_tag: str = Field(
         max_length=50, 
-        index=True,
+        # index=True,
         description="Human-readable version tag (e.g., v1.0.0)"
     )
     version_number: int = Field(
@@ -72,7 +72,7 @@ class AIModel(SQLModel, table=True):
     # Status Flags
     is_active: bool = Field(
         default=False, 
-        index=True,
+        # index=True,
         description="Whether this version is currently active"
     )
     is_beta: bool = Field(
@@ -81,7 +81,7 @@ class AIModel(SQLModel, table=True):
     )
     is_deleted: bool = Field(
         default=False,
-        index=True,
+        # index=True,
         description="Soft delete flag"
     )
     
@@ -107,7 +107,7 @@ class AIModel(SQLModel, table=True):
     # Activation Tracking (for rollback support)
     activated_at: Optional[datetime] = Field(
         default=None,
-        index=True,
+        # index=True,
         description="When this version was activated"
     )
     previously_active_version_id: Optional[UUID] = Field(
@@ -119,7 +119,7 @@ class AIModel(SQLModel, table=True):
     # Audit Timestamps
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
-        index=True,
+        # index=True,
         description="Record creation timestamp"
     )
     updated_at: datetime = Field(
@@ -184,14 +184,14 @@ class ModelVersionHistory(SQLModel, table=True):
     history_id: UUID = Field(default_factory=uuid4, primary_key=True)
     model_id: UUID = Field(
         foreign_key="ai_models.model_id", 
-        index=True,
+        # index=True,
         description="Reference to the model"
     )
     
     # Action Information
     action: str = Field(
         max_length=50,
-        index=True,
+        # index=True,
         description="Action performed: upload, activate, deactivate, rollback, delete, restore"
     )
     from_version: Optional[str] = Field(
@@ -227,7 +227,7 @@ class ModelVersionHistory(SQLModel, table=True):
     # Timestamp
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
-        index=True,
+        # index=True,
         description="History record creation timestamp"
     )
     
