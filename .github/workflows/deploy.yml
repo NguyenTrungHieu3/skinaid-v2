@@ -1,5 +1,4 @@
 name: Deploy to AWS EC2
-
 on:
   push:
     branches:
@@ -9,34 +8,28 @@ on:
       - 'docker-compose.prod.yml'
       - 'nginx/**'
       - '.github/workflows/deploy.yml'
-
 jobs:
   deploy:
     name: Deploy Backend
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 600s  # ⬆️ Tăng timeout từ 300s → 600s (10 phút)
+          timeout: 600s
           script: |
             set -e
-            
             echo "=== 🧹 Dọn dẹp Docker trước khi deploy ==="
             docker system prune -af --volumes || true
             docker builder prune -af || true
-            
             echo "=== 📦 Pull code mới ==="
             cd ~/skinaid
             git pull origin deployment
-
             echo "=== 📝 Ghi file .env.prod từ GitHub Secrets ==="
             cat > .env.prod << 'EOF'
             DB_HOST=${{ secrets.DB_HOST }}
@@ -56,27 +49,30 @@ jobs:
             AI_API_KEY=${{ secrets.AI_API_KEY }}
             AI_SERVICE_TIMEOUT=30
             AI_MAX_RETRIES=3
+            MAX_UPLOAD_SIZE=5242880
+            MIN_FILE_SIZE=1024
+            ALLOWED_EXTENSIONS=.jpg,.jpeg,.png
             CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
             BASE_URL=http://${{ secrets.EC2_HOST }}
             GEOAPIFY_API_KEY=${{ secrets.GEOAPIFY_API_KEY }}
+            REDIS_URL=redis://skinaid_redis:6379/0
+            QDRANT=http://skinaid_qdrant:6333/
+            RAG_COLLECTION_NAME=skinaid_knowledge_base
+            RAG_EMBEDDING_DIMENSION=3072
+            RAG_DOCS_PATH=docs/RAGDocumentation
+            RAG_SCORE_THRESHOLD=0.5
+            RAG_SPARSE_MODEL=Qdrant/bm25
+            OPEN_API_KEY=${{ secrets.OPEN_API_KEY }}
+            OPEN_EMBEDDING_MODEL=text-embedding-3-small
             EOF
-
             echo "=== 🐳 Build và khởi động containers ==="
             docker compose -f docker-compose.prod.yml --env-file .env.prod down || true
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
-
             echo "=== ⏳ Chờ backend sẵn sàng ==="
-            timeout 120 bash -c 'until docker exec skinaid_backend curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; done' || echo "⚠️ Health check timeout, tiếp tục migration..."
-
-            echo "=== 🗄️ Chạy migration ==="
-            docker exec skinaid_backend alembic upgrade head || echo "⚠️ Migration failed, check logs"
-
+            timeout 120 bash -c 'until docker exec skinaid_backend curl -f http://localhost:8000/health 2>/dev/null; do sleep 2; done' || echo "⚠️ Health check timeout, tiếp tục..."
             echo "=== 🧹 Dọn dẹp images cũ ==="
             docker image prune -af
-
             echo "=== ✅ Deploy hoàn tất! ==="
             docker compose -f docker-compose.prod.yml ps
-            
             echo "=== 📊 Disk usage ==="
             df -h / | grep -E '^Filesystem|/$'
-            docker system df

@@ -34,4 +34,10 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db():
     import app.shared.models_registry  # noqa: F401
     async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        try:
+            await conn.run_sync(lambda conn: SQLModel.metadata.create_all(conn, checkfirst=True))
+        except Exception as e:
+            if "already exists" in str(e):
+                pass  # tables/indexes đã tồn tại, bỏ qua
+            else:
+                raise
