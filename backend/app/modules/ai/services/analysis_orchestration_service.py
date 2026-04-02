@@ -64,6 +64,9 @@ class AnalysisOrchestrationService:
         resource_id: Optional[UUID] = None,
         error_message: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
+        log_type: Optional[str] = None,
+        level: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         """Log audit event (non-blocking)."""
         try:
@@ -79,6 +82,9 @@ class AnalysisOrchestrationService:
                 guest_session_id=guest_session_id if user_id is None else None,
                 error_message=error_message,
                 details=details,
+                log_type=log_type,
+                level=level,
+                description=description,
             )
         except Exception:
             pass
@@ -104,13 +110,14 @@ class AnalysisOrchestrationService:
         )
 
         await self._log_audit(
-            action="upload_image",
+            action="wound_scan",
             user_id=user_id,
             guest_session_id=guest_session_id,
             success=True,
             request=request,
             resource_id=result.data.analysis_id if hasattr(result.data, "analysis_id") else None,
             details={"file_name": file.filename, "content_type": file.content_type},
+            description=f"Wound image scanned: {file.filename}",
         )
 
         return result.data

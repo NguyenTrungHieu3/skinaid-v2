@@ -34,16 +34,18 @@ def get_audit_service(db: AsyncSession = Depends(get_db)) -> AuditService:
 )
 async def get_audit_logs(
     page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(10, ge=1, le=100, description="Items per page"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
     user_id: Optional[UUID] = Query(None, description="Filter by user ID"),
     action: Optional[str] = Query(None, description="Filter by action"),
     resource_type: Optional[str] = Query(None, description="Filter by resource type"),
     success: Optional[bool] = Query(None, description="Filter by success status"),
     is_guest: Optional[bool] = Query(None, description="Filter guest sessions"),
-    search: Optional[str] = Query(None, description="Search in action, user name, email"),
+    search: Optional[str] = Query(None, description="Search in action, description, user name, email"),
     role_name: Optional[str] = Query(None, description="Filter by user role"),
     start_date: Optional[datetime] = Query(None, description="Filter from date"),
     end_date: Optional[datetime] = Query(None, description="Filter to date"),
+    log_type: Optional[str] = Query(None, description="Filter by log type: admin_action / user_activity / system_error"),
+    level: Optional[str] = Query(None, description="Filter by level: info / warning / error"),
     service: AuditService = Depends(get_audit_service),
     current_user: User = Depends(require_admin),
 ):
@@ -51,11 +53,13 @@ async def get_audit_logs(
     Get all audit logs with full filtering and pagination.
 
     Supports:
-    - Filter by type (success/error)
+    - Filter by log_type (admin_action / user_activity / system_error)
+    - Filter by level (info / warning / error)
+    - Filter by success/error status
     - Filter by user role
     - Filter by date range
-    - Search by action, username, email
-    - Pagination
+    - Search by action, description, username, email
+    - Pagination (default 20 per page)
 
     **Requires admin role**
     """
@@ -76,6 +80,8 @@ async def get_audit_logs(
         role_name=role_name,
         start_date=safe_start,
         end_date=safe_end,
+        log_type=log_type,
+        level=level,
     )
 
     logs, total_count = await service.get_audit_logs(filters)

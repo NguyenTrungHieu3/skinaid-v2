@@ -30,6 +30,8 @@ class AuditRepository(BaseRepository[AuditLog]):
         role_name: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
+        log_type: Optional[str] = None,
+        level: Optional[str] = None,
         limit: int = 50,
         offset: int = 0
     ) -> Tuple[List[Dict[str, Any]], int]:
@@ -59,6 +61,11 @@ class AuditRepository(BaseRepository[AuditLog]):
         if is_guest is not None:
             stmt = stmt.where(AuditLog.is_guest == is_guest)
 
+        if log_type:
+            stmt = stmt.where(AuditLog.log_type == log_type)
+        if level:
+            stmt = stmt.where(AuditLog.level == level)
+
         if start_date:
             stmt = stmt.where(AuditLog.timestamp >= start_date)
         if end_date:
@@ -68,6 +75,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             search_pattern = f"%{search.strip()}%"
             stmt = stmt.where(or_(
                 AuditLog.action.ilike(search_pattern),
+                AuditLog.description.ilike(search_pattern),
                 AuditLog.error_message.ilike(search_pattern),
                 User.email.ilike(search_pattern),
                 User.user_name.ilike(search_pattern)

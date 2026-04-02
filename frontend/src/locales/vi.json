@@ -660,6 +660,14 @@
         "actions": {
           "login": "Đăng nhập",
           "logout": "Đăng xuất",
+          "user_login": "Đăng nhập",
+          "user_login_failed": "Đăng nhập thất bại",
+          "user_logout": "Đăng xuất",
+          "wound_scan": "Quét vết thương",
+          "register": "Đăng ký",
+          "refresh_token": "Làm mới token",
+          "activate_user": "Kích hoạt tài khoản",
+          "deactivate_user": "Vô hiệu hóa tài khoản",
           "create_guest_session": "Tạo phiên khách",
           "guest_session_created": "Phiên khách đã tạo",
           "create_user": "Tạo người dùng",
@@ -670,7 +678,9 @@
           "view_firstaid": "Xem sơ cứu",
           "create_firstaid": "Tạo hướng dẫn sơ cứu",
           "update_firstaid": "Cập nhật hướng dẫn sơ cứu",
-          "delete_firstaid": "Xóa hướng dẫn sơ cứu"
+          "delete_firstaid": "Xóa hướng dẫn sơ cứu",
+          "rag_error": "Lỗi RAG",
+          "llm_api_error": "Lỗi LLM API"
         },
         "resources": {
           "user": "Người dùng",
@@ -796,31 +806,43 @@
         "showing": "Hiển thị {{start}}-{{end}} trên tổng số {{total}}",
         "headers": {
           "time": "Thời gian",
-          "type": "Loại",
+          "type": "Mức độ",
           "username": "Tên đăng nhập",
           "role": "Vai trò",
           "action": "Hành động",
-          "details": "Chi tiết",
-          "view_details": "Xem chi tiết"
+          "description": "Mô tả",
+          "view_details": "Xem"
         }
       },
       "details": {
         "title": "Chi tiết nhật ký",
         "summary": "Tóm tắt",
+        "description": "Mô tả",
+        "log_type": "Loại nhật ký:",
         "timestamp": "Thời gian:",
         "action": "Hành động:",
         "severity": "Mức độ:",
         "user": "Người dùng:",
-        "full_details": "Chi tiết đầy đủ",
+        "full_details": "Chi tiết gốc",
         "close": "Đóng"
       },
       "filters": {
         "search_placeholder": "Tìm kiếm nhật ký...",
-        "all_types": "Tất cả loại",
-        "success": "Thành công",
-        "error": "Lỗi",
+        "all_log_types": "Tất cả loại nhật ký",
+        "all_levels": "Tất cả mức độ",
         "all_roles": "Tất cả vai trò",
         "refresh": "Làm mới",
+        "log_types": {
+          "admin_action": "Hành động Admin",
+          "user_activity": "Hoạt động người dùng",
+          "system_error": "Lỗi hệ thống"
+        },
+        "levels": {
+          "info": "Thông tin",
+          "success": "Thành công",
+          "warning": "Cảnh báo",
+          "error": "Lỗi"
+        },
         "roles": {
           "user": "Người dùng",
           "admin": "Quản trị viên",

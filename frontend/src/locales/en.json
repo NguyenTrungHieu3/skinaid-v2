@@ -667,6 +667,14 @@
         "actions": {
           "login": "Login",
           "logout": "Logout",
+          "user_login": "Login",
+          "user_login_failed": "Login Failed",
+          "user_logout": "Logout",
+          "wound_scan": "Wound Scan",
+          "register": "Register",
+          "refresh_token": "Refresh Token",
+          "activate_user": "Activate User",
+          "deactivate_user": "Deactivate User",
           "create_guest_session": "Create guest session",
           "guest_session_created": "Guest session created",
           "create_user": "Create user",
@@ -677,7 +685,9 @@
           "view_firstaid": "View first aid",
           "create_firstaid": "Create first aid guide",
           "update_firstaid": "Update first aid guide",
-          "delete_firstaid": "Delete first aid guide"
+          "delete_firstaid": "Delete first aid guide",
+          "rag_error": "RAG Error",
+          "llm_api_error": "LLM API Error"
         },
         "resources": {
           "user": "User",
@@ -803,31 +813,43 @@
         "showing": "Showing {{start}}-{{end}} of {{total}}",
         "headers": {
           "time": "Time",
-          "type": "Type",
+          "type": "Level",
           "username": "Username",
           "role": "Role",
           "action": "Action",
-          "details": "Details",
-          "view_details": "View Details"
+          "description": "Description",
+          "view_details": "View"
         }
       },
       "details": {
         "title": "Log Details",
         "summary": "Summary",
+        "description": "Description",
+        "log_type": "Log Type:",
         "timestamp": "Timestamp:",
         "action": "Action:",
         "severity": "Severity:",
         "user": "User:",
-        "full_details": "Full Details",
+        "full_details": "Raw Details",
         "close": "Close"
       },
       "filters": {
         "search_placeholder": "Search logs...",
-        "all_types": "All Types",
-        "success": "Success",
-        "error": "Error",
+        "all_log_types": "All Log Types",
+        "all_levels": "All Levels",
         "all_roles": "All Roles",
         "refresh": "Refresh",
+        "log_types": {
+          "admin_action": "Admin Action",
+          "user_activity": "User Activity",
+          "system_error": "System Error"
+        },
+        "levels": {
+          "info": "Info",
+          "success": "Success",
+          "warning": "Warning",
+          "error": "Error"
+        },
         "roles": {
           "user": "User",
           "admin": "Admin",

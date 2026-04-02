@@ -5,6 +5,9 @@ export interface AuditLog {
     audit_action_id: string;
     user_id: string | null;
     action: string;
+    log_type: string;  // admin_action / user_activity / system_error
+    level: string;     // info / warning / error
+    description: string | null;
     resource_type: string | null;
     resource_id: string | null;
     ip_address: string | null;
@@ -42,6 +45,8 @@ export interface AuditLogFilterParams {
     role_name?: string;
     start_date?: string;
     end_date?: string;
+    log_type?: string;
+    level?: string;
 }
 
 /**
@@ -62,6 +67,8 @@ export const getAuditLogs = async (params: AuditLogFilterParams = {}): Promise<A
     if (params.role_name) queryParams.append('role_name', params.role_name);
     if (params.start_date) queryParams.append('start_date', params.start_date);
     if (params.end_date) queryParams.append('end_date', params.end_date);
+    if (params.log_type) queryParams.append('log_type', params.log_type);
+    if (params.level) queryParams.append('level', params.level);
 
     const response = await apiClient.get(`/audit/logs?${queryParams.toString()}`);
     return response.data;

@@ -32,7 +32,6 @@ class UserRepository(BaseRepository[User]):
                 or_(
                     self.model.email.ilike(search_pattern),
                     self.model.user_name.ilike(search_pattern),
-                    # Assuming profile full_name if it exists
                     func.lower(self.model.profile.property.mapper.class_.full_name).like(search_pattern.lower())
                 )
             )

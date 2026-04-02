@@ -13,8 +13,9 @@ interface Log {
   email?: string;
   role: string;
   timestamp: string;
-  details: string;
+  description: string;
   type: "error" | "warning" | "info" | "success";
+  logType: string; // admin_action / user_activity / system_error
   severity: "high" | "medium" | "low";
   ip: string;
   fullDetails?: any;
@@ -30,14 +31,15 @@ export default function AdminLogs() {
   // Filters
   const [filters, setFilters] = useState({
     search: "",
-    type: "all",
+    logType: "all",   // admin_action / user_activity / system_error
+    level: "all",     // info / warning / error
     role: "all",
     dateRange: "all",
   });
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [logsPerPage] = useState(10);
+  const [logsPerPage] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
   // Fetch system logs with server-side pagination
@@ -56,13 +58,22 @@ export default function AdminLogs() {
         params.search = filters.search;
       }
 
-      // Map frontend 'type' to backend 'success'
-      if (filters.type === "success") {
-        params.success = true;
-      } else if (filters.type === "error") {
-        params.success = false;
+      // Map log_type filter
+      if (filters.logType !== "all") {
+        params.log_type = filters.logType;
       }
-      // 'all' = no success filter
+
+      // Map level filter — must stay consistent with badge logic below
+      if (filters.level === "success") {
+        // "Success" = successful operations (level=info + success=true)
+        params.success = true;
+      } else if (filters.level === "info") {
+        // "Info" = info-level logs that were NOT successful
+        params.level = "info";
+        params.success = false;
+      } else if (filters.level !== "all") {
+        params.level = filters.level;
+      }
 
       // Add role filter
       if (filters.role !== "all") {
@@ -94,31 +105,24 @@ export default function AdminLogs() {
         setTotalCount(response.data.total || fetchedLogs.length);
 
         const mappedLogs: Log[] = fetchedLogs.map((log: any) => {
-          // Determine log type based on success and action
+          // Use backend level field directly for badge display
+          const level = log.level || "info";
           let type: "error" | "warning" | "info" | "success" = "info";
           let severity: "high" | "medium" | "low" = "low";
 
-          if (!log.success) {
+          // Badge logic: must match filter logic above
+          if (level === "error") {
             type = "error";
             severity = "high";
-          } else if (
-            log.action?.startsWith("DELETE") ||
-            log.action?.startsWith("REMOVE") ||
-            log.action?.startsWith("DEACTIVATE") ||
-            log.action?.startsWith("SOFT_DELETE")
-          ) {
+          } else if (level === "warning") {
             type = "warning";
             severity = "medium";
-          } else if (
-            log.action?.startsWith("CREATE") ||
-            log.action?.startsWith("UPDATE") ||
-            log.action?.startsWith("ACTIVATE") ||
-            log.action?.startsWith("UPLOAD") ||
-            log.action === "SIGN_IN"
-          ) {
+          } else if (log.success === true) {
+            // level=info + success=true → "Success" badge
             type = "success";
             severity = "low";
           } else {
+            // level=info + success=false → "Info" badge
             type = "info";
             severity = "low";
           }
@@ -136,10 +140,9 @@ export default function AdminLogs() {
             email: log.email,
             role: log.role_name || (log.is_guest ? "Guest" : "User"),
             timestamp: log.timestamp,
-            details:
-              log.error_message ||
-              (log.details ? JSON.stringify(log.details) : log.action),
+            description: log.description || log.error_message || log.action,
             type,
+            logType: log.log_type || "user_activity",
             severity,
             ip: log.ip_address || "-",
             fullDetails: log.details,
@@ -148,7 +151,6 @@ export default function AdminLogs() {
         setLogs(mappedLogs);
       }
     } catch (err) {
-      console.error("Error fetching system logs:", err);
       setError("Failed to load system logs");
     } finally {
       setLoading(false);
@@ -156,7 +158,7 @@ export default function AdminLogs() {
   };
 
   // Track if filters changed to reset page
-  const filtersKey = `${filters.search}|${filters.type}|${filters.role}|${filters.dateRange}`;
+  const filtersKey = `${filters.search}|${filters.logType}|${filters.level}|${filters.role}|${filters.dateRange}`;
 
   useEffect(() => {
     // When filters change, always fetch from page 1
@@ -255,3 +257,4 @@ export default function AdminLogs() {
     </div>
   );
 }
+

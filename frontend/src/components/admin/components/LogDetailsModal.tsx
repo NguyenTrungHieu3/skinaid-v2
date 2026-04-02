@@ -1,4 +1,4 @@
-import { X, Clock, User, Shield, Activity, FileText, AlertTriangle, CheckCircle, Info, AlertCircle } from 'lucide-react';
+import { X, Clock, User, Shield, Activity, FileText, AlertTriangle, CheckCircle, Info, AlertCircle, Tag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import styles from './LogDetailsModal.module.css';
 
@@ -9,11 +9,12 @@ interface Log {
     email?: string;
     role: string;
     timestamp: string;
-    details: string;
+    description: string;
     type: 'error' | 'warning' | 'info' | 'success';
+    logType: string;
     severity: 'high' | 'medium' | 'low';
     ip: string;
-    fullDetails?: any; // For the raw JSON details
+    fullDetails?: any;
 }
 
 interface LogDetailsModalProps {
@@ -45,10 +46,16 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
         }
     };
 
+    const translateLogType = (logType: string) => {
+        const key = `admin.logs.filters.log_types.${logType}`;
+        const translated = t(key);
+        return translated !== key ? translated : logType;
+    };
+
     // Format JSON for display
     const formattedDetails = log.fullDetails
         ? JSON.stringify(log.fullDetails, null, 2)
-        : log.details;
+        : '{}';
 
     return (
         <div className={styles.modalOverlay}>
@@ -64,6 +71,14 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                 </div>
 
                 <div className={styles.modalBody}>
+                    {/* Description Section */}
+                    <div className={styles.section}>
+                        <h3 className={styles.sectionTitle}>{t('admin.logs.details.description')}</h3>
+                        <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.6 }}>
+                            {log.description}
+                        </p>
+                    </div>
+
                     {/* Summary Section */}
                     <div className={styles.section}>
                         <h3 className={styles.sectionTitle}>{t('admin.logs.details.summary')}</h3>
@@ -72,7 +87,7 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                                 <Clock size={16} />
                                 <span className={styles.label}>{t('admin.logs.details.timestamp')}</span>
                                 <span className={styles.value}>
-                                    {new Date(log.timestamp).toLocaleString('en-US', {
+                                    {new Date(log.timestamp + 'Z').toLocaleString('vi-VN', {
                                         year: 'numeric',
                                         month: '2-digit',
                                         day: '2-digit',
@@ -87,6 +102,11 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                                 <Activity size={16} />
                                 <span className={styles.label}>{t('admin.logs.details.action')}</span>
                                 <span className={styles.value}>{log.action}</span>
+                            </div>
+                            <div className={styles.infoItem}>
+                                <Tag size={16} />
+                                <span className={styles.label}>{t('admin.logs.details.log_type')}</span>
+                                <span className={styles.value}>{translateLogType(log.logType)}</span>
                             </div>
                             <div className={styles.infoItem}>
                                 <Shield size={16} />
@@ -107,16 +127,18 @@ const LogDetailsModal: React.FC<LogDetailsModalProps> = ({ log, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Details Section */}
-                    <div className={styles.section}>
-                        <h3 className={styles.sectionTitle}>
-                            <FileText size={18} />
-                            {t('admin.logs.details.full_details')}
-                        </h3>
-                        <div className={styles.codeBlock}>
-                            <pre>{formattedDetails}</pre>
+                    {/* Raw Details Section */}
+                    {log.fullDetails && Object.keys(log.fullDetails).length > 0 && (
+                        <div className={styles.section}>
+                            <h3 className={styles.sectionTitle}>
+                                <FileText size={18} />
+                                {t('admin.logs.details.full_details')}
+                            </h3>
+                            <div className={styles.codeBlock}>
+                                <pre>{formattedDetails}</pre>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 <div className={styles.modalFooter}>

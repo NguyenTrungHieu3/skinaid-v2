@@ -289,3 +289,6 @@ pids/
 .qwen/
 
 
+
+# AI Generated Workspace
+.ai_workspace/

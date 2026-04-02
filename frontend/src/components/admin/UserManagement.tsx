@@ -24,35 +24,29 @@ import {
 import styles from "./UserManagement.module.css";
 
 export default function UserManagementPage() {
-  // Service logic state
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [panelLoading, setPanelLoading] = useState(false);
   
-  // Pagination & Server State
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Filter & Search State
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Panel & Action State
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
-  // Tick mỗi 60 giây để cập nhật hiển thị "Last Active" (relative time)
   const [, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(timer);
   }, []);
 
-  // user_id của admin đang đăng nhập — lấy từ JWT sub
   const currentAdminId = (() => {
     try {
       const token =
@@ -67,7 +61,6 @@ export default function UserManagementPage() {
     }
   })();
 
-  // Dropdown click outside listener
   const dropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -79,7 +72,6 @@ export default function UserManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounce logic
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -87,13 +79,11 @@ export default function UserManagementPage() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Fetch users triggered by dependencies
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, roleFilter, statusFilter, currentPage]);
 
-  // Auto-refresh every 5 minutes (silent, no loading spinner)
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -107,9 +97,8 @@ export default function UserManagementPage() {
         setUsers(data.items);
         setTotalUsers(data.total);
       } catch {
-        // silent fail – do not disturb user
       }
-    }, 5 * 60_000); // 5 minutes
+    }, 5 * 60_000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, roleFilter, statusFilter, currentPage]);
@@ -134,7 +123,6 @@ export default function UserManagementPage() {
     }
   };
 
-  // Handlers
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -175,10 +163,9 @@ export default function UserManagementPage() {
       return;
     }
 
-    const originalStatus = userToUpdate.status; // Snapshot trước khi thay đổi
+    const originalStatus = userToUpdate.status;
     const newStatus = originalStatus.toLowerCase() === "active" ? "inactive" : "active";
 
-    // Optimistic Update — cập nhật UI ngay lập tức
     setUsers(prev => {
       const next = [...prev];
       next[userIndex] = { ...next[userIndex], status: newStatus };
@@ -195,7 +182,6 @@ export default function UserManagementPage() {
         `User "${userToUpdate.full_name || userToUpdate.email}" đã được ${newStatus === "active" ? "kích hoạt" : "vô hiệu hoá"}.`
       );
     } catch (err: any) {
-      // Revert về trạng thái gốc
       setUsers(prev => {
         const reverted = [...prev];
         reverted[userIndex] = { ...reverted[userIndex], status: originalStatus };
@@ -214,7 +200,6 @@ export default function UserManagementPage() {
     }
   };
 
-  // Utilities
   const getInitials = (name: string | null) => {
     if (!name) return "U";
     return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
@@ -228,13 +213,11 @@ export default function UserManagementPage() {
 
   const getRelativeTime = (dateString: string | null) => {
     if (!dateString) return "Never";
-    // Ensure the date is parsed as UTC by appending 'Z' if missing (because backend sends naive datetimes)
     const normalizedDateString = dateString.endsWith("Z") ? dateString : `${dateString}Z`;
     const date = new Date(normalizedDateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    // Nếu chênh lệch bị lùi giờ (do timezone hoặc clock máy tính sai) thì hiện Just now
     if (diffInSeconds < 60) return "Just now";
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
@@ -254,7 +237,6 @@ export default function UserManagementPage() {
     return "🦠";
   };
 
-  // Computed data
   const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize));
   const indexOfFirstUser = (currentPage - 1) * pageSize + 1;
   const indexOfLastUser = Math.min(currentPage * pageSize, totalUsers);

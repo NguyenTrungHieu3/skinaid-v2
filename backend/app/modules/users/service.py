@@ -85,7 +85,6 @@ class UserService:
             wound_type = item.wound_type
             severity = item.severity
             
-            # Fallback to the first detection if analysis level fields are empty
             if not wound_type and getattr(item, 'wound_detections', None):
                 if len(item.wound_detections) > 0:
                     wound_type = item.wound_detections[0].wound_type
@@ -149,8 +148,11 @@ class UserService:
         await self.db.commit()
         await self.db.refresh(target_user)
 
-        # Ghi log Audit Backbone
         base_action = "activate_user" if is_active_target else "deactivate_user"
+        admin_name = current_admin.user_name or str(current_admin.user_id)[:8]
+        target_email = target_user.email or str(target_user.user_id)[:8]
+        desc = f"Admin {admin_name} {'activated' if is_active_target else 'deactivated'} user {target_email}"
+
         await audit_service.log_event(
             action=base_action,
             user_id=current_admin.user_id,
@@ -159,6 +161,9 @@ class UserService:
             resource_id=str(target_user.user_id),
             ip_address=ip_address,
             user_agent=user_agent,
+            log_type="admin_action",
+            level="info",
+            description=desc,
             details={
                 "target_email": target_user.email,
                 "before": before_status,

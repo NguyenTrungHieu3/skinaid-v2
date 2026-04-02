@@ -6,7 +6,7 @@ from datetime import datetime
 
 class AuditLogFilterParams(BaseModel):
     page: int = Field(1, ge=1, description="Trang hiện tại")
-    limit: int = Field(10, ge=1, le=100, description="Số lượng logs mỗi trang")
+    limit: int = Field(20, ge=1, le=100, description="Số lượng logs mỗi trang")
     user_id: Optional[UUID] = Field(None, description="Lọc theo user ID")
     action: Optional[str] = Field(None, description="Lọc theo hành động")
     resource_type: Optional[str] = Field(
@@ -14,13 +14,17 @@ class AuditLogFilterParams(BaseModel):
     success: Optional[bool] = Field(
         None, description="Lọc theo trạng thái thành công/thất bại")
     is_guest: Optional[bool] = Field(
-        None, description="Lọc theo k hách vãng lai")
+        None, description="Lọc theo khách vãng lai")
     search: Optional[str] = Field(
-        None, description="Tìm kiếm trong action, resource_id, ip_address, user_agent")
+        None, description="Tìm kiếm trong action, description, email, user_name")
     role_name: Optional[str] = Field(
         None, description="Lọc theo vai trò của user")
     start_date: Optional[datetime] = Field(None, description="Lọc từ ngày")
     end_date: Optional[datetime] = Field(None, description="Lọc đến ngày")
+    log_type: Optional[str] = Field(
+        None, description="Lọc theo loại log: admin_action / user_activity / system_error")
+    level: Optional[str] = Field(
+        None, description="Lọc theo mức độ: info / warning / error")
 
 
 class AuditLogResponse(BaseModel):

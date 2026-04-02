@@ -5,7 +5,8 @@ import styles from './LogFilters.module.css';
 interface LogFiltersProps {
   filters: {
     search: string;
-    type: string;
+    logType: string;
+    level: string;
     role: string;
     dateRange: string;
   };
@@ -37,13 +38,28 @@ const LogFilters: React.FC<LogFiltersProps> = ({
 
         <div className={styles.filterSelectWrapper}>
           <select
-            value={filters.type}
-            onChange={(e) => onFilterChange('type', e.target.value)}
+            value={filters.logType}
+            onChange={(e) => onFilterChange('logType', e.target.value)}
             className={styles.filterSelect}
           >
-            <option value="all">{t('admin.logs.filters.all_types')}</option>
-            <option value="success">{t('admin.logs.filters.success')}</option>
-            <option value="error">{t('admin.logs.filters.error')}</option>
+            <option value="all">{t('admin.logs.filters.all_log_types')}</option>
+            <option value="admin_action">{t('admin.logs.filters.log_types.admin_action')}</option>
+            <option value="user_activity">{t('admin.logs.filters.log_types.user_activity')}</option>
+            <option value="system_error">{t('admin.logs.filters.log_types.system_error')}</option>
+          </select>
+        </div>
+
+        <div className={styles.filterSelectWrapper}>
+          <select
+            value={filters.level}
+            onChange={(e) => onFilterChange('level', e.target.value)}
+            className={styles.filterSelect}
+          >
+            <option value="all">{t('admin.logs.filters.all_levels')}</option>
+            <option value="info">{t('admin.logs.filters.levels.info')}</option>
+            <option value="success">{t('admin.logs.filters.levels.success')}</option>
+            <option value="warning">{t('admin.logs.filters.levels.warning')}</option>
+            <option value="error">{t('admin.logs.filters.levels.error')}</option>
           </select>
         </div>
 
