@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -15,6 +16,8 @@ import {
   PrimaryButton,
   TEAL,
 } from "../../components/AuthComponents";
+import { useAuth } from "../../context/AuthContext";
+import { getErrorMessage } from "../../services/utils";
 
 export default function SignInScreen() {
   const [username, setUsername] = useState("");
@@ -22,12 +25,30 @@ export default function SignInScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSignIn = () => {
-    // TODO: xử lý login logic
-    console.log("Sign in:", username, password);
-    router.replace("/(tabs)/home");
-  };
+  const { signIn } = useAuth();
+  const [loading, setLoading] = useState(false);
 
+  // Trong file sign-in.tsx
+  const handleSignIn = async () => {
+    if (!username || !password) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Gửi đúng key "user_name" như Swagger yêu cầu
+      await signIn({
+        user_name: username,
+        password: password,
+      });
+      router.replace("/(tabs)/home");
+    } catch (error: any) {
+      Alert.alert("Đăng nhập thất bại", getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <ScrollView
       contentContainerStyle={styles.container}

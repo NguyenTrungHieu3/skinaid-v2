@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -15,7 +16,8 @@ import {
   PrimaryButton,
   TEAL,
 } from "../../components/AuthComponents";
-
+import { authService } from "../../services/authService";
+import { getErrorMessage } from "../../services/utils";
 export default function SignUpScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -25,12 +27,39 @@ export default function SignUpScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreed, setAgreed] = useState(false);
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (!agreed) return;
-    // TODO: xử lý register logic
-    console.log("Sign up:", username, email);
-  };
 
+    if (password !== confirmPassword) {
+      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    try {
+      // Sửa lại object gửi đi cho đúng với Swagger
+      const signUpData = {
+        user_name: username, // Phải là user_name (theo Swagger)
+        email: email,
+        password: password,
+        confirm_password: confirmPassword, // Phải có trường này gửi lên server
+        gender: "Other", // Swagger yêu cầu phải có gender (bạn có thể thêm input chọn hoặc để mặc định)
+      };
+
+      console.log("Data sending:", signUpData); // Log ra để kiểm tra trước khi call
+
+      await authService.signUp(signUpData);
+
+      Alert.alert("Thành công", "Đăng ký tài khoản thành công!", [
+        {
+          text: "Đăng nhập ngay",
+          onPress: () => router.replace("/(auth)/sign-in"),
+        },
+      ]);
+    } catch (error: any) {
+      console.log("Error details:", error.response?.data); // Log lỗi chi tiết từ server
+      Alert.alert("Lỗi đăng ký", getErrorMessage(error));
+    }
+  };
   return (
     <ScrollView
       contentContainerStyle={styles.container}

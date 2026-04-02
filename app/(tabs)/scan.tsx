@@ -36,8 +36,12 @@ export default function ScanScreen() {
         quality: 0.85,
         base64: false,
       });
-      console.log("Photo taken:", photo?.uri);
-      // TODO: router.push({ pathname: "/(app)/result", params: { uri: photo.uri } });
+
+      // Navigate sang image-check, truyền uri ảnh
+      router.push({
+        pathname: "../image-check",
+        params: { uri: photo.uri },
+      });
     } catch {
       Alert.alert("Lỗi", "Không thể chụp ảnh. Vui lòng thử lại.");
     } finally {
@@ -63,7 +67,10 @@ export default function ScanScreen() {
     });
     if (!result.canceled && result.assets.length > 0) {
       console.log("Image picked:", result.assets[0].uri);
-      // TODO: router.push({ pathname: "/(app)/result", params: { uri: result.assets[0].uri } });
+      router.push({
+        pathname: "../image-check",
+        params: { uri: result.assets[0].uri },
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, StatusBar, StyleSheet, Text } from "react-native";
+import { Alert, ScrollView, StatusBar, StyleSheet, Text } from "react-native";
 import {
   AuthHeader,
   BackToLogin,
@@ -8,13 +9,19 @@ import {
   PrimaryButton,
   TEAL,
 } from "../../components/AuthComponents";
+import { authService } from "../../services/authService";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
 
-  const handleSend = () => {
-    // TODO: gửi email reset password
-    console.log("Send reset email to:", email);
+  const handleSend = async () => {
+    try {
+      await authService.forgotPassword(email);
+      Alert.alert("Thông báo", "Vui lòng kiểm tra email để nhận mã reset");
+      router.push("/(auth)/reset-password");
+    } catch (error: any) {
+      Alert.alert("Lỗi", "Email không tồn tại hoặc lỗi hệ thống");
+    }
   };
 
   return (
