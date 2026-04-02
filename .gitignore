@@ -292,3 +292,9 @@ pids/
 .env.prod
 *.pem
 *.key
+
+# Tạo Admin
+create_admin.py
+
+# SQL schema
+schema_v2.1_improved.sql
