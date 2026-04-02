@@ -296,5 +296,7 @@ pids/
 # Tạo Admin
 create_admin.py
 
-# SQL schema
-schema_v2.1_improved.sql
+# AI Generated Workspace
+.ai_workspace/
+
+tech.md

@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
-    from app.modules.users.models.user import User
+    from app.modules.users.models import User
 
 class VerificationToken(SQLModel, table=True):
     __tablename__ = "verification_tokens"  # type: ignore

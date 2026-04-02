@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import allow_guest, require_admin
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.firstaid.dependencies import get_firstaid_service
 from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,

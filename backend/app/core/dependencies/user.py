@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy import select, func, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.role_permissions import RolePermission

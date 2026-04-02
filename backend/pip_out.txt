@@ -1,0 +1,421 @@
+Collecting aiofiles==25.1.0 (from -r requirements.txt (line 1))
+  Using cached aiofiles-25.1.0-py3-none-any.whl.metadata (6.3 kB)
+Requirement already satisfied: aiohappyeyeballs==2.6.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 2)) (2.6.1)
+Collecting aiohttp==3.13.3 (from -r requirements.txt (line 3))
+  Using cached aiohttp-3.13.3-cp313-cp313-win_amd64.whl.metadata (8.4 kB)
+Requirement already satisfied: aiosignal==1.4.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 4)) (1.4.0)
+Requirement already satisfied: alembic==1.13.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 5)) (1.13.3)
+Collecting annotated-doc==0.0.4 (from -r requirements.txt (line 6))
+  Using cached annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+Requirement already satisfied: annotated-types==0.7.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 7)) (0.7.0)
+Requirement already satisfied: anyio==4.10.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 8)) (4.10.0)
+Requirement already satisfied: APScheduler==3.10.4 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 9)) (3.10.4)
+Requirement already satisfied: argon2-cffi==25.1.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 10)) (25.1.0)
+Requirement already satisfied: argon2-cffi-bindings==25.1.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 11)) (25.1.0)
+Collecting asyncpg==0.31.0 (from -r requirements.txt (line 12))
+  Using cached asyncpg-0.31.0-cp313-cp313-win_amd64.whl.metadata (4.5 kB)
+Collecting attrs==26.1.0 (from -r requirements.txt (line 13))
+  Using cached attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting bcrypt==5.0.0 (from -r requirements.txt (line 14))
+  Using cached bcrypt-5.0.0-cp39-abi3-win_amd64.whl.metadata (10 kB)
+Collecting beautifulsoup4==4.14.3 (from -r requirements.txt (line 15))
+  Using cached beautifulsoup4-4.14.3-py3-none-any.whl.metadata (3.8 kB)
+Collecting certifi==2026.2.25 (from -r requirements.txt (line 16))
+  Using cached certifi-2026.2.25-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: cffi==2.0.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 17)) (2.0.0)
+Collecting charset-normalizer==3.4.6 (from -r requirements.txt (line 18))
+  Using cached charset_normalizer-3.4.6-cp313-cp313-win_amd64.whl.metadata (41 kB)
+Collecting click==8.3.1 (from -r requirements.txt (line 19))
+  Using cached click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Requirement already satisfied: colorama==0.4.6 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 20)) (0.4.6)
+Requirement already satisfied: contourpy==1.3.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 21)) (1.3.3)
+Requirement already satisfied: cryptography==45.0.7 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 22)) (45.0.7)
+Requirement already satisfied: cycler==0.12.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 23)) (0.12.1)
+Collecting dataclasses-json==0.6.7 (from -r requirements.txt (line 24))
+  Using cached dataclasses_json-0.6.7-py3-none-any.whl.metadata (25 kB)
+Requirement already satisfied: Deprecated==1.2.18 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 25)) (1.2.18)
+Collecting distro==1.9.0 (from -r requirements.txt (line 26))
+  Using cached distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Requirement already satisfied: dnspython==2.8.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 27)) (2.8.0)
+Collecting ecdsa==0.19.2 (from -r requirements.txt (line 28))
+  Using cached ecdsa-0.19.2-py2.py3-none-any.whl.metadata (29 kB)
+Requirement already satisfied: email-validator==2.3.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 29)) (2.3.0)
+Collecting fastapi==0.135.2 (from -r requirements.txt (line 30))
+  Using cached fastapi-0.135.2-py3-none-any.whl.metadata (28 kB)
+Requirement already satisfied: fastapi-cli==0.0.11 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 31)) (0.0.11)
+Requirement already satisfied: fastapi-cloud-cli==0.1.5 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 32)) (0.1.5)
+Collecting fastar==0.9.0 (from -r requirements.txt (line 33))
+  Using cached fastar-0.9.0-cp313-cp313-win_amd64.whl.metadata (4.1 kB)
+Collecting fastembed==0.8.0 (from -r requirements.txt (line 34))
+  Using cached fastembed-0.8.0-py3-none-any.whl.metadata (10 kB)
+Collecting filelock==3.25.2 (from -r requirements.txt (line 35))
+  Using cached filelock-3.25.2-py3-none-any.whl.metadata (2.0 kB)
+Requirement already satisfied: filetype==1.2.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 36)) (1.2.0)
+Requirement already satisfied: flatbuffers==25.12.19 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 37)) (25.12.19)
+Collecting fonttools==4.62.1 (from -r requirements.txt (line 38))
+  Using cached fonttools-4.62.1-cp313-cp313-win_amd64.whl.metadata (119 kB)
+Requirement already satisfied: frozenlist==1.8.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 39)) (1.8.0)
+Collecting fsspec==2026.3.0 (from -r requirements.txt (line 40))
+  Using cached fsspec-2026.3.0-py3-none-any.whl.metadata (10 kB)
+Collecting greenlet==3.3.2 (from -r requirements.txt (line 41))
+  Using cached greenlet-3.3.2-cp313-cp313-win_amd64.whl.metadata (3.8 kB)
+Collecting grpcio==1.78.0 (from -r requirements.txt (line 42))
+  Using cached grpcio-1.78.0-cp313-cp313-win_amd64.whl.metadata (3.9 kB)
+Requirement already satisfied: h11==0.16.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 43)) (0.16.0)
+Collecting h2==4.3.0 (from -r requirements.txt (line 44))
+  Using cached h2-4.3.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting hf-xet==1.4.2 (from -r requirements.txt (line 45))
+  Using cached hf_xet-1.4.2-cp37-abi3-win_amd64.whl.metadata (4.9 kB)
+Collecting hpack==4.1.0 (from -r requirements.txt (line 46))
+  Using cached hpack-4.1.0-py3-none-any.whl.metadata (4.6 kB)
+Requirement already satisfied: httpcore==1.0.9 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 47)) (1.0.9)
+Collecting httptools==0.7.1 (from -r requirements.txt (line 48))
+  Using cached httptools-0.7.1-cp313-cp313-win_amd64.whl.metadata (3.6 kB)
+Requirement already satisfied: httpx==0.28.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 49)) (0.28.1)
+Collecting httpx-sse==0.4.3 (from -r requirements.txt (line 50))
+  Using cached httpx_sse-0.4.3-py3-none-any.whl.metadata (9.7 kB)
+Requirement already satisfied: huggingface-hub==0.35.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 51)) (0.35.3)
+Collecting hyperframe==6.1.0 (from -r requirements.txt (line 52))
+  Using cached hyperframe-6.1.0-py3-none-any.whl.metadata (4.3 kB)
+Collecting idna==3.11 (from -r requirements.txt (line 53))
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting iniconfig==2.3.0 (from -r requirements.txt (line 54))
+  Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: Jinja2==3.1.6 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 55)) (3.1.6)
+Collecting jiter==0.13.0 (from -r requirements.txt (line 56))
+  Using cached jiter-0.13.0-cp313-cp313-win_amd64.whl.metadata (5.3 kB)
+Collecting jsonpatch==1.33 (from -r requirements.txt (line 57))
+  Using cached jsonpatch-1.33-py2.py3-none-any.whl.metadata (3.0 kB)
+Collecting jsonpointer==3.1.1 (from -r requirements.txt (line 58))
+  Using cached jsonpointer-3.1.1-py3-none-any.whl.metadata (2.4 kB)
+Collecting kiwisolver==1.5.0 (from -r requirements.txt (line 59))
+  Using cached kiwisolver-1.5.0-cp313-cp313-win_amd64.whl.metadata (5.2 kB)
+Collecting langchain==1.2.13 (from -r requirements.txt (line 60))
+  Using cached langchain-1.2.13-py3-none-any.whl.metadata (5.8 kB)
+Collecting langchain-classic==1.0.3 (from -r requirements.txt (line 61))
+  Using cached langchain_classic-1.0.3-py3-none-any.whl.metadata (4.8 kB)
+Collecting langchain-community==0.4.1 (from -r requirements.txt (line 62))
+  Using cached langchain_community-0.4.1-py3-none-any.whl.metadata (3.0 kB)
+Collecting langchain-core==1.2.23 (from -r requirements.txt (line 63))
+  Using cached langchain_core-1.2.23-py3-none-any.whl.metadata (4.4 kB)
+Collecting langchain-experimental==0.4.1 (from -r requirements.txt (line 64))
+  Using cached langchain_experimental-0.4.1-py3-none-any.whl.metadata (1.3 kB)
+Collecting langchain-openai==1.1.12 (from -r requirements.txt (line 65))
+  Using cached langchain_openai-1.1.12-py3-none-any.whl.metadata (3.1 kB)
+Collecting langchain-qdrant==1.1.0 (from -r requirements.txt (line 66))
+  Using cached langchain_qdrant-1.1.0-py3-none-any.whl.metadata (2.0 kB)
+Collecting langchain-text-splitters==1.1.1 (from -r requirements.txt (line 67))
+  Using cached langchain_text_splitters-1.1.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting langgraph==1.1.3 (from -r requirements.txt (line 68))
+  Using cached langgraph-1.1.3-py3-none-any.whl.metadata (7.4 kB)
+Collecting langgraph-checkpoint==4.0.1 (from -r requirements.txt (line 69))
+  Using cached langgraph_checkpoint-4.0.1-py3-none-any.whl.metadata (4.9 kB)
+Collecting langgraph-prebuilt==1.0.8 (from -r requirements.txt (line 70))
+  Using cached langgraph_prebuilt-1.0.8-py3-none-any.whl.metadata (5.2 kB)
+Collecting langgraph-sdk==0.3.12 (from -r requirements.txt (line 71))
+  Using cached langgraph_sdk-0.3.12-py3-none-any.whl.metadata (1.6 kB)
+Collecting langsmith==0.7.22 (from -r requirements.txt (line 72))
+  Using cached langsmith-0.7.22-py3-none-any.whl.metadata (15 kB)
+Requirement already satisfied: limits==5.6.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 73)) (5.6.0)
+Collecting loguru==0.7.3 (from -r requirements.txt (line 74))
+  Using cached loguru-0.7.3-py3-none-any.whl.metadata (22 kB)
+Collecting lxml==6.0.2 (from -r requirements.txt (line 75))
+  Using cached lxml-6.0.2-cp313-cp313-win_amd64.whl.metadata (3.7 kB)
+Requirement already satisfied: Mako==1.3.10 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 76)) (1.3.10)
+Requirement already satisfied: markdown-it-py==4.0.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 77)) (4.0.0)
+Collecting MarkupSafe==3.0.3 (from -r requirements.txt (line 78))
+  Using cached markupsafe-3.0.3-cp313-cp313-win_amd64.whl.metadata (2.8 kB)
+Collecting marshmallow==3.26.2 (from -r requirements.txt (line 79))
+  Using cached marshmallow-3.26.2-py3-none-any.whl.metadata (7.3 kB)
+Collecting matplotlib==3.10.8 (from -r requirements.txt (line 80))
+  Using cached matplotlib-3.10.8-cp313-cp313-win_amd64.whl.metadata (52 kB)
+Requirement already satisfied: mdurl==0.1.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 81)) (0.1.2)
+Collecting mmh3==5.2.1 (from -r requirements.txt (line 82))
+  Using cached mmh3-5.2.1-cp313-cp313-win_amd64.whl.metadata (15 kB)
+Requirement already satisfied: mpmath==1.3.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 83)) (1.3.0)
+Collecting multidict==6.7.1 (from -r requirements.txt (line 84))
+  Using cached multidict-6.7.1-cp313-cp313-win_amd64.whl.metadata (5.5 kB)
+Collecting mypy_extensions==1.1.0 (from -r requirements.txt (line 85))
+  Using cached mypy_extensions-1.1.0-py3-none-any.whl.metadata (1.1 kB)
+Requirement already satisfied: networkx==3.5 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 86)) (3.5)
+Requirement already satisfied: numpy<2.3.0,>=2.1.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 87)) (2.2.6)
+Collecting onnxruntime==1.24.4 (from -r requirements.txt (line 88))
+  Using cached onnxruntime-1.24.4-cp313-cp313-win_amd64.whl.metadata (5.4 kB)
+Collecting openai==2.29.0 (from -r requirements.txt (line 89))
+  Using cached openai-2.29.0-py3-none-any.whl.metadata (29 kB)
+Requirement already satisfied: opencv-python==4.12.0.88 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 90)) (4.12.0.88)
+Requirement already satisfied: orjson==3.11.7 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 91)) (3.11.7)
+Requirement already satisfied: ormsgpack==1.12.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 92)) (1.12.2)
+Requirement already satisfied: packaging==26.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 93)) (26.0)
+Requirement already satisfied: passlib==1.7.4 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 94)) (1.7.4)
+Collecting pdf2image==1.17.0 (from -r requirements.txt (line 95))
+  Using cached pdf2image-1.17.0-py3-none-any.whl.metadata (6.2 kB)
+Requirement already satisfied: pillow==12.1.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 96)) (12.1.1)
+Requirement already satisfied: pluggy==1.6.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 97)) (1.6.0)
+Collecting polars==1.39.2 (from -r requirements.txt (line 98))
+  Using cached polars-1.39.2-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: polars-runtime-32==1.39.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 99)) (1.39.2)
+Requirement already satisfied: portalocker==3.2.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 100)) (3.2.0)
+Requirement already satisfied: propcache==0.4.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 101)) (0.4.1)
+Requirement already satisfied: protobuf==7.34.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 102)) (7.34.1)
+Requirement already satisfied: psutil==7.2.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 103)) (7.2.2)
+Requirement already satisfied: psycopg2-binary==2.9.11 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 104)) (2.9.11)
+Requirement already satisfied: py_rust_stemmers==0.1.5 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 105)) (0.1.5)
+Requirement already satisfied: pyasn1==0.6.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 106)) (0.6.3)
+Requirement already satisfied: pycparser==3.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 107)) (3.0)
+Requirement already satisfied: pydantic==2.11.7 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 108)) (2.11.7)
+Requirement already satisfied: pydantic-extra-types==2.11.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 109)) (2.11.1)
+Requirement already satisfied: pydantic-settings==2.10.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 110)) (2.10.1)
+Requirement already satisfied: pydantic_core==2.33.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 111)) (2.33.2)
+Requirement already satisfied: Pygments==2.19.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 112)) (2.19.2)
+Requirement already satisfied: PyMuPDF==1.27.2.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 113)) (1.27.2.2)
+Requirement already satisfied: pyparsing==3.3.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 114)) (3.3.2)
+Requirement already satisfied: pypdf==6.9.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 115)) (6.9.2)
+Collecting pytesseract==0.3.13 (from -r requirements.txt (line 116))
+  Using cached pytesseract-0.3.13-py3-none-any.whl.metadata (11 kB)
+Requirement already satisfied: pytest==8.4.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 117)) (8.4.2)
+Requirement already satisfied: pytest-asyncio==1.2.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 118)) (1.2.0)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 119)) (2.9.0.post0)
+Collecting python-docx==1.2.0 (from -r requirements.txt (line 120))
+  Using cached python_docx-1.2.0-py3-none-any.whl.metadata (2.0 kB)
+Requirement already satisfied: python-dotenv==1.2.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 121)) (1.2.2)
+Requirement already satisfied: python-jose==3.5.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 122)) (3.5.0)
+Requirement already satisfied: python-multipart==0.0.22 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 123)) (0.0.22)
+Requirement already satisfied: pytz==2026.1.post1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 124)) (2026.1.post1)
+Requirement already satisfied: pywin32==311 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 125)) (311)
+Requirement already satisfied: PyYAML==6.0.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 126)) (6.0.3)
+Collecting qdrant-client==1.17.1 (from -r requirements.txt (line 127))
+  Using cached qdrant_client-1.17.1-py3-none-any.whl.metadata (11 kB)
+Requirement already satisfied: redis==5.2.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 128)) (5.2.1)
+Requirement already satisfied: regex==2026.2.28 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 129)) (2026.2.28)
+Requirement already satisfied: requests==2.32.5 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 130)) (2.32.5)
+Collecting requests-toolbelt==1.0.0 (from -r requirements.txt (line 131))
+  Using cached requests_toolbelt-1.0.0-py2.py3-none-any.whl.metadata (14 kB)
+Requirement already satisfied: rich==14.1.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 132)) (14.1.0)
+Requirement already satisfied: rich-toolkit==0.15.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 133)) (0.15.1)
+Requirement already satisfied: rignore==0.7.6 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 134)) (0.7.6)
+Requirement already satisfied: rsa==4.9.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 135)) (4.9.1)
+Requirement already satisfied: safetensors==0.7.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 136)) (0.7.0)
+Requirement already satisfied: scipy==1.16.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 137)) (1.16.2)
+Requirement already satisfied: sentry-sdk==2.38.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 138)) (2.38.0)
+Requirement already satisfied: setuptools==80.9.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 139)) (80.9.0)
+Requirement already satisfied: shellingham==1.5.4 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 140)) (1.5.4)
+Requirement already satisfied: six==1.17.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 141)) (1.17.0)
+Requirement already satisfied: slowapi==0.1.9 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 142)) (0.1.9)
+Requirement already satisfied: sniffio==1.3.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 143)) (1.3.1)
+Requirement already satisfied: soupsieve==2.8.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 144)) (2.8.3)
+Requirement already satisfied: SQLAlchemy==2.0.43 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 145)) (2.0.43)
+Requirement already satisfied: sqlmodel==0.0.24 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 146)) (0.0.24)
+Requirement already satisfied: starlette==0.47.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 147)) (0.47.3)
+Requirement already satisfied: sympy==1.14.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 148)) (1.14.0)
+Requirement already satisfied: tenacity==9.1.4 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 149)) (9.1.4)
+Collecting tiktoken==0.12.0 (from -r requirements.txt (line 150))
+  Using cached tiktoken-0.12.0-cp313-cp313-win_amd64.whl.metadata (6.9 kB)
+Requirement already satisfied: timm==1.0.20 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 151)) (1.0.20)
+Collecting tokenizers==0.22.2 (from -r requirements.txt (line 152))
+  Using cached tokenizers-0.22.2-cp39-abi3-win_amd64.whl.metadata (7.4 kB)
+Requirement already satisfied: torch==2.8.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 153)) (2.8.0)
+Requirement already satisfied: torchvision==0.23.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 154)) (0.23.0)
+Requirement already satisfied: tqdm==4.67.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 155)) (4.67.3)
+Requirement already satisfied: typer==0.17.4 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 156)) (0.17.4)
+Collecting typing-inspect==0.9.0 (from -r requirements.txt (line 157))
+  Using cached typing_inspect-0.9.0-py3-none-any.whl.metadata (1.5 kB)
+Requirement already satisfied: typing-inspection==0.4.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 158)) (0.4.2)
+Requirement already satisfied: typing_extensions==4.15.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 159)) (4.15.0)
+Requirement already satisfied: tzdata==2025.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 160)) (2025.3)
+Requirement already satisfied: tzlocal==5.3.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 161)) (5.3.1)
+Requirement already satisfied: ultralytics==8.3.203 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 162)) (8.3.203)
+Requirement already satisfied: ultralytics-thop==2.0.17 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 163)) (2.0.17)
+Requirement already satisfied: urllib3==2.6.3 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 164)) (2.6.3)
+Requirement already satisfied: uuid_utils==0.14.1 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 165)) (0.14.1)
+Requirement already satisfied: uv==0.11.2 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 166)) (0.11.2)
+Collecting uvicorn==0.42.0 (from -r requirements.txt (line 167))
+  Using cached uvicorn-0.42.0-py3-none-any.whl.metadata (6.7 kB)
+Requirement already satisfied: watchfiles==1.1.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 168)) (1.1.0)
+Requirement already satisfied: websockets==16.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 169)) (16.0)
+Requirement already satisfied: win32_setctime==1.2.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 170)) (1.2.0)
+Requirement already satisfied: wrapt<2.0.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 171)) (1.17.3)
+Requirement already satisfied: xxhash==3.6.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 172)) (3.6.0)
+Collecting yarl==1.23.0 (from -r requirements.txt (line 173))
+  Using cached yarl-1.23.0-cp313-cp313-win_amd64.whl.metadata (82 kB)
+Requirement already satisfied: zstandard==0.25.0 in c:\users\hieug\appdata\local\programs\python\python313\lib\site-packages (from -r requirements.txt (line 174)) (0.25.0)
+WARNING: pydantic 2.11.7 does not provide the extra 'email'
+WARNING: The candidate selected for download or install is a yanked version: 'polars' candidate (version 1.39.2 at https://files.pythonhosted.org/packages/c2/52/306da8d01a324a6ad693baa963dcd180f089882426653605bd418681183b/polars-1.39.2-py3-none-any.whl (from https://pypi.org/simple/polars/) (requires-python:>=3.10))
+Reason for being yanked: no lockfile
+Using cached aiofiles-25.1.0-py3-none-any.whl (14 kB)
+Using cached aiohttp-3.13.3-cp313-cp313-win_amd64.whl (453 kB)
+Using cached multidict-6.7.1-cp313-cp313-win_amd64.whl (45 kB)
+Using cached yarl-1.23.0-cp313-cp313-win_amd64.whl (87 kB)
+Using cached annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+Using cached asyncpg-0.31.0-cp313-cp313-win_amd64.whl (596 kB)
+Using cached attrs-26.1.0-py3-none-any.whl (67 kB)
+Using cached bcrypt-5.0.0-cp39-abi3-win_amd64.whl (150 kB)
+Using cached beautifulsoup4-4.14.3-py3-none-any.whl (107 kB)
+Using cached certifi-2026.2.25-py3-none-any.whl (153 kB)
+Using cached charset_normalizer-3.4.6-cp313-cp313-win_amd64.whl (154 kB)
+Using cached click-8.3.1-py3-none-any.whl (108 kB)
+Using cached dataclasses_json-0.6.7-py3-none-any.whl (28 kB)
+Using cached marshmallow-3.26.2-py3-none-any.whl (50 kB)
+Using cached typing_inspect-0.9.0-py3-none-any.whl (8.8 kB)
+Using cached distro-1.9.0-py3-none-any.whl (20 kB)
+Using cached ecdsa-0.19.2-py2.py3-none-any.whl (150 kB)
+Using cached fastapi-0.135.2-py3-none-any.whl (117 kB)
+Using cached fastar-0.9.0-cp313-cp313-win_amd64.whl (484 kB)
+Using cached fastembed-0.8.0-py3-none-any.whl (116 kB)
+Using cached loguru-0.7.3-py3-none-any.whl (61 kB)
+Using cached mmh3-5.2.1-cp313-cp313-win_amd64.whl (41 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Using cached tokenizers-0.22.2-cp39-abi3-win_amd64.whl (2.7 MB)
+Using cached filelock-3.25.2-py3-none-any.whl (26 kB)
+Using cached fonttools-4.62.1-cp313-cp313-win_amd64.whl (2.3 MB)
+Using cached fsspec-2026.3.0-py3-none-any.whl (202 kB)
+Using cached greenlet-3.3.2-cp313-cp313-win_amd64.whl (230 kB)
+Using cached grpcio-1.78.0-cp313-cp313-win_amd64.whl (4.8 MB)
+Using cached h2-4.3.0-py3-none-any.whl (61 kB)
+Using cached hpack-4.1.0-py3-none-any.whl (34 kB)
+Using cached hyperframe-6.1.0-py3-none-any.whl (13 kB)
+Using cached hf_xet-1.4.2-cp37-abi3-win_amd64.whl (3.7 MB)
+Using cached httptools-0.7.1-cp313-cp313-win_amd64.whl (85 kB)
+Using cached httpx_sse-0.4.3-py3-none-any.whl (9.0 kB)
+Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Using cached jiter-0.13.0-cp313-cp313-win_amd64.whl (202 kB)
+Using cached jsonpatch-1.33-py2.py3-none-any.whl (12 kB)
+Using cached jsonpointer-3.1.1-py3-none-any.whl (7.7 kB)
+Using cached kiwisolver-1.5.0-cp313-cp313-win_amd64.whl (73 kB)
+Using cached langchain-1.2.13-py3-none-any.whl (112 kB)
+Using cached langchain_core-1.2.23-py3-none-any.whl (506 kB)
+Using cached langgraph-1.1.3-py3-none-any.whl (168 kB)
+Using cached langgraph_checkpoint-4.0.1-py3-none-any.whl (50 kB)
+Using cached langgraph_prebuilt-1.0.8-py3-none-any.whl (35 kB)
+Using cached langgraph_sdk-0.3.12-py3-none-any.whl (95 kB)
+Using cached langsmith-0.7.22-py3-none-any.whl (359 kB)
+Using cached langchain_classic-1.0.3-py3-none-any.whl (1.0 MB)
+Using cached langchain_text_splitters-1.1.1-py3-none-any.whl (35 kB)
+Using cached langchain_community-0.4.1-py3-none-any.whl (2.5 MB)
+Using cached langchain_experimental-0.4.1-py3-none-any.whl (210 kB)
+Using cached langchain_openai-1.1.12-py3-none-any.whl (88 kB)
+Using cached openai-2.29.0-py3-none-any.whl (1.1 MB)
+Using cached tiktoken-0.12.0-cp313-cp313-win_amd64.whl (879 kB)
+Using cached langchain_qdrant-1.1.0-py3-none-any.whl (24 kB)
+Using cached qdrant_client-1.17.1-py3-none-any.whl (389 kB)
+Using cached lxml-6.0.2-cp313-cp313-win_amd64.whl (4.0 MB)
+Using cached markupsafe-3.0.3-cp313-cp313-win_amd64.whl (15 kB)
+Using cached matplotlib-3.10.8-cp313-cp313-win_amd64.whl (8.1 MB)
+Using cached mypy_extensions-1.1.0-py3-none-any.whl (5.0 kB)
+Using cached onnxruntime-1.24.4-cp313-cp313-win_amd64.whl (12.6 MB)
+Using cached pdf2image-1.17.0-py3-none-any.whl (11 kB)
+Using cached polars-1.39.2-py3-none-any.whl (823 kB)
+Using cached pytesseract-0.3.13-py3-none-any.whl (14 kB)
+Using cached python_docx-1.2.0-py3-none-any.whl (252 kB)
+Using cached requests_toolbelt-1.0.0-py2.py3-none-any.whl (54 kB)
+Using cached uvicorn-0.42.0-py3-none-any.whl (68 kB)
+Installing collected packages: pytesseract, polars, pdf2image, mypy_extensions, multidict, mmh3, marshmallow, MarkupSafe, lxml, loguru, kiwisolver, jsonpointer, jiter, iniconfig, idna, hyperframe, httpx-sse, httptools, hpack, hf-xet, grpcio, greenlet, fsspec, fonttools, filelock, fastar, ecdsa, distro, click, charset-normalizer, certifi, beautifulsoup4, bcrypt, attrs, asyncpg, annotated-doc, aiofiles, yarl, uvicorn, typing-inspect, python-docx, onnxruntime, matplotlib, jsonpatch, h2, tiktoken, requests-toolbelt, dataclasses-json, aiohttp, tokenizers, openai, langsmith, langgraph-sdk, fastapi, qdrant-client, langchain-core, fastembed, langgraph-checkpoint, langchain-text-splitters, langchain-qdrant, langchain-openai, langgraph-prebuilt, langchain-classic, langgraph, langchain-community, langchain-experimental, langchain
+  Attempting uninstall: polars
+    Found existing installation: polars 1.34.0
+    Uninstalling polars-1.34.0:
+      Successfully uninstalled polars-1.34.0
+  Attempting uninstall: multidict
+    Found existing installation: multidict 6.7.0
+    Uninstalling multidict-6.7.0:
+      Successfully uninstalled multidict-6.7.0
+  Attempting uninstall: MarkupSafe
+    Found existing installation: MarkupSafe 3.0.2
+    Uninstalling MarkupSafe-3.0.2:
+      Successfully uninstalled MarkupSafe-3.0.2
+  Attempting uninstall: kiwisolver
+    Found existing installation: kiwisolver 1.4.9
+    Uninstalling kiwisolver-1.4.9:
+      Successfully uninstalled kiwisolver-1.4.9
+  Attempting uninstall: jsonpointer
+    Found existing installation: jsonpointer 3.0.0
+    Uninstalling jsonpointer-3.0.0:
+      Successfully uninstalled jsonpointer-3.0.0
+  Attempting uninstall: iniconfig
+    Found existing installation: iniconfig 2.1.0
+    Uninstalling iniconfig-2.1.0:
+      Successfully uninstalled iniconfig-2.1.0
+  Attempting uninstall: idna
+    Found existing installation: idna 3.10
+    Uninstalling idna-3.10:
+      Successfully uninstalled idna-3.10
+  Attempting uninstall: httptools
+    Found existing installation: httptools 0.6.4
+    Uninstalling httptools-0.6.4:
+      Successfully uninstalled httptools-0.6.4
+  Attempting uninstall: greenlet
+    Found existing installation: greenlet 3.2.4
+    Uninstalling greenlet-3.2.4:
+      Successfully uninstalled greenlet-3.2.4
+  Attempting uninstall: fsspec
+    Found existing installation: fsspec 2025.9.0
+    Uninstalling fsspec-2025.9.0:
+      Successfully uninstalled fsspec-2025.9.0
+  Attempting uninstall: fonttools
+    Found existing installation: fonttools None
+    Uninstalling fonttools-None:
+      Successfully uninstalled fonttools-None
+  Attempting uninstall: filelock
+    Found existing installation: filelock 3.19.1
+    Uninstalling filelock-3.19.1:
+      Successfully uninstalled filelock-3.19.1
+  Attempting uninstall: ecdsa
+    Found existing installation: ecdsa 0.19.1
+    Uninstalling ecdsa-0.19.1:
+      Successfully uninstalled ecdsa-0.19.1
+  Attempting uninstall: click
+    Found existing installation: click 8.2.1
+    Uninstalling click-8.2.1:
+      Successfully uninstalled click-8.2.1
+  Attempting uninstall: charset-normalizer
+    Found existing installation: charset-normalizer 3.4.3
+    Uninstalling charset-normalizer-3.4.3:
+      Successfully uninstalled charset-normalizer-3.4.3
+  Attempting uninstall: certifi
+    Found existing installation: certifi 2025.10.5
+    Uninstalling certifi-2025.10.5:
+      Successfully uninstalled certifi-2025.10.5
+  Attempting uninstall: beautifulsoup4
+    Found existing installation: beautifulsoup4 4.14.2
+    Uninstalling beautifulsoup4-4.14.2:
+      Successfully uninstalled beautifulsoup4-4.14.2
+  Attempting uninstall: bcrypt
+    Found existing installation: bcrypt 4.3.0
+    Uninstalling bcrypt-4.3.0:
+      Successfully uninstalled bcrypt-4.3.0
+  Attempting uninstall: attrs
+    Found existing installation: attrs 25.4.0
+    Uninstalling attrs-25.4.0:
+      Successfully uninstalled attrs-25.4.0
+  Attempting uninstall: asyncpg
+    Found existing installation: asyncpg 0.30.0
+    Uninstalling asyncpg-0.30.0:
+      Successfully uninstalled asyncpg-0.30.0
+  Attempting uninstall: aiofiles
+    Found existing installation: aiofiles 24.1.0
+    Uninstalling aiofiles-24.1.0:
+      Successfully uninstalled aiofiles-24.1.0
+  Attempting uninstall: yarl
+    Found existing installation: yarl None
+    Uninstalling yarl-None:
+      Successfully uninstalled yarl-None
+  Attempting uninstall: uvicorn
+    Found existing installation: uvicorn 0.35.0
+    Uninstalling uvicorn-0.35.0:
+      Successfully uninstalled uvicorn-0.35.0
+  Attempting uninstall: matplotlib
+    Found existing installation: matplotlib 3.10.7
+    Uninstalling matplotlib-3.10.7:
+      Successfully uninstalled matplotlib-3.10.7
+  Attempting uninstall: aiohttp
+    Found existing installation: aiohttp 3.13.2
+    Uninstalling aiohttp-3.13.2:
+      Successfully uninstalled aiohttp-3.13.2
+  Attempting uninstall: fastapi
+    Found existing installation: fastapi 0.116.1
+    Uninstalling fastapi-0.116.1:
+      Successfully uninstalled fastapi-0.116.1
+
+Successfully installed MarkupSafe-3.0.3 aiofiles-25.1.0 aiohttp-3.13.3 annotated-doc-0.0.4 asyncpg-0.31.0 attrs-26.1.0 bcrypt-5.0.0 beautifulsoup4-4.14.3 certifi-2026.2.25 charset-normalizer-3.4.6 click-8.3.1 dataclasses-json-0.6.7 distro-1.9.0 ecdsa-0.19.2 fastapi-0.135.2 fastar-0.9.0 fastembed-0.8.0 filelock-3.25.2 fonttools-4.62.1 fsspec-2026.3.0 greenlet-3.3.2 grpcio-1.78.0 h2-4.3.0 hf-xet-1.4.2 hpack-4.1.0 httptools-0.7.1 httpx-sse-0.4.3 hyperframe-6.1.0 idna-3.11 iniconfig-2.3.0 jiter-0.13.0 jsonpatch-1.33 jsonpointer-3.1.1 kiwisolver-1.5.0 langchain-1.2.13 langchain-classic-1.0.3 langchain-community-0.4.1 langchain-core-1.2.23 langchain-experimental-0.4.1 langchain-openai-1.1.12 langchain-qdrant-1.1.0 langchain-text-splitters-1.1.1 langgraph-1.1.3 langgraph-checkpoint-4.0.1 langgraph-prebuilt-1.0.8 langgraph-sdk-0.3.12 langsmith-0.7.22 loguru-0.7.3 lxml-6.0.2 marshmallow-3.26.2 matplotlib-3.10.8 mmh3-5.2.1 multidict-6.7.1 mypy_extensions-1.1.0 onnxruntime-1.24.4 openai-2.29.0 pdf2image-1.17.0 polars-1.39.2 pytesseract-0.3.13 python-docx-1.2.0 qdrant-client-1.17.1 requests-toolbelt-1.0.0 tiktoken-0.12.0 tokenizers-0.22.2 typing-inspect-0.9.0 uvicorn-0.42.0 yarl-1.23.0
+
+[notice] A new release of pip is available: 25.3 -> 26.0.1
+[notice] To update, run: python.exe -m pip install --upgrade pip

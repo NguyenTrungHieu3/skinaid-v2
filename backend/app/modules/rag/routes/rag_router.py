@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile, status
 
 from app.core.dependencies.access_control import require_admin, require_auth
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.rag.dependencies import get_rag_document_service
 from app.modules.rag.services.rag_document_service import RAGDocumentService
 from app.modules.rag.services.qdrant_service import qdrant_service

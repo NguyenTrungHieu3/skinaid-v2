@@ -8,7 +8,7 @@ from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.verification_token import VerificationToken
-from app.modules.users.models.user_profile import UserProfile
+from app.modules.profile.models import UserProfile
 
 
 def utc_now_naive() -> datetime:

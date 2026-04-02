@@ -7,7 +7,7 @@ from sqlalchemy import func, case, desc, or_
 from sqlmodel import select
 
 from app.modules.audit.models.audit_log import AuditLog
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.user_roles import UserRole
 from app.shared.base_repository import BaseRepository
@@ -30,6 +30,8 @@ class AuditRepository(BaseRepository[AuditLog]):
         role_name: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
+        log_type: Optional[str] = None,
+        level: Optional[str] = None,
         limit: int = 50,
         offset: int = 0
     ) -> Tuple[List[Dict[str, Any]], int]:
@@ -45,7 +47,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             UserRole, User.user_id == UserRole.user_id
         ).outerjoin(
             Role, UserRole.role_id == Role.role_id
-        ).group_by(AuditLog.log_id, User.user_name, User.email)
+        ).group_by(AuditLog.audit_action_id, User.user_name, User.email)
 
         # Filters
         if user_id:
@@ -59,6 +61,11 @@ class AuditRepository(BaseRepository[AuditLog]):
         if is_guest is not None:
             stmt = stmt.where(AuditLog.is_guest == is_guest)
 
+        if log_type:
+            stmt = stmt.where(AuditLog.log_type == log_type)
+        if level:
+            stmt = stmt.where(AuditLog.level == level)
+
         if start_date:
             stmt = stmt.where(AuditLog.timestamp >= start_date)
         if end_date:
@@ -68,6 +75,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             search_pattern = f"%{search.strip()}%"
             stmt = stmt.where(or_(
                 AuditLog.action.ilike(search_pattern),
+                AuditLog.description.ilike(search_pattern),
                 AuditLog.error_message.ilike(search_pattern),
                 User.email.ilike(search_pattern),
                 User.user_name.ilike(search_pattern)

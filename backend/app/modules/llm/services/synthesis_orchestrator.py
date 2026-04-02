@@ -24,6 +24,8 @@ from app.modules.llm.services.llm_service import LLMService
 from app.modules.llm.services.prompt_builder import PromptBuilder
 from app.modules.rag.services.qdrant_service import RetrievedChunk, qdrant_service
 from app.core.config import settings
+from app.modules.audit.audit_repository import AuditRepository
+from app.modules.audit.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +49,34 @@ class SynthesisOrchestrator:
         self._firstaid_service = FirstAidService(
             repository=FirstAidRepository(db), db=db
         )
+        # Audit logging for system errors (non-blocking)
+        try:
+            self._audit_service = AuditService(AuditRepository(db))
+        except Exception:
+            self._audit_service = None
+
+    async def _log_system_error(
+        self,
+        action: str,
+        error_message: str,
+        details: dict | None = None,
+    ) -> None:
+        """Log a system error to audit_logs. Never raises."""
+        if not self._audit_service:
+            return
+        try:
+            await self._audit_service.log_event(
+                action=action,
+                success=False,
+                log_type="system_error",
+                level="error",
+                description=error_message[:500],
+                error_message=error_message[:500],
+                resource_type="system",
+                details=details,
+            )
+        except Exception:
+            logger.warning("Failed to write system error audit log for %s", action)
 
     # Public API
 
@@ -146,6 +176,11 @@ class SynthesisOrchestrator:
                 "[SynthesisOrchestrator] RAG retrieval thất bại (%s). Tiếp tục không có RAG.",
                 str(rag_result)[:150],
             )
+            await self._log_system_error(
+                action="rag_error",
+                error_message=f"RAG retrieval failed: {str(rag_result)[:300]}",
+                details={"error_type": type(rag_result).__name__},
+            )
         elif isinstance(rag_result, list):
             rag_chunks = [
                 RAGChunkSnapshot(
@@ -164,6 +199,11 @@ class SynthesisOrchestrator:
             logger.warning(
                 "[SynthesisOrchestrator] DB lookup thất bại (%s). Tiếp tục không có DB guide.",
                 str(db_result)[:150],
+            )
+            await self._log_system_error(
+                action="llm_api_error",
+                error_message=f"DB guide lookup failed: {str(db_result)[:300]}",
+                details={"error_type": type(db_result).__name__},
             )
         elif db_result is not None:
             db_guide_snapshot = DBGuideSnapshot(

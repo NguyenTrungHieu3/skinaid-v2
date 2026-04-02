@@ -4,8 +4,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
-from app.modules.users.repository.profile_repository import ProfileRepository
-from app.modules.users.services.profile_service import ProfileService
+from app.modules.profile.repository import ProfileRepository
+from app.modules.profile.service import ProfileService
 
 
 def get_profile_repository(

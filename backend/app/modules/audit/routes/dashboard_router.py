@@ -17,7 +17,7 @@ from app.modules.audit.schemas.dashboard_schemas import (
     SeverityStatsResponse
 )
 from app.core.dependencies import get_db, require_admin
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard Analytics"])
 

@@ -22,7 +22,7 @@ from app.modules.guest.repository import GuestRepository
 from app.modules.guest.service import GuestService
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.services.audit_service import AuditService
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.shared.exceptions import (
     ForbiddenError,
     NotFoundError,

@@ -27,12 +27,12 @@ from app.modules.auth.exceptions import (
     UsernameExistsError,
     WeakPasswordError,
 )
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
 from app.modules.auth.schemas.api import UserCreate, UserLogin
-from app.modules.users.models.user_profile import UserProfile
+from app.modules.profile.models import UserProfile
 from app.shared.exceptions import BadRequestError
 from app.modules.auth.utils.auth_validators import (
     validate_email,
@@ -86,6 +86,9 @@ class AuthService:
         details: Optional[dict] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
+        log_type: Optional[str] = None,
+        level: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> None:
         if not self.audit_service:
             return
@@ -100,6 +103,9 @@ class AuthService:
                 user_agent=user_agent,
                 error_message=error_message,
                 details=details,
+                log_type=log_type,
+                level=level,
+                description=description,
             )
         except Exception:
             pass
@@ -153,6 +159,7 @@ class AuthService:
             details={"email": user_data.email, "user_name": user_data.user_name},
             ip_address=ip_address,
             user_agent=user_agent,
+            description=f"New user registered: {user_data.user_name} ({user_data.email})",
         )
 
         return user
@@ -168,12 +175,14 @@ class AuthService:
             user = await self.authenticate_user(form_data.user_name, form_data.password)
         except (InvalidCredentialsError, AccountInactiveError, AccountUnverifiedError) as e:
             await self._audit(
-                action="login",
+                action="user_login_failed",
                 success=False,
                 error_message=str(e),
                 details={"user_name": form_data.user_name},
                 ip_address=ip_address,
                 user_agent=user_agent,
+                level="warning",
+                description=f"Failed login attempt for user: {form_data.user_name}",
             )
             raise
 
@@ -199,12 +208,13 @@ class AuthService:
         )
 
         await self._audit(
-            action="login",
+            action="user_login",
             success=True,
             user_id=user.user_id,
             details={"user_name": form_data.user_name},
             ip_address=ip_address,
             user_agent=user_agent,
+            description=f"User {form_data.user_name} logged in successfully",
         )
 
         return {
@@ -373,11 +383,12 @@ class AuthService:
             pass
 
         await self._audit(
-            action="logout",
+            action="user_logout",
             success=True,
             user_id=UUID(str(user_id)) if user_id else None,
             ip_address=ip_address,
             user_agent=user_agent,
+            description="User logged out",
         )
 
         return {

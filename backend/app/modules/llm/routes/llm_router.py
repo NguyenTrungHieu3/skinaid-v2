@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from app.core.dependencies.access_control import require_auth
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.llm.dependencies import SynthesisOrchestratorDep
 from app.modules.llm.schemas.llm_schemas import (
     LLMSynthesizeRequest,

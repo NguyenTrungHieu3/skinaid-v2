@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
-    from app.modules.users.models.user import User
+    from app.modules.users.models import User
     from app.modules.auth.models.roles import Role
 
 
