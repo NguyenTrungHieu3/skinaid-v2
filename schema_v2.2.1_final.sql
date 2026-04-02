@@ -1,20 +1,22 @@
 -- ============================================================
--- SKINAID v2.1 - PostgreSQL Schema (IMPROVED 10/10)
+-- SKINAID v2.1.1 - PostgreSQL Schema (IMPROVED & FULLY SYNCED)
 -- ============================================================
--- Version: 2.1.0 (Refined for Production)
--- Total Tables: 24 (+3 new: chat_messages, notifications, model_performance)
+-- Version: 2.2.1 (Perfectly synchronized with Python SQLModel backend)
+-- Total Tables: 26
 -- Vector DB: Qdrant (external, 1536d OpenAI text-embedding-3-small)
 -- Cache: Redis (external)
 -- Storage: MinIO (S3-compatible)
 -- ============================================================
--- Improvements from v2.0:
+-- Improvements from v2.0 & v2.1:
 --   ✅ Chat messages separated (no more JSONB bloat)
 --   ✅ Push notification system added
 --   ✅ AI model A/B testing support
 --   ✅ Better mobile indexes
 --   ✅ Rollback support for migrations
---   ✅ Audit trail for sensitive operations
+--   ✅ Audit trail for sensitive operations (Upgraded with log_type, level, description)
 --   ✅ Rate limiting per device
+--   🔥 (HOTFIX) AI Models fully aligned with Python backend (model_type, version_tag, name, etc.)
+--   🔥 (HOTFIX) Added missing model_version_history table for auditing AI deployments
 -- ============================================================
 
 -- Enable extensions
@@ -68,6 +70,7 @@ CREATE TABLE users (
     -- Metadata
     last_login_at TIMESTAMP,
     last_login_ip VARCHAR(45),
+    last_active_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -237,15 +240,20 @@ CREATE INDEX idx_guest_sessions_active ON guest_sessions(is_active, last_activit
 CREATE INDEX idx_guest_sessions_platform ON guest_sessions(platform);
 
 -- ============================================================
--- 4. AUDIT LOGS (Enhanced for compliance)
+-- 4. AUDIT LOGS (Enhanced for compliance & proper filtering)
 -- ============================================================
 
 CREATE TABLE audit_logs (
     audit_action_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
     
-    -- Action
+    -- Action & Classification
     action VARCHAR(100) NOT NULL,
+    log_type VARCHAR(50) DEFAULT 'user_activity', -- admin_action, user_activity, system_error
+    level VARCHAR(20) DEFAULT 'info',             -- info, warning, error
+    description TEXT,                             -- Human-readable description
+    
+    -- Resources
     resource_type VARCHAR(50),
     resource_id VARCHAR(255),
     action_category VARCHAR(50),  -- auth, analysis, chat, admin, system
@@ -270,12 +278,14 @@ CREATE TABLE audit_logs (
     timestamp TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Index for audit queries
+-- Index for audit queries (Updated for new fields)
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id, timestamp);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action, timestamp);
 CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 CREATE INDEX idx_audit_logs_category ON audit_logs(action_category, timestamp);
 CREATE INDEX idx_audit_logs_success ON audit_logs(success, timestamp);
+CREATE INDEX idx_audit_logs_log_type ON audit_logs(log_type);
+CREATE INDEX idx_audit_logs_level ON audit_logs(level);
 
 -- ============================================================
 -- 5. ANALYSIS TABLES (v2.1 - Production Ready)
@@ -595,9 +605,6 @@ CREATE INDEX idx_chat_messages_role ON chat_messages(role, created_at);
 CREATE INDEX idx_chat_messages_feedback ON chat_messages(is_helpful);
 CREATE INDEX idx_chat_messages_flagged ON chat_messages(flagged);
 
--- Full-text search for message content
-CREATE INDEX idx_chat_messages_content_search ON chat_messages USING GIN (to_tsvector('simple', content));
-
 -- Trigger to update session message_count
 CREATE OR REPLACE FUNCTION update_chat_session_count()
 RETURNS TRIGGER AS $$
@@ -617,53 +624,90 @@ CREATE TRIGGER trg_chat_message_insert
     EXECUTE FUNCTION update_chat_session_count();
 
 -- ============================================================
--- 8. AI MODEL MANAGEMENT (v2.1 - A/B Testing)
+-- 8. AI MODEL MANAGEMENT (v2.2.1 - FULLY ALIGNED WITH FASTAPI)
 -- ============================================================
 
 CREATE TABLE ai_models (
     model_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
-    -- Model info
-    -- stage: stage1_detection, stage2a_wound, stage2b_skin, severity
-    stage VARCHAR(20) NOT NULL,
-    model_name VARCHAR(100) NOT NULL,
-    version VARCHAR(50) NOT NULL,
+    -- Model Identification
+    model_type VARCHAR(50) NOT NULL,         -- e.g., 'detection', 'classification', 'segmentation'
+    version_tag VARCHAR(50) NOT NULL,        -- e.g., 'v1.0.0'
+    version_number INTEGER NOT NULL DEFAULT 1,
+    
+    -- File Storage
+    file_path TEXT NOT NULL,
+    file_size_bytes FLOAT,
+    file_hash VARCHAR(64),                   -- SHA-256
+    
+    -- Model Metadata
+    name VARCHAR(200),
     description TEXT,
     
-    -- Storage
-    file_path TEXT NOT NULL,        -- MinIO path or local path to .pt/.onnx
-    file_size_mb FLOAT,
-    file_format VARCHAR(20),        -- pt, onnx, h5, tflite
-    checksum_sha256 VARCHAR(64),    -- File integrity
+    -- Performance Metrics
+    metrics JSONB,                           -- {accuracy, precision, recall, confusion_matrix...}
     
-    -- Performance
-    accuracy FLOAT,                 -- 0.0-1.0 on test set
-    metrics JSONB,                  -- {precision, recall, f1, test_set_size, confusion_matrix}
-    
-    -- Lifecycle
-    -- Only 1 active per stage, but can have multiple beta for A/B testing
+    -- Status Flags
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
-    is_beta BOOLEAN NOT NULL DEFAULT FALSE,  -- A/B testing
-    traffic_percentage INTEGER DEFAULT 0,    -- 0-100 for A/B testing
+    is_beta BOOLEAN NOT NULL DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     
-    -- Deployment
+    -- Traffic Split (for A/B testing or canary deployments)
+    traffic_percentage INTEGER NOT NULL DEFAULT 0,
+    
+    -- Deployment Info
     deployed_at TIMESTAMP,
     deployed_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
-    rollback_to_model_id UUID REFERENCES ai_models(model_id),
     
-    -- Audit
+    -- Activation Tracking (for rollback support)
+    activated_at TIMESTAMP,
+    previously_active_version_id UUID REFERENCES ai_models(model_id) ON DELETE SET NULL,
+    
+    -- Audit Timestamps
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP,
+    deleted_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
     
-    UNIQUE (stage, version)
+    UNIQUE (model_type, version_tag)
+);
+
+-- Indexes (Matching Python SQLModel fields)
+CREATE INDEX ix_ai_models_type_active ON ai_models(model_type, is_active);
+CREATE INDEX ix_ai_models_type_deleted ON ai_models(model_type, is_deleted);
+CREATE INDEX ix_ai_models_created_at ON ai_models(created_at);
+CREATE INDEX ix_ai_models_deployed_at ON ai_models(deployed_at);
+CREATE INDEX ix_ai_models_activated_at ON ai_models(activated_at);
+CREATE INDEX ix_ai_models_prev_active ON ai_models(previously_active_version_id);
+
+
+-- NEW: Model Version History / Audit Tracking (Required by Python Backend)
+CREATE TABLE model_version_history (
+    history_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_id UUID NOT NULL REFERENCES ai_models(model_id) ON DELETE CASCADE,
+    
+    -- Action Info (upload, activate, deactivate, rollback, delete, restore)
+    action VARCHAR(50) NOT NULL,
+    from_version VARCHAR(50),
+    to_version VARCHAR(50),
+    
+    -- Actor Information
+    actor_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+    actor_ip VARCHAR(45),
+    
+    -- Details
+    details JSONB,
+    
+    -- Timestamps
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Indexes
-CREATE INDEX idx_ai_models_active ON ai_models(stage, is_active);
-CREATE INDEX idx_ai_models_beta ON ai_models(stage, is_beta);
-CREATE INDEX idx_ai_models_version ON ai_models(model_name, version);
+CREATE INDEX ix_model_history_model_action ON model_version_history(model_id, action);
+CREATE INDEX ix_model_history_created_at ON model_version_history(created_at);
 
--- NEW: Model performance tracking
+
+-- Model performance tracking aggregated
 CREATE TABLE model_performance (
     performance_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model_id UUID NOT NULL REFERENCES ai_models(model_id) ON DELETE CASCADE,
@@ -977,16 +1021,17 @@ FROM chat_sessions cs
 LEFT JOIN users u ON cs.user_id = u.user_id
 ORDER BY cs.last_message_at DESC;
 
--- Model performance dashboard
+-- Model performance dashboard (UPDATED for exact Python compatibility)
 CREATE VIEW v_model_performance_dashboard AS
 SELECT 
     m.model_id,
-    m.model_name,
-    m.version,
-    m.stage,
+    m.name AS model_name,
+    m.version_tag AS version,
+    m.model_type AS stage,
     m.is_active,
     m.is_beta,
     m.traffic_percentage,
+    m.is_deleted,
     mp.date,
     mp.total_predictions,
     mp.avg_confidence,
@@ -1000,7 +1045,8 @@ SELECT
 FROM ai_models m
 LEFT JOIN model_performance mp ON m.model_id = mp.model_id
 WHERE mp.date >= CURRENT_DATE - INTERVAL '7 days'
-ORDER BY m.stage, m.is_active DESC, mp.date DESC;
+AND m.is_deleted = FALSE
+ORDER BY m.model_type, m.is_active DESC, mp.date DESC;
 
 -- Unread notifications per user
 CREATE VIEW v_unread_notifications AS
@@ -1015,27 +1061,22 @@ GROUP BY user_id;
 -- ============================================================
 -- SUMMARY
 -- ============================================================
--- Tables: 27 (+6 from v2.0)
+-- Tables: 26 (HOTFIX: Added model_version_history, refactored ai_models)
 --   Auth: users, user_profiles, verification_tokens, token_blacklist, token_families
 --   RBAC: roles, permissions, user_roles, role_permissions
 --   Guest: guest_sessions
 --   Audit: audit_logs
 --   Analysis: analyses, ai_results, user_inputs, detections
 --   Knowledge: firstaid_guides, guide_analytics
---   Chatbot: chat_sessions, chat_messages (NEW - separated)
---   AI Model: ai_models, model_performance (NEW)
+--   Chatbot: chat_sessions, chat_messages
+--   AI Model: ai_models, model_version_history, model_performance (REFACTORED for Python)
 --   Device: device_sessions
---   Notifications: notifications (NEW)
---   Rate Limiting: rate_limits (NEW)
---   Backup: wound_analyses, wound_detections (migration backup from v1.0)
+--   Notifications: notifications
+--   Rate Limiting: rate_limits
+--   Backup: wound_analyses, wound_detections
 --
--- Views: 4
+-- Views: 4 (REFACTORED v_model_performance_dashboard for compatibility)
 --   v_active_analyses, v_chat_sessions_summary, v_model_performance_dashboard, v_unread_notifications
 --
--- Triggers: 4
+-- Triggers: 3
 --   trg_analyses_updated_at, trg_chat_message_insert, trg_ai_result_performance
---
--- External:
---   Qdrant: skinaid_knowledge_base collection (1536d, OpenAI text-embedding-3-small)
---   Redis: session, jwt_blacklist, rate_limit, ai_result_cache, notification_queue
---   MinIO: skinaid-models, skinaid-images buckets
