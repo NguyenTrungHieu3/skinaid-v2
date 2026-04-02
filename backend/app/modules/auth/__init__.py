@@ -1,5 +1,5 @@
 # Models
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from .models.verification_token import VerificationToken
 from .models.roles import Role
 from .models.permissions import Permission

@@ -22,7 +22,7 @@ from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole  # noqa: F401
 from app.modules.auth.models.verification_token import VerificationToken  # noqa: F401
-from app.modules.users.models.user_profile import UserProfile
+from app.modules.profile.models import UserProfile
 from app.shared.services.mock_email_service import mock_email_service
 from tests.auth.helpers import (
     build_profile,

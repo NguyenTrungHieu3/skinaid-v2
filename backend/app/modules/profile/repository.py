@@ -5,8 +5,8 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlmodel import select as sqlmodel_select
 
-from app.modules.users.models.user import User
-from app.modules.users.models.user_profile import UserProfile
+from app.modules.users.models import User
+from app.modules.profile.models import UserProfile
 from app.shared.base_repository import BaseRepository
 
 

@@ -27,12 +27,12 @@ from app.modules.auth.exceptions import (
     UsernameExistsError,
     WeakPasswordError,
 )
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
 from app.modules.auth.schemas.api import UserCreate, UserLogin
-from app.modules.users.models.user_profile import UserProfile
+from app.modules.profile.models import UserProfile
 from app.shared.exceptions import BadRequestError
 from app.modules.auth.utils.auth_validators import (
     validate_email,

@@ -1,14 +1,13 @@
 from fastapi import APIRouter
 from app.modules.auth.router import router as auth_router
-from app.modules.users.routes.profile_router import router as profile_router
+from app.modules.profile.router import router as profile_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.ai.routes.model_management_router import router as model_management_router
 from app.modules.firstaid.router import router as first_aid_router
 from app.modules.guest.router import router as guest_router
 from app.modules.audit.routes.dashboard_router import router as dashboard_router
 from app.modules.audit.routes.audit_router import router as audit_router
-from app.modules.users.routes.user_list_router import router as user_list_router
-from app.modules.users.routes.user_ops_router import router as user_ops_router
+from app.modules.users.router import router as users_router
 from app.modules.map.router import router as map_router
 
 from app.modules.chatbot.router import router as chatbot_router
@@ -25,8 +24,7 @@ router.include_router(first_aid_router, tags=["First Aid Knowledge"])
 router.include_router(guest_router, tags=["Guest Management"])
 router.include_router(dashboard_router, tags=["Dashboard Analytics"])
 router.include_router(audit_router, tags=["Audit Logs"])
-router.include_router(user_list_router, tags=["User Management"])
-router.include_router(user_ops_router, tags=["User Management"])
+router.include_router(users_router, tags=["User Management"])
 router.include_router(map_router, tags=["Map"])
 router.include_router(chatbot_router, tags=["Chatbot"])
 router.include_router(rag_router, prefix="/rag", tags=["RAG - Knowledge Retrieval"])

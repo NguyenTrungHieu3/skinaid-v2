@@ -10,7 +10,7 @@ from .user import (
     check_user_has_role,
     check_user_has_permission
 )
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 
 
 async def get_token(token: str = Depends(oauth2_scheme)) -> str:
@@ -38,6 +38,13 @@ async def get_current_user(
             detail="User not found or inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if user.last_active_at is None or (now - user.last_active_at).total_seconds() > 300:
+        user.last_active_at = now
+        db.add(user)
+        await db.commit()
 
     return user
 
@@ -117,6 +124,13 @@ def allow_access(
 
         if require_verified:
             await check_email_verified(user, required=True)
+
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if user.last_active_at is None or (now - user.last_active_at).total_seconds() > 300:
+            user.last_active_at = now
+            db.add(user)
+            await db.commit()
 
         return user
 

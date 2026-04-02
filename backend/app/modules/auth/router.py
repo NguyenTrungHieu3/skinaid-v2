@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_current_active_user, get_token
 from app.modules.auth.dependencies import get_auth_service
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.auth.schemas.api import (
     ChangePasswordRequest,
     ChangePasswordResponse,

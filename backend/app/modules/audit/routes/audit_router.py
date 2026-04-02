@@ -15,7 +15,7 @@ from app.modules.audit.schemas.api import AuditLogFilterParams, AuditLogListResp
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.services.audit_service import AuditService
 from app.core.dependencies import get_db, require_admin
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/audit", tags=["Audit Logs"])
 

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.core.dependencies import get_db, require_admin, require_user
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.guest.dependencies import get_guest_service
 from app.modules.guest.schemas.api import (
     CreateGuestSessionRequest,

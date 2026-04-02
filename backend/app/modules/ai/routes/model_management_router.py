@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db, require_admin, require_admin_or_moderator
 from app.core.dependencies.database import get_db
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.ai.services.model_service import ModelService, ModelServiceError
 from app.modules.ai.services.model_storage_service import get_storage_service
 from app.modules.ai.schemas.model_schemas import (

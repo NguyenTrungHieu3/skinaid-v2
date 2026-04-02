@@ -9,9 +9,9 @@ from app.core.dependencies import (
     get_current_user,
     require_admin,
 )
-from app.modules.users.models.user import User
-from app.modules.users.dependencies import get_profile_service
-from app.modules.users.schemas.profile_schemas import (
+from app.modules.users.models import User
+from app.modules.profile.dependencies import get_profile_service
+from app.modules.profile.schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,
@@ -19,7 +19,7 @@ from app.modules.users.schemas.profile_schemas import (
     UserProfileResponse,
     UserProfileUpdate,
 )
-from app.modules.users.services.profile_service import ProfileService
+from app.modules.profile.service import ProfileService
 from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
