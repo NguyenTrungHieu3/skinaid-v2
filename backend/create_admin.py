@@ -24,14 +24,14 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
     'port': int(os.getenv('DB_PORT', 5432)),
-    'database': os.getenv('DB_NAME', 'skinaid_db_ver2'), # Pointing to the new schema DB
+    'database': os.getenv('DB_NAME', 'skinaid_db'), # Pointing to the new schema DB
     'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', '123456')
+    'password': os.getenv('DB_PASSWORD', 'rdmdaphfkitxxnlc')
 }
 # Fallback logic if DATABASE_URL is preferred but components are missing
 db_url = os.getenv('DATABASE_URL')
-if db_url and 'skinaid_db_ver2' in db_url:
-    DB_CONFIG['database'] = 'skinaid_db_ver2'
+if db_url and 'skinaid_db' in db_url:
+    DB_CONFIG['database'] = 'skinaid_db'
 
 # ============================================================
 # UTILITY FUNCTIONS
