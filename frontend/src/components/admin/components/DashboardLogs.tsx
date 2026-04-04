@@ -11,9 +11,10 @@ interface Log {
 
 interface DashboardLogsProps {
   logs: Log[];
+  onViewAll?: () => void;
 }
 
-export default function DashboardLogs({ logs }: DashboardLogsProps) {
+export default function DashboardLogs({ logs, onViewAll }: DashboardLogsProps) {
   const { t } = useTranslation();
   const getLogIcon = (type: string) => {
     switch (type) {
@@ -71,6 +72,26 @@ export default function DashboardLogs({ logs }: DashboardLogsProps) {
           <h3 className={styles.adminErrorLogsTitle}>{t('admin.dashboard.logs.recent_logs_title')}</h3>
           <p className={styles.adminErrorLogsDescription}>{t('admin.dashboard.logs.recent_logs_desc')}</p>
         </div>
+        {onViewAll && (
+          <button
+            onClick={onViewAll}
+            style={{
+              background: 'none',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              color: '#4b5563',
+              cursor: 'pointer',
+              fontWeight: 500,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = '#1f2937'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#4b5563'; }}
+          >
+            {t('admin.dashboard.logs.view_all', 'View All')}
+          </button>
+        )}
       </div>
       <div className={styles.adminErrorLogsContent}>
         {logs.map((alert, index) => {

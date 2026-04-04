@@ -70,7 +70,7 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
               <div key={item.name} className={styles.woundLegendItem}>
                 <div className={styles.woundLegendColor} style={{ backgroundColor: item.color }}></div>
                 <span className={styles.woundLegendName}>{item.name}</span>
-                <span>{item.value}</span>
+                <span className={styles.woundLegendValue}>({item.value})</span>
               </div>
             ))}
           </div>
@@ -113,10 +113,10 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                 }}
-                formatter={(value: number, _name: string, props: { payload?: { name: string } }) => {
+                formatter={(value: any, _name: any, props: any) => {
                   return [`${value} ${t('admin.dashboard.charts.cases')}`, props.payload?.name];
                 }}
-                labelFormatter={(label: string) => `${t('admin.dashboard.charts.severity_label')}: ${translateSeverity(label)}`}
+                labelFormatter={(label: any) => `${t('admin.dashboard.charts.severity_label')}: ${translateSeverity(String(label))}`}
               />
               <Bar dataKey="value" fill="#1E9378" radius={[8, 8, 0, 0]}>
                 {severityData.map((entry, index) => (
@@ -127,35 +127,19 @@ export default function DashboardCharts({ woundTypeData, severityStats }: Dashbo
           </ResponsiveContainer>
 
           {/* Custom Legend */}
-          <div className={styles.woundLegend} style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '24px',
-            marginTop: '20px',
-            flexWrap: 'wrap'
-          }}>
+          <div className={styles.woundLegend}>
             {severityData.map((item) => (
-              <div key={item.name} className={styles.woundLegendItem} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <div className={styles.woundLegendColor} style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '2px',
-                  backgroundColor: item.color
-                }}></div>
-                <span className={styles.woundLegendName} style={{
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#475569'
-                }}>{translateSeverity(item.name)}</span>
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#1e293b'
-                }}>({item.value})</span>
+              <div key={item.name} className={styles.woundLegendItem}>
+                <div 
+                  className={styles.woundLegendColor} 
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <span className={styles.woundLegendName}>
+                  {translateSeverity(item.name)}
+                </span>
+                <span className={styles.woundLegendValue}>
+                  ({item.value})
+                </span>
               </div>
             ))}
           </div>

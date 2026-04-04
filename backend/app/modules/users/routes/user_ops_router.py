@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from app.shared.response import SuccessResponse
+from app.modules.users.dependencies import UserSvc, get_user_service
 from app.modules.users.services.user_service import UserService
 from app.modules.users.schemas.api import (
     CreateUserRequest,
@@ -10,15 +10,11 @@ from app.modules.users.schemas.api import (
     UpdateUserStatusRequest,
     UserDetailResponse
 )
-from app.core.dependencies import get_db, require_admin
+from app.core.dependencies import require_admin
 from app.modules.users.models.user import User
 from app.middleware.rate_limit import limiter
 
 router = APIRouter(prefix="/admin/users")
-
-
-def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
-    return UserService(db)
 
 
 @router.post(
@@ -32,7 +28,7 @@ def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
 async def create_user(
     request: Request,
     user_data: CreateUserRequest,
-    service: UserService = Depends(get_user_service),
+    service: UserService = Depends(get_user_service),  # explicit — required by limiter decorator
     current_user: User = Depends(require_admin)
 ):
     """
@@ -59,7 +55,7 @@ async def create_user(
 )
 async def get_user_detail(
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: UserSvc,
     current_user: User = Depends(require_admin)
 ):
     """Lấy thông tin chi tiết về một người dùng cụ thể theo ID."""
@@ -85,7 +81,7 @@ async def update_user(
     request: Request,
     user_id: str,
     user_data: UpdateUserRequest,
-    service: UserService = Depends(get_user_service),
+    service: UserSvc,
     current_user: User = Depends(require_admin)
 ):
     """Cập nhật thông tin người dùng."""
@@ -112,7 +108,7 @@ async def update_user_status(
     request: Request,
     user_id: str,
     status_data: UpdateUserStatusRequest,
-    service: UserService = Depends(get_user_service),
+    service: UserSvc,
     current_user: User = Depends(require_admin)
 ):
     """Cập nhật trạng thái hoạt động/không hoạt động của người dùng."""
@@ -140,7 +136,7 @@ async def update_user_status(
 async def delete_user(
     request: Request,
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: UserSvc,
     current_user: User = Depends(require_admin)
 ):
     """Xóa tài khoản người dùng (soft delete)."""
@@ -165,7 +161,7 @@ async def delete_user(
 async def resend_verification_email(
     request: Request,
     user_id: str,
-    service: UserService = Depends(get_user_service),
+    service: UserSvc,
     current_user: User = Depends(require_admin)
 ):
     """Gửi lại email xác thực cho người dùng."""

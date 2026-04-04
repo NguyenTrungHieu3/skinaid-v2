@@ -13,8 +13,9 @@ interface Log {
   email?: string;
   role: string;
   timestamp: string;
-  details: string;
+  description: string;
   type: "error" | "warning" | "info" | "success";
+  logType: string; // admin_action / user_activity / system_error
   severity: "high" | "medium" | "low";
   ip: string;
   fullDetails?: any;
@@ -30,14 +31,15 @@ export default function AdminLogs() {
   // Filters
   const [filters, setFilters] = useState({
     search: "",
-    type: "all",
+    logType: "all",   // admin_action / user_activity / system_error
+    level: "all",     // info / warning / error
     role: "all",
     dateRange: "all",
   });
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [logsPerPage] = useState(5);
+  const [logsPerPage] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
   // Fetch system logs with server-side pagination
@@ -56,32 +58,42 @@ export default function AdminLogs() {
         params.search = filters.search;
       }
 
-      // Map frontend 'type' to backend 'success'
-      if (filters.type === "success") {
-        params.success = true;
-      } else if (filters.type === "error") {
-        params.success = false;
+      // Map log_type filter
+      if (filters.logType !== "all") {
+        params.log_type = filters.logType;
       }
-      // 'all' = no success filter
+
+      // Map level filter — must stay consistent with badge logic below
+      if (filters.level === "success") {
+        // "Success" = successful operations (level=info + success=true)
+        params.success = true;
+      } else if (filters.level === "info") {
+        // "Info" = info-level logs that were NOT successful
+        params.level = "info";
+        params.success = false;
+      } else if (filters.level !== "all") {
+        params.level = filters.level;
+      }
 
       // Add role filter
       if (filters.role !== "all") {
         params.role_name = filters.role;
       }
 
-      // Map dateRange to start_date
+      // Map dateRange to start_date and end_date
       if (filters.dateRange !== "all") {
         const now = new Date();
-        if (filters.dateRange === "Today") {
-          const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+        const endOfNow = new Date(); // current moment as end boundary
+        params.end_date = endOfNow.toISOString();
+
+        if (filters.dateRange === "today") {
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
           params.start_date = startOfDay.toISOString();
-        } else if (filters.dateRange === "Last 7 Days") {
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
+        } else if (filters.dateRange === "7days") {
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           params.start_date = weekAgo.toISOString();
-        } else if (filters.dateRange === "Last 30 Days") {
-          const monthAgo = new Date();
-          monthAgo.setDate(monthAgo.getDate() - 30);
+        } else if (filters.dateRange === "30days") {
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           params.start_date = monthAgo.toISOString();
         }
       }
@@ -92,53 +104,70 @@ export default function AdminLogs() {
         const fetchedLogs = response.data.logs || [];
         setTotalCount(response.data.total || fetchedLogs.length);
 
-        const mappedLogs: Log[] = fetchedLogs.map((log: any) => ({
-          id: log.audit_action_id,
-          action: log.action,
-          user:
-            log.user_name ||
-            (log.user_id
-              ? `User ${log.user_id.substring(0, 8)}...`
-              : log.is_guest
-              ? "Guest"
-              : "System"),
-          email: log.email,
-          role: log.role_name || (log.is_guest ? "Guest" : "User"),
-          timestamp: log.timestamp,
-          details:
-            log.error_message ||
-            (log.details ? JSON.stringify(log.details) : log.action),
-          type: log.success ? "success" : "error",
-          severity: !log.success ? "high" : "low",
-          ip: log.ip_address || "-",
-          fullDetails: log.details,
-        }));
+        const mappedLogs: Log[] = fetchedLogs.map((log: any) => {
+          // Use backend level field directly for badge display
+          const level = log.level || "info";
+          let type: "error" | "warning" | "info" | "success" = "info";
+          let severity: "high" | "medium" | "low" = "low";
+
+          // Badge logic: must match filter logic above
+          if (level === "error") {
+            type = "error";
+            severity = "high";
+          } else if (level === "warning") {
+            type = "warning";
+            severity = "medium";
+          } else if (log.success === true) {
+            // level=info + success=true → "Success" badge
+            type = "success";
+            severity = "low";
+          } else {
+            // level=info + success=false → "Info" badge
+            type = "info";
+            severity = "low";
+          }
+
+          return {
+            id: log.audit_action_id || log.log_id,
+            action: log.action,
+            user:
+              log.user_name ||
+              (log.user_id
+                ? `User ${log.user_id.substring(0, 8)}...`
+                : log.is_guest
+                ? "Guest"
+                : "System"),
+            email: log.email,
+            role: log.role_name || (log.is_guest ? "Guest" : "User"),
+            timestamp: log.timestamp,
+            description: log.description || log.error_message || log.action,
+            type,
+            logType: log.log_type || "user_activity",
+            severity,
+            ip: log.ip_address || "-",
+            fullDetails: log.details,
+          };
+        });
         setLogs(mappedLogs);
       }
     } catch (err) {
-      console.error("Error fetching system logs:", err);
       setError("Failed to load system logs");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch on mount and when filters change (reset to page 1)
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.search, filters.type, filters.role, filters.dateRange]);
+  // Track if filters changed to reset page
+  const filtersKey = `${filters.search}|${filters.logType}|${filters.level}|${filters.role}|${filters.dateRange}`;
 
-  // Fetch when page changes or filters change
+  useEffect(() => {
+    // When filters change, always fetch from page 1
+    setCurrentPage(1);
+  }, [filtersKey]);
+
   useEffect(() => {
     fetchSystemLogs();
-  }, [
-    currentPage,
-    logsPerPage,
-    filters.search,
-    filters.type,
-    filters.role,
-    filters.dateRange,
-  ]);
+  }, [currentPage, filtersKey]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -228,3 +257,4 @@ export default function AdminLogs() {
     </div>
   );
 }
+

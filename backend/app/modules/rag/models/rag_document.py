@@ -42,6 +42,12 @@ class RagDocument(SQLModel, table=True):
         description="Extension không có dấu chấm (pdf, md, docx, txt...)",
     )
 
+    file_size_bytes: Optional[int] = Field(
+        default=None,
+        nullable=True,
+        description="Kích thước file tính bằng bytes — dùng để validate upload limit & hiển thị UI",
+    )
+
     storage_path: str = Field(
         nullable=False,
         max_length=1000,
@@ -66,6 +72,12 @@ class RagDocument(SQLModel, table=True):
         nullable=True,
         max_length=2000,
         description="Thông báo lỗi nếu status='failed'",
+    )
+
+    indexed_at: Optional[datetime] = Field(
+        default=None,
+        nullable=True,
+        description="Thời điểm index xong vào Qdrant, NULL nếu chưa indexed",
     )
 
     doc_metadata: Optional[dict[str, Any]] = Field(
@@ -138,6 +150,7 @@ class RagDocument(SQLModel, table=True):
         self.status = "indexed"
         self.chunk_count = chunk_count
         self.error_message = None
+        self.indexed_at = _now()
         self.updated_at = _now()
 
     def mark_failed(self, error: str) -> None:

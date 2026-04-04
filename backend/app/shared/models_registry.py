@@ -8,12 +8,13 @@ from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user_profile import UserProfile
 from app.modules.guest.models.guest_session import GuestSession
 from app.modules.audit.models.audit_log import AuditLog
+from app.modules.audit.models.rate_limits import RateLimit
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 from app.modules.ai.models.analysis import Analysis
 from app.modules.ai.models.detection import Detection
 from app.modules.ai.models.ai_results import AIResult
 from app.modules.ai.models.user_inputs import UserInput
-from app.modules.ai.models.ai_models import AIModel
+from app.modules.ai.models.ai_models import AIModel, ModelVersionHistory
 from app.modules.chatbot.models.chat_sessions import ChatSession
 from app.modules.chatbot.models.chat_messages import ChatMessage
 from app.modules.users.models.device_sessions import DeviceSession
@@ -23,8 +24,8 @@ from app.modules.rag.models.rag_document import RagDocument
 __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
     "UserRole", "TokenFamily", "UserProfile",
-    "GuestSession", "AuditLog", "FirstAidGuide", "Analysis", "Detection",
-    "AIResult", "UserInput", "AIModel", "ChatSession",
+    "GuestSession", "AuditLog", "RateLimit", "FirstAidGuide", "Analysis", "Detection",
+    "AIResult", "UserInput", "AIModel", "ModelVersionHistory", "ChatSession",
     "ChatMessage", "DeviceSession", "Notification",
     "RagDocument",
 ]

@@ -1,7 +1,7 @@
 from .analysis import Analysis
 from .detection import Detection
 from .ai_results import AIResult
-from .ai_models import AIModel
+from .ai_models import AIModel, ModelVersionHistory
 from .user_inputs import UserInput
 
 __all__ = [
@@ -9,5 +9,6 @@ __all__ = [
     "Detection",
     "AIResult",
     "AIModel",
+    "ModelVersionHistory",
     "UserInput",
 ]

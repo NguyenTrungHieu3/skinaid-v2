@@ -17,8 +17,9 @@ interface Log {
   user: string;
   role: string;
   timestamp: string;
-  details: string;
+  description: string;
   type: 'error' | 'warning' | 'info' | 'success';
+  logType: string;
   severity: 'high' | 'medium' | 'low';
   ip: string;
 }
@@ -52,23 +53,21 @@ const LogTable: React.FC<LogTableProps> = ({
   // Function to translate role
   const translateRole = (role: string) => {
     const roleLower = role.toLowerCase();
-    // Check if it's a valid role key
     if (['user', 'admin', 'guest'].includes(roleLower)) {
       return t(`admin.logs.filters.roles.${roleLower}`);
     }
-    return role; // fallback to original if not matched
+    return role;
   };
 
   // Function to translate action
   const translateAction = (action: string) => {
     const key = `admin.dashboard.logs.actions.${action}`;
     const translated = t(key);
-    // If translation exists, return it; otherwise return original
     return translated !== key ? translated : action;
   };
 
-  // Function to translate log type
-  const translateType = (type: string) => {
+  // Function to translate log type badge
+  const translateLevel = (type: string) => {
     const typeLower = type.toLowerCase();
     if (['success', 'error', 'info', 'warning'].includes(typeLower)) {
       return t(`admin.logs.types.${typeLower}`);
@@ -164,7 +163,7 @@ const LogTable: React.FC<LogTableProps> = ({
                 <th>{t('admin.logs.table.headers.username')}</th>
                 <th>{t('admin.logs.table.headers.role')}</th>
                 <th>{t('admin.logs.table.headers.action')}</th>
-                <th>{t('admin.logs.table.headers.details')}</th>
+                <th>{t('admin.logs.table.headers.description')}</th>
                 <th style={{ width: '80px', textAlign: 'center' }}>{t('admin.logs.table.headers.view_details')}</th>
               </tr>
             </thead>
@@ -185,7 +184,7 @@ const LogTable: React.FC<LogTableProps> = ({
                   <td>
                     <span className={`${styles.logTypeBadge} ${getLogTypeClass(log.type)}`}>
                       {getLogTypeIcon(log.type)}
-                      <span style={{ marginLeft: '4px' }}>{translateType(log.type)}</span>
+                      <span style={{ marginLeft: '4px' }}>{translateLevel(log.type)}</span>
                     </span>
                   </td>
                   <td className={styles.userCell}>
@@ -199,12 +198,12 @@ const LogTable: React.FC<LogTableProps> = ({
                   <td className={styles.standardCell}>{translateAction(log.action)}</td>
                   <td className={`${styles.logMessage} ${styles.standardCell}`}>
                     <div style={{
-                      maxWidth: '200px',
+                      maxWidth: '250px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>
-                      {log.details}
+                      {log.description}
                     </div>
                   </td>
                   <td style={{ textAlign: 'center' }}>

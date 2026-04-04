@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import func, select, desc, and_, or_, cast, Date, true, false
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.users.models.user import User
+from app.modules.users.models import User
 from app.modules.audit.models.audit_log import AuditLog
 from app.modules.ai.models.analysis import Analysis
 from app.modules.ai.models.detection import Detection

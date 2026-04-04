@@ -21,6 +21,19 @@ class AuditLog(SQLModel, table=True):
     action: str = Field(max_length=100, nullable=False, index=True)
     action_category: Optional[str] = Field(default=None, max_length=50, index=True)
 
+    # --- US-LOG-01: New classification fields ---
+    log_type: str = Field(
+        default="user_activity", max_length=30, index=True,
+    )  # Values: "admin_action", "user_activity", "system_error"
+
+    level: str = Field(
+        default="info", max_length=10, index=True,
+    )  # Values: "info", "warning", "error"
+
+    description: Optional[str] = Field(default=None)
+    # Human-readable text describing what happened
+    # --- End new fields ---
+
     resource_type: Optional[str] = Field(default=None, max_length=50, index=True) 
 
     resource_id: Optional[str] = Field(default=None, max_length=255, index=True)
@@ -29,7 +42,7 @@ class AuditLog(SQLModel, table=True):
     success: bool = Field(default=True, nullable=False)
     response_status: Optional[int] = None
     error_code: Optional[str] = Field(default=None, max_length=50)
-    error_message:Optional[str] =Field(default=None, max_length=500)
+    error_message: Optional[str] = Field(default=None, max_length=500)
     request_body: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     is_guest: bool = Field(default=False, nullable=False)
     guest_session_id: Optional[UUID] = Field(
@@ -40,7 +53,6 @@ class AuditLog(SQLModel, table=True):
             nullable=True,
         ),
     )
-    device_id: Optional[str] = Field(default=None, max_length=100)
     details: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
@@ -49,6 +61,9 @@ class AuditLog(SQLModel, table=True):
             "audit_action_id": self.audit_action_id,
             "user_id": self.user_id,
             "action": self.action,
+            "log_type": self.log_type,
+            "level": self.level,
+            "description": self.description,
             "resource_type": self.resource_type,
             "resource_id": self.resource_id,
             "ip_address": self.ip_address,
@@ -62,5 +77,5 @@ class AuditLog(SQLModel, table=True):
         }
 
     def __repr__(self):
-        return f"<AuditLog(audit_action_id={self.audit_action_id}, action={self.action}, success={self.success})>"
+        return f"<AuditLog(audit_action_id={self.audit_action_id}, action={self.action}, log_type={self.log_type}, level={self.level})>"
 

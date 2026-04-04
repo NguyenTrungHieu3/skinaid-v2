@@ -131,7 +131,11 @@ class StatisticsService:
             "burn": "#3b82f6",
             "bruise": "#ec4899",
             "laceration": "#8b5cf6",
-            "puncture": "#f59e0b"
+            "puncture": "#f59e0b",
+            "acne": "#10b981",     
+            "psoriasis": "#ef4444", 
+            "ringworm": "#f97316",  
+            "cut": "#84cc16"        
         }
 
         distribution = []

@@ -1,21 +1,16 @@
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
 from app.shared.response import SuccessResponse
-from app.modules.users.services.user_service import UserService
+from app.modules.users.dependencies import UserSvc
 from app.modules.users.schemas.api import (
     UserListResponse,
     UserStatsResponse
 )
-from app.core.dependencies import get_db, require_admin
+from app.core.dependencies import require_admin
 from app.modules.users.models.user import User
 
 router = APIRouter(prefix="/admin/users")
-
-
-def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
-    return UserService(db)
 
 
 @router.get(
@@ -34,7 +29,7 @@ async def get_users(
         None, description="Lọc theo vai trò (user, moderator, admin)"),
     status: Optional[str] = Query(
         None, description="Lọc theo trạng thái (active, inactive)"),
-    service: UserService = Depends(get_user_service),
+    service: UserSvc = None,
     current_user: User = Depends(require_admin)
 ):
     """Lấy danh sách người dùng có phân trang với các bộ lọc."""
@@ -58,7 +53,7 @@ async def get_users(
     description="Lấy thống kê tổng quan về người dùng"
 )
 async def get_user_stats(
-    service: UserService = Depends(get_user_service),
+    service: UserSvc = None,
     current_user: User = Depends(require_admin)
 ):
     """Lấy thống kê tổng quan về người dùng."""
