@@ -20,7 +20,7 @@ from app.modules.auth.schemas.api import (
 from app.modules.auth.service import AuthService
 from app.shared.response import SuccessResponse
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth")
 
 
 @router.post(
@@ -35,7 +35,6 @@ async def oauth2_token(
 ) -> OAuth2TokenResponse:
     """OAuth2 Password flow — dung cho Swagger UI. Frontend dung /signin."""
     result = await service.login(
-        # OAuth2PasswordRequestForm dùng field `username`, map sang `user_name`
         form_data=UserLogin(user_name=form_data.username, password=form_data.password),
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent"),

@@ -17,15 +17,17 @@ class GuestSession(SQLModel, table=True):
 
     upload_count: int = Field(default=0, ge=0)
     analysis_count: int = Field(default=0, ge=0)
+    daily_upload_limit: int = Field(default=10)
 
     is_active: bool = Field(default=True)
     is_converted_to_user: bool = Field(default=False)
     converted_user_id: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
     converted_at: Optional[datetime] = None
-    daily_upload_limit: int = Field(default=5)
+
     platform: Optional[str] = Field(default=None, max_length=20)
-    app_version: Optional[str] = Field(default=None, max_length=20)
-    os_version: Optional[str] = Field(default=None, max_length=20)
+    app_version: Optional[str] = Field(default=None, max_length=50)
+    os_version: Optional[str] = Field(default=None, max_length=50)
+    device_model: Optional[str] = Field(default=None, max_length=100)
 
     @property
     def is_expired(self) -> bool:

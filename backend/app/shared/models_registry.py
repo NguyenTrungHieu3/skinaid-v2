@@ -14,7 +14,6 @@ from app.modules.ai.models.detection import Detection
 from app.modules.ai.models.ai_results import AIResult
 from app.modules.ai.models.user_inputs import UserInput
 from app.modules.ai.models.ai_models import AIModel
-from app.modules.ai.models.model_performance import ModelPerformance
 from app.modules.chatbot.models.chat_sessions import ChatSession
 from app.modules.chatbot.models.chat_messages import ChatMessage
 from app.modules.users.models.device_sessions import DeviceSession
@@ -25,7 +24,7 @@ __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
     "UserRole", "TokenFamily", "UserProfile",
     "GuestSession", "AuditLog", "FirstAidGuide", "Analysis", "Detection",
-    "AIResult", "UserInput", "AIModel", "ModelPerformance", "ChatSession",
+    "AIResult", "UserInput", "AIModel", "ChatSession",
     "ChatMessage", "DeviceSession", "Notification",
     "RagDocument",
 ]

@@ -9,6 +9,8 @@ from typing import Final
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.ai.repository.wound_analysis_repository import WoundAnalysisRepository
+from app.modules.ai.services.wound_analysis_service import WoundAnalysisService
 from app.modules.firstaid.repository import FirstAidRepository
 from app.modules.firstaid.service import FirstAidService
 from app.modules.llm.exceptions import LLMContextBuildError
@@ -47,6 +49,7 @@ class SynthesisOrchestrator:
         self._firstaid_service = FirstAidService(
             repository=FirstAidRepository(db), db=db
         )
+        self._wound_analysis_service = WoundAnalysisService(db)
 
     # Public API
 
@@ -104,6 +107,29 @@ class SynthesisOrchestrator:
             )
 
         processing_time_ms = int((time.monotonic() - start_ms) * 1000)
+
+        # ── Step 6: Persist structured_guidance vào Detection.firstaid_snapshot
+        if request.analysis_id is not None and structured is not None:
+            try:
+                rows = await self._wound_analysis_service.persist_llm_guidance(
+                    analysis_id=request.analysis_id,
+                    wound_type=request.wound_type,
+                    severity=request.severity,
+                    structured_guidance=structured.model_dump(),
+                )
+                logger.info(
+                    "[SynthesisOrchestrator] Persisted LLM guidance → %d detection(s) updated "
+                    "(analysis_id=%s, wound_type=%s, severity=%s).",
+                    rows,
+                    request.analysis_id,
+                    request.wound_type,
+                    request.severity,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[SynthesisOrchestrator] Persist LLM guidance thất bại (non-blocking): %s",
+                    str(exc)[:200],
+                )
 
         return LLMSynthesizeResponse(
             guidance=guidance,

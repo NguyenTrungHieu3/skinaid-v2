@@ -35,7 +35,7 @@ class FirstAidGuide(SQLModel, table=True):
     wound_type: str = Field(nullable=False, index=True)
     severity: str = Field(nullable=False, index=True)
     sub_type: Optional[str] = Field(default=None, nullable=True, index=True)
-    
+
     title: str = Field(nullable=False)
 
     steps: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
@@ -45,17 +45,12 @@ class FirstAidGuide(SQLModel, table=True):
 
     estimated_healing_time: Optional[str] = None
     source: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
+
     is_active: bool = Field(default=True, index=True)
     is_deleted: bool = Field(default=False, index=True)
     version: int = Field(default=1)
-    superseded_by: Optional[UUID] = Field(default=None, foreign_key="firstaid_guides.firstaidguide_id")
-    reviewed_by: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
-    reviewed_at: Optional[datetime] = None
-    usage_count: int = Field(default=0)
-    helpful_count: int = Field(default=0)
-    keywords: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
-    created_by: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
 
+    created_by: Optional[UUID] = Field(default=None, foreign_key="users.user_id")
     created_at: datetime = Field(default_factory=_current_timestamp)
     updated_at: datetime = Field(default_factory=_current_timestamp)
 

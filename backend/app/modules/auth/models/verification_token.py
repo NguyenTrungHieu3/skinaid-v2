@@ -17,9 +17,14 @@ class VerificationToken(SQLModel, table=True):
         )
     )
     token: str = Field(unique=True)
-    token_type: str  # 'email_verification', 'password_reset', etc.
+    token_type: str  # 'email_verify' | 'password_reset' | 'phone_verify'
+
+    max_uses: int = Field(default=1)
+    use_count: int = Field(default=0)
     expires_at: datetime
     is_used: bool = Field(default=False)
+
+    created_ip: Optional[str] = Field(default=None, max_length=45)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     

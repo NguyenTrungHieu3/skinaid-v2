@@ -1,5 +1,6 @@
 import asyncio
 import time
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
@@ -8,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.ai.exceptions import AIProcessFailedError
 from app.modules.ai.mappers.response_mapper import ResponseMapper
+from app.modules.ai.models.ai_results import AIResult
 from app.modules.ai.schemas.wound_analysis_schemas import (
     BatchAnalysisItemResult,
     BatchAnalysisResponse,
@@ -53,6 +55,8 @@ class ImageProcessingService:
             subfolder=subfolder,
         )
 
+        started_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
         ai_result = await self.ai_service.analyze_wound(
             image_path=save_result["file_path"]
         )
@@ -76,12 +80,46 @@ class ImageProcessingService:
             image_size_bytes=validation["size"],
         )
 
-        if ai_result.get("detections"):
+        detections = ai_result.get("detections", [])
+
+        if detections:
             await self.analysis_service.save_detections(
                 analysis_id=analysis.analysis_id,
-                detections=ai_result.get("detections", []),
+                detections=detections,
             )
 
+        # --- Update Analysis status to "completed" ---
+        ai_model_version = ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0")
+        await self.analysis_service.update_analysis_after_processing(
+            analysis_id=analysis.analysis_id,
+            detections=detections,
+            ai_model_version=ai_model_version,
+            started_at=started_at,
+        )
+
+        # --- Persist AIResult record ---
+        ai_result_record = AIResult(
+            analysis_id=analysis.analysis_id,
+            result_type="classification",
+            model_name="YOLOv11_EfficientNetV2",
+            model_version=ai_model_version,
+            results={
+                "num_detections": ai_result.get("num_detections", len(detections)),
+                "reliable_detections": ai_result.get("reliable_detections", 0),
+                "meets_accuracy_threshold": ai_result.get("meets_accuracy_threshold", False),
+                "average_confidence": ai_result.get("average_confidence", 0.0),
+                "detections": detections,
+            },
+            confidence_breakdown={
+                "average_confidence": ai_result.get("average_confidence", 0.0),
+                "reliable_count": ai_result.get("reliable_detections", 0),
+                "total_count": ai_result.get("num_detections", len(detections)),
+            },
+            processing_time_ms=processing_time_ms,
+        )
+        await self.analysis_service.repository.save_ai_result(ai_result_record)
+
+        # Re-fetch with detections eager-loaded
         analysis = await self.analysis_service.get_analysis_by_id(
             analysis.analysis_id
         )

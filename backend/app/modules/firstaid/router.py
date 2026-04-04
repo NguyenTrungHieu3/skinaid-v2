@@ -10,13 +10,12 @@ from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,
     FirstAidGuideResponse,
     GuideStatsResponse,
-    GuideValidationResponse,
     UpdateGuideRequest,
 )
 from app.modules.firstaid.service import FirstAidService
 from app.shared.response import SuccessResponse
 
-router = APIRouter(prefix="/first-aid", tags=["First Aid"])
+router = APIRouter(prefix="/first-aid")
 
 
 @router.get(

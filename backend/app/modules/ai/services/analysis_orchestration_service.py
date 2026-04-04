@@ -17,13 +17,6 @@ from app.modules.audit.services.audit_service import AuditService
 
 
 class AnalysisOrchestrationService:
-    """
-    Orchestrates wound analysis workflow including:
-    - Guest session management
-    - Image processing
-    - Audit logging
-    """
-
     def __init__(
         self,
         image_service: ImageProcessingService,

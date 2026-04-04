@@ -15,7 +15,7 @@ from app.modules.guest.service import GuestService
 from app.shared.response import SuccessResponse
 
 
-router = APIRouter(prefix="/guest", tags=["Guest Management"])
+router = APIRouter(prefix="/guest")
 
 
 @router.post(

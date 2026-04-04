@@ -31,7 +31,7 @@ from app.shared.exceptions import (
 from app.shared.response import SuccessResponse
 from app.shared.constants import messages as Message
 
-router = APIRouter(prefix="/ai", tags=["AI Analysis"])
+router = APIRouter(prefix="/ai")
 
 
 def get_wound_analysis_service(

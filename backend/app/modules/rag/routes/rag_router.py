@@ -20,7 +20,7 @@ from app.modules.rag.schemas.rag_document_schemas import (
 from app.modules.rag.schemas.rag_schemas import RAGRetrieveRequest, RAGRetrieveResponse
 from app.shared.response import SuccessResponse
 
-router = APIRouter(tags=["RAG - Knowledge Retrieval"])
+router = APIRouter(prefix="/rag")
 
 @router.post(
     "/documents",

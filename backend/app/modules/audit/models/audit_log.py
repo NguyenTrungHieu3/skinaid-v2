@@ -40,6 +40,7 @@ class AuditLog(SQLModel, table=True):
             nullable=True,
         ),
     )
+    device_id: Optional[str] = Field(default=None, max_length=100)
     details: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSONB, nullable=True))
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 

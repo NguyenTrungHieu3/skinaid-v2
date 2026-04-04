@@ -11,7 +11,7 @@ from app.modules.llm.schemas.llm_schemas import (
 )
 from app.shared.response import SuccessResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/llm")
 
 
 @router.post(

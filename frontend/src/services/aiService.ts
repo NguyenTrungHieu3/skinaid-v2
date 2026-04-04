@@ -60,6 +60,7 @@ export interface StructuredGuidance {
 }
 
 export interface LLMSynthesizeRequest {
+  analysis_id?: string;        // UUID — nếu có, BE sẽ persist guidance vào Detection.firstaid_snapshot
   wound_type: string;
   severity: string;
   sub_type?: string | null;

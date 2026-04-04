@@ -236,7 +236,6 @@ class WoundAIService:
             }
 
     async def check_model_health(self) -> Dict[str, Any]:
-        """Kiểm tra sức khỏe đơn giản cho dịch vụ AI."""
         try:
             headers = {}
             if self.ai_api_key:

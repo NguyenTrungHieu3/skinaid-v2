@@ -150,7 +150,10 @@ class WoundAnalysisService:
         return {
             "wound_type": mapped_wound_type,
             "severity": wound_info["severity"],
-            "sub_type": wound_info["sub_type"],
+            # sub_type là field riêng từ AI service — WoundParser chỉ parse được
+            # khi sub_type nhúng trong chuỗi severity (vd "moderate_skintear").
+            # Dùng detection.get("sub_type") làm nguồn ưu tiên.
+            "sub_type": detection.get("sub_type") or wound_info["sub_type"],
             "guide_id": guide_id,
             "snapshot": snapshot,
         }
@@ -184,6 +187,53 @@ class WoundAnalysisService:
         if detection_objects:
             await self.repository.add_detections(detection_objects)
 
+    async def update_analysis_after_processing(
+        self,
+        analysis_id: UUID,
+        detections: List[Dict[str, Any]],
+        ai_model_version: Optional[str] = None,
+        started_at: Optional[datetime] = None,
+    ) -> None:
+        """
+        Update Analysis record after AI processing completes:
+        - Set status = "completed"
+        - Fill completed_at, started_at
+        - Populate top-level wound_type / severity / sub_type / confidence
+          from the primary (highest confidence) detection.
+        """
+        completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
+
+        primary: Optional[Dict[str, Any]] = None
+        if detections:
+            primary = max(detections, key=lambda d: float(d.get("confidence", 0.0)))
+
+        wound_type = None
+        severity = None
+        sub_type = None
+        confidence = None
+
+        if primary:
+            wound_info = WoundParser.parse_from_separate_fields(
+                primary.get("wound_type", "unknown"),
+                primary.get("severity", "mild"),
+            )
+            wound_type = WoundParser.map_wound_type_for_database(wound_info["wound_type"])
+            severity = wound_info["severity"]
+            sub_type = primary.get("sub_type") or wound_info["sub_type"]
+            confidence = float(primary.get("confidence", 0.0))
+
+        await self.repository.update_analysis_status(
+            analysis_id=analysis_id,
+            status="completed",
+            started_at=started_at,
+            completed_at=completed_at,
+            wound_type=wound_type,
+            severity=severity,
+            sub_type=sub_type,
+            confidence=confidence,
+            model_version=ai_model_version,
+        )
+
     async def get_history(
         self,
         user_id: Optional[UUID] = None,
@@ -213,3 +263,32 @@ class WoundAnalysisService:
     async def soft_delete_analysis(self, analysis_id: UUID) -> None:
         """Soft delete analysis"""
         await self.repository.soft_delete_analysis(analysis_id)
+
+    async def persist_llm_guidance(
+        self,
+        analysis_id: UUID,
+        wound_type: str,
+        severity: str,
+        structured_guidance: Dict[str, Any],
+    ) -> int:
+        """
+        Lưu structured_guidance từ LLM vào Detection.firstaid_snapshot.
+        Ghi đè snapshot cũ (từ B4 DB lookup) bằng output phong phú hơn từ LLM.
+        Trả về số detections đã được update.
+        """
+        snapshot = {
+            "title": structured_guidance.get("title", ""),
+            "steps": structured_guidance.get("steps", []),
+            "dos": structured_guidance.get("dos", []),
+            "donts": structured_guidance.get("donts", []),
+            "supplies_needed": structured_guidance.get("supplies_needed", []),
+            "estimated_healing_time": structured_guidance.get("estimated_healing_time"),
+            "source": structured_guidance.get("source"),
+            "llm_generated": True,
+        }
+        return await self.repository.update_detection_snapshot(
+            analysis_id=analysis_id,
+            wound_type=wound_type,
+            severity=severity,
+            snapshot=snapshot,
+        )
