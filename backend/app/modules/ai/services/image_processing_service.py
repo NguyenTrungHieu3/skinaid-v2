@@ -5,7 +5,6 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.ai.exceptions import AIProcessFailedError
 from app.modules.ai.mappers.response_mapper import ResponseMapper
@@ -27,13 +26,19 @@ from app.shared.constants import messages as Message
 
 class ImageProcessingService:
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.validator = FileValidator()
-        self.file_service = FileService()
-        self.ai_service = WoundAIService()
-        self.analysis_service = WoundAnalysisService(db)
-        self.response_mapper = ResponseMapper()
+    def __init__(
+        self,
+        analysis_service: WoundAnalysisService,
+        ai_service: WoundAIService,
+        file_service: FileService,
+        validator: FileValidator,
+        response_mapper: ResponseMapper,
+    ):
+        self.analysis_service = analysis_service
+        self.ai_service = ai_service
+        self.file_service = file_service
+        self.validator = validator
+        self.response_mapper = response_mapper
 
     async def process_single_image(
         self,
@@ -88,7 +93,6 @@ class ImageProcessingService:
                 detections=detections,
             )
 
-        # --- Update Analysis status to "completed" ---
         ai_model_version = ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0")
         await self.analysis_service.update_analysis_after_processing(
             analysis_id=analysis.analysis_id,
@@ -97,7 +101,6 @@ class ImageProcessingService:
             started_at=started_at,
         )
 
-        # --- Persist AIResult record ---
         ai_result_record = AIResult(
             analysis_id=analysis.analysis_id,
             result_type="classification",
@@ -119,7 +122,6 @@ class ImageProcessingService:
         )
         await self.analysis_service.repository.save_ai_result(ai_result_record)
 
-        # Re-fetch with detections eager-loaded
         analysis = await self.analysis_service.get_analysis_by_id(
             analysis.analysis_id
         )

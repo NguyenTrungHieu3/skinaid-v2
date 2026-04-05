@@ -31,9 +31,9 @@ router = APIRouter(prefix="/profile")
     summary="Update profile",
 )
 async def update_profile(
+    service: ProfileSvc,
     request: Request,
     profile_data: UserProfileUpdate,
-    service: ProfileSvc = None,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.update_profile(current_user.user_id, profile_data)
@@ -50,9 +50,9 @@ async def update_profile(
     summary="Upload avatar",
 )
 async def upload_avatar(
-    file: UploadFile = File(...),
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
+    file: UploadFile = File(...),
 ) -> SuccessResponse:
     result = await service.upload_avatar(current_user.user_id, file)
     return SuccessResponse(
@@ -67,7 +67,7 @@ async def upload_avatar(
     summary="Get current profile",
 )
 async def get_my_profile(
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.get_profile(current_user.user_id)
@@ -83,7 +83,7 @@ async def get_my_profile(
     summary="Get profile statistics",
 )
 async def get_profile_statistics(
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     _: User = Depends(require_admin),
 ) -> SuccessResponse:
     result = await service.get_statistics()
@@ -99,7 +99,7 @@ async def get_profile_statistics(
     summary="Search profiles",
 )
 async def search_profiles(
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     _: User = Depends(require_admin),
     full_name: Optional[str] = Query(None),
     gender: Optional[str] = Query(None),
@@ -128,7 +128,7 @@ async def search_profiles(
     summary="Get profile completion suggestions",
 )
 async def get_completion_suggestions(
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.get_completion_suggestions(current_user.user_id)
@@ -144,7 +144,7 @@ async def get_completion_suggestions(
     summary="Delete avatar",
 )
 async def delete_avatar(
-    service: ProfileSvc = None,
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.delete_avatar(current_user.user_id)
@@ -160,8 +160,8 @@ async def delete_avatar(
     summary="Get public avatar",
 )
 async def get_user_avatar(
+    service: ProfileSvc,
     user_id: UUID,
-    service: ProfileSvc = None,
 ) -> SuccessResponse:
     result = await service.get_public_avatar(user_id)
     return SuccessResponse(

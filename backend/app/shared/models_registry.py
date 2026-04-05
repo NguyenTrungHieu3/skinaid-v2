@@ -8,7 +8,6 @@ from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user_profile import UserProfile
 from app.modules.guest.models.guest_session import GuestSession
 from app.modules.audit.models.audit_log import AuditLog
-from app.modules.audit.models.rate_limits import RateLimit
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
 from app.modules.ai.models.analysis import Analysis
 from app.modules.ai.models.detection import Detection
@@ -24,7 +23,7 @@ from app.modules.rag.models.rag_document import RagDocument
 __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
     "UserRole", "TokenFamily", "UserProfile",
-    "GuestSession", "AuditLog", "RateLimit", "FirstAidGuide", "Analysis", "Detection",
+    "GuestSession", "AuditLog", "FirstAidGuide", "Analysis", "Detection",
     "AIResult", "UserInput", "AIModel", "ModelVersionHistory", "ChatSession",
     "ChatMessage", "DeviceSession", "Notification",
     "RagDocument",

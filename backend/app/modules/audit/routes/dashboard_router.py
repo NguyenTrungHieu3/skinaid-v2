@@ -28,9 +28,9 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard Analytics"])
     description="Get overview statistics for admin dashboard (4 main cards)"
 )
 async def get_dashboard_overview(
+    service: StatisticsSvc,
+    current_user: User = Depends(require_admin),
     period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Statistics period"),
-    service: StatisticsSvc = None,
-    current_user: User = Depends(require_admin)
 ):
     """
     Get dashboard overview statistics including:
@@ -56,9 +56,9 @@ async def get_dashboard_overview(
     description="Get wound type distribution for pie chart"
 )
 async def get_wound_type_distribution(
+    service: StatisticsSvc,
+    current_user: User = Depends(require_admin),
     period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Statistics period"),
-    service: StatisticsSvc = None,
-    current_user: User = Depends(require_admin)
 ):
     """
     Get wound type distribution data for pie chart:
@@ -83,8 +83,8 @@ async def get_wound_type_distribution(
     description="Get weekly activity statistics for bar chart (last 7 days)"
 )
 async def get_weekly_activity(
-    service: StatisticsSvc = None,
-    current_user: User = Depends(require_admin)
+    service: StatisticsSvc,
+    current_user: User = Depends(require_admin),
 ):
     """
     Get weekly activity statistics for bar chart:
@@ -109,9 +109,9 @@ async def get_weekly_activity(
     description="Get wound severity distribution (Mild, Moderate, Severe)"
 )
 async def get_severity_stats(
+    service: StatisticsSvc,
+    current_user: User = Depends(require_admin),
     period: str = Query("month", enum=["day", "week", "month", "year", "all"], description="Statistics period"),
-    service: StatisticsSvc = None,
-    current_user: User = Depends(require_admin)
 ):
     """
     Get severity statistics for bar chart:
@@ -137,9 +137,9 @@ async def get_severity_stats(
     description="Get recent system logs and warnings for monitoring"
 )
 async def get_system_logs(
+    service: StatisticsSvc,
+    current_user: User = Depends(require_admin),
     limit: int = Query(10, ge=1, le=50, description="Number of logs to retrieve"),
-    service: StatisticsSvc = None,
-    current_user: User = Depends(require_admin)
 ):
     """
     Get recent system logs and warnings:

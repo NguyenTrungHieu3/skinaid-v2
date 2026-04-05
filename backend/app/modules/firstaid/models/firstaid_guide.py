@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from app.modules.firstaid.utils import unwrap_jsonb_list
 
 VALID_WOUND_TYPES = ["abrasion", "bruise", "burn", "cut", "acne", "fungal", "psoriasis"]
-VALID_SEVERITIES = ["mild", "moderate", "severe"]
+VALID_SEVERITIES = ["mild", "moderate", "severe", "all"]
 VALID_BURN_SUBTYPES = ["blister", "skintear"]
 EXPECTED_GUIDE_COUNT = 15
 

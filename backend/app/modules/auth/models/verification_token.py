@@ -26,8 +26,8 @@ class VerificationToken(SQLModel, table=True):
 
     created_ip: Optional[str] = Field(default=None, max_length=45)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    
+    # updated_at intentionally omitted — token is immutable after creation (no trigger needed)
+
     @property
     def is_expired(self) -> bool:
         """Kiểm tra xem token đã hết hạn chưa."""
@@ -54,7 +54,6 @@ class VerificationToken(SQLModel, table=True):
             expires_at=current_time + timedelta(hours=expires_in_hours),
             is_used=False,
             created_at=current_time,
-            updated_at=current_time
         )
 
     @staticmethod

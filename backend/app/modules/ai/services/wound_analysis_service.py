@@ -8,16 +8,18 @@ from datetime import datetime, timezone
 from app.modules.ai.models.analysis import Analysis
 from app.modules.ai.models.detection import Detection
 from app.modules.firstaid.service import FirstAidService
-from app.modules.firstaid.repository import FirstAidRepository
 from app.modules.ai.repository.wound_analysis_repository import WoundAnalysisRepository
 from app.modules.ai.exceptions import WoundAnalysisNotFoundError
 
 
 class WoundAnalysisService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.repository = WoundAnalysisRepository(db)
-        self.first_aid_service = FirstAidService(FirstAidRepository(db), db)
+    def __init__(
+        self,
+        repository: WoundAnalysisRepository,
+        first_aid_service: FirstAidService,
+    ):
+        self.repository = repository
+        self.first_aid_service = first_aid_service
 
 
 
@@ -150,9 +152,6 @@ class WoundAnalysisService:
         return {
             "wound_type": mapped_wound_type,
             "severity": wound_info["severity"],
-            # sub_type là field riêng từ AI service — WoundParser chỉ parse được
-            # khi sub_type nhúng trong chuỗi severity (vd "moderate_skintear").
-            # Dùng detection.get("sub_type") làm nguồn ưu tiên.
             "sub_type": detection.get("sub_type") or wound_info["sub_type"],
             "guide_id": guide_id,
             "snapshot": snapshot,
@@ -272,9 +271,9 @@ class WoundAnalysisService:
         structured_guidance: Dict[str, Any],
     ) -> int:
         """
-        Lưu structured_guidance từ LLM vào Detection.firstaid_snapshot.
-        Ghi đè snapshot cũ (từ B4 DB lookup) bằng output phong phú hơn từ LLM.
-        Trả về số detections đã được update.
+        Persist LLM-generated structured_guidance into Detection.firstaid_snapshot,
+        overwriting the snapshot from the B4 DB lookup with the richer LLM output.
+        Returns the number of updated detections.
         """
         snapshot = {
             "title": structured_guidance.get("title", ""),

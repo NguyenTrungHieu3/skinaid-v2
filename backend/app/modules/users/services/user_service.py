@@ -23,17 +23,21 @@ from app.modules.users.exceptions import (
 )
 from app.shared.exceptions import ConflictError, BadRequestError
 from app.modules.audit.services.audit_service import AuditService
-from app.modules.audit.audit_repository import AuditRepository
 from app.modules.users.services.user_mapper import UserMapper
 
 
 class UserService:
-    def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)
-        self.token_repository = TokenRepository(db)
+    def __init__(
+        self,
+        db: AsyncSession,
+        repository: UserRepository,
+        token_repository: TokenRepository,
+        audit_service: AuditService,
+    ):
         self.db = db
-        audit_repo = AuditRepository(db)
-        self.audit_service = AuditService(audit_repo)
+        self.repository = repository
+        self.token_repository = token_repository
+        self.audit_service = audit_service
 
     async def _get_user_or_raise(self, user_id: UUID) -> User:
         """Get user by ID or raise UserManagementNotFoundError."""
@@ -127,23 +131,16 @@ class UserService:
             await self.db.rollback()
             raise UserActionFailedError(message=f"Failed to create user: {str(e)}")
 
-    # ══════════════════════════════════════════════════════
-    # HELPER METHODS FOR CREATE_USER
-    # ══════════════════════════════════════════════════════
-
     async def _check_and_handle_conflicts(self, email: str, username: str) -> None:
         """Check for existing users and handle soft-deleted collisions."""
-        # Check Email
         if await self.repository.email_exists(email):
             existing = await self.repository.get_by_email(email)
             if existing:
                 if not existing.is_deleted:
                     raise ConflictError(message="Email already registered")
                 else:
-                    # Rename deleted user to free up email
                     await self._rename_deleted_user(existing)
 
-        # Check Username
         if await self.repository.username_exists(username):
             existing = await self.repository.get_by_username(username)
             if existing:
@@ -151,7 +148,7 @@ class UserService:
                     raise ConflictError(
                         message=f"Username '{username}' already exists")
                 else:
-                    if existing.email != email:  # If it's a different user record
+                    if existing.email != email:
                         await self._rename_deleted_user(existing)
 
     async def _rename_deleted_user(self, user: User) -> None:
@@ -185,7 +182,6 @@ class UserService:
         self.db.add(new_user)
         await self.db.flush()
 
-        # Create Profile
         await self.repository.create_profile(
             user_id=new_user_id,
             full_name=display_name.strip()

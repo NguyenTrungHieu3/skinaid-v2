@@ -12,7 +12,7 @@ class UserInput(SQLModel, table=True):
     input_id: UUID = Field(default_factory=uuid4, primary_key=True)
     analysis_id: UUID = Field(foreign_key="analyses.analysis_id", index=True)
 
-    question_template_id: Optional[UUID] = Field(default=None)
+    # question_template_id intentionally removed — table question_templates does not exist in schema
     question_text: Optional[str] = Field(default=None)
     # text | multiple_choice | scale | boolean
     question_type: Optional[str] = Field(default=None, max_length=50)

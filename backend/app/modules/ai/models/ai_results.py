@@ -15,7 +15,7 @@ class AIResult(SQLModel, table=True):
     # "classification" | "detail" | "generation"
     result_type: str = Field(max_length=20)
 
-    model_id: Optional[UUID] = Field(default=None, nullable=True)
+    # Model info stored as snapshot string — no FK to avoid losing audit trail when model is deleted
     model_name: str = Field(max_length=100)
     model_version: str = Field(max_length=50)
 

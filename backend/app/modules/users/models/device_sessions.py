@@ -35,8 +35,8 @@ class DeviceSession(SQLModel, table=True):
 
     sync_status: str = Field(default="synced", max_length=20)
 
-    rate_limit_remaining: Optional[int] = Field(default=100)
-    rate_limit_reset_at: Optional[datetime] = Field(default=None)
+    # NOTE: rate limiting enforced entirely in Redis (slowapi)
+    # rate_limit_remaining and rate_limit_reset_at removed — not in SQL schema v3.2.0
 
     is_trusted: bool = Field(default=False)
     last_trusted_at: Optional[datetime] = Field(default=None)

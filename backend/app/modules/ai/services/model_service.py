@@ -39,7 +39,6 @@ from app.modules.ai.repository.model_repository import ModelRepository
 from app.modules.ai.services.model_validator import ModelValidator
 from app.modules.ai.services.model_storage_service import ModelStorageService, get_storage_service
 from app.modules.audit.services.audit_service import AuditService
-from app.modules.audit.audit_repository import AuditRepository
 
 logger = logging.getLogger(__name__)
 
@@ -66,19 +65,19 @@ class ModelService:
     - Delete: Soft-delete model versions
     - Metadata: Update model metadata and metrics
     """
-    
+
     def __init__(
-        self, 
+        self,
         db: AsyncSession,
-        storage_service: Optional[ModelStorageService] = None
+        repository: ModelRepository,
+        audit_service: AuditService,
+        storage_service: Optional[ModelStorageService] = None,
     ):
         self.db = db
-        self.repository = ModelRepository(db)
+        self.repository = repository
         self.storage = storage_service or get_storage_service()
-        self.audit_service = AuditService(AuditRepository(db))
-    
-    # ============== Upload Operations ==============
-    
+        self.audit_service = audit_service
+
     async def upload_model(
         self,
         upload_file,
@@ -104,7 +103,6 @@ class ModelService:
         try:
             logger.info(f"Starting model upload: {request.model_type} v{request.version_tag}")
 
-            # Step 1: Validate file and metadata
             validation_result = await ModelValidator.validate_all(
                 file=upload_file,
                 model_type=request.model_type,
@@ -113,7 +111,6 @@ class ModelService:
 
             logger.info(f"Validation passed: {validation_result['file_size']} bytes, hash: {validation_result['file_hash']}")
 
-            # Step 2: Check for duplicate version tag within this model type
             existing = await self.repository.get_model_by_version_tag(request.version_tag)
             if existing and existing.model_type == request.model_type:
                 raise ModelServiceError(
@@ -121,14 +118,9 @@ class ModelService:
                     error_code="DUPLICATE_VERSION"
                 )
 
-            # FIXED: Generate model_id first before storing file
-            # Each model version gets a unique UUID
             from uuid import uuid4
             new_model_id = uuid4()
 
-            # Step 3: Store file using the storage service's upload method
-            # FIXED: Use store_model_from_upload which handles file reading internally
-            # This avoids double-reading the file after validation consumed it
             file_path, file_size = await self.storage.store_model_from_upload(
                 upload_file=upload_file,
                 model_type=request.model_type,
@@ -139,7 +131,6 @@ class ModelService:
 
             logger.info(f"File stored at: {file_path}")
 
-            # Step 4: Create database record
             model = await self.repository.create_model(
                 model_type=request.model_type,
                 version_tag=request.version_tag,
@@ -148,12 +139,11 @@ class ModelService:
                 file_hash=validation_result['file_hash'],
                 description=request.description,
                 metrics=request.metrics.model_dump() if request.metrics else None,
-                is_beta=False,  # Beta flag removed
+                is_beta=False,
                 created_by=uploaded_by,
-                model_id=new_model_id  # FIXED: Pass the same UUID used for file storage
+                model_id=new_model_id
             )
 
-            # Step 5: Log version change
             await self.repository.log_version_change(
                 model_id=model.model_id,
                 action="model_upload",
@@ -188,8 +178,6 @@ class ModelService:
                 error_code="UPLOAD_FAILED"
             )
     
-    # ============== List Operations ==============
-    
     async def list_models(self, filters: Optional[ModelListFilters] = None) -> ModelListResponse:
         """
         List models with filtering and pagination.
@@ -201,8 +189,7 @@ class ModelService:
             List of models with metadata
         """
         filters = filters or ModelListFilters()
-        
-        # Get models from repository
+
         models, total = await self.repository.get_all_models(
             skip=0,
             limit=100,
@@ -213,13 +200,9 @@ class ModelService:
             search=filters.search
         )
         
-        # Convert to response format
         model_infos = []
         for model in models:
-            # Get version count for this model group
             versions = await self.repository.get_model_versions(model.model_id)
-
-            # Get active version
             active_model = await self.repository.get_active_model(model.model_type)
 
             model_info = ModelInfo(
@@ -229,15 +212,14 @@ class ModelService:
                 description=model.description,
                 current_version=active_model.version_tag if active_model else None,
                 version_tag=model.version_tag,
-                is_active=model.is_active,  # Add is_active field for THIS model
+                is_active=model.is_active,
                 total_versions=len(versions),
                 created_at=model.created_at,
                 updated_at=model.updated_at,
                 metrics=ModelMetrics(**model.metrics) if model.metrics else None
             )
             model_infos.append(model_info)
-        
-        # Get active version for display
+
         active_version = None
         if filters.model_type:
             active_model = await self.repository.get_active_model(filters.model_type)
@@ -261,15 +243,11 @@ class ModelService:
         Returns:
             Dictionary with model versions
         """
-        # Get model info
         model = await self.repository.get_model_by_id(model_id)
         if not model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
-        
-        # Get all versions
+
         versions = await self.repository.get_model_versions(model_id)
-        
-        # Get active version
         active_version = await self.repository.get_active_model(model.model_type)
         
         version_infos = [
@@ -292,8 +270,7 @@ class ModelService:
             "model_id": model_id,
             "model_type": model.model_type,
             "versions": version_infos,
-            "active_version": ModelVersionInfo(
-                version_id=active_version.model_id,
+            "active_version": ModelVersionInfo(                version_id=active_version.model_id,
                 model_id=active_version.model_id,
                 version_tag=active_version.version_tag,
                 version_number=active_version.version_number,
@@ -306,8 +283,6 @@ class ModelService:
             ) if active_version else None,
             "total": len(versions)
         }
-    
-    # ============== Detail Operations ==============
     
     async def get_model_detail(self, model_id: UUID) -> ModelDetailResponse:
         """
@@ -381,8 +356,6 @@ class ModelService:
             ]
         )
     
-    # ============== Activate Operations ==============
-
     async def activate_model(
         self,
         model_id: UUID,
@@ -402,7 +375,6 @@ class ModelService:
         Returns:
             Activation response
         """
-        # Get model
         model = await self.repository.get_model_by_id(model_id)
         if not model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
@@ -410,14 +382,11 @@ class ModelService:
         if model.is_deleted:
             raise ModelServiceError("Cannot activate a deleted model", "MODEL_DELETED")
 
-        # Get previous active version
         previous_active = await self.repository.get_active_model(model.model_type)
         previous_version = previous_active.version_tag if previous_active else None
 
-        # Activate model (repository handles deactivating others)
         activated_model = await self.repository.activate_model(model_id, activated_by)
 
-        # Log version change
         await self.repository.log_version_change(
             model_id=model_id,
             action="model_activate",
@@ -464,7 +433,6 @@ class ModelService:
         Raises:
             ModelServiceError: If this is the only active model of its type
         """
-        # Get model
         model = await self.repository.get_model_by_id(model_id)
         if not model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
@@ -472,18 +440,15 @@ class ModelService:
         if not model.is_active:
             raise ModelServiceError("Model is not active", "MODEL_NOT_ACTIVE")
 
-        # RULE: Cannot deactivate the last active model of a type
         if await self.repository.is_only_active_model(model_id):
             raise ModelServiceError(
                 f"Cannot deactivate: this is the only active model for type '{model.model_type}'. Activate another version first.",
                 error_code="CANNOT_DEACTIVATE_LAST_ACTIVE"
             )
 
-        # Store info for response
         version_tag = model.version_tag
         model_type = model.model_type
 
-        # Deactivate the model
         model.is_active = False
         model.deployed_at = None
         model.activated_at = None
@@ -492,7 +457,6 @@ class ModelService:
         await self.db.flush()
         await self.db.refresh(model)
 
-        # Log version change
         await self.repository.log_version_change(
             model_id=model_id,
             action="model_deactivate",
@@ -538,7 +502,6 @@ class ModelService:
         Raises:
             ModelServiceError: If no previous version exists
         """
-        # Get current active model
         current_active = await self.repository.get_active_model(model_type)
         if not current_active:
             raise ModelServiceError(
@@ -546,14 +509,12 @@ class ModelService:
                 "NO_ACTIVE_MODEL"
             )
 
-        # Check if there's a previous version to roll back to
         if not current_active.previously_active_version_id:
             raise ModelServiceError(
                 f"No previous version available for rollback of type '{model_type}'",
                 "NO_PREVIOUS_VERSION"
             )
 
-        # Get the previous version info for logging
         previous_version_model = await self.repository.get_by_id(current_active.previously_active_version_id)
         if not previous_version_model or previous_version_model.is_deleted:
             raise ModelServiceError(
@@ -564,7 +525,6 @@ class ModelService:
         previous_version_tag = previous_version_model.version_tag
         current_version_tag = current_active.version_tag
 
-        # Perform rollback (repository handles the activation)
         rolled_back_model = await self.repository.rollback_model_type(model_type, rolled_back_by)
         if not rolled_back_model:
             raise ModelServiceError(
@@ -572,7 +532,6 @@ class ModelService:
                 "ROLLBACK_FAILED"
             )
 
-        # Log version change
         await self.repository.log_version_change(
             model_id=rolled_back_model.model_id,
             action="model_rollback",
@@ -597,8 +556,6 @@ class ModelService:
             message=f"Rolled back {model_type} from {current_version_tag} to {previous_version_tag}"
         )
     
-    # ============== Rollback Operations ==============
-    
     async def rollback_model(
         self,
         model_id: UUID,
@@ -618,14 +575,11 @@ class ModelService:
         Returns:
             Rollback response
         """
-        # Get current model
         current_model = await self.repository.get_model_by_id(model_id)
         if not current_model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
-        
-        # Determine target version
+
         if request and request.target_version:
-            # Find specific version
             target_model = await self.repository.get_model_by_version_tag(request.target_version)
             if not target_model:
                 raise ModelServiceError(
@@ -633,24 +587,19 @@ class ModelService:
                     "VERSION_NOT_FOUND"
                 )
         else:
-            # Find previous version (one before current)
             versions = await self.repository.get_model_versions(current_model.model_id)
             if len(versions) < 2:
                 raise ModelServiceError(
                     "No previous version to rollback to",
                     "NO_PREVIOUS_VERSION"
                 )
-            
-            # Get second-to-last version
+
             target_model = versions[-2] if versions[-1].model_id == model_id else versions[-1]
-        
-        # Get previous active version for logging
+
         previous_version = current_model.version_tag
-        
-        # Activate target model
+
         activated_model = await self.repository.activate_model(target_model.model_id, rolled_back_by)
-        
-        # Log version change
+
         await self.repository.log_version_change(
             model_id=target_model.model_id,
             action="model_rollback",
@@ -676,8 +625,6 @@ class ModelService:
             message=f"Rolled back to v{target_model.version_tag}"
         )
     
-    # ============== Delete Operations ==============
-    
     async def delete_model(
         self,
         model_id: UUID,
@@ -700,24 +647,19 @@ class ModelService:
         model = await self.repository.get_model_by_id(model_id)
         if not model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
-        
-        # Prevent deleting active model
+
         if model.is_active:
             raise ModelServiceError(
                 "Cannot delete an active model. Deactivate it first.",
                 "CANNOT_DELETE_ACTIVE"
             )
-        
-        # Store version tag for response
+
         deleted_version = model.version_tag
-        
-        # Soft delete in database
+
         deleted_model = await self.repository.soft_delete_model(model_id, deleted_by)
-        
-        # Note: We don't delete the actual file, just mark as deleted
-        # Files can be cleaned up later by a maintenance job
-        
-        # Log version change
+
+        # Files are not deleted immediately; they can be cleaned up by a maintenance job.
+
         await self.repository.log_version_change(
             model_id=model_id,
             action="model_delete",
@@ -739,8 +681,6 @@ class ModelService:
             is_permanent=request.permanent if request else False,
             message=f"Model v{deleted_version} deleted successfully"
         )
-    
-    # ============== Metadata Operations ==============
     
     async def get_model_metadata(self, model_id: UUID) -> ModelMetadataResponse:
         """
@@ -796,7 +736,6 @@ class ModelService:
         if not model:
             raise ModelServiceError(f"Model {model_id} not found", "MODEL_NOT_FOUND")
         
-        # Update fields
         if description is not None:
             model.description = description
         if is_beta is not None:
@@ -810,8 +749,6 @@ class ModelService:
         
         return await self.get_model_metadata(model_id)
     
-    # ============== Runtime Operations ==============
-    
     async def get_runtime_status(self) -> dict:
         """
         Get runtime status of all models.
@@ -819,9 +756,8 @@ class ModelService:
         Returns:
             Runtime status dictionary
         """
-        # Get active models for each type
         model_types = ["detection", "classification", "segmentation", "severity_scoring"]
-        
+
         status = {}
         for model_type in model_types:
             active_model = await self.repository.get_active_model(model_type)

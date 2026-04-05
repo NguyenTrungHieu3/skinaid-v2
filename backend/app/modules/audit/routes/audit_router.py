@@ -25,6 +25,8 @@ router = APIRouter(prefix="/audit", tags=["Audit Logs"])
     description="Get paginated, filterable audit logs for admin monitoring."
 )
 async def get_audit_logs(
+    service: AuditSvc,
+    current_user: User = Depends(require_admin),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     user_id: Optional[UUID] = Query(None, description="Filter by user ID"),
@@ -38,8 +40,6 @@ async def get_audit_logs(
     end_date: Optional[datetime] = Query(None, description="Filter to date"),
     log_type: Optional[str] = Query(None, description="Filter by log type: admin_action / user_activity / system_error"),
     level: Optional[str] = Query(None, description="Filter by level: info / warning / error"),
-    service: AuditSvc = None,
-    current_user: User = Depends(require_admin),
 ):
     """
     Get all audit logs with full filtering and pagination.

@@ -20,17 +20,13 @@ router = APIRouter(prefix="/admin/users")
     description="Lấy danh sách người dùng có phân trang với các bộ lọc tùy chọn"
 )
 async def get_users(
+    service: UserSvc,
+    _: User = Depends(require_admin),
     page: int = Query(1, ge=1, description="Số trang (bắt đầu từ 1)"),
-    limit: int = Query(
-        10, ge=1, le=100, description="Số lượng người dùng mỗi trang"),
-    search: Optional[str] = Query(
-        None, description="Tìm kiếm theo email hoặc tên hiển thị"),
-    role: Optional[str] = Query(
-        None, description="Lọc theo vai trò (user, moderator, admin)"),
-    status: Optional[str] = Query(
-        None, description="Lọc theo trạng thái (active, inactive)"),
-    service: UserSvc = None,
-    current_user: User = Depends(require_admin)
+    limit: int = Query(10, ge=1, le=100, description="Số lượng người dùng mỗi trang"),
+    search: Optional[str] = Query(None, description="Tìm kiếm theo email hoặc tên hiển thị"),
+    role: Optional[str] = Query(None, description="Lọc theo vai trò (user, moderator, admin)"),
+    status: Optional[str] = Query(None, description="Lọc theo trạng thái (active, inactive)"),
 ):
     """Lấy danh sách người dùng có phân trang với các bộ lọc."""
     users, pagination = await service.get_users(
@@ -53,8 +49,8 @@ async def get_users(
     description="Lấy thống kê tổng quan về người dùng"
 )
 async def get_user_stats(
-    service: UserSvc = None,
-    current_user: User = Depends(require_admin)
+    service: UserSvc,
+    _: User = Depends(require_admin),
 ):
     """Lấy thống kê tổng quan về người dùng."""
     stats = await service.get_user_stats()

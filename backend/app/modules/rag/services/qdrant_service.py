@@ -32,7 +32,7 @@ _LANGCHAIN_SPARSE_VECTOR_KEY = SPARSE_VECTOR_NAME
 
 @dataclass
 class RetrievedChunk:
-    """Một chunk được tìm thấy sau hybrid search."""
+    """A chunk returned from hybrid search."""
 
     point_id: str
     document_id: str
@@ -62,7 +62,7 @@ class RetrievedChunk:
 
 @dataclass
 class ChunkInput:
-    """Một chunk cần được index vào Qdrant."""
+    """A chunk to be indexed into Qdrant."""
 
     document_id: str
     chunk_index: int
@@ -88,10 +88,10 @@ class QdrantService:
 
     async def initialize(self) -> None:
         if self._initialized:
-            logger.debug("[QdrantService] Đã initialized, bỏ qua.")
+            logger.debug("[QdrantService] Already initialized, skipping.")
             return
 
-        logger.info("[QdrantService] Bắt đầu khởi tạo...")
+        logger.info("[QdrantService] Initializing...")
 
         self._client = AsyncQdrantClient(url=self._qdrant_url)
         self._sync_client = QdrantClient(url=self._qdrant_url)
@@ -107,7 +107,7 @@ class QdrantService:
         await self._ensure_collection()
 
         self._vector_store = QdrantVectorStore(
-            client=self._sync_client,                 
+            client=self._sync_client,
             collection_name=self._collection_name,
             embedding=self._dense_embedder,
             sparse_embedding=self._sparse_embedder,
@@ -118,7 +118,7 @@ class QdrantService:
 
         self._initialized = True
         logger.info(
-            "[QdrantService] Khởi tạo thành công. Collection: %s",
+            "[QdrantService] Initialized successfully. Collection: %s",
             self._collection_name,
         )
 
@@ -127,7 +127,7 @@ class QdrantService:
             self._sync_client.close()
         if self._client:
             await self._client.close()
-            logger.info("[QdrantService] Đã đóng kết nối Qdrant.")
+            logger.info("[QdrantService] Qdrant connection closed.")
         self._initialized = False
 
     async def create_collection(self, recreate: bool = False) -> None:
@@ -139,7 +139,7 @@ class QdrantService:
 
             if exists and recreate:
                 logger.warning(
-                    "[QdrantService] Đang xóa collection '%s' để tạo lại.",
+                    "[QdrantService] Deleting collection '%s' to recreate.",
                     self._collection_name,
                 )
                 await self._client.delete_collection(self._collection_name)
@@ -147,21 +147,21 @@ class QdrantService:
 
             if exists:
                 logger.info(
-                    "[QdrantService] Collection '%s' đã tồn tại, bỏ qua tạo mới.",
+                    "[QdrantService] Collection '%s' already exists, skipping creation.",
                     self._collection_name,
                 )
                 return
 
             await self._create_collection_with_named_vectors()
             logger.info(
-                "[QdrantService] Đã tạo collection '%s'.", self._collection_name
+                "[QdrantService] Created collection '%s'.", self._collection_name
             )
 
         except (QdrantCollectionError, RAGServiceNotInitializedError):
             raise
         except Exception as exc:
             raise QdrantCollectionError(
-                message=f"Không thể tạo Qdrant collection '{self._collection_name}'",
+                message=f"Cannot create Qdrant collection '{self._collection_name}'",
                 details={"error": str(exc), "collection": self._collection_name},
             ) from exc
 
@@ -170,7 +170,7 @@ class QdrantService:
         assert self._vector_store is not None
 
         if not chunks:
-            logger.debug("[QdrantService] upsert_documents gọi với list rỗng, bỏ qua.")
+            logger.debug("[QdrantService] upsert_documents called with empty list, skipping.")
             return 0
 
         try:
@@ -178,7 +178,7 @@ class QdrantService:
             point_ids = await self._vector_store.aadd_documents(documents)
 
             logger.info(
-                "[QdrantService] Đã upsert %d chunks (document_id mẫu: %s).",
+                "[QdrantService] Upserted %d chunks (sample document_id: %s).",
                 len(point_ids),
                 chunks[0].document_id if chunks else "N/A",
             )
@@ -188,7 +188,7 @@ class QdrantService:
             raise
         except Exception as exc:
             raise QdrantUpsertError(
-                message="Upsert chunks vào Qdrant thất bại",
+                message="Failed to upsert chunks into Qdrant",
                 details={
                     "error": str(exc),
                     "chunk_count": len(chunks),
@@ -208,7 +208,7 @@ class QdrantService:
 
         if not query or not query.strip():
             raise QdrantSearchError(
-                message="Query không được rỗng",
+                message="Query cannot be empty",
                 details={"query": query},
             )
 
@@ -231,7 +231,7 @@ class QdrantService:
             ]
 
             logger.info(
-                "[QdrantService] Hybrid search '%s...' → %d kết quả (top_k=%d, threshold=%.2f).",
+                "[QdrantService] Hybrid search '%s...' → %d results (top_k=%d, threshold=%.2f).",
                 query[:50],
                 len(retrieved),
                 top_k,
@@ -243,7 +243,7 @@ class QdrantService:
             raise
         except Exception as exc:
             raise QdrantSearchError(
-                message="Hybrid search thất bại",
+                message="Hybrid search failed",
                 details={
                     "error": str(exc),
                     "query_preview": query[:100],
@@ -258,7 +258,7 @@ class QdrantService:
 
         if not document_id or not document_id.strip():
             raise QdrantDeleteError(
-                message="document_id không được rỗng",
+                message="document_id cannot be empty",
                 details={"document_id": document_id},
             )
 
@@ -267,7 +267,7 @@ class QdrantService:
 
             if count_before == 0:
                 logger.info(
-                    "[QdrantService] Không tìm thấy points nào cho document_id='%s'.",
+                    "[QdrantService] No points found for document_id='%s'.",
                     document_id,
                 )
                 return 0
@@ -287,7 +287,7 @@ class QdrantService:
             )
 
             logger.info(
-                "[QdrantService] Đã xóa %d points của document_id='%s'.",
+                "[QdrantService] Deleted %d points for document_id='%s'.",
                 count_before,
                 document_id,
             )
@@ -297,7 +297,7 @@ class QdrantService:
             raise
         except Exception as exc:
             raise QdrantDeleteError(
-                message=f"Không thể xóa points của document '{document_id}'",
+                message=f"Cannot delete points for document '{document_id}'",
                 details={"error": str(exc), "document_id": document_id},
             ) from exc
 
@@ -316,7 +316,7 @@ class QdrantService:
             }
         except Exception as exc:
             raise QdrantCollectionError(
-                message="Không thể lấy thông tin collection",
+                message="Cannot retrieve collection info",
                 details={"error": str(exc), "collection": self._collection_name},
             ) from exc
 
@@ -329,12 +329,12 @@ class QdrantService:
         if not exists:
             await self._create_collection_with_named_vectors()
             logger.info(
-                "[QdrantService] Đã tạo collection mới '%s'.",
+                "[QdrantService] Created new collection '%s'.",
                 self._collection_name,
             )
         else:
             logger.info(
-                "[QdrantService] Collection '%s' đã tồn tại.",
+                "[QdrantService] Collection '%s' already exists.",
                 self._collection_name,
             )
 
