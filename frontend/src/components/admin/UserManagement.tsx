@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
+import { useTranslation } from "react-i18next";
 import { 
   getUsers, 
   getUserDetail, 
@@ -21,9 +22,11 @@ import {
   ChevronRight,
   X
 } from "lucide-react";
+import StatCard from "./shared/StatCard";
 import styles from "./UserManagement.module.css";
 
 export default function UserManagementPage() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [panelLoading, setPanelLoading] = useState(false);
@@ -249,40 +252,31 @@ export default function UserManagementPage() {
       {/* Header */}
       <div className={styles.pageHeader}>
         <div className={styles.pageTitle}>
-          <h1>User Management</h1>
-          <p>Manage users and permissions</p>
+          <h1>{t('admin.user_management.title')}</h1>
+          <p>{t('admin.user_management.subtitle')}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${styles.total}`}>
-          <div className={`${styles.statIcon} ${styles.total}`}>
-            <Users size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{totalUsers}</div>
-            <div className={styles.statLabel}>Total Users</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.active}`}>
-          <div className={`${styles.statIcon} ${styles.active}`}>
-            <UserCheck size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{activeUsersCount}</div>
-            <div className={styles.statLabel}>Active Users</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.inactive}`}>
-          <div className={`${styles.statIcon} ${styles.inactive}`}>
-            <UserX size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{inactiveUsersCount}</div>
-            <div className={styles.statLabel}>Inactive Users</div>
-          </div>
-        </div>
+        <StatCard
+          icon={Users}
+          value={totalUsers}
+          label={t('admin.user_management.total_users')}
+          color="default"
+        />
+        <StatCard
+          icon={UserCheck}
+          value={activeUsersCount}
+          label={t('admin.user_management.status.active')}
+          color="green"
+        />
+        <StatCard
+          icon={UserX}
+          value={inactiveUsersCount}
+          label={t('admin.user_management.status.inactive')}
+          color="red"
+        />
       </div>
 
       {/* Filters */}

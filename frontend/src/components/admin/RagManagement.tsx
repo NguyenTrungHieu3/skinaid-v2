@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { Toaster } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import {
   Upload, FileText, CheckCircle, Clock, AlertTriangle,
   Search, Eye, Trash2, X, AlertCircle,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react'
 import * as ragService from '../../services/ragService'
 import type { RagDocument } from '../../services/ragService'
+import StatCard from './shared/StatCard'
 import styles from './RagManagement.module.css'
 
 // ── Helpers ────────────────────────────────────────────────
@@ -37,6 +39,7 @@ const formatFileSize = (bytes: number) => {
 // ── Main Component ─────────────────────────────────────────
 
 export default function RagManagement() {
+  const { t } = useTranslation()
   // Data
   const [documents, setDocuments] = useState<RagDocument[]>([])
   const [total, setTotal] = useState(0)
@@ -268,7 +271,7 @@ export default function RagManagement() {
       <div className={styles.ragManagementPage}>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner} />
-          <p className={styles.loadingText}>Loading knowledge base...</p>
+          <p className={styles.loadingText}>{t('admin.rag.loading')}</p>
         </div>
       </div>
     )
@@ -283,90 +286,87 @@ export default function RagManagement() {
       {/* Header */}
       <div className={styles.pageHeader}>
         <div className={styles.pageTitle}>
-          <h1>Knowledge Base Management</h1>
-          <p>Manage RAG documents for the AI assistant and first-aid guide</p>
+          <h1>{t('admin.rag.title')}</h1>
+          <p>{t('admin.rag.subtitle')}</p>
         </div>
         <button className={styles.btnPrimary} onClick={() => setShowUploadModal(true)}>
           <Upload size={18} />
-          Upload Document
+          {t('admin.rag.upload_document')}
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <p className={styles.statLabel}>Total Documents</p>
-            <p className={styles.statValue}>{stats.total}</p>
-          </div>
-          <div className={`${styles.statIcon} ${styles.total}`}>
-            <FileText size={24} />
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <p className={styles.statLabel}>Indexed Successfully</p>
-            <p className={styles.statValue}>{stats.indexed}</p>
-          </div>
-          <div className={`${styles.statIcon} ${styles.indexed}`}>
-            <CheckCircle size={24} />
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <p className={styles.statLabel}>Indexing in Progress</p>
-            <p className={styles.statValue}>{stats.indexing}</p>
-          </div>
-          <div className={`${styles.statIcon} ${styles.indexing}`}>
-            <Clock size={24} />
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statInfo}>
-            <p className={styles.statLabel}>Failed to Index</p>
-            <p className={styles.statValue}>{stats.failed}</p>
-          </div>
-          <div className={`${styles.statIcon} ${styles.failed}`}>
-            <AlertTriangle size={24} />
-          </div>
-        </div>
+        <StatCard
+          icon={FileText}
+          value={stats.total}
+          label={t('admin.rag.total_documents')}
+          color="default"
+        />
+        <StatCard
+          icon={CheckCircle}
+          value={stats.indexed}
+          label={t('admin.rag.indexed_successfully')}
+          color="green"
+        />
+        <StatCard
+          icon={Clock}
+          value={stats.indexing}
+          label={t('admin.rag.indexing_in_progress')}
+          color="yellow"
+        />
+        <StatCard
+          icon={AlertTriangle}
+          value={stats.failed}
+          label={t('admin.rag.failed_to_index')}
+          color="red"
+        />
       </div>
 
       {/* Search & Filter */}
       <div className={styles.filtersCard}>
-        <div className={styles.searchBox}>
-          <Search size={16} className={styles.searchIcon} />
-          <input
-            className={styles.searchInput}
-            placeholder="Search by file name..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
+        <div className={styles.filterGroup}>
+          <label>{t('admin.rag.filter_search')}</label>
+          <div className={styles.searchBox}>
+            <Search size={16} className={styles.searchIcon} />
+            <input
+              className={styles.searchInput}
+              placeholder={t('admin.rag.search_placeholder')}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
         </div>
-        <select
-          className={styles.filterSelect}
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}
-        >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="indexing">Indexing</option>
-          <option value="indexed">Indexed</option>
-          <option value="failed">Failed</option>
-        </select>
-        <select
-          className={styles.filterSelect}
-          value={fileTypeFilter}
-          onChange={(e) => { setFileTypeFilter(e.target.value); setCurrentPage(1) }}
-        >
-          <option value="all">All Types</option>
-          <option value="pdf">PDF</option>
-          <option value="md">MD</option>
-          <option value="txt">TXT</option>
-          <option value="docx">DOCX</option>
-          <option value="html">HTML</option>
-          <option value="csv">CSV</option>
-        </select>
+        <div className={styles.filterGroup}>
+          <label>{t('admin.rag.filter_status')}</label>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}
+          >
+            <option value="all">{t('admin.rag.status_all')}</option>
+            <option value="pending">{t('admin.rag.status_pending')}</option>
+            <option value="indexing">{t('admin.rag.status_indexing')}</option>
+            <option value="indexed">{t('admin.rag.status_indexed')}</option>
+            <option value="failed">{t('admin.rag.status_failed')}</option>
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
+          <label>{t('admin.rag.filter_type')}</label>
+          <select
+            className={styles.filterSelect}
+            value={fileTypeFilter}
+            onChange={(e) => { setFileTypeFilter(e.target.value); setCurrentPage(1) }}
+          >
+            <option value="all">{t('admin.rag.type_all')}</option>
+            <option value="pdf">PDF</option>
+            <option value="md">MD</option>
+            <option value="txt">TXT</option>
+            <option value="docx">DOCX</option>
+            <option value="html">HTML</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}

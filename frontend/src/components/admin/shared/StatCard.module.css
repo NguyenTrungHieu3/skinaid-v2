@@ -1,0 +1,143 @@
+/* ========== StatCard Shared Component ========== */
+/* Chuẩn: icon bên trái, số lớn phía trên, label phía dưới, border-bottom màu */
+
+.statCard {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.statCard:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+/* ── Icon container ── */
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Text area ── */
+.statInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* ── Color variants: border + icon bg/color ── */
+
+/* Default (gray) */
+.colorDefault {
+  border-bottom-color: #64748b;
+}
+.colorDefault .statIcon {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+/* Primary / teal (SkinAid brand) */
+.colorPrimary {
+  border-bottom-color: #1E9378;
+}
+.colorPrimary .statIcon {
+  background-color: #d1fae5;
+  color: #1E9378;
+}
+
+/* Green (active/success) */
+.colorGreen {
+  border-bottom-color: #17805f;
+}
+.colorGreen .statIcon {
+  background-color: #ecfdf5;
+  color: #17805f;
+}
+
+/* Red (danger/inactive) */
+.colorRed {
+  border-bottom-color: #ef4444;
+}
+.colorRed .statIcon {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+/* Blue */
+.colorBlue {
+  border-bottom-color: #3b82f6;
+}
+.colorBlue .statIcon {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+/* Purple */
+.colorPurple {
+  border-bottom-color: #8b5cf6;
+}
+.colorPurple .statIcon {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+}
+
+/* Indigo */
+.colorIndigo {
+  border-bottom-color: #6366f1;
+}
+.colorIndigo .statIcon {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* Orange */
+.colorOrange {
+  border-bottom-color: #f97316;
+}
+.colorOrange .statIcon {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+/* Yellow */
+.colorYellow {
+  border-bottom-color: #f59e0b;
+}
+.colorYellow .statIcon {
+  background-color: #fef9c3;
+  color: #d97706;
+}
+
+/* Cyan */
+.colorCyan {
+  border-bottom-color: #06b6d4;
+}
+.colorCyan .statIcon {
+  background-color: #cffafe;
+  color: #0891b2;
+}

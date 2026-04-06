@@ -368,9 +368,7 @@
     },
     "view": "View",
     "analysis": "Analysis",
-    "detail": {
-      "title": "Analysis Details"
-    },
+
     "search_placeholder": "Search events...",
     "filter_label": "Filter",
     "date_filters": {
@@ -392,6 +390,7 @@
       "error_delete": "Error deleting analysis"
     },
     "detail": {
+      "title": "Analysis Details",
       "back_button": "Back",
       "confirm_delete": "Confirm Delete",
       "delete_message": "Are you sure you want to delete this analysis record? This action cannot be undone.",
@@ -777,6 +776,47 @@
         "user_deleted": "User deleted successfully!",
         "delete_failed": "Failed to delete user"
       }
+    },
+    "rag": {
+      "title": "Knowledge Base Management",
+      "subtitle": "Manage RAG documents for the AI assistant and first-aid guide",
+      "upload_document": "Upload Document",
+      "total_documents": "Total Documents",
+      "indexed_successfully": "Indexed Successfully",
+      "indexing_in_progress": "Indexing in Progress",
+      "failed_to_index": "Failed to Index",
+      "filter_search": "Search",
+      "search_placeholder": "Search by file name...",
+      "filter_status": "Status",
+      "status_all": "All Status",
+      "status_pending": "Pending",
+      "status_indexing": "Indexing",
+      "status_indexed": "Indexed",
+      "status_failed": "Failed",
+      "filter_type": "File Type",
+      "type_all": "All Types",
+      "loading": "Loading knowledge base..."
+    },
+    "questionnaires": {
+      "title": "Questionnaires Management",
+      "subtitle": "Configure questions and triage answers by wound type",
+      "import_single_tooltip": "Import a new questionnaire from file",
+      "import_single": "Import Single Questionnaire",
+      "import_bulk_tooltip": "Import multiple questionnaires from one file",
+      "import_bulk": "Import Bulk Questionnaires",
+      "create_new": "Create New Questionnaire",
+      "total": "Total Questionnaires",
+      "active": "Active",
+      "draft": "Drafts",
+      "wound_types": "wound types",
+      "no_active_banner": "no active questionnaires",
+      "quick_import": "Quick Import",
+      "filter_wound_type": "WOUND TYPE",
+      "filter_all": "All wound types",
+      "questions": "Questions",
+      "questions_lower": "questions",
+      "download": "Download",
+      "btn_import": "Import"
     },
     "first_aid": {
       "title": "First Aid Guidance Management",

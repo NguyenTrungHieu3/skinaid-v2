@@ -361,9 +361,7 @@
     },
     "view": "Xem",
     "analysis": "Phân tích",
-    "detail": {
-      "title": "Chi tiết phân tích"
-    },
+
     "search_placeholder": "Tìm kiếm sự kiện...",
     "filter_label": "Lọc",
     "date_filters": {
@@ -385,6 +383,7 @@
       "error_delete": "Không thể xóa phân tích"
     },
     "detail": {
+      "title": "Chi tiết phân tích",
       "back_button": "Quay lại",
       "confirm_delete": "Xác nhận xóa",
       "delete_message": "Bạn có chắc chắn muốn xóa bản ghi phân tích này? Hành động này không thể hoàn tác.",
@@ -770,6 +769,47 @@
         "user_deleted": "Xóa người dùng thành công!",
         "delete_failed": "Không thể xóa người dùng"
       }
+    },
+    "rag": {
+      "title": "Quản lý cơ sở tri thức",
+      "subtitle": "Quản lý dữ liệu RAG cho trợ lý AI và hướng dẫn sơ cứu",
+      "upload_document": "Tải tài liệu",
+      "total_documents": "Tổng tài liệu",
+      "indexed_successfully": "Indexed thành công",
+      "indexing_in_progress": "Đang indexing",
+      "failed_to_index": "Indexing thất bại",
+      "filter_search": "Tìm kiếm",
+      "search_placeholder": "Tìm kiếm theo tên file...",
+      "filter_status": "Trạng thái",
+      "status_all": "Tất cả trạng thái",
+      "status_pending": "Đang chờ",
+      "status_indexing": "Đang indexing",
+      "status_indexed": "Đã indexed",
+      "status_failed": "Thất bại",
+      "filter_type": "Loại file",
+      "type_all": "Tất cả file",
+      "loading": "Đang tải cơ sở tri thức..."
+    },
+    "questionnaires": {
+      "title": "Quản lý Bộ Câu Hỏi",
+      "subtitle": "Cấu hình câu hỏi và đáp án triage theo từng loại vết thương",
+      "import_single_tooltip": "Import một bộ câu hỏi mới từ file",
+      "import_single": "Import một bộ",
+      "import_bulk_tooltip": "Import nhiều bộ câu hỏi từ 1 file",
+      "import_bulk": "Import nhiều bộ",
+      "create_new": "Tạo Bộ Câu Hỏi Mới",
+      "total": "Tổng bộ câu hỏi",
+      "active": "Đang hoạt động",
+      "draft": "Bản nháp",
+      "wound_types": "loại vết thương",
+      "no_active_banner": "chưa có bộ câu hỏi active",
+      "quick_import": "Import nhanh",
+      "filter_wound_type": "LOẠI VẾT THƯƠNG",
+      "filter_all": "Tất cả loại vết thương",
+      "questions": "Câu hỏi",
+      "questions_lower": "câu hỏi",
+      "download": "Tải xuống",
+      "btn_import": "Import"
     },
     "first_aid": {
       "title": "Quản lý hướng dẫn sơ cứu",

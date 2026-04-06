@@ -6,11 +6,12 @@ import {
   Trash2,
   BookOpen,
   Activity,
-  AlertCircle,
+  Layers,
   Loader2,
   RefreshCw,
   Ban,
 } from "lucide-react";
+import StatCard from "./shared/StatCard";
 import { useTranslation } from "react-i18next";
 import {
   searchFirstAidGuides,
@@ -646,51 +647,36 @@ export default function FirstAidManagement() {
   return (
     <div className={styles.firstaidManagementPage}>
       <title>{t("title.admin_first_aid")}</title>
-      <div className={styles.adminPageHeader}>
-        <div className={styles.adminPageTitle}>
+      <div className={styles.pageHeader}>
+        <div className={styles.pageTitle}>
           <h1>{t("admin.first_aid.title")}</h1>
           <p>{t("admin.first_aid.subtitle")}</p>
         </div>
-        <button className={styles.adminBtnPrimary} onClick={handleOpenAddModal}>
+        <button className={styles.btnPrimary} onClick={handleOpenAddModal}>
           <Plus size={20} />
           {t("admin.first_aid.add_guidance")}
         </button>
       </div>
 
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconPrimary}`}>
-            <BookOpen size={24} />
-          </div>
-          <div className={styles.statDetails}>
-            <div className={styles.statValue}>{stats.total_guides}</div>
-            <div className={styles.statLabel}>
-              {t("admin.first_aid.total_guides")}
-            </div>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconSuccess}`}>
-            <Activity size={24} />
-          </div>
-          <div className={styles.statDetails}>
-            <div className={styles.statValue}>{stats.active_guides}</div>
-            <div className={styles.statLabel}>
-              {t("admin.first_aid.active_guides")}
-            </div>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={`${styles.statIcon} ${styles.statIconInfo}`}>
-            <AlertCircle size={24} />
-          </div>
-          <div className={styles.statDetails}>
-            <div className={styles.statValue}>{stats.wound_types}</div>
-            <div className={styles.statLabel}>
-              {t("admin.first_aid.wound_types")}
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={BookOpen}
+          value={stats.total_guides}
+          label={t("admin.first_aid.total_guides")}
+          color="primary"
+        />
+        <StatCard
+          icon={Activity}
+          value={stats.active_guides}
+          label={t("admin.first_aid.active_guides")}
+          color="green"
+        />
+        <StatCard
+          icon={Layers}
+          value={stats.wound_types}
+          label={t("admin.first_aid.wound_types")}
+          color="purple"
+        />
       </div>
 
       <div className={styles.filtersSection}>

@@ -117,6 +117,8 @@ pytesseract==0.3.13
 pytest==8.4.2
 pytest-asyncio==1.2.0
 python-dateutil==2.9.0.post0
+openpyxl==3.1.5
+reportlab==4.4.10
 python-docx==1.2.0
 python-dotenv==1.2.2
 python-jose==3.5.0

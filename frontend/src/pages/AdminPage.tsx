@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, FileText, Shield, LayoutGrid, Database, BookOpen } from 'lucide-react';
+import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
@@ -7,6 +7,7 @@ import FirstAidManagement from '../components/admin/FirstAidManagement';
 import AdminLogs from '../components/admin/AdminLogs';
 import ModelManagement from '../components/admin/ModelManagement';
 import RagManagement from '../components/admin/RagManagement';
+import QuestionnaireManagement from '../components/admin/QuestionnaireManagement';
 import Sidebar from '../components/admin/Sidebar';
 import TopBar from '../components/admin/TopBar';
 import styles from './AdminPage.module.css';
@@ -19,6 +20,7 @@ export default function AdminPage() {
     { id: 'dashboard', label: t('admin.sidebar.dashboard'), icon: LayoutGrid },
     { id: 'users', label: t('admin.sidebar.user_management'), icon: Users },
     { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
+    { id: 'questionnaires', label: 'Bộ câu hỏi', icon: ClipboardList },
     { id: 'models', label: t('admin.sidebar.model_management'), icon: Database },
     { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Knowledge Base'), icon: BookOpen },
     { id: 'logs', label: t('admin.sidebar.admin_logs'), icon: Shield },
@@ -36,6 +38,8 @@ export default function AdminPage() {
         return <ModelManagement />;
       case 'rag':
         return <RagManagement />;
+      case 'questionnaires':
+        return <QuestionnaireManagement />;
       case 'logs':
         return <AdminLogs />;
       default:

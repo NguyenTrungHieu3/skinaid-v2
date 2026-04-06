@@ -20,6 +20,7 @@ from app.modules.chatbot.models.chat_messages import ChatMessage
 from app.modules.profile.models import DeviceSession
 from app.modules.notifications.models.notification import Notification
 from app.modules.rag.models.rag_document import RagDocument
+from app.modules.questionnaires.models import Questionnaire, Question, AnswerOption
 
 __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
@@ -28,4 +29,5 @@ __all__ = [
     "AIResult", "UserInput", "AIModel", "ModelPerformance", "ChatSession",
     "ChatMessage", "DeviceSession", "Notification",
     "RagDocument",
+    "Questionnaire", "Question", "AnswerOption"
 ]

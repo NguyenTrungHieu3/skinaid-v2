@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import * as modelService from '../../services/modelManagementService'
 import type { AIModel } from '../../types/admin'
+import StatCard from './shared/StatCard'
 import styles from './ModelManagement.module.css'
 
 // Grouped model data structure
@@ -228,33 +229,24 @@ export default function ModelManagement() {
 
       {/* Stats */}
       <div className={styles.statsGrid}>
-        <div className={`${styles.statCard} ${styles.total}`}>
-          <div className={`${styles.statIcon} ${styles.total}`}>
-            <Database size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{totalModels}</div>
-            <div className={styles.statLabel}>{t('admin.model_management.total_models')}</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.active}`}>
-          <div className={`${styles.statIcon} ${styles.active}`}>
-            <CheckCircle2 size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{activeVersions}</div>
-            <div className={styles.statLabel}>{t('admin.model_management.active_version')}</div>
-          </div>
-        </div>
-        <div className={`${styles.statCard} ${styles.versions}`}>
-          <div className={`${styles.statIcon} ${styles.versions}`}>
-            <FileText size={24} />
-          </div>
-          <div>
-            <div className={styles.statValue}>{totalVersions}</div>
-            <div className={styles.statLabel}>{t('admin.model_management.total_versions')}</div>
-          </div>
-        </div>
+        <StatCard
+          icon={Database}
+          value={totalModels}
+          label={t('admin.model_management.total_models')}
+          color="default"
+        />
+        <StatCard
+          icon={CheckCircle2}
+          value={activeVersions}
+          label={t('admin.model_management.active_version')}
+          color="green"
+        />
+        <StatCard
+          icon={FileText}
+          value={totalVersions}
+          label={t('admin.model_management.total_versions')}
+          color="blue"
+        />
       </div>
 
       {/* Warning */}
