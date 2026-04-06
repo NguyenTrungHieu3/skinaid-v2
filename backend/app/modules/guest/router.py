@@ -5,13 +5,12 @@ from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.core.dependencies import get_db, require_admin, require_user
 from app.modules.users.models.user import User
-from app.modules.guest.dependencies import get_guest_service
+from app.modules.guest.dependencies import GuestSvc
 from app.modules.guest.schemas.api import (
     CreateGuestSessionRequest,
     GuestSessionResponse,
     GuestStatsResponse,
 )
-from app.modules.guest.service import GuestService
 from app.shared.response import SuccessResponse
 
 
@@ -26,10 +25,10 @@ router = APIRouter(prefix="/guest")
 )
 async def create_guest_session(
     request: Request,
+    service: GuestSvc,
     ip_address: Optional[str] = Query(
         None, description="IP address của guest"),
     user_agent: Optional[str] = Query(None, description="User agent"),
-    service: GuestService = Depends(get_guest_service),
 ) -> SuccessResponse:
     if not ip_address and request.client:
         ip_address = request.client.host
@@ -53,7 +52,7 @@ async def create_guest_session(
 )
 async def get_guest_session(
     session_id: UUID,
-    service: GuestService = Depends(get_guest_service),
+    service: GuestSvc,
 ) -> SuccessResponse:
     session = await service.get_session(session_id)
     return SuccessResponse(
@@ -68,7 +67,7 @@ async def get_guest_session(
     summary="Thống kê Guest (Admin)",
 )
 async def get_guest_statistics(
-    service: GuestService = Depends(get_guest_service),
+    service: GuestSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     stats = await service.get_stats()
@@ -85,7 +84,7 @@ async def get_guest_statistics(
 )
 async def claim_analysis(
     analysis_id: UUID,
-    service: GuestService = Depends(get_guest_service),
+    service: GuestSvc,
     current_user: User = Depends(require_user),
 ) -> SuccessResponse:
     await service.claim_analysis(analysis_id, current_user.user_id)

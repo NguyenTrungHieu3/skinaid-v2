@@ -130,7 +130,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_user_upload_count(self, user_id: UUID) -> int:
         from app.modules.ai.models.analysis import Analysis
-        
+
         query = select(func.count(Analysis.analysis_id)).where(
             Analysis.user_id == user_id
         )
@@ -140,6 +140,23 @@ class UserRepository(BaseRepository[User]):
             return count or 0
         except Exception:
             return 0
+
+    async def get_upload_counts_bulk(self, user_ids: List[UUID]) -> Dict[UUID, int]:
+        """Fetch upload counts for multiple users in a single query — avoids N+1."""
+        from app.modules.ai.models.analysis import Analysis
+
+        if not user_ids:
+            return {}
+        query = (
+            select(Analysis.user_id, func.count(Analysis.analysis_id).label("cnt"))
+            .where(Analysis.user_id.in_(user_ids))
+            .group_by(Analysis.user_id)
+        )
+        try:
+            result = await self.db.execute(query)
+            return {row.user_id: row.cnt for row in result.all()}
+        except Exception:
+            return {}
 
     async def get_role_by_name(self, role_name: str) -> Optional[Role]:
         query = select(Role).where(Role.role_name == role_name.lower())

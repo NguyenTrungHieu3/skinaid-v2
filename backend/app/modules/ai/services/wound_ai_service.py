@@ -11,8 +11,6 @@ from app.modules.ai.constants import WoundConstants
 
 class WoundAIService:
 
-
-
     def __init__(self):
         self.ai_service_url = getattr(settings, 'AI_SERVICE_URL', "http://localhost:8001")
         self.ai_api_key = getattr(settings, 'AI_API_KEY', "")

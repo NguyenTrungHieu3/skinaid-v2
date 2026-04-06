@@ -89,7 +89,6 @@ class RAGDocumentService:
         )
 
         doc = await self.repository.create(doc)
-        await self.db.commit()
 
         logger.info(
             "[RAGDocumentService] Created RagDocument id=%s, file='%s', status=pending",
@@ -210,7 +209,6 @@ class RAGDocumentService:
         )
 
         await self.repository.delete(doc)
-        await self.db.commit()
 
         logger.info(
             "[RAGDocumentService] Deleted RagDocument id=%s, file='%s'",

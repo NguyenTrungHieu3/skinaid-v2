@@ -14,6 +14,7 @@ from app.modules.map.router import router as map_router
 from app.modules.chatbot.router import router as chatbot_router
 from app.modules.rag.routes.rag_router import router as rag_router
 from app.modules.llm.routes.llm_router import router as llm_router
+from app.modules.notifications.router import router as notifications_router
 
 router = APIRouter()
 
@@ -31,3 +32,4 @@ router.include_router(map_router, tags=["Map"])
 router.include_router(chatbot_router, tags=["Chatbot"])
 router.include_router(rag_router, tags=["RAG - Knowledge Retrieval"])
 router.include_router(llm_router, tags=["LLM - Response Synthesis"])
+router.include_router(notifications_router, tags=["Notifications"])

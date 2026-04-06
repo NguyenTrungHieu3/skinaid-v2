@@ -5,14 +5,13 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import allow_guest, require_admin
 from app.modules.users.models.user import User
-from app.modules.firstaid.dependencies import get_firstaid_service
+from app.modules.firstaid.dependencies import FirstAidSvc
 from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,
     FirstAidGuideResponse,
     GuideStatsResponse,
     UpdateGuideRequest,
 )
-from app.modules.firstaid.service import FirstAidService
 from app.shared.response import SuccessResponse
 
 router = APIRouter(prefix="/first-aid")
@@ -26,8 +25,8 @@ router = APIRouter(prefix="/first-aid")
 async def get_guide(
     wound_type: str,
     severity: str,
+    service: FirstAidSvc,
     sub_type: Optional[str] = Query(None),
-    service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     guide = await service.get_guide(wound_type, severity, sub_type)
@@ -49,7 +48,7 @@ async def get_guide(
     summary="Danh sách loại vết thương",
 )
 async def get_wound_types(
-    service: FirstAidService = Depends(get_firstaid_service),
+    service: FirstAidSvc,
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     types = await service.get_available_types()
@@ -65,13 +64,13 @@ async def get_wound_types(
     summary="Tìm kiếm hướng dẫn",
 )
 async def search_guides(
+    service: FirstAidSvc,
     wound_type: Optional[str] = Query(None),
     severity: Optional[str] = Query(None),
     limit: int = Query(20, le=100),
     offset: int = 0,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
-    service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     # Convert empty strings to None
@@ -100,7 +99,7 @@ async def search_guides(
     summary="Thống kê dữ liệu",
 )
 async def get_statistics(
-    service: FirstAidService = Depends(get_firstaid_service),
+    service: FirstAidSvc,
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     stats = await service.get_stats()
@@ -118,8 +117,8 @@ async def get_statistics(
 async def validate_availability(
     wound_type: str,
     severity: str,
+    service: FirstAidSvc,
     sub_type: Optional[str] = Query(None),
-    service: FirstAidService = Depends(get_firstaid_service),
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     result = await service.check_availability(wound_type, severity, sub_type)
@@ -135,7 +134,7 @@ async def validate_availability(
 )
 async def create_guide(
     request: CreateGuideRequest,
-    service: FirstAidService = Depends(get_firstaid_service),
+    service: FirstAidSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     guide = await service.create_guide(request, current_user.user_id)
@@ -152,7 +151,7 @@ async def create_guide(
 )
 async def get_guide_by_id(
     guide_id: UUID,
-    service: FirstAidService = Depends(get_firstaid_service),
+    service: FirstAidSvc,
     current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     guide = await service.get_guide_by_id(guide_id)
@@ -170,7 +169,7 @@ async def get_guide_by_id(
 async def update_guide(
     guide_id: UUID,
     request: UpdateGuideRequest,
-    service: FirstAidService = Depends(get_firstaid_service),
+    service: FirstAidSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     guide = await service.update_guide(guide_id, request)
@@ -187,8 +186,8 @@ async def update_guide(
 )
 async def delete_guide(
     guide_id: UUID,
+    service: FirstAidSvc,
     hard_delete: bool = False,
-    service: FirstAidService = Depends(get_firstaid_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     await service.delete_guide(guide_id, hard_delete)

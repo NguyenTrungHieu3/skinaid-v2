@@ -465,7 +465,11 @@ class ChatService:
         raw_list = await self._redis.lrange(self._msgs_key(session_id), 0, -1)
         items: list[MessageItem] = []
         for raw in raw_list:
-            data = json.loads(raw)
+            try:
+                data = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                logger.warning("[ChatService] Skipping corrupt Redis message: %r", raw[:200])
+                continue
             items.append(MessageItem(
                 role=data["role"],
                 content=data["content"],

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.dependencies import get_current_active_user, get_token
+from app.middleware.rate_limit import limiter
 from app.modules.auth.dependencies import get_auth_service
 from app.modules.users.models.user import User
 from app.modules.auth.schemas.api import (
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/auth")
     response_model=OAuth2TokenResponse,
     summary="OAuth2 login (Swagger Authorize)",
 )
+@limiter.limit("10/minute")
 async def oauth2_token(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -76,6 +78,7 @@ async def _build_user_response(user: User) -> UserResponse:
     status_code=status.HTTP_201_CREATED,
     summary="Register new user",
 )
+@limiter.limit("5/minute")
 async def register_user(
     request: Request,
     user_data: UserCreate,
@@ -99,6 +102,7 @@ async def register_user(
     response_model=SuccessResponse[TokenResponse],
     summary="Login",
 )
+@limiter.limit("10/minute")
 async def login_user(
     request: Request,
     credentials: UserLogin,
@@ -127,7 +131,9 @@ async def login_user(
     response_model=SuccessResponse[TokenResponse],
     summary="Refresh token",
 )
+@limiter.limit("20/minute")
 async def refresh_token(
+    request: Request,
     refresh_request: RefreshTokenRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
@@ -150,7 +156,9 @@ async def refresh_token(
     response_model=SuccessResponse[PasswordResetResponse],
     summary="Request password reset",
 )
+@limiter.limit("3/minute")
 async def request_password_reset(
+    request: Request,
     reset_request: PasswordResetRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> SuccessResponse:
@@ -170,6 +178,7 @@ async def request_password_reset(
     response_model=SuccessResponse[PasswordResetResponse],
     summary="Confirm password reset",
 )
+@limiter.limit("5/minute")
 async def confirm_password_reset(
     request: Request,
     reset_data: PasswordResetConfirm,

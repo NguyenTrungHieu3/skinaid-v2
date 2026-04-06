@@ -149,7 +149,6 @@ class WoundAnalysisRepository(BaseRepository[Analysis]):
             Analysis.analysis_id == analysis_id
         )
         result = await self.db.execute(stmt)
-        await self.db.commit()
         return result.rowcount > 0
 
     async def get_recent_analyses(self, limit: int = 5) -> List[Analysis]:
