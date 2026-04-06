@@ -1,4 +1,118 @@
 services:
+  backend:
+    container_name: skinaid_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Database → RDS
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}
+
+      # JWT & Security
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+
+      # Application
+      - APP_NAME=${APP_NAME:-SkinAid Wound Detection API}
+      - VERSION=${VERSION:-0.1.0}
+      - DEBUG=false
+      - TESTING=false
+      - API_V1_STR=${API_V1_STR:-/api/v1}
+      - UPLOAD_DIR=/app/uploads
+
+      # CORS & URL
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - BASE_URL=${BASE_URL}
+
+      # Email
+      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-false}
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+
+      # File Upload
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-5242880}
+      - MIN_FILE_SIZE=${MIN_FILE_SIZE:-1024}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-.jpg,.jpeg,.png}
+      - MAX_IMAGE_WIDTH=${MAX_IMAGE_WIDTH:-4096}
+      - MAX_IMAGE_HEIGHT=${MAX_IMAGE_HEIGHT:-4096}
+      - MIN_IMAGE_WIDTH=${MIN_IMAGE_WIDTH:-100}
+      - MIN_IMAGE_HEIGHT=${MIN_IMAGE_HEIGHT:-100}
+
+      # AI Service → nội bộ Docker
+      - AI_SERVICE_URL=http://ai:8001
+      - AI_SECRET_KEY=${AI_SECRET_KEY}
+      - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-60}
+      - AI_MAX_RETRIES=${AI_MAX_RETRIES:-3}
+
+      # Redis → nội bộ Docker
+      - REDIS_URL=redis://redis:6379/0
+
+      # Qdrant → nội bộ Docker
+      - QDRANT=http://qdrant:6333/
+      - RAG_COLLECTION_NAME=${RAG_COLLECTION_NAME:-skinaid_knowledge_base}
+      - RAG_EMBEDDING_DIMENSION=${RAG_EMBEDDING_DIMENSION:-3072}
+      - RAG_DOCS_PATH=${RAG_DOCS_PATH:-docs/RAGDocumentation}
+      - RAG_SCORE_THRESHOLD=${RAG_SCORE_THRESHOLD:-0.5}
+      - RAG_SPARSE_MODEL=${RAG_SPARSE_MODEL:-Qdrant/bm25}
+
+      # OpenAI
+      - OPEN_API_KEY=${OPEN_API_KEY}
+      - OPEN_EMBEDDING_MODEL=${OPEN_EMBEDDING_MODEL:-text-embedding-3-small}
+
+      # Geoapify
+      - GEOAPIFY_API_KEY=${GEOAPIFY_API_KEY}
+
+    expose:
+      - "8000"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - redis
+      - qdrant
+      - ai
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - skinaid_net
+
+  ai:
+    container_name: skinaid_ai
+    build:
+      context: ./ai_ml
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - S3_BUCKET=${S3_BUCKET:-skinaid-models}
+      - MODEL_DIR=/app/models
+      - AI_SECRET_KEY=${AI_SECRET_KEY}
+      - DEBUG=false
+    volumes:
+      - model_cache:/app/models
+    expose:
+      - "8001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    networks:
+      - skinaid_net
+
   redis:
     container_name: skinaid_redis
     image: redis:7-alpine
@@ -7,11 +121,6 @@ services:
       - "6379"
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - skinaid_net
 
@@ -23,90 +132,6 @@ services:
       - "6333"
     volumes:
       - qdrant_data:/qdrant/storage
-    networks:
-      - skinaid_net
-
-  backend:
-    container_name: skinaid_backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      # Database → RDS PostgreSQL
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}
-
-      # JWT & Security
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM:-HS256}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-
-      # Email
-      - SMTP_SERVER=${SMTP_SERVER}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - USE_MOCK_EMAIL=${USE_MOCK_EMAIL:-false}
-
-      # AI Service (Hugging Face)
-      - AI_SERVICE_URL=${AI_SERVICE_URL}
-      - AI_API_KEY=${AI_API_KEY}
-      - AI_SERVICE_TIMEOUT=${AI_SERVICE_TIMEOUT:-30}
-      - AI_MAX_RETRIES=${AI_MAX_RETRIES:-3}
-
-      # Application
-      - APP_NAME=SkinAid Wound Detection API
-      - VERSION=0.1.0
-      - DEBUG=false
-      - TESTING=false
-      - UPLOAD_DIR=/app/uploads
-      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-5242880}
-      - MIN_FILE_SIZE=${MIN_FILE_SIZE:-1024}
-      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-.jpg,.jpeg,.png}
-
-      # CORS & URL
-      - CORS_ORIGINS=${CORS_ORIGINS}
-      - BASE_URL=${BASE_URL}
-
-      # Geoapify
-      - GEOAPIFY_API_KEY=${GEOAPIFY_API_KEY}
-
-      # Redis → trỏ về container redis nội bộ
-      - REDIS_URL=redis://redis:6379/0
-
-      # Qdrant → trỏ về container qdrant nội bộ
-      - QDRANT=http://qdrant:6333/
-      - RAG_COLLECTION_NAME=${RAG_COLLECTION_NAME:-skinaid_knowledge_base}
-      - RAG_EMBEDDING_DIMENSION=${RAG_EMBEDDING_DIMENSION:-3072}
-      - RAG_DOCS_PATH=${RAG_DOCS_PATH:-docs/RAGDocumentation}
-      - RAG_SCORE_THRESHOLD=${RAG_SCORE_THRESHOLD:-0.5}
-      - RAG_SPARSE_MODEL=${RAG_SPARSE_MODEL:-Qdrant/bm25}
-
-      # OpenAI (RAG embeddings & LLM)
-      - OPEN_API_KEY=${OPEN_API_KEY}
-      - OPEN_EMBEDDING_MODEL=${OPEN_EMBEDDING_MODEL:-text-embedding-3-small}
-
-    expose:
-      - "8000"
-    volumes:
-      - uploads_data:/app/uploads
-    depends_on:
-      redis:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - skinaid_net
 
@@ -127,6 +152,7 @@ services:
 
 volumes:
   uploads_data:
+  model_cache:
   redis_data:
   qdrant_data:
 
