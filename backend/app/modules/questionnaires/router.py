@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
@@ -214,6 +214,149 @@ async def import_bulk_questionnaires(
         ],
         "errors": errors
     }
+
+@router.post("/import/bulk-files")
+async def import_bulk_files(
+    files: List[UploadFile] = File(...),
+    auto_activate: bool = Query(False, description="Tự động kích hoạt bộ vừa import"),
+    service: QuestionnaireService = Depends(get_service),
+):
+    """Import multiple CSV/Excel files at once – each file produces one or more questionnaires."""
+    if not files:
+        raise HTTPException(status_code=400, detail="Không có file nào được gửi lên")
+
+    all_groups: list = []
+    all_errors: list = []
+    file_results: list = []
+
+    for f in files:
+        fname = (f.filename or "").lower()
+        content = await f.read()
+
+        try:
+            if fname.endswith(".csv"):
+                groups, errors = ie.parse_full_csv(content)
+            elif fname.endswith((".xlsx", ".xls")):
+                groups, errors = ie.parse_full_excel(content)
+            else:
+                file_results.append({
+                    "filename": f.filename,
+                    "status": "error",
+                    "message": "Định dạng không hỗ trợ (chỉ CSV hoặc Excel)",
+                    "questionnaires": [],
+                })
+                continue
+
+            if errors:
+                all_errors.extend([f"[{f.filename}] {e}" for e in errors])
+
+            if not groups:
+                file_results.append({
+                    "filename": f.filename,
+                    "status": "error",
+                    "message": "Không có dữ liệu hợp lệ trong file",
+                    "questionnaires": [],
+                })
+                continue
+
+            all_groups.extend(groups)
+            file_results.append({
+                "filename": f.filename,
+                "status": "ok",
+                "message": f"Tìm thấy {len(groups)} bộ câu hỏi",
+                "questionnaires_count": len(groups),
+            })
+        except Exception as exc:
+            logger.error("[IMPORT BULK FILES] Error processing %s: %s", f.filename, exc, exc_info=True)
+            file_results.append({
+                "filename": f.filename,
+                "status": "error",
+                "message": f"Lỗi đọc file: {type(exc).__name__}: {exc}",
+                "questionnaires": [],
+            })
+
+    if not all_groups:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "Không có dữ liệu hợp lệ từ bất kỳ file nào",
+                "file_results": file_results,
+                "errors": all_errors,
+            }
+        )
+
+    # Import all collected groups
+    results = await service.import_bulk_questionnaires(all_groups, auto_activate=auto_activate)
+    return {
+        "imported": len(results),
+        "questionnaires": [
+            {
+                "questionnaire_id": str(q.questionnaire_id),
+                "title": q.title,
+                "wound_type": q.wound_type,
+                "is_active": q.is_active,
+            }
+            for q in results
+        ],
+        "file_results": file_results,
+        "errors": all_errors,
+    }
+
+
+# ─── Bulk Export ──────────────────────────────────────────────────────────────
+
+@router.post("/export/bulk")
+async def export_bulk(
+    body: dict,
+    service: QuestionnaireService = Depends(get_service),
+):
+    """
+    Export multiple questionnaires as a single file.
+    Body: { "ids": ["uuid1", "uuid2", ...], "format": "csv" | "excel" }
+    """
+    ids = body.get("ids", [])
+    fmt = body.get("format", "csv")
+
+    if not ids:
+        raise HTTPException(status_code=400, detail="Không có bộ câu hỏi nào được chọn")
+
+    if fmt not in ("csv", "excel", "docx", "pdf"):
+        raise HTTPException(status_code=400, detail="Định dạng không hợp lệ. Hãy chọn 'csv', 'excel', 'docx' hoặc 'pdf'")
+
+    questionnaires = []
+    for q_id in ids:
+        try:
+            q = await service.get_by_id(UUID(q_id))
+            questionnaires.append(q)
+        except Exception:
+            pass  # skip invalid IDs
+
+    if not questionnaires:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bộ câu hỏi nào")
+
+    if fmt == "csv":
+        file_bytes = ie.export_bulk_to_csv(questionnaires)
+        filename = f"questionnaires_export_{len(questionnaires)}.csv"
+        media_type = "text/csv"
+    elif fmt == "excel":
+        file_bytes = ie.export_bulk_to_excel(questionnaires)
+        filename = f"questionnaires_export_{len(questionnaires)}.xlsx"
+        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elif fmt == "docx":
+        file_bytes = ie.export_bulk_to_docx(questionnaires)
+        filename = f"questionnaires_export_{len(questionnaires)}.docx"
+        media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else:  # pdf
+        file_bytes = ie.export_bulk_to_pdf(questionnaires)
+        filename = f"questionnaires_export_{len(questionnaires)}.pdf"
+        media_type = "application/pdf"
+
+    return Response(
+        content=file_bytes,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 # ─── Question & Answer static-prefix routes ───────────────────────────────────
 # These must also be before /{q_id} to avoid shadowing

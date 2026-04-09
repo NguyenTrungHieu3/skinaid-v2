@@ -106,7 +106,7 @@ export default function TopBar() {
       <header className={styles.adminTopbar}>
         <div className={styles.adminTopbarContent}>
           <div className={styles.adminTopbarActions}>
-            <LanguageSwitcher />
+            {/* Language switcher hidden — admin uses Vietnamese only */}
             <div
               className={styles.adminUserInfo}
               title={user?.email}

@@ -332,7 +332,7 @@ class QuestionnaireService:
         return await self.repo.get_by_id(q.questionnaire_id)
 
     async def import_bulk_questionnaires(
-        self, q_groups: list[dict]
+        self, q_groups: list[dict], auto_activate: bool = False
     ) -> list[Questionnaire]:
         """
         Import multiple questionnaires from a list of parsed group dicts.
@@ -340,7 +340,7 @@ class QuestionnaireService:
         """
         results = []
         for group in q_groups:
-            q = await self.import_full_questionnaire(group)
+            q = await self.import_full_questionnaire(group, auto_activate=auto_activate)
             results.append(q)
         return results
 

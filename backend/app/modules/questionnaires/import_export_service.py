@@ -227,6 +227,7 @@ def export_to_docx(questionnaire: Questionnaire) -> bytes:
 
 def export_to_pdf(questionnaire: Questionnaire) -> bytes:
     """Generate a PDF document for the questionnaire using ReportLab."""
+    import os
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import cm
     from reportlab.lib import colors
@@ -235,6 +236,23 @@ def export_to_pdf(questionnaire: Questionnaire) -> bytes:
         SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
     )
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    # Register Roboto font for Vietnamese unicode support
+    current_dir = os.path.dirname(__file__)
+    roboto_path = os.path.join(current_dir, "Roboto-Regular.ttf")
+    roboto_bold_path = os.path.join(current_dir, "Roboto-Bold.ttf")
+
+    if os.path.exists(roboto_path) and os.path.exists(roboto_bold_path):
+        pdfmetrics.registerFont(TTFont('Roboto', roboto_path))
+        pdfmetrics.registerFont(TTFont('Roboto-Bold', roboto_bold_path))
+        pdfmetrics.registerFontFamily('Roboto', normal='Roboto', bold='Roboto-Bold')
+        font_name = 'Roboto'
+        font_bold = 'Roboto-Bold'
+    else:
+        font_name = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
 
     PRIMARY = colors.HexColor("#17805f")
     LIGHT_GREEN = colors.HexColor("#dcfce7")
@@ -256,20 +274,23 @@ def export_to_pdf(questionnaire: Questionnaire) -> bytes:
     styles = getSampleStyleSheet()
     style_title = ParagraphStyle(
         "Title", parent=styles["Title"],
+        fontName=font_bold,
         textColor=PRIMARY, fontSize=22, spaceAfter=6, alignment=TA_CENTER
     )
     style_meta = ParagraphStyle(
         "Meta", parent=styles["Normal"],
+        fontName=font_name,
         fontSize=10, textColor=colors.HexColor("#475569"), spaceAfter=4
     )
     style_question = ParagraphStyle(
         "Question", parent=styles["Normal"],
-        fontSize=12, fontName="Helvetica-Bold",
+        fontSize=12, fontName=font_bold,
         textColor=colors.HexColor("#0f172a"),
         spaceBefore=12, spaceAfter=6
     )
     style_answer = ParagraphStyle(
         "Answer", parent=styles["Normal"],
+        fontName=font_name,
         fontSize=10, textColor=colors.HexColor("#334155")
     )
 
@@ -310,11 +331,12 @@ def export_to_pdf(questionnaire: Questionnaire) -> bytes:
             triage_style = [
                 ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 0), (-1, 0), font_bold),
                 ('FONTSIZE', (0, 0), (-1, 0), 10),
                 ('ROWBACKGROUND', (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
                 ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTNAME', (0, 1), (-1, -1), font_name),
                 ('LEFTPADDING', (0, 0), (-1, -1), 8),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 8),
                 ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -337,6 +359,7 @@ def export_to_pdf(questionnaire: Questionnaire) -> bytes:
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e2e8f0")))
     footer_style = ParagraphStyle(
         "Footer", parent=styles["Normal"],
+        fontName=font_name,
         fontSize=8, textColor=colors.HexColor("#94a3b8"), alignment=TA_CENTER
     )
     story.append(Paragraph(f"Xuất bởi SkinAid Admin | ID: {questionnaire.questionnaire_id}", footer_style))
@@ -493,6 +516,312 @@ def export_to_excel(questionnaire: Questionnaire) -> bytes:
     ws2.append(["triage_level", "Mức độ nghiêm trọng", "green / yellow / red"])
     ws2.append([])
     ws2.append(["Lưu ý:", "File này export từ hệ thống SkinAid và có thể re-import qua chức năng 'Import một bộ' hoặc 'Import nhiều bộ'"])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ─── Bulk Export ──────────────────────────────────────────────────────────────
+
+def export_bulk_to_docx(questionnaires: list[Questionnaire]) -> bytes:
+    """Generate a single Word (.docx) document containing multiple questionnaires."""
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    doc = Document()
+
+    for i, questionnaire in enumerate(questionnaires):
+        if i > 0:
+            doc.add_page_break()
+
+        title_para = doc.add_heading(questionnaire.title, level=1)
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = title_para.runs[0]
+        run.font.color.rgb = RGBColor(0x17, 0x80, 0x5f)
+
+        status_text = "✅ Đang hoạt động" if questionnaire.is_active else "📝 Bản nháp"
+        meta = doc.add_paragraph()
+        meta.add_run(f"Loại vết thương: ").bold = True
+        meta.add_run(questionnaire.wound_type)
+        meta.add_run("   |   ")
+        meta.add_run(f"Trạng thái: ").bold = True
+        meta.add_run(status_text)
+        if questionnaire.description:
+            desc = doc.add_paragraph()
+            desc.add_run("Mô tả: ").bold = True
+            desc.add_run(questionnaire.description)
+
+        doc.add_paragraph()
+
+        questions = sorted(questionnaire.questions or [], key=lambda q: q.order_index)
+        for idx, q in enumerate(questions, start=1):
+            q_para = doc.add_paragraph()
+            run = q_para.add_run(f"Câu {idx}: {q.question_text}")
+            run.bold = True
+            run.font.size = Pt(12)
+            run.font.color.rgb = RGBColor(0x0f, 0x17, 0x2a)
+
+            mc_label = "(Chọn nhiều)" if q.is_multiple_choice else "(Chọn một)"
+            q_para.add_run(f"  {mc_label}").italic = True
+
+            answers = sorted(q.answers or [], key=lambda a: a.order_index)
+            if answers:
+                table = doc.add_table(rows=1, cols=2)
+                table.style = "Table Grid"
+                hdr = table.rows[0].cells
+                hdr[0].text = "Đáp án"
+                hdr[1].text = "Mức độ Triage"
+
+                for hdr_cell in hdr:
+                    for p in hdr_cell.paragraphs:
+                        for r in p.runs:
+                            r.bold = True
+
+                for ans in answers:
+                    row = table.add_row().cells
+                    row[0].text = ans.answer_text
+                    row[1].text = TRIAGE_LABELS.get(ans.triage_level, ans.triage_level)
+
+            doc.add_paragraph()
+
+        footer = doc.add_paragraph(f"Xuất bởi SkinAid Admin — {questionnaire.questionnaire_id}")
+        footer.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        footer.runs[0].font.size = Pt(8)
+        footer.runs[0].font.color.rgb = RGBColor(0x94, 0xa3, 0xb8)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def export_bulk_to_pdf(questionnaires: list[Questionnaire]) -> bytes:
+    """Generate a single PDF document containing multiple questionnaires."""
+    import os
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, PageBreak
+    )
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    current_dir = os.path.dirname(__file__)
+    roboto_path = os.path.join(current_dir, "Roboto-Regular.ttf")
+    roboto_bold_path = os.path.join(current_dir, "Roboto-Bold.ttf")
+
+    if os.path.exists(roboto_path) and os.path.exists(roboto_bold_path):
+        pdfmetrics.registerFont(TTFont('Roboto', roboto_path))
+        pdfmetrics.registerFont(TTFont('Roboto-Bold', roboto_bold_path))
+        pdfmetrics.registerFontFamily('Roboto', normal='Roboto', bold='Roboto-Bold')
+        font_name = 'Roboto'
+        font_bold = 'Roboto-Bold'
+    else:
+        font_name = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
+
+    PRIMARY = colors.HexColor("#17805f")
+    LIGHT_GREEN = colors.HexColor("#dcfce7")
+    LIGHT_YELLOW = colors.HexColor("#fef9c3")
+    LIGHT_RED = colors.HexColor("#fee2e2")
+
+    TRIAGE_BG = {"green": LIGHT_GREEN, "yellow": LIGHT_YELLOW, "red": LIGHT_RED}
+    TRIAGE_FG = {
+        "green":  colors.HexColor("#166534"),
+        "yellow": colors.HexColor("#854d0e"),
+        "red":    colors.HexColor("#991b1b"),
+    }
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+
+    styles = getSampleStyleSheet()
+    style_title = ParagraphStyle("Title", parent=styles["Title"], fontName=font_bold, textColor=PRIMARY, fontSize=22, spaceAfter=6, alignment=TA_CENTER)
+    style_meta = ParagraphStyle("Meta", parent=styles["Normal"], fontName=font_name, fontSize=10, textColor=colors.HexColor("#475569"), spaceAfter=4)
+    style_question = ParagraphStyle("Question", parent=styles["Normal"], fontSize=12, fontName=font_bold, textColor=colors.HexColor("#0f172a"), spaceBefore=12, spaceAfter=6)
+    style_answer = ParagraphStyle("Answer", parent=styles["Normal"], fontName=font_name, fontSize=10, textColor=colors.HexColor("#334155"))
+    footer_style = ParagraphStyle("Footer", parent=styles["Normal"], fontName=font_name, fontSize=8, textColor=colors.HexColor("#94a3b8"), alignment=TA_CENTER)
+
+    story = []
+
+    for i, questionnaire in enumerate(questionnaires):
+        if i > 0:
+            story.append(PageBreak())
+
+        story.append(Paragraph(questionnaire.title, style_title))
+        story.append(HRFlowable(width="100%", thickness=2, color=PRIMARY))
+        story.append(Spacer(1, 0.3*cm))
+
+        status_text = "✅ Đang hoạt động" if questionnaire.is_active else "📝 Bản nháp"
+        story.append(Paragraph(f"<b>Loại vết thương:</b> {questionnaire.wound_type}   |   <b>Trạng thái:</b> {status_text}", style_meta))
+        if questionnaire.description:
+            story.append(Paragraph(f"<b>Mô tả:</b> {questionnaire.description}", style_meta))
+
+        story.append(Spacer(1, 0.5*cm))
+
+        questions = sorted(questionnaire.questions or [], key=lambda q: q.order_index)
+        for idx, q in enumerate(questions, start=1):
+            mc_label = "(Chọn nhiều)" if q.is_multiple_choice else "(Chọn một)"
+            story.append(Paragraph(f"Câu {idx}: {q.question_text} <i>{mc_label}</i>", style_question))
+
+            answers = sorted(q.answers or [], key=lambda a: a.order_index)
+            if answers:
+                table_data = [["Đáp án", "Mức độ Triage"]]
+                for ans in answers:
+                    table_data.append([ Paragraph(ans.answer_text, style_answer), Paragraph(TRIAGE_LABELS.get(ans.triage_level, ans.triage_level), style_answer) ])
+
+                t = Table(table_data, colWidths=[12*cm, 4*cm])
+                triage_style = [
+                    ('BACKGROUND', (0, 0), (-1, 0), PRIMARY),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('FONTNAME', (0, 0), (-1, 0), font_bold),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('ROWBACKGROUND', (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('FONTNAME', (0, 1), (-1, -1), font_name),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                    ('TOPPADDING', (0, 0), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ]
+                for row_i, ans in enumerate(answers, start=1):
+                    triage_style.append(('BACKGROUND', (1, row_i), (1, row_i), TRIAGE_BG.get(ans.triage_level, colors.white)))
+                    triage_style.append(('TEXTCOLOR', (1, row_i), (1, row_i), TRIAGE_FG.get(ans.triage_level, colors.black)))
+
+                t.setStyle(TableStyle(triage_style))
+                story.append(t)
+
+            story.append(Spacer(1, 0.3*cm))
+
+        story.append(Spacer(1, 1*cm))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#e2e8f0")))
+        story.append(Paragraph(f"Xuất bởi SkinAid Admin | ID: {questionnaire.questionnaire_id}", footer_style))
+
+    doc.build(story)
+    return buf.getvalue()
+
+
+# ─── Bulk CSV / Excel Export ──────────────────────────────────────────────────
+
+def export_bulk_to_csv(questionnaires: list[Questionnaire]) -> bytes:
+    """
+    Export multiple questionnaires as a single CSV in the full-import format.
+    The resulting file can be re-imported via /import/bulk or /import/bulk-files.
+    """
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "wound_type", "title", "description", "is_active",
+        "question_order", "question_text", "is_multiple_choice",
+        "answer_text", "triage_level"
+    ])
+
+    for questionnaire in questionnaires:
+        questions = sorted(questionnaire.questions or [], key=lambda q: q.order_index)
+        for q in questions:
+            answers = sorted(q.answers or [], key=lambda a: a.order_index)
+            if answers:
+                for ans in answers:
+                    writer.writerow([
+                        questionnaire.wound_type,
+                        questionnaire.title,
+                        questionnaire.description or "",
+                        str(questionnaire.is_active).lower(),
+                        q.order_index,
+                        q.question_text,
+                        str(q.is_multiple_choice).lower(),
+                        ans.answer_text,
+                        ans.triage_level,
+                    ])
+            else:
+                writer.writerow([
+                    questionnaire.wound_type,
+                    questionnaire.title,
+                    questionnaire.description or "",
+                    str(questionnaire.is_active).lower(),
+                    q.order_index,
+                    q.question_text,
+                    str(q.is_multiple_choice).lower(),
+                    "",
+                    "green",
+                ])
+
+    return output.getvalue().encode("utf-8-sig")
+
+
+def export_bulk_to_excel(questionnaires: list[Questionnaire]) -> bytes:
+    """
+    Export multiple questionnaires as a single Excel (.xlsx) in the full-import format.
+    The resulting file can be re-imported via /import/bulk or /import/bulk-files.
+    """
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Bộ câu hỏi"
+
+    headers = [
+        "wound_type", "title", "description", "is_active",
+        "question_order", "question_text", "is_multiple_choice",
+        "answer_text", "triage_level"
+    ]
+    header_fill = PatternFill(fgColor="17805f", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for col, h in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center")
+
+    triage_fills = {
+        "green":  PatternFill(fgColor="dcfce7", fill_type="solid"),
+        "yellow": PatternFill(fgColor="fef9c3", fill_type="solid"),
+        "red":    PatternFill(fgColor="fee2e2", fill_type="solid"),
+    }
+
+    for questionnaire in questionnaires:
+        questions = sorted(questionnaire.questions or [], key=lambda q: q.order_index)
+        for q in questions:
+            answers = sorted(q.answers or [], key=lambda a: a.order_index)
+            if answers:
+                for ans in answers:
+                    row = [
+                        questionnaire.wound_type,
+                        questionnaire.title,
+                        questionnaire.description or "",
+                        str(questionnaire.is_active).lower(),
+                        q.order_index,
+                        q.question_text,
+                        str(q.is_multiple_choice).lower(),
+                        ans.answer_text,
+                        ans.triage_level,
+                    ]
+                    ws.append(row)
+                    triage_cell = ws.cell(row=ws.max_row, column=9)
+                    triage_cell.fill = triage_fills.get(ans.triage_level, PatternFill())
+            else:
+                ws.append([
+                    questionnaire.wound_type,
+                    questionnaire.title,
+                    questionnaire.description or "",
+                    str(questionnaire.is_active).lower(),
+                    q.order_index,
+                    q.question_text,
+                    str(q.is_multiple_choice).lower(),
+                    "",
+                    "green",
+                ])
+
+    col_widths = [12, 30, 30, 10, 14, 45, 18, 40, 12]
+    for i, w in enumerate(col_widths, start=1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
 
     buf = io.BytesIO()
     wb.save(buf)

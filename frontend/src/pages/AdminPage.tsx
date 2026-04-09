@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminDashboard from '../components/admin/AdminDashboard';
@@ -13,8 +13,18 @@ import TopBar from '../components/admin/TopBar';
 import styles from './AdminPage.module.css';
 
 export default function AdminPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const prevLang = useRef(i18n.language);
+
+  // Force Vietnamese for admin, restore on leave
+  useEffect(() => {
+    prevLang.current = i18n.language;
+    if (i18n.language !== 'vi') i18n.changeLanguage('vi');
+    return () => {
+      if (prevLang.current !== 'vi') i18n.changeLanguage(prevLang.current);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const menuItems = [
     { id: 'dashboard', label: t('admin.sidebar.dashboard'), icon: LayoutGrid },

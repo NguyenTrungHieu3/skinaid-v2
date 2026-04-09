@@ -257,6 +257,24 @@ export const exportQuestionnaireExcel = async (id: string, title: string): Promi
   }
 };
 
+/** Export multiple questionnaires as a single CSV or Excel file */
+export const exportBulkQuestionnaires = async (
+  ids: string[],
+  format: 'csv' | 'excel' | 'docx' | 'pdf'
+): Promise<void> => {
+  try {
+    const res = await apiClient.post(
+      '/questionnaires/export/bulk',
+      { ids, format },
+      { responseType: 'blob' }
+    );
+    let ext = format;
+    if (format === 'excel') ext = 'xlsx';
+    _downloadBlob(res.data, `questionnaires_export_${ids.length}.${ext}`);
+  } catch (err) {
+    throw new Error(await _parseBlobError(err));
+  }
+};
 
 export const downloadCsvTemplate = async (): Promise<void> => {
   const res = await apiClient.get('/questionnaires/templates/csv', { responseType: 'blob' });
@@ -332,6 +350,27 @@ export const importBulkQuestionnaires = async (
   const res = await apiClient.post('/questionnaires/import/bulk', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return res.data;
+};
+
+export interface BulkFilesResult {
+  imported: number;
+  questionnaires: { questionnaire_id: string; title: string; wound_type: string; is_active: boolean }[];
+  file_results: { filename: string; status: string; message: string; questionnaires_count?: number }[];
+  errors: string[];
+}
+
+export const importBulkMultipleFiles = async (
+  files: File[],
+  autoActivate = false
+): Promise<BulkFilesResult> => {
+  const form = new FormData();
+  files.forEach((file) => form.append('files', file));
+  const res = await apiClient.post(
+    `/questionnaires/import/bulk-files?auto_activate=${autoActivate}`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
   return res.data;
 };
 

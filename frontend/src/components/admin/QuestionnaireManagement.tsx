@@ -19,6 +19,7 @@ import {
   Download,
   FileSpreadsheet,
   Zap,
+  Files,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../contexts/ToastContext';
@@ -47,14 +48,16 @@ import {
   downloadFullCsvTemplate,
   downloadFullExcelTemplate,
   previewFullImportFile,
-  importFullQuestionnaire,
-  importBulkQuestionnaires,
+  importBulkMultipleFiles,
+  exportBulkQuestionnaires,
   getCoverage,
   type Questionnaire,
   type Question,
   type AnswerOption,
   type ImportPreview,
   type FullImportPreview,
+  type FullImportGroupPreview,
+  type BulkFilesResult,
   type CoverageReport,
 } from '../../services/questionnaireService';
 
@@ -107,8 +110,8 @@ type ModalType =
   | 'editAnswer'
   | 'deleteAnswer'
   | 'import'
-  | 'importFull'
-  | 'importBulk'
+  | 'importUnified'
+  | 'exportBulk'
   | null;
 
 export default function QuestionnaireManagement() {
@@ -128,17 +131,22 @@ export default function QuestionnaireManagement() {
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importPreviewing, setImportPreviewing] = useState(false);
   const [importTargetId, setImportTargetId] = useState<string | null>(null);
-  // Import Full / Bulk state
-  const [fullImportFile, setFullImportFile] = useState<File | null>(null);
-  const [fullImportPreview, setFullImportPreview] = useState<FullImportPreview | null>(null);
-  const [fullImportPreviewing, setFullImportPreviewing] = useState(false);
-  const [fullImportAutoActivate, setFullImportAutoActivate] = useState(true);
+  // Unified import state (multi-file with preview)
+  const [bulkFiles, setBulkFiles] = useState<File[]>([]);
+  const [bulkFilesAutoActivate, setBulkFilesAutoActivate] = useState(false);
+  const [bulkFilesResult, setBulkFilesResult] = useState<BulkFilesResult | null>(null);
+  const [bulkFilesPreviews, setBulkFilesPreviews] = useState<Map<string, { preview: FullImportGroupPreview[]; errors: string[] }>>(new Map());
+  const [bulkFilesPreviewing, setBulkFilesPreviewing] = useState(false);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
   // Coverage banner
   const [coverage, setCoverage] = useState<CoverageReport | null>(null);
   // Export dropdown
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+  // Bulk export state
+  const [exportSelectedIds, setExportSelectedIds] = useState<Set<string>>(new Set());
+  const [exportFormat, setExportFormat] = useState<'csv' | 'excel' | 'docx' | 'pdf'>('excel');
 
   // ─── Modal state ───────────────────────────────────────────────────────────
   const [modal, setModal] = useState<ModalType>(null);
@@ -307,6 +315,42 @@ export default function QuestionnaireManagement() {
     }
   };
 
+  // ─── Bulk Export ─────────────────────────────────────────────────────
+  const openExportBulk = () => {
+    setExportSelectedIds(new Set());
+    setExportFormat('excel');
+    setModal('exportBulk');
+  };
+
+  const toggleExportId = (id: string) => {
+    setExportSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllExport = () => {
+    if (exportSelectedIds.size === questionnaires.length) {
+      setExportSelectedIds(new Set());
+    } else {
+      setExportSelectedIds(new Set(questionnaires.map((q) => q.questionnaire_id)));
+    }
+  };
+
+  const handleBulkExport = async () => {
+    if (exportSelectedIds.size === 0) return;
+    try {
+      setExporting(true);
+      await exportBulkQuestionnaires(Array.from(exportSelectedIds), exportFormat);
+      success(`Đã xuất ${exportSelectedIds.size} bộ câu hỏi thành công!`);
+    } catch (err: any) {
+      toastError(err?.message ?? 'Xuất file thất bại');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // ─── Import ────────────────────────────────────────────────────────────────
   const handleImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -339,55 +383,87 @@ export default function QuestionnaireManagement() {
     }
   };
 
-  // ─── Import Full / Bulk handlers ───────────────────────────────────────────
-  const resetFullImport = () => {
-    setFullImportFile(null);
-    setFullImportPreview(null);
+  // ─── Unified Import handlers (multi-file with preview) ─────────────────
+  const resetUnifiedImport = () => {
+    setBulkFiles([]);
+    setBulkFilesResult(null);
+    setBulkFilesPreviews(new Map());
+    setBulkFilesAutoActivate(false);
+    setBulkFilesPreviewing(false);
   };
 
-  const handleFullImportFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFullImportFile(file);
-    setFullImportPreview(null);
-    try {
-      setFullImportPreviewing(true);
-      const preview = await previewFullImportFile(file);
-      setFullImportPreview(preview);
-    } catch (err: any) {
-      toastError(err?.response?.data?.detail ?? 'Không thể đọc file');
-    } finally {
-      setFullImportPreviewing(false);
+  const previewFiles = async (files: File[]) => {
+    setBulkFilesPreviewing(true);
+    const newPreviews = new Map(bulkFilesPreviews);
+    for (const file of files) {
+      if (newPreviews.has(file.name)) continue;
+      try {
+        const result = await previewFullImportFile(file);
+        newPreviews.set(file.name, { preview: result.preview, errors: result.errors });
+      } catch {
+        newPreviews.set(file.name, { preview: [], errors: [`Không thể đọc file ${file.name}`] });
+      }
+    }
+    setBulkFilesPreviews(newPreviews);
+    setBulkFilesPreviewing(false);
+  };
+
+  const handleBulkFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    if (selected.length === 0) return;
+    const existingNames = new Set(bulkFiles.map((f) => f.name));
+    const newFiles = selected.filter((f) => !existingNames.has(f.name));
+    if (newFiles.length > 0) {
+      setBulkFiles((prev) => [...prev, ...newFiles]);
+      previewFiles(newFiles);
+    }
+    e.target.value = '';
+  };
+
+  const handleBulkFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const dropped = Array.from(e.dataTransfer.files).filter(
+      (f) => f.name.endsWith('.csv') || f.name.endsWith('.xlsx') || f.name.endsWith('.xls')
+    );
+    if (dropped.length === 0) return;
+    const existingNames = new Set(bulkFiles.map((f) => f.name));
+    const newFiles = dropped.filter((f) => !existingNames.has(f.name));
+    if (newFiles.length > 0) {
+      setBulkFiles((prev) => [...prev, ...newFiles]);
+      previewFiles(newFiles);
     }
   };
 
-  const handleConfirmFullImport = async () => {
-    if (!fullImportFile || !fullImportPreview) return;
-    try {
-      setSubmitting(true);
-      const result = await importFullQuestionnaire(fullImportFile, fullImportAutoActivate);
-      success(`Đã import bộ câu hỏi "${result.title}"!`);
-      closeModal();
-      resetFullImport();
-      fetchAll();
-    } catch (err: any) {
-      toastError(err?.response?.data?.detail ?? 'Import thất bại');
-    } finally {
-      setSubmitting(false);
+  const removeBulkFile = (index: number) => {
+    const removed = bulkFiles[index];
+    setBulkFiles((prev) => prev.filter((_, i) => i !== index));
+    if (removed) {
+      setBulkFilesPreviews((prev) => {
+        const next = new Map(prev);
+        next.delete(removed.name);
+        return next;
+      });
     }
   };
 
-  const handleConfirmBulkImport = async () => {
-    if (!fullImportFile || !fullImportPreview) return;
+  // Derived: total questionnaires found across all previewed files
+  const totalPreviewedQuestionnaires = Array.from(bulkFilesPreviews.values()).reduce(
+    (sum, p) => sum + p.preview.length, 0
+  );
+  const allPreviewErrors = Array.from(bulkFilesPreviews.entries()).flatMap(
+    ([fname, p]) => p.errors.map((e) => `[${fname}] ${e}`)
+  );
+
+  const handleConfirmBulkFiles = async () => {
+    if (bulkFiles.length === 0) return;
     try {
       setSubmitting(true);
-      const result = await importBulkQuestionnaires(fullImportFile);
-      success(`Đã import ${result.imported} bộ câu hỏi thành công!`);
-      closeModal();
-      resetFullImport();
+      const result = await importBulkMultipleFiles(bulkFiles, bulkFilesAutoActivate);
+      setBulkFilesResult(result);
+      success(`Đã import ${result.imported} bộ câu hỏi từ ${bulkFiles.length} file!`);
       fetchAll();
     } catch (err: any) {
-      toastError(err?.response?.data?.detail ?? 'Import thất bại');
+      toastError(err?.response?.data?.detail?.message ?? err?.response?.data?.detail ?? 'Import thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -600,18 +676,18 @@ export default function QuestionnaireManagement() {
           <button
             className={styles.btnOutline}
             style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem' }}
-            onClick={() => { resetFullImport(); setModal('importFull'); }}
-            title={t('admin.questionnaires.import_single_tooltip')}
+            onClick={() => { resetUnifiedImport(); setModal('importUnified'); }}
+            title="Import bộ câu hỏi từ file CSV/Excel"
           >
-            <Upload size={15} /> {t('admin.questionnaires.import_single')}
+            <Upload size={15} /> Import bộ câu hỏi
           </button>
           <button
             className={styles.btnOutline}
-            style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem', borderColor: '#6366f1', color: '#6366f1' }}
-            onClick={() => { resetFullImport(); setModal('importBulk'); }}
-            title={t('admin.questionnaires.import_bulk_tooltip')}
+            style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem' }}
+            onClick={openExportBulk}
+            title="Xuất nhiều bộ câu hỏi ra file"
           >
-            <Upload size={15} /> {t('admin.questionnaires.import_bulk')}
+            <Download size={15} /> Export bộ câu hỏi
           </button>
           <button className={styles.adminBtnPrimary} onClick={openCreateQuestionnaire}>
             <PlusCircle size={18} />
@@ -656,7 +732,7 @@ export default function QuestionnaireManagement() {
           </div>
           <button
             className={styles.coverageBannerAction}
-            onClick={() => { resetFullImport(); setModal('importBulk'); }}
+            onClick={() => { resetUnifiedImport(); setModal('importUnified'); }}
           >
             Import nhanh
           </button>
@@ -1319,132 +1395,331 @@ export default function QuestionnaireManagement() {
         </div>
       )}
 
-      {/* ─── Import Full Questionnaire Modal ─── */}
-      {(modal === 'importFull' || modal === 'importBulk') && (() => {
-        const isBulk = modal === 'importBulk';
-        return (
-          <div className={styles.modalOverlay} onClick={closeModal}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '660px' }}>
-              <div className={styles.modalHeader}>
-                <h2>
-                  <Upload size={16} />
-                  {isBulk ? ' Import nhiều bộ câu hỏi' : ' Import bộ câu hỏi mới'}
-                </h2>
-                <button className={styles.modalClose} onClick={closeModal}><X size={16} /></button>
+      {/* ─── Unified Import Modal ─── */}
+      {modal === 'importUnified' && (
+        <div className={styles.modalOverlay} onClick={closeModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+            <div className={styles.modalHeader}>
+              <h2><Upload size={16} /> Import Bộ Câu Hỏi</h2>
+              <button className={styles.modalClose} onClick={closeModal}><X size={16} /></button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.fullImportModeInfo}>
+                <strong>Import bộ câu hỏi từ file</strong> — Chọn một hoặc nhiều file CSV/Excel.
+                Mỗi file có thể chứa một hoặc nhiều bộ câu hỏi. Hệ thống sẽ tự động nhận diện.
               </div>
-              <div className={styles.modalBody}>
-                <div className={styles.fullImportModeInfo}>
-                  {isBulk
-                    ? <><strong>Chế độ: Import nhiều bộ</strong> — Mỗi cặp (wound_type + title) sẽ tạo 1 bộ câu hỏi riêng.</>
-                    : <><strong>Chế độ: Import một bộ</strong> — Sẽ import bộ câu hỏi đầu tiên trong file.</>
-                  }
-                </div>
 
-                {/* Templates */}
-                <div className={styles.importTemplateLinks} style={{ marginBottom: '1rem' }}>
-                  <button type="button" className={styles.btnOutline} onClick={() => downloadFullCsvTemplate()} style={{ fontSize: '0.78rem' }}>
-                    <Download size={13} /> Tải mẫu CSV
-                  </button>
-                  <button type="button" className={styles.btnOutline} onClick={() => downloadFullExcelTemplate()} style={{ fontSize: '0.78rem' }}>
-                    <Download size={13} /> Tải mẫu Excel
-                  </button>
-                  <span className={styles.importFormatHint}>Định dạng: wound_type, title, description, is_active, question_order, question_text, is_multiple_choice, answer_text, triage_level</span>
-                </div>
+              {/* Templates */}
+              <div className={styles.importTemplateLinks} style={{ marginBottom: '1rem' }}>
+                <button type="button" className={styles.btnOutline} onClick={() => downloadFullCsvTemplate()} style={{ fontSize: '0.78rem' }}>
+                  <Download size={13} /> Tải mẫu CSV
+                </button>
+                <button type="button" className={styles.btnOutline} onClick={() => downloadFullExcelTemplate()} style={{ fontSize: '0.78rem' }}>
+                  <Download size={13} /> Tải mẫu Excel
+                </button>
+                <span className={styles.importFormatHint}>Định dạng: wound_type, title, description, is_active, question_order, question_text, is_multiple_choice, answer_text, triage_level</span>
+              </div>
 
-                {/* File input */}
-                <div className={styles.formGroup}>
-                  <label>Chọn file CSV hoặc Excel *</label>
-                  <input
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    onChange={handleFullImportFileChange}
-                    className={styles.fileInput}
-                  />
-                </div>
-
-                {/* Auto activate (only for single import) */}
-                {!isBulk && (
-                  <label className={styles.checkboxRow} style={{ marginBottom: '0.75rem' }}>
+              {/* Drag & Drop zone */}
+              {!bulkFilesResult && (
+                <>
+                  <div
+                    className={styles.bulkDropZone}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add(styles.bulkDropZoneActive); }}
+                    onDragLeave={(e) => { e.currentTarget.classList.remove(styles.bulkDropZoneActive); }}
+                    onDrop={(e) => { e.currentTarget.classList.remove(styles.bulkDropZoneActive); handleBulkFileDrop(e); }}
+                    onClick={() => bulkFileInputRef.current?.click()}
+                  >
+                    <Upload size={28} strokeWidth={1.5} />
+                    <p><strong>Kéo thả file vào đây</strong> hoặc nhấn để chọn</p>
+                    <span>Hỗ trợ .csv, .xlsx, .xls — có thể chọn một hoặc nhiều file</span>
                     <input
-                      type="checkbox"
-                      checked={fullImportAutoActivate}
-                      onChange={(e) => setFullImportAutoActivate(e.target.checked)}
+                      ref={bulkFileInputRef}
+                      type="file"
+                      accept=".csv,.xlsx,.xls"
+                      multiple
+                      onChange={handleBulkFilesSelect}
+                      style={{ display: 'none' }}
                     />
-                    Tự động kích hoạt bộ vừa import (sẽ deactivate bộ cùng loại đang active)
-                  </label>
-                )}
-
-                {/* Loading */}
-                {fullImportPreviewing && (
-                  <div style={{ textAlign: 'center', padding: '1rem', color: '#64748b' }}>
-                    <Loader2 size={20} className={styles.spinIcon} /> Đang đọc và phân tích file...
                   </div>
-                )}
 
-                {/* Preview */}
-                {fullImportPreview && (
-                  <div className={styles.importPreviewBox}>
-                    <div className={styles.importPreviewHeader}>
-                      <span>Tìm thấy: <strong>{fullImportPreview.total_questionnaires}</strong> bộ câu hỏi</span>
-                      {fullImportPreview.errors.length > 0 && (
-                        <span className={styles.importWarning}>⚠️ {fullImportPreview.errors.length} cảnh báo</span>
-                      )}
-                    </div>
-                    {fullImportPreview.errors.length > 0 && (
-                      <ul className={styles.importErrorList}>
-                        {fullImportPreview.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
-                      </ul>
-                    )}
-                    <div style={{ padding: '0.5rem 0.875rem' }}>
-                      {fullImportPreview.preview.map((g, gi) => (
-                        <div key={gi} className={styles.fullImportGroupCard}>
-                          <div className={styles.fullImportGroupHeader}>
-                            <span className={`${styles.badge} ${g.is_active ? styles.badgeActive : styles.badgeDraft}`}>
-                              {g.is_active ? 'Active' : 'Draft'}
+                  {/* File list */}
+                  {bulkFiles.length > 0 && (
+                    <div className={styles.bulkFileList}>
+                      <div className={styles.bulkFileListHeader}>
+                        <span><FileSpreadsheet size={14} /> {bulkFiles.length} file đã chọn</span>
+                        <button
+                          type="button"
+                          className={styles.filterClearBtn}
+                          onClick={() => { setBulkFiles([]); setBulkFilesPreviews(new Map()); }}
+                          title="Xóa tất cả"
+                        >
+                          Xóa tất cả
+                        </button>
+                      </div>
+                      {bulkFiles.map((f, i) => (
+                        <div key={`${f.name}-${i}`} className={styles.bulkFileItem}>
+                          <FileSpreadsheet size={16} className={styles.bulkFileIcon} />
+                          <div className={styles.bulkFileInfo}>
+                            <span className={styles.bulkFileName}>{f.name}</span>
+                            <span className={styles.bulkFileSize}>
+                              {(f.size / 1024).toFixed(1)} KB
+                              {bulkFilesPreviews.has(f.name) && (
+                                <> · {bulkFilesPreviews.get(f.name)!.preview.length} bộ câu hỏi</>
+                              )}
                             </span>
-                            <strong>{g.title}</strong>
-                            <span className={styles.listItemMeta}>{WOUND_TYPE_LABEL[g.wound_type] ?? g.wound_type}</span>
-                            <span className={styles.listItemMeta}>• {g.total_questions} câu hỏi</span>
                           </div>
-                          {g.description && <div className={styles.fullImportGroupDesc}>{g.description}</div>}
-                          <ul className={styles.fullImportQList}>
-                            {g.questions_preview.map((q, qi) => (
-                              <li key={qi}>
-                                <span className={styles.questionIndex}>{q.order}</span>
-                                {q.text} <span className={styles.listItemMeta}>({q.answers_count} đáp án)</span>
-                              </li>
-                            ))}
-                            {g.total_questions > 3 && (
-                              <li style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
-                                ... và {g.total_questions - 3} câu hỏi khác
-                              </li>
-                            )}
-                          </ul>
+                          <button
+                            className={`${styles.iconBtn} ${styles.iconBtnDelete}`}
+                            onClick={() => removeBulkFile(i)}
+                            title="Xóa file này"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
+                  )}
+
+                  {/* Preview loading */}
+                  {bulkFilesPreviewing && (
+                    <div style={{ textAlign: 'center', padding: '0.75rem', color: '#64748b', fontSize: '0.85rem' }}>
+                      <Loader2 size={18} className={styles.spinIcon} /> Đang phân tích file...
+                    </div>
+                  )}
+
+                  {/* Preview results */}
+                  {!bulkFilesPreviewing && totalPreviewedQuestionnaires > 0 && (
+                    <div className={styles.importPreviewBox} style={{ marginTop: '0.75rem' }}>
+                      <div className={styles.importPreviewHeader}>
+                        <span>Tìm thấy: <strong>{totalPreviewedQuestionnaires}</strong> bộ câu hỏi</span>
+                        {allPreviewErrors.length > 0 && (
+                          <span className={styles.importWarning}>⚠️ {allPreviewErrors.length} cảnh báo</span>
+                        )}
+                      </div>
+                      {allPreviewErrors.length > 0 && (
+                        <ul className={styles.importErrorList}>
+                          {allPreviewErrors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                        </ul>
+                      )}
+                      <div style={{ padding: '0.5rem 0.875rem', maxHeight: '280px', overflowY: 'auto' }}>
+                        {Array.from(bulkFilesPreviews.entries()).map(([fname, data]) =>
+                          data.preview.map((g, gi) => (
+                            <div key={`${fname}-${gi}`} className={styles.fullImportGroupCard}>
+                              <div className={styles.fullImportGroupHeader}>
+                                <span className={`${styles.badge} ${g.is_active ? styles.badgeActive : styles.badgeDraft}`}>
+                                  {g.is_active ? 'Active' : 'Draft'}
+                                </span>
+                                <strong>{g.title}</strong>
+                                <span className={styles.listItemMeta}>{WOUND_TYPE_LABEL[g.wound_type] ?? g.wound_type}</span>
+                                <span className={styles.listItemMeta}>• {g.total_questions} câu hỏi</span>
+                              </div>
+                              {g.description && <div className={styles.fullImportGroupDesc}>{g.description}</div>}
+                              <ul className={styles.fullImportQList}>
+                                {g.questions_preview.map((q, qi) => (
+                                  <li key={qi}>
+                                    <span className={styles.questionIndex}>{q.order}</span>
+                                    {q.text} <span className={styles.listItemMeta}>({q.answers_count} đáp án)</span>
+                                  </li>
+                                ))}
+                                {g.total_questions > 3 && (
+                                  <li style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                                    ... và {g.total_questions - 3} câu hỏi khác
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Auto activate */}
+                  <label className={styles.checkboxRow} style={{ marginTop: '0.75rem' }}>
+                    <input
+                      type="checkbox"
+                      checked={bulkFilesAutoActivate}
+                      onChange={(e) => setBulkFilesAutoActivate(e.target.checked)}
+                    />
+                    Tự động kích hoạt các bộ vừa import (sẽ deactivate bộ cùng loại đang active)
+                  </label>
+                </>
+              )}
+
+              {/* Results after import */}
+              {bulkFilesResult && (
+                <div className={styles.importPreviewBox}>
+                  <div className={styles.importPreviewHeader} style={{ background: '#f0fdf4' }}>
+                    <span>
+                      <CheckCircle2 size={14} style={{ color: '#16a34a', marginRight: '0.375rem' }} />
+                      Đã import thành công <strong>{bulkFilesResult.imported}</strong> bộ câu hỏi
+                    </span>
                   </div>
+
+                  {/* Per-file status */}
+                  {bulkFilesResult.file_results.length > 0 && (
+                    <div style={{ padding: '0.5rem 0.875rem' }}>
+                      {bulkFilesResult.file_results.map((fr, i) => (
+                        <div key={i} className={styles.bulkFileResultRow}>
+                          <span className={`${styles.badge} ${fr.status === 'ok' ? styles.badgeActive : styles.badgeRed}`}>
+                            {fr.status === 'ok' ? '✓' : '✗'}
+                          </span>
+                          <span className={styles.bulkFileResultName}>{fr.filename}</span>
+                          <span className={styles.bulkFileResultMsg}>{fr.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Imported questionnaires */}
+                  {bulkFilesResult.questionnaires.length > 0 && (
+                    <div style={{ padding: '0.5rem 0.875rem', borderTop: '1px solid #e2e8f0' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.375rem', textTransform: 'uppercase' }}>
+                        Bộ câu hỏi đã tạo
+                      </div>
+                      {bulkFilesResult.questionnaires.map((q, i) => (
+                        <div key={i} className={styles.bulkFileResultRow}>
+                          <span className={`${styles.badge} ${q.is_active ? styles.badgeActive : styles.badgeDraft}`}>
+                            {q.is_active ? 'Active' : 'Draft'}
+                          </span>
+                          <strong style={{ fontSize: '0.8rem' }}>{q.title}</strong>
+                          <span className={styles.listItemMeta}>{WOUND_TYPE_LABEL[q.wound_type] ?? q.wound_type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {bulkFilesResult.errors.length > 0 && (
+                    <ul className={styles.importErrorList} style={{ margin: '0.5rem 0.875rem' }}>
+                      {bulkFilesResult.errors.slice(0, 8).map((e, i) => <li key={i}>{e}</li>)}
+                      {bulkFilesResult.errors.length > 8 && (
+                        <li style={{ color: '#94a3b8' }}>... và {bulkFilesResult.errors.length - 8} lỗi khác</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.btnSecondary} onClick={closeModal}>
+                {bulkFilesResult ? 'Đóng' : 'Hủy'}
+              </button>
+              {!bulkFilesResult && (
+                <button
+                  className={styles.btnSubmit}
+                  onClick={handleConfirmBulkFiles}
+                  disabled={submitting || bulkFiles.length === 0 || bulkFilesPreviewing}
+                >
+                  {submitting ? <Loader2 size={14} className={styles.spinIcon} /> : <Upload size={14} />}
+                  Import {totalPreviewedQuestionnaires > 0 ? `${totalPreviewedQuestionnaires} bộ câu hỏi` : `${bulkFiles.length} file`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Export Bulk Modal ─── */}
+      {modal === 'exportBulk' && (
+        <div className={styles.modalOverlay} onClick={closeModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+            <div className={styles.modalHeader}>
+              <h2><Download size={16} /> Export Bộ Câu Hỏi</h2>
+              <button className={styles.modalClose} onClick={closeModal}><X size={16} /></button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.fullImportModeInfo}>
+                <strong>Xuất bộ câu hỏi ra file</strong> — Chọn một hoặc nhiều bộ câu hỏi để xuất thành file CSV hoặc Excel.
+                File xuất ra có thể dùng để re-import.
+              </div>
+
+              {/* Format picker */}
+              <div className={styles.exportFormatPicker}>
+                <span className={styles.exportFormatLabel}>Định dạng:</span>
+                <button
+                  className={`${styles.exportFormatBtn} ${exportFormat === 'excel' ? styles.exportFormatBtnActive : ''}`}
+                  onClick={() => setExportFormat('excel')}
+                >
+                  <FileSpreadsheet size={14} /> Excel (.xlsx)
+                </button>
+                <button
+                  className={`${styles.exportFormatBtn} ${exportFormat === 'csv' ? styles.exportFormatBtnActive : ''}`}
+                  onClick={() => setExportFormat('csv')}
+                >
+                  <FileSpreadsheet size={14} /> CSV
+                </button>
+                <button
+                  className={`${styles.exportFormatBtn} ${exportFormat === 'docx' ? styles.exportFormatBtnActive : ''}`}
+                  onClick={() => setExportFormat('docx')}
+                >
+                  <Files size={14} /> Word (.docx)
+                </button>
+                <button
+                  className={`${styles.exportFormatBtn} ${exportFormat === 'pdf' ? styles.exportFormatBtnActive : ''}`}
+                  onClick={() => setExportFormat('pdf')}
+                >
+                  <FileQuestion size={14} /> PDF
+                </button>
+              </div>
+
+              {/* Select all */}
+              <div className={styles.exportSelectAll}>
+                <label className={styles.checkboxRow}>
+                  <input
+                    type="checkbox"
+                    checked={exportSelectedIds.size === questionnaires.length && questionnaires.length > 0}
+                    onChange={toggleAllExport}
+                  />
+                  Chọn tất cả ({questionnaires.length} bộ)
+                </label>
+                {exportSelectedIds.size > 0 && (
+                  <span className={styles.exportSelectedCount}>
+                    Đã chọn: <strong>{exportSelectedIds.size}</strong>
+                  </span>
                 )}
               </div>
 
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.btnSecondary} onClick={closeModal}>Hủy</button>
-                <button
-                  className={styles.btnSubmit}
-                  onClick={isBulk ? handleConfirmBulkImport : handleConfirmFullImport}
-                  disabled={submitting || !fullImportFile || !fullImportPreview || fullImportPreview.total_questionnaires === 0}
-                >
-                  {submitting ? <Loader2 size={14} className={styles.spinIcon} /> : <Upload size={14} />}
-                  {isBulk
-                    ? `Import ${fullImportPreview?.total_questionnaires ?? 0} bộ câu hỏi`
-                    : `Import bộ câu hỏi`
-                  }
-                </button>
+              {/* Questionnaire list */}
+              <div className={styles.exportList}>
+                {questionnaires.map((q) => (
+                  <label key={q.questionnaire_id} className={styles.exportListItem}>
+                    <input
+                      type="checkbox"
+                      checked={exportSelectedIds.has(q.questionnaire_id)}
+                      onChange={() => toggleExportId(q.questionnaire_id)}
+                    />
+                    <span className={`${styles.badge} ${q.is_active ? styles.badgeActive : styles.badgeDraft}`}>
+                      {q.is_active ? 'Active' : 'Draft'}
+                    </span>
+                    <div className={styles.exportListItemInfo}>
+                      <strong>{q.title}</strong>
+                      <span className={styles.listItemMeta}>
+                        {WOUND_TYPE_LABEL[q.wound_type] ?? q.wound_type}
+                        {' · '}
+                        {(q.questions?.length ?? 0)} câu hỏi
+                      </span>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
+
+            <div className={styles.modalActions}>
+              <button type="button" className={styles.btnSecondary} onClick={closeModal}>Hủy</button>
+              <button
+                className={styles.btnSubmit}
+                onClick={handleBulkExport}
+                disabled={exporting || exportSelectedIds.size === 0}
+              >
+                {exporting ? <Loader2 size={14} className={styles.spinIcon} /> : <Download size={14} />}
+                Xuất {exportSelectedIds.size} bộ ({exportFormat.toUpperCase()})
+              </button>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }
