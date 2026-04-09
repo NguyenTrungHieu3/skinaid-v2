@@ -64,8 +64,11 @@ class UserService:
             skip=skip, limit=limit, search=search, role=role, status=status
         )
 
+        user_ids = [u.user_id for u in users]
+        upload_counts = await self.repository.get_upload_counts_bulk(user_ids)
+
         user_list = [
-            UserMapper.to_basic_info(user, await self.repository.get_user_upload_count(user.user_id))
+            UserMapper.to_basic_info(user, upload_counts.get(user.user_id, 0))
             for user in users
         ]
 
@@ -367,7 +370,6 @@ class UserService:
             expires_at=now + timedelta(hours=24),
             is_used=False,
             created_at=now,
-            updated_at=now
         )
 
         await self.token_repository.create_verification_token(verification_token)

@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
-from app.modules.audit.audit_repository import AuditRepository
+from app.modules.audit.dependencies import get_audit_service
 from app.modules.audit.services.audit_service import AuditService
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.users.repository.profile_repository import ProfileRepository
@@ -38,15 +38,11 @@ def get_token_repository(db: DbSession) -> TokenRepository:
     return TokenRepository(db)
 
 
-def get_user_audit_service(db: DbSession) -> AuditService:
-    return AuditService(AuditRepository(db))
-
-
 def get_user_service(
     db: DbSession,
     repository: UserRepository = Depends(get_user_repository),
     token_repository: TokenRepository = Depends(get_token_repository),
-    audit_service: AuditService = Depends(get_user_audit_service),
+    audit_service: AuditService = Depends(get_audit_service),
 ) -> UserService:
     return UserService(
         db=db,
@@ -56,5 +52,6 @@ def get_user_service(
     )
 
 
-UserRepo = Annotated[UserRepository, Depends(get_user_repository)]
-UserSvc  = Annotated[UserService,    Depends(get_user_service)]
+UserRepo  = Annotated[UserRepository,  Depends(get_user_repository)]
+TokenRepo = Annotated[TokenRepository, Depends(get_token_repository)]
+UserSvc   = Annotated[UserService,     Depends(get_user_service)]

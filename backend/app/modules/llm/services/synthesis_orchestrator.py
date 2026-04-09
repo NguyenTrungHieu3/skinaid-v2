@@ -49,7 +49,10 @@ class SynthesisOrchestrator:
         self._firstaid_service = FirstAidService(
             repository=FirstAidRepository(db), db=db
         )
-        self._wound_analysis_service = WoundAnalysisService(db)
+        self._wound_analysis_service = WoundAnalysisService(
+            repository=WoundAnalysisRepository(db),
+            first_aid_service=self._firstaid_service,
+        )
 
     # Public API
 

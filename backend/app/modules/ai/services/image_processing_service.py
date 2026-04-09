@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -23,6 +24,8 @@ from app.shared.validators.file_validator import FileValidator
 from app.shared.constants import error_codes as ErrorCode
 from app.shared.constants import messages as Message
 
+logger = logging.getLogger(__name__)
+
 
 class ImageProcessingService:
 
@@ -33,12 +36,14 @@ class ImageProcessingService:
         file_service: FileService,
         validator: FileValidator,
         response_mapper: ResponseMapper,
+        notification_service=None,
     ):
         self.analysis_service = analysis_service
         self.ai_service = ai_service
         self.file_service = file_service
         self.validator = validator
         self.response_mapper = response_mapper
+        self.notification_service = notification_service
 
     async def process_single_image(
         self,
@@ -121,6 +126,22 @@ class ImageProcessingService:
             processing_time_ms=processing_time_ms,
         )
         await self.analysis_service.repository.save_ai_result(ai_result_record)
+
+        # Fire-and-forget notification for authenticated users
+        if user_id is not None and self.notification_service is not None and detections:
+            primary = detections[0]
+            try:
+                await self.notification_service.create_analysis_complete(
+                    user_id=user_id,
+                    analysis_id=str(analysis.analysis_id),
+                    wound_type=primary.get("wound_type", ""),
+                    severity=primary.get("severity", ""),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[ImageProcessingService] Notification create failed (non-blocking): %s",
+                    str(exc)[:200],
+                )
 
         analysis = await self.analysis_service.get_analysis_by_id(
             analysis.analysis_id

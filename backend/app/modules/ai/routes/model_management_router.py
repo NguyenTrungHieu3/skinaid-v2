@@ -28,7 +28,7 @@ from app.modules.ai.schemas.model_schemas import (
 )
 from app.shared.response import SuccessResponse, ErrorResponse
 
-router = APIRouter(prefix="/admin/models", tags=["Admin - Model Management"])
+router = APIRouter(prefix="/admin/models")
 
 
 def get_actor_info(request: Request, current_user: User) -> tuple[Optional[UUID], Optional[str]]:

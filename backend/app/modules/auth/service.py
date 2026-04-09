@@ -102,7 +102,11 @@ class AuthService:
                 details=details,
             )
         except Exception:
-            pass
+            logger.warning(
+                "[AuthService] Audit log failed (non-blocking) — action=%s, user_id=%s",
+                action,
+                user_id,
+            )
 
 
     async def register_user(
