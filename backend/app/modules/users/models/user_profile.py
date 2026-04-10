@@ -1,11 +1,11 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, TYPE_CHECKING, List
-from uuid import uuid4, UUID
+from sqlalchemy import UUID
+from typing import Optional, TYPE_CHECKING
 from datetime import date, datetime, timezone
+from uuid import uuid4, UUID
 
 if TYPE_CHECKING:
-    from app.modules.auth.models.user_roles import UserRole
-
+    from app.modules.users.models.user import User
 
 class UserProfile(SQLModel, table=True):
     __tablename__ = "user_profiles"  # type: ignore
@@ -125,32 +125,3 @@ class UserProfile(SQLModel, table=True):
             "created_at": self.created_at,
             "updated_at": self.updated_at
         }
-
-
-class User(SQLModel, table=True):
-    __tablename__ = "users"  # type: ignore
-
-    user_id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_name: str = Field(unique=True, index=True, nullable=False)
-    email: str = Field(unique=True, index=True)
-    hashed_password: str
-    token_version: int = Field(default=0, nullable=False)
-    is_active: bool = Field(default=True)
-    is_verified: bool = Field(default=False)
-    is_deleted: bool = Field(default=False)
-    failed_login_attempts: int = Field(default=0)
-    locked_until: Optional[datetime] = None
-    last_login_at: Optional[datetime] = None
-    last_login_ip: Optional[str] = Field(default=None, max_length=45)
-    last_active_at: Optional[datetime] = None  # v3_final: track last activity
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-
-    profile: Optional["UserProfile"] = Relationship(back_populates="user")
-    user_roles: List["UserRole"] = Relationship(
-        back_populates="user",
-        sa_relationship_kwargs={
-            "cascade": "all, delete-orphan",
-            "foreign_keys": "[UserRole.user_id]"
-        }
-    )
