@@ -126,6 +126,8 @@ export default function QuestionnaireManagement() {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [filterWoundType, setFilterWoundType] = useState<string>('');
+  const [listPage, setListPage] = useState(1);
+  const LIST_PAGE_SIZE = 10;
   // Import state (add to existing questionnaire)
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -175,6 +177,18 @@ export default function QuestionnaireManagement() {
   const filteredQuestionnaires = filterWoundType
     ? questionnaires.filter((q) => q.wound_type === filterWoundType)
     : questionnaires;
+
+  // Pagination for left panel list
+  const totalListPages = Math.ceil(filteredQuestionnaires.length / LIST_PAGE_SIZE);
+  const paginatedQuestionnaires = filteredQuestionnaires.slice(
+    (listPage - 1) * LIST_PAGE_SIZE,
+    listPage * LIST_PAGE_SIZE
+  );
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setListPage(1);
+  }, [filterWoundType]);
 
   // ─── Load ──────────────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
@@ -780,12 +794,12 @@ export default function QuestionnaireManagement() {
                 </button>
               )}
             </div>
-            {filteredQuestionnaires.length === 0 ? (
+            {paginatedQuestionnaires.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
                 {filterWoundType ? `Không có bộ câu hỏi nào cho loại vết thương này` : 'Chưa có bộ câu hỏi nào'}
               </div>
             ) : (
-              filteredQuestionnaires.map((q) => (
+              paginatedQuestionnaires.map((q) => (
                 <div
                   key={q.questionnaire_id}
                   role="button"
@@ -814,6 +828,41 @@ export default function QuestionnaireManagement() {
                   </div>
                 </div>
               ))
+            )}
+            {/* Pagination cho danh sách */}
+            {filteredQuestionnaires.length > LIST_PAGE_SIZE && (
+              <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                    Hiển thị {(listPage - 1) * LIST_PAGE_SIZE + 1}-{Math.min(listPage * LIST_PAGE_SIZE, filteredQuestionnaires.length)} / {filteredQuestionnaires.length}
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    <button
+                      disabled={listPage === 1}
+                      onClick={() => setListPage(p => Math.max(1, p - 1))}
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', cursor: listPage === 1 ? 'not-allowed' : 'pointer', opacity: listPage === 1 ? 0.4 : 1, color: '#475569' }}
+                    >
+                      ‹ Trước
+                    </button>
+                    {Array.from({ length: totalListPages }, (_, i) => i + 1).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setListPage(p)}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid', borderColor: p === listPage ? '#17805f' : '#e2e8f0', borderRadius: '0.375rem', background: p === listPage ? '#17805f' : 'white', color: p === listPage ? 'white' : '#475569', cursor: 'pointer', fontWeight: p === listPage ? 600 : 400, minWidth: '1.75rem' }}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                    <button
+                      disabled={listPage === totalListPages}
+                      onClick={() => setListPage(p => Math.min(totalListPages, p + 1))}
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', cursor: listPage === totalListPages ? 'not-allowed' : 'pointer', opacity: listPage === totalListPages ? 0.4 : 1, color: '#475569' }}
+                    >
+                      Tiếp ›
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

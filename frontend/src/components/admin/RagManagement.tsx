@@ -24,7 +24,7 @@ const STATUS_BADGE: Record<string, string> = {
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('en-US', {
+  new Date(iso).toLocaleDateString('vi-VN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -93,7 +93,7 @@ export default function RagManagement() {
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error.response?.data?.message || 'Failed to load documents')
+      toast.error(error.response?.data?.message || 'Không thể tải danh sách tài liệu')
     } finally {
       setLoading(false)
     }
@@ -151,7 +151,7 @@ export default function RagManagement() {
       const metadata = uploadTags.trim() ? uploadTags.trim() : undefined
       const res = await ragService.uploadRagDocument(uploadFile, metadata)
       if (res.success) {
-        toast.success(`Uploaded "${res.data.file_name}" successfully. Indexing started.`)
+        toast.success(`Đã tải lên "${res.data.file_name}" thành công. Đang bắt đầu đánh chỉ mục.`)
         setShowUploadModal(false)
         resetUploadForm()
         fetchDocuments()
@@ -159,7 +159,7 @@ export default function RagManagement() {
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error.response?.data?.message || 'Upload failed')
+      toast.error(error.response?.data?.message || 'Tải lên thất bại')
     } finally {
       setIsUploading(false)
     }
@@ -205,7 +205,7 @@ export default function RagManagement() {
       setIsDeleting(true)
       const res = await ragService.deleteRagDocument(selectedDoc.rag_document_id)
       if (res.success) {
-        toast.success(`Deleted "${res.data.file_name}" and ${res.data.vectors_deleted} vectors`)
+        toast.success(`Đã xóa "${res.data.file_name}" và ${res.data.vectors_deleted} vector`)
         setShowDeleteConfirm(false)
         setSelectedDoc(null)
         fetchDocuments()
@@ -213,7 +213,7 @@ export default function RagManagement() {
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error.response?.data?.message || 'Delete failed')
+      toast.error(error.response?.data?.message || 'Xóa thất bại')
     } finally {
       setIsDeleting(false)
     }
@@ -375,12 +375,12 @@ export default function RagManagement() {
           <table className={styles.docTable}>
             <thead>
               <tr>
-                <th>File Name</th>
-                <th>File Type</th>
-                <th>Status</th>
+                <th>Tên tài liệu</th>
+                <th>Loại file</th>
+                <th>Trạng thái</th>
                 <th>Chunks</th>
-                <th>Upload Date</th>
-                <th>Actions</th>
+                <th>Ngày tải lên</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -389,7 +389,7 @@ export default function RagManagement() {
                   <td colSpan={6}>
                     <div className={styles.emptyState}>
                       <Database size={48} />
-                      <p>No documents found</p>
+                      <p>Không tìm thấy tài liệu nào</p>
                     </div>
                   </td>
                 </tr>
@@ -419,14 +419,14 @@ export default function RagManagement() {
                     <td className={styles.actionsCell}>
                       <button
                         className={`${styles.btnIcon} ${styles.btnView}`}
-                        title="View Details"
+                        title="Xem chi tiết"
                         onClick={() => openDetails(doc)}
                       >
                         <Eye size={16} />
                       </button>
                       <button
                         className={`${styles.btnIcon} ${styles.btnDelete}`}
-                        title="Delete"
+                        title="Xóa"
                         onClick={() => openDeleteConfirm(doc)}
                       >
                         <Trash2 size={16} />
@@ -443,7 +443,7 @@ export default function RagManagement() {
         {total > 0 && (
           <div className={styles.paginationBar}>
             <span className={styles.paginationInfo}>
-              Showing {startIdx} to {endIdx} of {total} documents
+              Hiển thị {startIdx} đến {endIdx} trong tổng số {total} tài liệu
             </span>
             {totalPages > 1 && (
               <div className={styles.paginationControls}>
@@ -452,7 +452,7 @@ export default function RagManagement() {
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 >
-                  <ChevronLeft size={14} /> Prev
+                  <ChevronLeft size={14} /> Trước
                 </button>
                 {getPageNumbers().map((page, idx) =>
                   typeof page === 'string' ? (
@@ -476,7 +476,7 @@ export default function RagManagement() {
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 >
-                  Next <ChevronRight size={14} />
+                  Tiếp <ChevronRight size={14} />
                 </button>
               </div>
             )}
@@ -490,8 +490,8 @@ export default function RagManagement() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
-                <h2>Upload Medical Document</h2>
-                <p className={styles.modalSubtitle}>Upload documents to add them to the knowledge base</p>
+                <h2>Tải lên tài liệu y khoa</h2>
+                <p className={styles.modalSubtitle}>Tải lên tài liệu để thêm vào cơ sở tri thức</p>
               </div>
               <button className={styles.modalClose} onClick={() => !isUploading && setShowUploadModal(false)}>
                 <X size={20} />
@@ -512,11 +512,11 @@ export default function RagManagement() {
                   <Upload size={24} />
                 </div>
                 <p className={styles.dropZoneText}>
-                  {isDragActive ? 'Drop your file here' : 'Drag and drop your file here'}
+                  {isDragActive ? 'Thả file vào đây' : 'Kéo và thả file vào đây'}
                 </p>
-                <p className={styles.dropZoneHint}>or click to browse from your computer</p>
+                <p className={styles.dropZoneHint}>hoặc nhấn để chọn file từ máy tính</p>
                 <p className={styles.dropZoneHint}>
-                  Allowed: .pdf, .md, .txt, .docx, .html, .csv (Max 50MB)
+                  Hỗ trợ: .pdf, .md, .txt, .docx, .html, .csv (Tối đa 50MB)
                 </p>
                 <input
                   id="rag-file-input"
@@ -542,7 +542,7 @@ export default function RagManagement() {
 
               {/* Metadata */}
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Metadata / Tags (Optional)</label>
+                <label className={styles.formLabel}>Metadata / Tags (Tùy chọn)</label>
                 <input
                   className={styles.formInput}
                   placeholder='e.g., {"topic": "burns", "source": "WHO"}'
@@ -558,7 +558,7 @@ export default function RagManagement() {
                 onClick={() => { setShowUploadModal(false); resetUploadForm() }}
                 disabled={isUploading}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 className={styles.btnSubmit}
@@ -568,12 +568,12 @@ export default function RagManagement() {
                 {isUploading ? (
                   <>
                     <span className={styles.spinnerInline} />
-                    Uploading...
+                    Đang tải lên...
                   </>
                 ) : (
                   <>
                     <Upload size={16} />
-                    Upload
+                    Tải lên
                   </>
                 )}
               </button>
@@ -588,8 +588,8 @@ export default function RagManagement() {
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <div>
-                <h2>Document Details</h2>
-                <p className={styles.modalSubtitle}>Detailed information about this document</p>
+                <h2>Chi tiết tài liệu</h2>
+                <p className={styles.modalSubtitle}>Thông tin chi tiết về tài liệu này</p>
               </div>
               <button className={styles.modalClose} onClick={() => setShowDetailsModal(false)}>
                 <X size={20} />
@@ -610,31 +610,31 @@ export default function RagManagement() {
               {/* Metadata Grid */}
               <div className={styles.detailGrid}>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>Document ID</p>
+                  <p className={styles.detailLabel}>Mã tài liệu</p>
                   <p className={`${styles.detailValue} ${styles.detailValueMono}`}>
                     {selectedDoc.rag_document_id}
                   </p>
                 </div>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>File Type</p>
+                  <p className={styles.detailLabel}>Loại file</p>
                   <p className={styles.detailValue}>{selectedDoc.file_type.toUpperCase()}</p>
                 </div>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>Status</p>
+                  <p className={styles.detailLabel}>Trạng thái</p>
                   <span className={`${styles.badge} ${STATUS_BADGE[selectedDoc.status] || ''}`}>
                     {capitalize(selectedDoc.status)}
                   </span>
                 </div>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>Chunks Generated</p>
+                  <p className={styles.detailLabel}>Số chunks tạo ra</p>
                   <p className={styles.detailValue}>{selectedDoc.chunk_count}</p>
                 </div>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>Created</p>
+                  <p className={styles.detailLabel}>Ngày tạo</p>
                   <p className={styles.detailValue}>{formatDate(selectedDoc.created_at)}</p>
                 </div>
                 <div className={styles.detailItem}>
-                  <p className={styles.detailLabel}>Updated</p>
+                  <p className={styles.detailLabel}>Cập nhật</p>
                   <p className={styles.detailValue}>{formatDate(selectedDoc.updated_at)}</p>
                 </div>
               </div>
@@ -644,7 +644,7 @@ export default function RagManagement() {
                 <div className={styles.errorBox}>
                   <div className={styles.errorBoxHeader}>
                     <AlertCircle size={18} />
-                    Indexing Failed
+                    Đánh chỉ mục thất bại
                   </div>
                   <p className={styles.errorBoxText}>{selectedDoc.error_message}</p>
                 </div>
@@ -653,7 +653,7 @@ export default function RagManagement() {
               {/* Metadata */}
               {selectedDoc.doc_metadata && Object.keys(selectedDoc.doc_metadata).length > 0 && (
                 <div className={styles.metadataBox}>
-                  <p className={styles.detailLabel}>Metadata</p>
+                  <p className={styles.detailLabel}>Siêu dữ liệu</p>
                   <pre>{JSON.stringify(selectedDoc.doc_metadata, null, 2)}</pre>
                 </div>
               )}
@@ -661,7 +661,7 @@ export default function RagManagement() {
 
             <div className={styles.modalFooter}>
               <button className={styles.btnCancel} onClick={() => setShowDetailsModal(false)}>
-                Close
+                Đóng
               </button>
             </div>
           </div>
@@ -676,11 +676,11 @@ export default function RagManagement() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.modalBody}>
-              <h3 className={styles.confirmTitle}>Delete Document</h3>
+              <h3 className={styles.confirmTitle}>Xóa tài liệu</h3>
               <p className={styles.confirmMessage}>
-                Are you sure you want to delete <strong>"{selectedDoc.file_name}"</strong>?
-                This will permanently remove the document and all its indexed vectors from the knowledge base.
-                This action cannot be undone.
+                Bạn có chắc chắn muốn xóa <strong>"{selectedDoc.file_name}"</strong>?
+                Thao tác này sẽ xóa vĩnh viễn tài liệu và tất cả vector đã đánh chỉ mục khỏi cơ sở tri thức.
+                Hành động này không thể hoàn tác.
               </p>
             </div>
             <div className={styles.modalFooter}>
@@ -689,18 +689,18 @@ export default function RagManagement() {
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
               >
-                Cancel
+                Hủy
               </button>
               <button className={styles.btnDanger} onClick={handleDelete} disabled={isDeleting}>
                 {isDeleting ? (
                   <>
                     <span className={styles.spinnerInline} />
-                    Deleting...
+                    Đang xóa...
                   </>
                 ) : (
                   <>
                     <Trash2 size={16} />
-                    Delete
+                    Xóa
                   </>
                 )}
               </button>

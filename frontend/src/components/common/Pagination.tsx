@@ -80,7 +80,7 @@ export default function Pagination({
             {/* Info Display */}
             {showInfo && totalItems > 0 && (
                 <div className={styles.paginationInfo}>
-                    Showing {indexOfFirstItem}-{indexOfLastItem} of {totalItems}
+                    Hiển thị {indexOfFirstItem}-{indexOfLastItem} trong tổng số {totalItems}
                 </div>
             )}
 
@@ -94,7 +94,7 @@ export default function Pagination({
                     aria-label="Previous page"
                 >
                     <ChevronLeft size={16} />
-                    Previous
+                    Trước
                 </button>
 
                 {/* Page Numbers - Only show if more than 1 page */}
@@ -132,7 +132,7 @@ export default function Pagination({
                     disabled={currentPage === totalPages}
                     aria-label="Next page"
                 >
-                    Next
+                    Tiếp
                     <ChevronRight size={16} />
                 </button>
             </div>

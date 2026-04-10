@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import * as ExcelJS from "exceljs";
 import {
   Plus,
   Search,
@@ -10,6 +11,9 @@ import {
   Loader2,
   RefreshCw,
   Ban,
+  Download,
+  FileSpreadsheet,
+  Upload
 } from "lucide-react";
 import StatCard from "./shared/StatCard";
 import { useTranslation } from "react-i18next";
@@ -96,9 +100,12 @@ export default function FirstAidManagement() {
   const [isReactivatingGuide, setIsReactivatingGuide] = useState<string | null>(
     null
   );
-  const [isDeactivatingGuide, setIsDeactivatingGuide] = useState<string | null>(
-    null
-  );
+  const [isDeactivatingGuide, setIsDeactivatingGuide] = useState<string | null>(null);
+
+  // Import/Export States
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -219,7 +226,7 @@ export default function FirstAidManagement() {
       }
     } catch (err: any) {
       console.error("Error fetching guides:", err);
-      setError(err.response?.data?.error || "Failed to fetch first aid guides");
+      setError(err.response?.data?.error || "Không thể tải danh sách hướng dẫn sơ cứu");
     } finally {
       setLoading(false);
     }
@@ -337,24 +344,24 @@ export default function FirstAidManagement() {
 
       // Client-side validation for required array fields
       if (cleanedSteps.length === 0) {
-        toastError("At least one step is required");
+        toastError("Cần ít nhất một bước sơ cứu");
         return;
       }
 
       if (cleanedSteps.length < 2) {
         toastError(
-          "Please provide at least 2 steps for comprehensive guidance"
+          "Vui lòng cung cấp ít nhất 2 bước để có hướng dẫn đầy đủ"
         );
         return;
       }
 
       if (cleanedDos.length === 0) {
-        toastError('At least one "Do" recommendation is required');
+        toastError('Cần ít nhất một khuyến nghị "Nên làm"');
         return;
       }
 
       if (cleanedDonts.length === 0) {
-        toastError('At least one "Don\'t" warning is required');
+        toastError('Cần ít nhất một cảnh báo "Không nên làm"');
         return;
       }
 
@@ -406,15 +413,15 @@ export default function FirstAidManagement() {
         resetForm();
         fetchGuides();
         fetchStatistics();
-        success("First aid guide created successfully!");
+        success("Đã tạo hướng dẫn sơ cứu thành công!");
       } else {
         // Show the actual error message from backend
-        toastError(response.message || "Failed to create guide");
+        toastError(response.message || "Không thể tạo hướng dẫn");
       }
     } catch (err: any) {
       console.error("Error creating guide:", err);
       // Prioritize the message field, then detail, then fallback
-      let errorMessage = "Failed to create guide";
+      let errorMessage = "Không thể tạo hướng dẫn";
       
       if (err.response?.data?.message) {
         errorMessage = typeof err.response.data.message === 'string' 
@@ -448,24 +455,24 @@ export default function FirstAidManagement() {
 
       // Client-side validation for required array fields
       if (cleanedSteps.length === 0) {
-        toastError("At least one step is required");
+        toastError("Cần ít nhất một bước sơ cứu");
         return;
       }
 
       if (cleanedSteps.length < 2) {
         toastError(
-          "Please provide at least 2 steps for comprehensive guidance"
+          "Vui lòng cung cấp ít nhất 2 bước để có hướng dẫn đầy đủ"
         );
         return;
       }
 
       if (cleanedDos.length === 0) {
-        toastError('At least one "Do" recommendation is required');
+        toastError('Cần ít nhất một khuyến nghị "Nên làm"');
         return;
       }
 
       if (cleanedDonts.length === 0) {
-        toastError('At least one "Don\'t" warning is required');
+        toastError('Cần ít nhất một cảnh báo "Không nên làm"');
         return;
       }
 
@@ -499,16 +506,16 @@ export default function FirstAidManagement() {
         resetForm();
         fetchGuides();
         fetchStatistics();
-        success("First aid guide updated successfully!");
+        success("Đã cập nhật hướng dẫn sơ cứu thành công!");
       } else {
-        toastError(response.message || "Failed to update guide");
+        toastError(response.message || "Không thể cập nhật hướng dẫn");
       }
     } catch (err: any) {
       console.error("Error updating guide:", err);
       toastError(
         err.response?.data?.message ||
           err.response?.data?.detail ||
-          "Failed to update guide"
+          "Không thể cập nhật hướng dẫn"
       );
     } finally {
       setIsSubmitting(false);
@@ -519,8 +526,8 @@ export default function FirstAidManagement() {
   const handleDeleteGuide = (guideId: string, guideName: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: "Delete First Aid Guide",
-      message: `Are you sure you want to delete "${guideName}"? This action cannot be undone.`,
+      title: "Xóa hướng dẫn sơ cứu",
+      message: `Bạn có chắc chắn muốn xóa "${guideName}"? Hành động này không thể hoàn tác.`,
       variant: "danger",
       onConfirm: () => handleConfirmDelete(guideId),
     });
@@ -537,13 +544,13 @@ export default function FirstAidManagement() {
       if (response.success) {
         fetchGuides();
         fetchStatistics();
-        success("First aid guide deleted successfully!");
+        success("Đã xóa hướng dẫn sơ cứu thành công!");
       } else {
-        toastError(response.message || "Failed to delete guide");
+        toastError(response.message || "Không thể xóa hướng dẫn");
       }
     } catch (err: any) {
       console.error("Error deleting guide:", err);
-      toastError(err.response?.data?.error || "Failed to delete guide");
+      toastError(err.response?.data?.error || "Không thể xóa hướng dẫn");
     } finally {
       setIsDeletingGuide(null);
     }
@@ -570,19 +577,302 @@ export default function FirstAidManagement() {
       if (response.success) {
         fetchGuides();
         fetchStatistics();
-        success("First aid guide reactivated successfully!");
+        success("Đã kích hoạt lại hướng dẫn sơ cứu!");
       } else {
-        toastError(response.message || "Failed to reactivate guide");
+        toastError(response.message || "Không thể kích hoạt lại");
       }
     } catch (err: any) {
-      console.error("Error reactivating guide:", err);
       toastError(
-        err.response?.data?.message ||
-          err.response?.data?.detail ||
-          "Failed to reactivate guide"
+        err?.response?.data?.detail ?? "Kích hoạt lại hướng dẫn thất bại"
       );
     } finally {
       setIsReactivatingGuide(null);
+    }
+  };
+
+  // ─── Export & Import Helpers ───────────────────────────────────────────────
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      
+      // Fetch all guides paginated
+      let allGuides: Guide[] = [];
+      let currentOffset = 0;
+      const EXPORT_LIMIT = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response: any = await searchFirstAidGuides({
+          wound_type: selectedWoundType !== "all" && selectedWoundType !== "" ? selectedWoundType : undefined,
+          severity: selectedSeverity !== "all" && selectedSeverity !== "" ? selectedSeverity : undefined,
+          is_active: selectedActiveStatus !== "all" ? selectedActiveStatus === "active" : undefined,
+          search: debouncedSearchQuery || undefined,
+          limit: EXPORT_LIMIT,
+          offset: currentOffset,
+        });
+
+        if (response.data && response.data.length > 0) {
+          allGuides = [...allGuides, ...response.data];
+          currentOffset += EXPORT_LIMIT;
+          if (response.extra && response.extra.total <= allGuides.length) hasMore = false;
+          if (response.data.length < EXPORT_LIMIT) hasMore = false;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      if (allGuides.length === 0) {
+        toastError("Không có dữ liệu để xuất");
+        setExporting(false);
+        return;
+      }
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Sơ cứu');
+
+      const headers = [
+        'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
+        'Mô tả', 'Các bước thực hiện', 'Nên làm', 'Không nên làm',
+        'Vật tư y tế', 'Thời gian phục hồi', 'Nguồn tham khảo', 'Trạng thái'
+      ];
+      const headerRow = worksheet.addRow(headers);
+      
+      // Style headers
+      headerRow.eachCell((cell) => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17805F' } };
+        cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+        };
+      });
+
+      // Add Data Rows
+      allGuides.forEach(guide => {
+        const getSourceName = (s: any) => {
+          if (!s) return "";
+          if (typeof s === "string") return s;
+          return s.name || "";
+        };
+
+        const row = worksheet.addRow([
+          guide.title || "",
+          guide.wound_type || "",
+          guide.severity || "",
+          guide.sub_type || "",
+          guide.description || "",
+          (guide.steps || []).join('\n'),
+          (guide.dos || []).join('\n'),
+          (guide.donts || []).join('\n'),
+          (guide.supplies_needed || []).join('\n'),
+          guide.estimated_healing_time || "",
+          getSourceName(guide.source),
+          guide.is_active ? "Hoạt động" : "Không hoạt động"
+        ]);
+
+        row.eachCell({ includeEmpty: true }, (cell) => {
+          cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+          };
+        });
+      });
+
+      // Column widths
+      worksheet.columns = [
+        { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
+        { width: 30 }, { width: 45 }, { width: 35 }, { width: 35 },
+        { width: 25 }, { width: 18 }, { width: 20 }, { width: 15 }
+      ];
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const today = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `huong_dan_so_cuu_${today}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      success("Xuất file Excel thành công!");
+    } catch (err) {
+      console.error("Export error", err);
+      toastError("Có lỗi xảy ra khi xuất file.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Template Sơ cứu');
+
+    const headers = [
+      'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
+      'Mô tả (Không bắt buộc)', 'Các bước thực hiện (Xuống dòng cho mỗi bước bằng Alt+Enter)', 
+      'Nên làm (Xuống dòng cho mỗi mục)', 'Không nên làm (Xuống dòng cho mỗi mục)',
+      'Vật tư y tế (Xuống dòng cho mỗi mục)', 'Thời gian phục hồi', 'Nguồn tham khảo (Website/Tên)', 'Trạng thái (Hoạt động / Không hoạt động)'
+    ];
+    const headerRow = worksheet.addRow(headers);
+    
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17805F' } };
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    });
+
+    // Sample Row
+    const sampleRow = worksheet.addRow([
+      "Sơ cứu Bỏng Cấp độ 1", "Bỏng", "Nhẹ", "",
+      "Cách sơ cứu cơ bản khi bị bỏng nhẹ ở nhà.",
+      "1. Làm mát vết bỏng dưới vòi nước chảy từ 10-15 phút.\n2. Bôi mỡ nhẹ nếu cần, không nặn bong bóng.",
+      "Làm mát ngay lập tức\nĐể hở vết thương",
+      "Không dùng đá lạnh chườm trực tiếp\nKhông bôi kem đánh răng",
+      "Gạc vô trùng\nNước sạch",
+      "3-5 ngày",
+      "Bộ Y Tế",
+      "Hoạt động"
+    ]);
+
+    sampleRow.eachCell((cell) => {
+      cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+    });
+
+    worksheet.columns = [
+      { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
+      { width: 25 }, { width: 50 }, { width: 40 }, { width: 40 },
+      { width: 25 }, { width: 18 }, { width: 25 }, { width: 35 }
+    ];
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `template_huong_dan_so_cuu.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImporting(true);
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+
+      const worksheet = workbook.worksheets[0];
+      if (!worksheet) {
+        toastError("File Excel không hợp lệ hoặc trống.");
+        return;
+      }
+
+      const rows: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) { // Skip header row
+          rows.push(row.values);
+        }
+      });
+
+      if (rows.length === 0) {
+        toastError("Không tìm thấy dữ liệu trong file.");
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Ensure sequential API calls to prevent overwhelming backend
+      for (const row of rows) {
+        try {
+          // row.values is 1-indexed array in exceljs
+          // 1: Tiêu đề, 2: Loại vết thương, 3: Mức độ, 4: Phụ, 5: Mô tả, 6: Các bước, 7: Nên, 8: Không nên, 9: Vật tư, 10: T/G phục hồi, 11: Nguồn, 12: Trạng thái
+          const title = String(row[1] || '').trim();
+          let wound_type = String(row[2] || '').trim();
+          let severity = String(row[3] || '').trim();
+          
+          if (!wound_type || !severity) continue; // Skip invalid row
+
+          // Normalize severity matching backend enums ("mild", "moderate", "severe")
+          if (severity.toLowerCase() === 'nhẹ') severity = 'mild';
+          else if (severity.toLowerCase() === 'vừa') severity = 'moderate';
+          else if (severity.toLowerCase() === 'nặng') severity = 'severe';
+          else if (severity.toLowerCase() === 'rất nặng') severity = 'severe';
+
+          // Normalize wound_type
+          const wMap: Record<string, string> = {
+            'bỏng': 'burn',
+            'trầy xước': 'abrasion',
+            'vết cắt': 'cut',
+            'cắt': 'cut',
+            'bầm tím': 'bruise',
+            'mụn': 'acne',
+            'nấm': 'fungal',
+            'vảy nến': 'psoriasis',
+          };
+          wound_type = wMap[wound_type.toLowerCase()] || wound_type;
+
+          const sub_type = String(row[4] || '').trim();
+          const description = String(row[5] || '').trim();
+          
+          const parseArray = (str: string) => str.split('\n').map(s => s.trim()).filter(s => s);
+          
+          const steps = parseArray(String(row[6] || ''));
+          const dos = parseArray(String(row[7] || ''));
+          const donts = parseArray(String(row[8] || ''));
+          const supplies_needed = parseArray(String(row[9] || ''));
+          const estimated_healing_time = String(row[10] || '').trim();
+          
+          const sourceName = String(row[11] || '').trim();
+          const isActive = String(row[12] || '').trim().toLowerCase() === 'hoạt động';
+
+          await createFirstAidGuide({
+            title,
+            wound_type,
+            severity,
+            sub_type: sub_type || undefined,
+            description: description || undefined,
+            steps: steps.length > 0 ? steps : ["Liên hệ cứu thương"],
+            dos,
+            donts,
+            supplies_needed,
+            estimated_healing_time: estimated_healing_time || undefined,
+            source: { name: sourceName || "Hệ thống" },
+            is_active: isActive
+          });
+          successCount++;
+        } catch (error) {
+          console.error("Row import failed:", row, error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        success(`Đã import thành công ${successCount} hướng dẫn!`);
+        fetchGuides();
+      }
+      if (failCount > 0) {
+        toastError(`${failCount} dòng bị lỗi và không thể import.`);
+      }
+    } catch (err) {
+      console.error("Parse file error:", err);
+      toastError("Lỗi đọc file Excel. Vui lòng thử lại bằng file mẫu.");
+    } finally {
+      setImporting(false);
+      // Reset input so the same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -605,16 +895,16 @@ export default function FirstAidManagement() {
       if (response.success) {
         fetchGuides();
         fetchStatistics();
-        success("First aid guide deactivated successfully!");
+        success("Đã vô hiệu hóa hướng dẫn sơ cứu!");
       } else {
-        toastError(response.message || "Failed to deactivate guide");
+        toastError(response.message || "Không thể vô hiệu hóa");
       }
     } catch (err: any) {
       console.error("Error deactivating guide:", err);
       toastError(
         err.response?.data?.message ||
           err.response?.data?.detail ||
-          "Failed to deactivate guide"
+          "Không thể vô hiệu hóa"
       );
     } finally {
       setIsDeactivatingGuide(null);
@@ -636,10 +926,10 @@ export default function FirstAidManagement() {
 
   const formatWoundType = (woundType: string) => {
     const typeMap: Record<string, string> = {
-      abrasion: "Scratch / Abrasion",
-      bruise: "Bruise / Contusion",
-      burn: "Burn",
-      cut: "Cut / Laceration",
+      abrasion: "Trầy xước",
+      bruise: "Bầm tím",
+      burn: "Bỏng",
+      cut: "Vết cắt",
     };
     return typeMap[woundType.toLowerCase()] || woundType;
   };
@@ -652,10 +942,49 @@ export default function FirstAidManagement() {
           <h1>{t("admin.first_aid.title")}</h1>
           <p>{t("admin.first_aid.subtitle")}</p>
         </div>
-        <button className={styles.btnPrimary} onClick={handleOpenAddModal}>
-          <Plus size={20} />
-          {t("admin.first_aid.add_guidance")}
-        </button>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <button 
+            className={styles.btnSecondary} 
+            onClick={handleDownloadTemplate} 
+            disabled={importing || exporting}
+          >
+            <Download size={16} /> Mẫu Import
+          </button>
+          
+          <input 
+            type="file" 
+            accept=".xlsx,.csv" 
+            style={{ display: 'none' }} 
+            ref={fileInputRef} 
+            onChange={handleImportExcel} 
+          />
+          <button 
+            className={styles.btnSecondary} 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={importing || exporting}
+          >
+            {importing ? <Loader2 size={16} className={styles.spin} /> : <Upload size={16} />} 
+            Import
+          </button>
+          
+          <button 
+            className={styles.btnSecondary} 
+            onClick={handleExportExcel} 
+            disabled={importing || exporting}
+          >
+            {exporting ? <Loader2 size={16} className={styles.spin} /> : <FileSpreadsheet size={16} />} 
+            Export
+          </button>
+
+          <button 
+            className={styles.btnPrimary} 
+            onClick={handleOpenAddModal} 
+            disabled={importing || exporting}
+          >
+            <Plus size={20} />
+            {t("admin.first_aid.add_guidance")}
+          </button>
+        </div>
       </div>
 
       <div className={styles.statsGrid}>
@@ -768,7 +1097,7 @@ export default function FirstAidManagement() {
         className={styles.usersCount}
         style={{ marginBottom: "1rem", fontSize: "0.9rem", color: "#64748b" }}
       >
-        Total Guides ({totalCount} total)
+        Tổng hướng dẫn ({totalCount})
         {totalCount > 0 && (
           <span
             style={{ marginLeft: "1rem", color: "#666", fontSize: "0.9rem" }}

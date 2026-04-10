@@ -31,6 +31,8 @@ export default function ModelManagement() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set())
+  const [versionPages, setVersionPages] = useState<Record<string, number>>({})
+  const VERSIONS_PER_PAGE = 5
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -64,7 +66,7 @@ export default function ModelManagement() {
 
   const handleUpload = async () => {
     if (!uploadFile) {
-      toast.error('Please select a file')
+      toast.error('Vui lòng chọn một file')
       return
     }
     try {
@@ -362,7 +364,16 @@ export default function ModelManagement() {
                   </div>
 
                   <div className={styles.versionList}>
-                    {group.versions.map((version) => (
+                    {(() => {
+                      const vPage = versionPages[group.modelType] || 1
+                      const totalVPages = Math.ceil(group.versions.length / VERSIONS_PER_PAGE)
+                      const paginatedVersions = group.versions.slice(
+                        (vPage - 1) * VERSIONS_PER_PAGE,
+                        vPage * VERSIONS_PER_PAGE
+                      )
+                      return (
+                        <>
+                          {paginatedVersions.map((version) => (
                       <div key={version.model_id} className={styles.versionRow}>
                         <div className={styles.versionInfo}>
                           <span className={`${styles.versionTag} ${version.is_active ? styles.active : styles.inactive}`}>
@@ -402,7 +413,42 @@ export default function ModelManagement() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                          ))}
+                          {totalVPages > 1 && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0 0.25rem', borderTop: '1px solid #e2e8f0', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                Hiển thị {(vPage - 1) * VERSIONS_PER_PAGE + 1}-{Math.min(vPage * VERSIONS_PER_PAGE, group.versions.length)} / {group.versions.length} phiên bản
+                              </span>
+                              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                <button
+                                  disabled={vPage === 1}
+                                  onClick={() => setVersionPages(prev => ({ ...prev, [group.modelType]: Math.max(1, vPage - 1) }))}
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', cursor: vPage === 1 ? 'not-allowed' : 'pointer', opacity: vPage === 1 ? 0.4 : 1, color: '#475569' }}
+                                >
+                                  ‹ Trước
+                                </button>
+                                {Array.from({ length: totalVPages }, (_, i) => i + 1).map(p => (
+                                  <button
+                                    key={p}
+                                    onClick={() => setVersionPages(prev => ({ ...prev, [group.modelType]: p }))}
+                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid', borderColor: p === vPage ? '#17805f' : '#e2e8f0', borderRadius: '0.375rem', background: p === vPage ? '#17805f' : 'white', color: p === vPage ? 'white' : '#475569', cursor: 'pointer', fontWeight: p === vPage ? 600 : 400, minWidth: '1.75rem' }}
+                                  >
+                                    {p}
+                                  </button>
+                                ))}
+                                <button
+                                  disabled={vPage === totalVPages}
+                                  onClick={() => setVersionPages(prev => ({ ...prev, [group.modelType]: Math.min(totalVPages, vPage + 1) }))}
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid #e2e8f0', borderRadius: '0.375rem', background: 'white', cursor: vPage === totalVPages ? 'not-allowed' : 'pointer', opacity: vPage === totalVPages ? 0.4 : 1, color: '#475569' }}
+                                >
+                                  Tiếp ›
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
               )}
@@ -437,7 +483,7 @@ export default function ModelManagement() {
               </div>
               <div className={styles.formGroup}>
                 <label>{t('admin.model_management.upload_modal.description_label')}</label>
-                <textarea className={styles.formTextarea} value={uploadDescription} onChange={(e) => setUploadDescription(e.target.value)} rows={3} placeholder="Describe your model..." />
+                <textarea className={styles.formTextarea} value={uploadDescription} onChange={(e) => setUploadDescription(e.target.value)} rows={3} placeholder="Mô tả model của bạn..." />
               </div>
               <div className={styles.formGroup}>
                 <label>{t('admin.model_management.upload_modal.select_file')}</label>

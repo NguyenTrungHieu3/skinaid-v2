@@ -10,11 +10,13 @@ import RagManagement from '../components/admin/RagManagement';
 import QuestionnaireManagement from '../components/admin/QuestionnaireManagement';
 import Sidebar from '../components/admin/Sidebar';
 import TopBar from '../components/admin/TopBar';
+import AdminFooter from '../components/admin/AdminFooter';
 import styles from './AdminPage.module.css';
 
 export default function AdminPage() {
   const { t, i18n } = useTranslation();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const prevLang = useRef(i18n.language);
 
   // Force Vietnamese for admin, restore on leave
@@ -26,13 +28,15 @@ export default function AdminPage() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const toggleSidebar = () => setSidebarCollapsed((prev) => !prev);
+
   const menuItems = [
     { id: 'dashboard', label: t('admin.sidebar.dashboard'), icon: LayoutGrid },
     { id: 'users', label: t('admin.sidebar.user_management'), icon: Users },
     { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
     { id: 'questionnaires', label: 'Bộ câu hỏi', icon: ClipboardList },
     { id: 'models', label: t('admin.sidebar.model_management'), icon: Database },
-    { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Knowledge Base'), icon: BookOpen },
+    { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Cơ sở tri thức'), icon: BookOpen },
     { id: 'logs', label: t('admin.sidebar.admin_logs'), icon: Shield },
   ];
 
@@ -63,12 +67,19 @@ export default function AdminPage() {
         menuItems={menuItems}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
+        collapsed={sidebarCollapsed}
+        onToggle={toggleSidebar}
       />
       <div className={styles.adminMainContent}>
-        <TopBar />
+        <TopBar
+          onToggleSidebar={toggleSidebar}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
         <main className={styles.adminPageContent}>
           {renderPage()}
         </main>
+        <AdminFooter />
       </div>
     </div>
   );

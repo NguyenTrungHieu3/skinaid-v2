@@ -9,6 +9,7 @@ import {
   type UserDetail 
 } from "../../services/userService";
 import { toast } from "sonner";
+import ExcelJS from "exceljs";
 import { 
   Users, 
   UserCheck, 
@@ -20,9 +21,12 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Download,
+  FileSpreadsheet
 } from "lucide-react";
 import StatCard from "./shared/StatCard";
+import ConfirmDialog from "../common/ConfirmDialog";
 import styles from "./UserManagement.module.css";
 
 export default function UserManagementPage() {
@@ -43,6 +47,12 @@ export default function UserManagementPage() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // Bulk Selection State
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkConfirmStatus, setBulkConfirmStatus] = useState<'active' | 'inactive' | null>(null);
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -118,9 +128,10 @@ export default function UserManagementPage() {
       });
       setUsers(data.items);
       setTotalUsers(data.total);
+      setSelectedUserIds(new Set()); // Reset selections on filter/page change
     } catch (err) {
       console.error("Failed to fetch users", err);
-      toast.error("Failed to load users list.");
+      toast.error("Không thể tải danh sách người dùng.");
     } finally {
       setLoading(false);
     }
@@ -151,7 +162,7 @@ export default function UserManagementPage() {
       const detail = await getUserDetail(user.id);
       setSelectedUser(detail);
     } catch (err) {
-      toast.error("Failed to load user details.");
+      toast.error("Không thể tải thông tin chi tiết người dùng.");
     } finally {
       setPanelLoading(false);
     }
@@ -215,20 +226,20 @@ export default function UserManagementPage() {
   };
 
   const getRelativeTime = (dateString: string | null) => {
-    if (!dateString) return "Never";
+    if (!dateString) return "Chưa hoạt động";
     const normalizedDateString = dateString.endsWith("Z") ? dateString : `${dateString}Z`;
     const date = new Date(normalizedDateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 60) return "Vừa xong";
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? "s" : ""} ago`;
+    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
+    if (diffInHours < 24) return `${diffInHours} giờ trước`;
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 30) return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-    return date.toLocaleDateString();
+    if (diffInDays < 30) return `${diffInDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
   };
 
   const getWoundIcon = (woundType: string | null) => {
@@ -247,6 +258,236 @@ export default function UserManagementPage() {
   const activeUsersCount = useMemo(() => users.filter(u => u.status === "active").length, [users]);
   const inactiveUsersCount = useMemo(() => users.filter(u => u.status === "inactive").length, [users]);
 
+  // ─── Bulk Action Helpers ───────────────────────────────────────────────────
+
+  const isAllCurrentPageSelected = users.length > 0 && users.every(u => selectedUserIds.has(u.id));
+  const isSomeCurrentPageSelected = users.some(u => selectedUserIds.has(u.id)) && !isAllCurrentPageSelected;
+
+  const toggleCurrentPageSelection = () => {
+    const newSelected = new Set(selectedUserIds);
+    if (isAllCurrentPageSelected) {
+      users.forEach(u => newSelected.delete(u.id));
+    } else {
+      users.forEach(u => newSelected.add(u.id));
+    }
+    setSelectedUserIds(newSelected);
+  };
+
+  const toggleUserSelection = (id: string) => {
+    const newSelected = new Set(selectedUserIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedUserIds(newSelected);
+  };
+
+  const handleBulkStatusChange = async (newStatus: "active" | "inactive") => {
+    if (selectedUserIds.size === 0) return;
+    
+    // Check if self-deactivating
+    if (newStatus === "inactive" && selectedUserIds.has(currentAdminId)) {
+      toast.error('Không thể tự khóa tài khoản của chính mình trong bulk action');
+      return;
+    }
+
+    setBulkConfirmStatus(newStatus);
+    setBulkConfirmOpen(true);
+  };
+
+  const executeBulkStatusChange = async () => {
+    if (!bulkConfirmStatus || selectedUserIds.size === 0) return;
+    
+    setBulkActionLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    const idsArray = Array.from(selectedUserIds);
+    
+    // Execute all API requests in parallel Promise.all
+    await Promise.all(
+      idsArray.map(async (id) => {
+        try {
+          await updateUserStatus(id, bulkConfirmStatus);
+          successCount++;
+        } catch (error) {
+          console.error(`Bulk action failed for user ${id}`, error);
+          failCount++;
+        }
+      })
+    );
+
+    if (successCount > 0) {
+      toast.success(`Đã ${bulkConfirmStatus === 'active' ? 'mở khóa' : 'khóa'} thành công ${successCount} tài khoản`);
+      await fetchUsers(); // Refresh the list
+    }
+    if (failCount > 0) {
+      toast.error(`Có ${failCount} tài khoản thất bại thao tác. Vui lòng thử lại.`);
+    }
+
+    setBulkActionLoading(false);
+    setBulkConfirmOpen(false);
+    setBulkConfirmStatus(null);
+  };
+
+  // ─── Export helpers ──────────────────────────────────────────────────────
+  const [exporting, setExporting] = useState(false);
+
+  const fetchAllUsersForExport = async (): Promise<UserListItem[]> => {
+    // Backend limits page_size to max 100, so paginate through all pages
+    const allItems: UserListItem[] = [];
+    let page = 1;
+    const batchSize = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+      const data = await getUsers({
+        page,
+        page_size: batchSize,
+        search: debouncedSearch || undefined,
+        role: roleFilter !== "all" ? roleFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      });
+      allItems.push(...data.items);
+      hasMore = allItems.length < data.total;
+      page++;
+    }
+
+    return allItems;
+  };
+
+  const formatExportDate = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
+  const buildExportRows = (items: UserListItem[]) => {
+    const headers = ['Tên', 'Email', 'Vai trò', 'Trạng thái', 'Lượt tải lên', 'Ngày tham gia', 'Hoạt động gần nhất'];
+    const rows = items.map(u => [
+      u.full_name || 'Không có tên',
+      u.email,
+      u.role === 'admin' ? 'Quản trị viên' : 'Người dùng',
+      u.status === 'active' ? 'Hoạt động' : 'Không hoạt động',
+      String(u.uploads_count),
+      formatExportDate(u.join_date),
+      formatExportDate(u.last_active_at),
+    ]);
+    return { headers, rows };
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      const items = await fetchAllUsersForExport();
+      const { headers, rows } = buildExportRows(items);
+
+      const escapeCSV = (val: string) => {
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+          return `"${val.replace(/"/g, '""')}"`;
+        }
+        return val;
+      };
+
+      const BOM = '\uFEFF';
+      const csv = BOM + [headers.map(escapeCSV).join(','), ...rows.map(r => r.map(escapeCSV).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `danh_sach_nguoi_dung_${new Date().toISOString().slice(0, 10)}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Đã xuất CSV thành công!');
+    } catch (err) {
+      console.error('Export CSV error:', err);
+      toast.error('Xuất CSV thất bại');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setExporting(true);
+      const items = await fetchAllUsersForExport();
+      const { headers, rows } = buildExportRows(items);
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Người dùng');
+
+      // Add Headers
+      const headerRow = worksheet.addRow(headers);
+      
+      // Style headers: green background (#17805F), white bold text, centered
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF17805F' }
+        };
+        cell.font = {
+          color: { argb: 'FFFFFFFF' },
+          bold: true
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+          right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+        };
+      });
+
+      // Add Data Rows
+      rows.forEach(rowData => {
+        const row = worksheet.addRow(rowData);
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          cell.alignment = { vertical: 'middle', horizontal: colNumber === 5 ? 'center' : 'left' };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+          };
+          // Cast string numbers back to number format if needed
+          if (colNumber === 5 && cell.value) {
+            cell.value = Number(cell.value);
+            cell.numFmt = '#,##0';
+          }
+        });
+      });
+
+      // Adjust column widths
+      worksheet.columns = [
+        { width: 25 }, // Tên
+        { width: 35 }, // Email
+        { width: 18 }, // Vai trò
+        { width: 18 }, // Trạng thái
+        { width: 14 }, // Lượt tải lên
+        { width: 18 }, // Ngày tham gia
+        { width: 22 }, // Hoạt động gần nhất
+      ];
+
+      // Export file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `danh_sach_nguoi_dung_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success('Đã xuất Excel thành công!');
+    } catch (err) {
+      console.error('Export Excel error:', err);
+      toast.error('Xuất Excel thất bại');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className={styles.userManagementPage}>
       {/* Header */}
@@ -254,6 +495,26 @@ export default function UserManagementPage() {
         <div className={styles.pageTitle}>
           <h1>{t('admin.user_management.title')}</h1>
           <p>{t('admin.user_management.subtitle')}</p>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            className={styles.btnExport}
+            onClick={handleExportCSV}
+            disabled={exporting || totalUsers === 0}
+            title="Xuất CSV"
+          >
+            <Download size={16} />
+            CSV
+          </button>
+          <button
+            className={styles.btnExport}
+            onClick={handleExportExcel}
+            disabled={exporting || totalUsers === 0}
+            title="Xuất Excel"
+          >
+            <FileSpreadsheet size={16} />
+            Excel
+          </button>
         </div>
       </div>
 
@@ -282,12 +543,12 @@ export default function UserManagementPage() {
       {/* Filters */}
       <div className={styles.filtersCard}>
         <div className={styles.filterGroup}>
-          <label>Search Users</label>
+          <label>Tìm kiếm</label>
           <div className={styles.filterInputContainer}>
             <Search className={styles.filterInputIcon} size={16} />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Tìm theo tên hoặc email..."
               className={styles.filterInput}
               value={searchQuery}
               onChange={handleSearchChange}
@@ -295,57 +556,97 @@ export default function UserManagementPage() {
           </div>
         </div>
         <div className={styles.filterGroup}>
-          <label>Filter by Role</label>
+          <label>Lọc theo vai trò</label>
           <select 
             className={styles.filterSelect}
             value={roleFilter}
             onChange={handleRoleChange}
           >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
+            <option value="all">Tất cả vai trò</option>
+            <option value="admin">Quản trị viên</option>
+            <option value="user">Người dùng</option>
           </select>
         </div>
         <div className={styles.filterGroup}>
-          <label>Filter by Status</label>
+          <label>Lọc theo trạng thái</label>
           <select 
             className={styles.filterSelect}
             value={statusFilter}
             onChange={handleStatusChange}
           >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Đã khóa</option>
           </select>
         </div>
       </div>
 
       <div style={{ fontSize: "0.85rem", color: "#64748b", marginBottom: "0.75rem" }}>
-        {totalUsers > 0 && `Showing ${indexOfFirstUser}-${indexOfLastUser} of ${totalUsers}`}
+        {totalUsers > 0 && `Hiển thị ${indexOfFirstUser}-${indexOfLastUser} trong tổng số ${totalUsers}`}
       </div>
 
       {/* Table */}
       <div className={styles.tableContainer}>
+        {/* Bulk Action Toolbar */}
+        {selectedUserIds.size > 0 && (
+          <div className={styles.bulkActionsBar}>
+            <div className={styles.bulkActionsInfo}>
+              Đã chọn {selectedUserIds.size} tài khoản
+            </div>
+            <div className={styles.bulkActionsGroup}>
+              <button 
+                className={`${styles.btnBulkAction} ${styles.btnBulkActivate}`}
+                onClick={() => handleBulkStatusChange('active')}
+                disabled={bulkActionLoading}
+              >
+                <ShieldAlert size={14} /> Mở khóa đã chọn
+              </button>
+              <button 
+                className={`${styles.btnBulkAction} ${styles.btnBulkDeactivate}`}
+                onClick={() => handleBulkStatusChange('inactive')}
+                disabled={bulkActionLoading}
+              >
+                <ShieldBan size={14} /> Khóa đã chọn
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className={styles.loadingContainer}>
             <div className={styles.loadingSpinner}></div>
-            <div className={styles.loadingText}>Fetching users...</div>
+            <div className={styles.loadingText}>Đang tải danh sách...</div>
           </div>
         ) : users.length === 0 ? (
           <div className={styles.emptyState}>
             <Search size={48} className={styles.emptyStateIcon} />
-            <p>No users found matching your filters.</p>
+            <p>Không tìm thấy người dùng phù hợp.</p>
           </div>
         ) : (
           <table className={styles.dataTable}>
             <thead>
               <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Uploads</th>
-                <th>Last Active</th>
-                <th style={{ textAlign: "right", paddingRight: "1.5rem" }}>Actions</th>
+                <th style={{ width: '40px', paddingRight: 0 }}>
+                  <div className={styles.checkboxContainer}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.customCheckbox}
+                      checked={isAllCurrentPageSelected}
+                      ref={input => {
+                        if (input) {
+                          input.indeterminate = isSomeCurrentPageSelected;
+                        }
+                      }}
+                      onChange={toggleCurrentPageSelection}
+                    />
+                  </div>
+                </th>
+                <th>Người dùng</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Lượt quét</th>
+                <th>Hoạt động gần nhất</th>
+                <th style={{ textAlign: "right", paddingRight: "1.5rem" }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -353,6 +654,16 @@ export default function UserManagementPage() {
                 const uniqueId = `${user.id}-${idx}`;
                 return (
                 <tr key={uniqueId}>
+                  <td style={{ width: '40px', paddingRight: 0 }}>
+                    <div className={styles.checkboxContainer}>
+                      <input 
+                        type="checkbox" 
+                        className={styles.customCheckbox}
+                        checked={selectedUserIds.has(user.id)}
+                        onChange={() => toggleUserSelection(user.id)}
+                      />
+                    </div>
+                  </td>
                   <td>
                     <div 
                       className={styles.userInfo} 
@@ -366,19 +677,19 @@ export default function UserManagementPage() {
                         {getInitials(user.full_name)}
                       </div>
                       <div className={styles.userDetails}>
-                        <span className={styles.userName}>{user.full_name || "Unknown"}</span>
+                        <span className={styles.userName}>{user.full_name || "Chưa đặt tên"}</span>
                         <span className={styles.userEmail}>{user.email}</span>
                       </div>
                     </div>
                   </td>
                   <td>
                     <span className={`${styles.roleBadge} ${user.role.toLowerCase() === 'admin' ? styles.roleAdmin : styles.roleUser}`}>
-                      {user.role}
+                      {user.role.toLowerCase() === 'admin' ? 'Quản trị viên' : 'Người dùng'}
                     </span>
                   </td>
                   <td>
                     <span className={`${styles.statusBadge} ${user.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
-                      {user.status}
+                      {user.status === 'active' ? 'Hoạt động' : 'Đã khóa'}
                     </span>
                   </td>
                   <td>{user.uploads_count || 0}</td>
@@ -402,7 +713,7 @@ export default function UserManagementPage() {
                             openUserDetail(user);
                           }}
                         >
-                          <FileText size={16} /> View Details
+                          <FileText size={16} /> Xem chi tiết
                         </button>
                         {user.status === "active" ? (
                           <button 
@@ -412,7 +723,7 @@ export default function UserManagementPage() {
                               toggleUserStatus(user.id, idx);
                             }}
                           >
-                            <ShieldBan size={16} /> Deactivate
+                            <ShieldBan size={16} /> Vô hiệu hóa
                           </button>
                         ) : (
                           <button 
@@ -422,7 +733,7 @@ export default function UserManagementPage() {
                               toggleUserStatus(user.id, idx);
                             }}
                           >
-                            <ShieldAlert size={16} /> Activate
+                            <ShieldAlert size={16} /> Kích hoạt
                           </button>
                         )}
                       </div>
@@ -444,7 +755,7 @@ export default function UserManagementPage() {
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
           >
-            <ChevronLeft size={16} /> Prev
+            <ChevronLeft size={16} /> Trước
           </button>
           <div className={styles.paginationNumbers}>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
@@ -476,7 +787,7 @@ export default function UserManagementPage() {
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
           >
-            Next <ChevronRight size={16} />
+            Tiếp <ChevronRight size={16} />
           </button>
         </div>
       )}
@@ -495,7 +806,7 @@ export default function UserManagementPage() {
                   {getInitials(selectedUser.full_name)}
                 </div>
                 <div>
-                  <h2 className={styles.panelTitle}>{selectedUser.full_name || "Unknown User"}</h2>
+                  <h2 className={styles.panelTitle}>{selectedUser.full_name || "Chưa đặt tên"}</h2>
                   <p className={styles.panelSubtitle}>{selectedUser.email}</p>
                 </div>
               </div>
@@ -503,36 +814,36 @@ export default function UserManagementPage() {
                 <X size={20} />
               </button>
             </div>
-
+            
             <div className={styles.panelContent}>
               {/* User Info Summary */}
               {!panelLoading && (
                 <div className={styles.userInfoGrid}>
                   <div className={styles.userInfoItem}>
-                    <span className={styles.userInfoLabel}>Role</span>
-                    <span className={`${styles.roleBadge} ${selectedUser.role?.toLowerCase() === 'admin' ? styles.roleAdmin : styles.roleUser}`}>
+                    <span className={styles.userInfoLabel}>Vai trò</span>
+                    <span className={`${styles.roleBadge} ${selectedUser.role === 'admin' ? styles.roleAdmin : styles.roleUser}`}>
                       {selectedUser.role}
                     </span>
                   </div>
                   <div className={styles.userInfoItem}>
-                    <span className={styles.userInfoLabel}>Status</span>
+                    <span className={styles.userInfoLabel}>Trạng thái</span>
                     <span className={`${styles.statusBadge} ${selectedUser.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
                       {selectedUser.status}
                     </span>
                   </div>
                   <div className={styles.userInfoItem}>
-                    <span className={styles.userInfoLabel}>Total Scans</span>
+                    <span className={styles.userInfoLabel}>Tổng lượt quét</span>
                     <span className={styles.userInfoValue}>{selectedUser.uploads_count || 0}</span>
                   </div>
                   <div className={styles.userInfoItem}>
-                    <span className={styles.userInfoLabel}>Joined</span>
+                    <span className={styles.userInfoLabel}>Ngày tham gia</span>
                     <span className={styles.userInfoValue}>
-                      {selectedUser.join_date ? new Date(selectedUser.join_date).toLocaleDateString() : "—"}
+                      {selectedUser.join_date ? new Date(selectedUser.join_date).toLocaleDateString("vi-VN") : "—"}
                     </span>
                   </div>
                   <div className={styles.userInfoItem} style={{ gridColumn: "1 / -1" }}>
-                    <span className={styles.userInfoLabel}>Last Active</span>
-                    <span className={styles.userInfoValue}>{getRelativeTime(selectedUser.last_active_at)}</span>
+                    <span className={styles.userInfoLabel}>Hoạt động gần nhất</span>
+                    <span className={styles.userInfoValue}>{selectedUser.last_active_at ? new Date(selectedUser.last_active_at).toLocaleDateString("vi-VN") : "Chưa có"}</span>
                   </div>
                 </div>
               )}
@@ -540,16 +851,16 @@ export default function UserManagementPage() {
               {/* Divider */}
               {!panelLoading && <div className={styles.panelDivider} />}
 
-              <h3 className={styles.scanHistoryTitle}>Scan History</h3>
+              <h3 className={styles.scanHistoryTitle}>Lịch sử quét ({selectedUser.scan_history?.length || 0})</h3>
               {panelLoading ? (
                  <div className={styles.loadingContainer}>
                    <div className={styles.loadingSpinner}></div>
-                   <div className={styles.loadingText}>Fetching details...</div>
+                   <div className={styles.loadingText}>Đang tải chi tiết...</div>
                  </div>
               ) : !selectedUser.scan_history || selectedUser.scan_history.length === 0 ? (
                  <div className={styles.emptyState}>
                    <FileText size={48} />
-                   <p>No scans recorded for this user.</p>
+                   <p>Chưa có lịch sử quét nào.</p>
                  </div>
               ) : (
                 <div className={styles.scanList}>
@@ -578,11 +889,11 @@ export default function UserManagementPage() {
                         )}
                         <div className={styles.scanDetails}>
                           <div className={styles.scanHeader}>
-                            <span className={styles.scanWoundType} title={scan.wound_type || "Unknown Wound"}>
-                              {scan.wound_type || "Unknown Wound"}
+                            <span className={styles.scanWoundType} title={scan.wound_type || "Không xác định"}>
+                              {scan.wound_type || "Không xác định"}
                             </span>
                             <span className={styles.scanDate}>
-                              {new Date(scan.created_at).toLocaleDateString()}
+                              {new Date(scan.created_at).toLocaleDateString("vi-VN")}
                             </span>
                           </div>
                           {scan.severity && (
@@ -600,6 +911,22 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Dialog for Bulk Action */}
+      <ConfirmDialog
+        isOpen={bulkConfirmOpen}
+        title={bulkConfirmStatus === 'active' ? "Xác nhận mở khóa hàng loạt" : "Xác nhận khóa hàng loạt"}
+        message={`Bạn có chắc chắn muốn ${bulkConfirmStatus === 'active' ? 'mở khóa' : 'khóa'} ${selectedUserIds.size} tài khoản đã chọn không?${bulkConfirmStatus === 'inactive' ? ' Những người dùng này sẽ không thể đăng nhập vào hệ thống.' : ''}`}
+        confirmText={bulkConfirmStatus === 'active' ? "Mở khóa" : "Khóa tài khoản"}
+        cancelText="Hủy bỏ"
+        variant={bulkConfirmStatus === 'active' ? "info" : "danger"}
+        onConfirm={executeBulkStatusChange}
+        onCancel={() => {
+          setBulkConfirmOpen(false);
+          setBulkConfirmStatus(null);
+        }}
+        isLoading={bulkActionLoading}
+      />
     </div>
   );
 }

@@ -1,18 +1,32 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, LogOut } from "lucide-react";
+import { Menu, Bell, ChevronRight, AlertTriangle, LogOut, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import CountryFlag from "react-country-flag";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./TopBar.module.css";
 
-export default function TopBar() {
+// Map page ids to Vietnamese labels for breadcrumb
+const PAGE_LABELS: Record<string, string> = {
+  dashboard: 'Tổng quan',
+  users: 'Quản lý người dùng',
+  firstaid: 'Hướng dẫn sơ cứu',
+  questionnaires: 'Bộ câu hỏi',
+  models: 'Quản lý Model',
+  rag: 'Knowledge Base',
+  logs: 'Nhật ký hệ thống',
+};
+
+interface TopBarProps {
+  onToggleSidebar?: () => void;
+  currentPage?: string;
+  onPageChange?: (page: string) => void;
+}
+
+export default function TopBar({ onToggleSidebar, currentPage, onPageChange }: TopBarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { i18n, t } = useTranslation();
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
-
-  // State mới để điều khiển Modal xác nhận
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Close logout menu when clicking outside
@@ -32,20 +46,17 @@ export default function TopBar() {
     };
   }, [showLogoutMenu]);
 
-  // 1. Khi bấm nút Logout ở menu thả xuống -> Mở Modal, đóng menu
   const onLogoutClick = () => {
     setShowLogoutMenu(false);
     setShowLogoutConfirm(true);
   };
 
-  // 2. Khi bấm xác nhận trong Modal -> Thực hiện Logout thật
   const handleConfirmLogout = () => {
     logout();
     setShowLogoutConfirm(false);
     navigate("/");
   };
 
-  // 3. Khi bấm hủy -> Đóng Modal
   const handleCancelLogout = () => {
     setShowLogoutConfirm(false);
   };
@@ -75,38 +86,43 @@ export default function TopBar() {
       roleMap[userRole] || userRole.charAt(0).toUpperCase() + userRole.slice(1);
   }
 
-  const LanguageSwitcher = () => (
-    <div className={styles.languageSwitcher}>
-      <button
-        onClick={() => i18n.changeLanguage("en")}
-        className={`${styles.flagButton} ${
-          i18n.language === "en" ? styles.activeFlag : ""
-        }`}
-        aria-label="Switch to English"
-        title="English"
-      >
-        <CountryFlag countryCode="US" svg />
-      </button>
-      <span className={styles.divider}>|</span>
-      <button
-        onClick={() => i18n.changeLanguage("vi")}
-        className={`${styles.flagButton} ${
-          i18n.language === "vi" ? styles.activeFlag : ""
-        }`}
-        aria-label="Switch to Vietnamese"
-        title="Tiếng Việt"
-      >
-        <CountryFlag countryCode="VN" svg />
-      </button>
-    </div>
-  );
+  const currentLabel = PAGE_LABELS[currentPage || 'dashboard'] || 'Tổng quan';
 
   return (
     <>
       <header className={styles.adminTopbar}>
         <div className={styles.adminTopbarContent}>
+          {/* Left side: hamburger + breadcrumb */}
+          <div className={styles.adminTopbarLeft}>
+            {/* Breadcrumb */}
+            <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+              <button
+                className={styles.breadcrumbLink}
+                onClick={() => onPageChange?.('dashboard')}
+                title="Về trang tổng quan"
+              >
+                <Home size={14} />
+                <span>Admin</span>
+              </button>
+              {currentPage && currentPage !== 'dashboard' && (
+                <>
+                  <ChevronRight size={14} className={styles.breadcrumbSep} />
+                  <span className={styles.breadcrumbCurrent}>{currentLabel}</span>
+                </>
+              )}
+            </nav>
+          </div>
+
+          {/* Right side: bell + user */}
           <div className={styles.adminTopbarActions}>
-            {/* Language switcher hidden — admin uses Vietnamese only */}
+            {/* Notification bell */}
+            <button className={styles.bellBtn} title="Thông báo">
+              <Bell size={20} />
+              <span className={styles.bellBadge}>3</span>
+            </button>
+
+            <div className={styles.topbarDivider} />
+
             <div
               className={styles.adminUserInfo}
               title={user?.email}
@@ -128,11 +144,10 @@ export default function TopBar() {
                     <p className={styles.logoutMenuEmail}>{user?.email}</p>
                   </div>
                   <div className={styles.logoutMenuDivider}></div>
-                  {/* Thay đổi hàm gọi ở đây thành onLogoutClick */}
                   <button
                     className={styles.logoutMenuButton}
                     onClick={(e) => {
-                      e.stopPropagation(); // Ngăn sự kiện nổi bọt
+                      e.stopPropagation();
                       onLogoutClick();
                     }}
                   >

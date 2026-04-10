@@ -135,10 +135,10 @@ export default function AdminLogs() {
               (log.user_id
                 ? `User ${log.user_id.substring(0, 8)}...`
                 : log.is_guest
-                ? "Guest"
-                : "System"),
+                ? "Khách"
+                : "Hệ thống"),
             email: log.email,
-            role: log.role_name || (log.is_guest ? "Guest" : "User"),
+            role: log.role_name || (log.is_guest ? "Khách" : "Người dùng"),
             timestamp: log.timestamp,
             description: log.description || log.error_message || log.action,
             type,
@@ -151,7 +151,7 @@ export default function AdminLogs() {
         setLogs(mappedLogs);
       }
     } catch (err) {
-      setError("Failed to load system logs");
+      setError("Không thể tải nhật ký hệ thống");
     } finally {
       setLoading(false);
     }

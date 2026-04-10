@@ -1,0 +1,66 @@
+.adminFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 24px;
+  height: 40px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+
+.footerLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.footerLeft span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footerBrand {
+  font-weight: 600;
+  color: #17805f;
+}
+
+.footerDot {
+  color: #cbd5e1;
+}
+
+.footerVersion {
+  background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+  border: 1px solid #d1fae5;
+  color: #047857;
+  font-size: 0.675rem;
+  font-weight: 600;
+  padding: 1px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
+.footerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.725rem;
+  color: #94a3b8;
+}
+
+.footerLink {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-size: inherit;
+  padding: 0;
+}
+
+.footerLink:hover {
+  color: #17805f;
+}
