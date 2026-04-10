@@ -1,6 +1,5 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Tuple
+from typing import Dict, Any, Tuple
 
 from app.modules.audit.repository.statistics_repository import StatisticsRepository
 
@@ -8,8 +7,8 @@ from app.modules.audit.repository.statistics_repository import StatisticsReposit
 class StatisticsService:
     """Service to gather dashboard statistics."""
 
-    def __init__(self, db: AsyncSession):
-        self.repository = StatisticsRepository(db)
+    def __init__(self, repository: StatisticsRepository):
+        self.repository = repository
 
     async def get_dashboard_overview(self, period: str = 'month') -> Dict[str, Any]:
         """Get dashboard overview stats."""

@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.modules.ai.models.analysis import Analysis
 from app.modules.ai.models.detection import Detection
+from app.modules.ai.models.ai_results import AIResult
 from app.shared.base_repository import BaseRepository
 from app.modules.ai.exceptions import WoundAnalysisNotFoundError
 
@@ -69,12 +70,85 @@ class WoundAnalysisRepository(BaseRepository[Analysis]):
         self.db.add_all(detections)
         await self.db.flush()
 
+    async def update_analysis_status(
+        self,
+        analysis_id: UUID,
+        status: str,
+        started_at: Optional[datetime] = None,
+        completed_at: Optional[datetime] = None,
+        wound_type: Optional[str] = None,
+        severity: Optional[str] = None,
+        sub_type: Optional[str] = None,
+        confidence: Optional[float] = None,
+        model_version: Optional[str] = None,
+        status_reason: Optional[str] = None,
+    ) -> None:
+        """Update Analysis status and summary fields after processing completes."""
+        values: Dict[str, Any] = {
+            "status": status,
+            "updated_at": datetime.now(timezone.utc).replace(tzinfo=None),
+        }
+        if started_at is not None:
+            values["started_at"] = started_at
+        if completed_at is not None:
+            values["completed_at"] = completed_at
+        if wound_type is not None:
+            values["wound_type"] = wound_type
+        if severity is not None:
+            values["severity"] = severity
+        if sub_type is not None:
+            values["sub_type"] = sub_type
+        if confidence is not None:
+            values["confidence"] = confidence
+        if model_version is not None:
+            values["model_version"] = model_version
+        if status_reason is not None:
+            values["status_reason"] = status_reason
+
+        stmt = (
+            update(Analysis)
+            .where(Analysis.analysis_id == analysis_id)
+            .values(**values)
+        )
+        await self.db.execute(stmt)
+        await self.db.flush()
+
+    async def save_ai_result(self, ai_result: AIResult) -> AIResult:
+        """Persist a single AIResult record."""
+        self.db.add(ai_result)
+        await self.db.flush()
+        return ai_result
+
+    async def update_detection_snapshot(
+        self,
+        analysis_id: UUID,
+        wound_type: str,
+        severity: str,
+        snapshot: Dict[str, Any],
+    ) -> int:
+        """
+        Overwrite firstaid_snapshot trên tất cả Detection khớp
+        analysis_id + wound_type + severity.
+        Trả về số rows đã update.
+        """
+        stmt = (
+            update(Detection)
+            .where(
+                Detection.analysis_id == analysis_id,
+                Detection.wound_type == wound_type,
+                Detection.severity == severity,
+            )
+            .values(firstaid_snapshot=snapshot)
+        )
+        result = await self.db.execute(stmt)
+        await self.db.flush()
+        return result.rowcount
+
     async def soft_delete_analysis(self, analysis_id: UUID) -> bool:
         stmt = delete(Analysis).where(
             Analysis.analysis_id == analysis_id
         )
         result = await self.db.execute(stmt)
-        await self.db.commit()
         return result.rowcount > 0
 
     async def get_recent_analyses(self, limit: int = 5) -> List[Analysis]:

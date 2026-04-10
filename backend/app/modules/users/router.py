@@ -15,7 +15,7 @@ from app.core.dependencies import get_db, require_admin
 from app.modules.users.models import User
 from app.shared.exceptions import NotFoundError
 from app.modules.audit.services.audit_service import AuditService
-from app.modules.audit.routes.audit_router import get_audit_service
+from app.modules.audit.dependencies import get_audit_service
 
 router = APIRouter(prefix="/admin/users")
 

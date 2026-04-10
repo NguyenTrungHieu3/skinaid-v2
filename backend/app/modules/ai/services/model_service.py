@@ -15,11 +15,23 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.ai.schemas.model_schemas import (
     ModelUploadRequest,
     ModelUploadResponse,
+    ModelUploadRequest,
+    ModelUploadResponse,
     ModelListResponse,
+    ModelListFilters,
+    ModelInfo,
+    ModelVersionInfo,
+    ModelDetailResponse,
+    ModelVersionDetailResponse,
+    ModelActivateRequest,
     ModelListFilters,
     ModelInfo,
     ModelVersionInfo,
@@ -33,6 +45,12 @@ from app.modules.ai.schemas.model_schemas import (
     ModelDeleteResponse,
     ModelMetadataResponse,
     ModelMetrics,
+    ModelRollbackRequest,
+    ModelRollbackResponse,
+    ModelDeleteRequest,
+    ModelDeleteResponse,
+    ModelMetadataResponse,
+    ModelMetrics,
 )
 from app.modules.ai.repository.model_repository import ModelRepository
 from app.modules.ai.services.model_validator import ModelValidator
@@ -40,6 +58,15 @@ from app.modules.ai.services.model_storage_service import ModelStorageService, g
 from app.modules.ai.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
+
+
+class ModelServiceError(Exception):
+    """Custom exception for model service errors."""
+    
+    def __init__(self, message: str, error_code: str = "SERVICE_ERROR"):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(self.message)
 
 
 class ModelServiceError(Exception):
@@ -195,6 +222,11 @@ class ModelService:
         Args:
             filters: Optional filter criteria
             
+        List models with filtering and pagination.
+        
+        Args:
+            filters: Optional filter criteria
+            
         Returns:
             List of models with metadata
         """
@@ -312,6 +344,8 @@ class ModelService:
         Get detailed model information.
         
         Args:
+            model_id: Model UUID
+            
             model_id: Model UUID
             
         Returns:

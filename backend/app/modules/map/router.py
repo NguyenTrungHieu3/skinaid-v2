@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 import httpx
 
-from app.modules.map.dependencies import get_map_service, MapSvc
+from app.modules.map.dependencies import MapSvc
 from app.modules.map.service import MapService
 from app.modules.map.schemas.api import (
     LocationResponse,

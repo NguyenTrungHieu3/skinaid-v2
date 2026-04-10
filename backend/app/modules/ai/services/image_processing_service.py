@@ -1,13 +1,15 @@
 import asyncio
+import logging
 import time
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.ai.exceptions import AIProcessFailedError
 from app.modules.ai.mappers.response_mapper import ResponseMapper
+from app.modules.ai.models.ai_results import AIResult
 from app.modules.ai.schemas.wound_analysis_schemas import (
     BatchAnalysisItemResult,
     BatchAnalysisResponse,
@@ -22,16 +24,26 @@ from app.shared.validators.file_validator import FileValidator
 from app.shared.constants import error_codes as ErrorCode
 from app.shared.constants import messages as Message
 
+logger = logging.getLogger(__name__)
+
 
 class ImageProcessingService:
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.validator = FileValidator()
-        self.file_service = FileService()
-        self.ai_service = WoundAIService()
-        self.analysis_service = WoundAnalysisService(db)
-        self.response_mapper = ResponseMapper()
+    def __init__(
+        self,
+        analysis_service: WoundAnalysisService,
+        ai_service: WoundAIService,
+        file_service: FileService,
+        validator: FileValidator,
+        response_mapper: ResponseMapper,
+        notification_service=None,
+    ):
+        self.analysis_service = analysis_service
+        self.ai_service = ai_service
+        self.file_service = file_service
+        self.validator = validator
+        self.response_mapper = response_mapper
+        self.notification_service = notification_service
 
     async def process_single_image(
         self,
@@ -52,6 +64,8 @@ class ImageProcessingService:
             filename=file.filename,
             subfolder=subfolder,
         )
+
+        started_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
         ai_result = await self.ai_service.analyze_wound(
             image_path=save_result["file_path"]
@@ -76,11 +90,58 @@ class ImageProcessingService:
             image_size_bytes=validation["size"],
         )
 
-        if ai_result.get("detections"):
+        detections = ai_result.get("detections", [])
+
+        if detections:
             await self.analysis_service.save_detections(
                 analysis_id=analysis.analysis_id,
-                detections=ai_result.get("detections", []),
+                detections=detections,
             )
+
+        ai_model_version = ai_result.get("ai_model_version", "YOLOv11_EfficientNetV2_1.0")
+        await self.analysis_service.update_analysis_after_processing(
+            analysis_id=analysis.analysis_id,
+            detections=detections,
+            ai_model_version=ai_model_version,
+            started_at=started_at,
+        )
+
+        ai_result_record = AIResult(
+            analysis_id=analysis.analysis_id,
+            result_type="classification",
+            model_name="YOLOv11_EfficientNetV2",
+            model_version=ai_model_version,
+            results={
+                "num_detections": ai_result.get("num_detections", len(detections)),
+                "reliable_detections": ai_result.get("reliable_detections", 0),
+                "meets_accuracy_threshold": ai_result.get("meets_accuracy_threshold", False),
+                "average_confidence": ai_result.get("average_confidence", 0.0),
+                "detections": detections,
+            },
+            confidence_breakdown={
+                "average_confidence": ai_result.get("average_confidence", 0.0),
+                "reliable_count": ai_result.get("reliable_detections", 0),
+                "total_count": ai_result.get("num_detections", len(detections)),
+            },
+            processing_time_ms=processing_time_ms,
+        )
+        await self.analysis_service.repository.save_ai_result(ai_result_record)
+
+        # Fire-and-forget notification for authenticated users
+        if user_id is not None and self.notification_service is not None and detections:
+            primary = detections[0]
+            try:
+                await self.notification_service.create_analysis_complete(
+                    user_id=user_id,
+                    analysis_id=str(analysis.analysis_id),
+                    wound_type=primary.get("wound_type", ""),
+                    severity=primary.get("severity", ""),
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[ImageProcessingService] Notification create failed (non-blocking): %s",
+                    str(exc)[:200],
+                )
 
         analysis = await self.analysis_service.get_analysis_by_id(
             analysis.analysis_id

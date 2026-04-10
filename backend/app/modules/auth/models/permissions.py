@@ -10,12 +10,11 @@ if TYPE_CHECKING:
 class Permission(SQLModel, table=True):
     __tablename__ = "permissions"
 
-    permission_id: UUID = Field(
-        default_factory=uuid4,
-        primary_key=True
-    )
+    permission_id: UUID = Field(default_factory=uuid4, primary_key=True)
     permission_name: str = Field(max_length=100, nullable=False, unique=True, index=True)
     description: Optional[str] = Field(default=None)
+    resource_type: Optional[str] = Field(default=None, max_length=50)
+    action_type: Optional[str] = Field(default=None, max_length=20)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 

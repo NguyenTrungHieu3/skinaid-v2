@@ -16,7 +16,9 @@ from app.modules.llm.exceptions import (
 logger = logging.getLogger(__name__)
 
 _MAX_RETRY: Final[int] = 2
-_RETRY_BASE_DELAY: Final[float] = 1.0  
+_RETRY_BASE_DELAY: Final[float] = 1.0
+
+_SENTINEL = object()  # marker cho default response_format
 
 
 class LLMService:
@@ -44,10 +46,12 @@ class LLMService:
         messages: list[dict[str, str]],
         max_tokens: int | None = None,
         temperature: float | None = None,
+        response_format: object = _SENTINEL,
     ) -> tuple[str, int]:
         """Gọi OpenAI chat completion, retry tối đa 2 lần khi rate limit, trả về (content, tokens_used)."""
         _max_tokens = max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS
         _temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
+        _response_format = {"type": "json_object"} if response_format is _SENTINEL else response_format
         client = self._get_client()
 
         total_prompt_chars = sum(len(m.get("content", "")) for m in messages)
@@ -62,13 +66,16 @@ class LLMService:
 
         for attempt in range(1, _MAX_RETRY + 2):  
             try:
-                response = await client.chat.completions.create(
+                create_kwargs = dict(
                     model=settings.LLM_MODEL,
                     messages=messages,  # type: ignore[arg-type]
                     max_completion_tokens=_max_tokens,
                     temperature=_temperature,
-                    response_format={"type": "json_object"},
                 )
+                if _response_format is not None:
+                    create_kwargs["response_format"] = _response_format
+
+                response = await client.chat.completions.create(**create_kwargs)
 
                 choice = response.choices[0] if response.choices else None
                 finish_reason = choice.finish_reason if choice else "no_choice"

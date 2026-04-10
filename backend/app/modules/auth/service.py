@@ -32,7 +32,7 @@ from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
 from app.modules.auth.schemas.api import UserCreate, UserLogin
-from app.modules.profile.models import UserProfile
+from app.modules.users.models import UserProfile
 from app.shared.exceptions import BadRequestError
 from app.modules.auth.utils.auth_validators import (
     validate_email,
@@ -108,7 +108,11 @@ class AuthService:
                 description=description,
             )
         except Exception:
-            pass
+            logger.warning(
+                "[AuthService] Audit log failed (non-blocking) — action=%s, user_id=%s",
+                action,
+                user_id,
+            )
 
 
     async def register_user(

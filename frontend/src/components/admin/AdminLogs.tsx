@@ -135,8 +135,8 @@ export default function AdminLogs() {
               (log.user_id
                 ? `User ${log.user_id.substring(0, 8)}...`
                 : log.is_guest
-                ? "Khách"
-                : "Hệ thống"),
+                  ? "Khách"
+                  : "Hệ thống"),
             email: log.email,
             role: log.role_name || (log.is_guest ? "Khách" : "Người dùng"),
             timestamp: log.timestamp,
@@ -257,4 +257,5 @@ export default function AdminLogs() {
     </div>
   );
 }
+
 

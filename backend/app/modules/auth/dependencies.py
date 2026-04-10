@@ -1,9 +1,11 @@
-from typing import Any
+from typing import Annotated, Any
 import os
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
+from app.modules.audit.dependencies import get_audit_repository
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
@@ -20,12 +22,6 @@ def get_token_repository(
     db: AsyncSession = Depends(get_db),
 ) -> TokenRepository:
     return TokenRepository(db)
-
-
-def get_audit_repository(
-    db: AsyncSession = Depends(get_db),
-) -> AuditRepository:
-    return AuditRepository(db)
 
 
 def get_email_service() -> Any:
@@ -54,3 +50,8 @@ def get_auth_service(
         db=db,
         email_service=email_service,
     )
+
+
+UserRepo  = Annotated[UserRepository,  Depends(get_user_repository)]
+TokenRepo = Annotated[TokenRepository, Depends(get_token_repository)]
+AuthSvc   = Annotated[AuthService,     Depends(get_auth_service)]

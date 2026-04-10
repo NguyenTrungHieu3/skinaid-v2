@@ -19,7 +19,6 @@ class WoundParser:
     def parse_classification(classification: str) -> Dict[str, Any]:
         normalized = classification.lower().strip()
 
-        # Handle single-word dermatological classes (e.g. "ringworm", "psoriasis")
         if normalized in _DERM_SINGLE_WORD:
             wound_type, severity = _DERM_SINGLE_WORD[normalized]
             return {
@@ -49,7 +48,6 @@ class WoundParser:
     @staticmethod
     def parse_from_separate_fields(wound_type: str, severity: str) -> Dict[str, Any]:
         normalized_type = wound_type.lower().strip()
-        # Remap AI class names to canonical DB wound types
         normalized_type = _DERM_TYPE_REMAP.get(normalized_type, normalized_type)
 
         parts = severity.lower().strip().split("_")

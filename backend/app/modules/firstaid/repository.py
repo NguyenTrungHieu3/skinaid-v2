@@ -4,7 +4,6 @@ from sqlalchemy import select, func, or_, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.firstaid.models.firstaid_guide import FirstAidGuide
-from app.modules.firstaid.utils import normalize_field_comparison, build_active_filter
 from app.shared.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)

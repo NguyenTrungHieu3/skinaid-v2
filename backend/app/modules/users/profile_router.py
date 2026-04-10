@@ -1,17 +1,16 @@
 import logging
-from uuid import uuid4, UUID
-from typing import Annotated, Any, Dict, List, Optional
+from uuid import UUID
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 
 from app.core.dependencies import (
     get_current_active_user,
-    get_current_user,
     require_admin,
 )
 from app.modules.users.models import User
-from app.modules.profile.dependencies import get_profile_service
-from app.modules.profile.schemas import (
+from app.modules.users.profile_dependencies import ProfileSvc
+from app.modules.users.profile_schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,
@@ -19,7 +18,6 @@ from app.modules.profile.schemas import (
     UserProfileResponse,
     UserProfileUpdate,
 )
-from app.modules.profile.service import ProfileService
 from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
@@ -33,9 +31,9 @@ router = APIRouter(prefix="/profile")
     summary="Update profile",
 )
 async def update_profile(
+    service: ProfileSvc,
     request: Request,
     profile_data: UserProfileUpdate,
-    service: ProfileService = Depends(get_profile_service),
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.update_profile(current_user.user_id, profile_data)
@@ -52,9 +50,9 @@ async def update_profile(
     summary="Upload avatar",
 )
 async def upload_avatar(
-    file: UploadFile = File(...),
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
+    file: UploadFile = File(...),
 ) -> SuccessResponse:
     result = await service.upload_avatar(current_user.user_id, file)
     return SuccessResponse(
@@ -69,7 +67,7 @@ async def upload_avatar(
     summary="Get current profile",
 )
 async def get_my_profile(
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.get_profile(current_user.user_id)
@@ -85,7 +83,7 @@ async def get_my_profile(
     summary="Get profile statistics",
 )
 async def get_profile_statistics(
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     _: User = Depends(require_admin),
 ) -> SuccessResponse:
     result = await service.get_statistics()
@@ -101,7 +99,7 @@ async def get_profile_statistics(
     summary="Search profiles",
 )
 async def search_profiles(
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     _: User = Depends(require_admin),
     full_name: Optional[str] = Query(None),
     gender: Optional[str] = Query(None),
@@ -130,7 +128,7 @@ async def search_profiles(
     summary="Get profile completion suggestions",
 )
 async def get_completion_suggestions(
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.get_completion_suggestions(current_user.user_id)
@@ -146,7 +144,7 @@ async def get_completion_suggestions(
     summary="Delete avatar",
 )
 async def delete_avatar(
-    service: ProfileService = Depends(get_profile_service),
+    service: ProfileSvc,
     current_user: User = Depends(get_current_active_user),
 ) -> SuccessResponse:
     result = await service.delete_avatar(current_user.user_id)
@@ -162,8 +160,8 @@ async def delete_avatar(
     summary="Get public avatar",
 )
 async def get_user_avatar(
+    service: ProfileSvc,
     user_id: UUID,
-    service: ProfileService = Depends(get_profile_service),
 ) -> SuccessResponse:
     result = await service.get_public_avatar(user_id)
     return SuccessResponse(

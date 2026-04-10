@@ -11,8 +11,6 @@ from app.modules.ai.constants import WoundConstants
 
 class WoundAIService:
 
-
-
     def __init__(self):
         self.ai_service_url = getattr(settings, 'AI_SERVICE_URL', "http://localhost:8001")
         self.ai_api_key = getattr(settings, 'AI_API_KEY', "")
@@ -236,7 +234,6 @@ class WoundAIService:
             }
 
     async def check_model_health(self) -> Dict[str, Any]:
-        """Kiểm tra sức khỏe đơn giản cho dịch vụ AI."""
         try:
             headers = {}
             if self.ai_api_key:

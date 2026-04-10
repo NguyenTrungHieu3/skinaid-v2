@@ -68,9 +68,21 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
+    # AI Model Management (model lifecycle)
+    MODEL_UPLOAD_MAX_SIZE: int = 500 * 1024 * 1024     # 500MB
+    MODEL_UPLOAD_MIN_SIZE: int = 1024                   # 1KB minimum
+    MODEL_UPLOAD_ALLOWED_EXTENSIONS: str = ".pt,.pth,.h5,.onnx,.safetensors"
+    MODEL_UPLOAD_ALLOWED_TYPES: str = "detection,classification,segmentation,severity_scoring"
+    MODEL_STORAGE_DIR: str = "models"
+    MODEL_STORAGE_BACKUP_DIR: str = "models_backup"
+    MODEL_STORAGE_TEMP_DIR: str = "models_temp"
+    MODEL_HASH_ALGORITHM: str = "sha256"
+    MODEL_VALIDATE_ON_UPLOAD: bool = True
+    MODEL_AUTO_ACTIVATE_ON_UPLOAD: bool = False
+
     QDRANT: str = "http://localhost:6333/"
     RAG_COLLECTION_NAME: str = "skinaid_knowledge_base"
-    RAG_EMBEDDING_DIMENSION: int = 3072          # text-embedding-3-large
+    RAG_EMBEDDING_DIMENSION: int = 3072        
 
     OPEN_API_KEY: str = ""
     OPEN_EMBEDDING_MODEL: str = "text-embedding-3-large"
@@ -80,6 +92,14 @@ class Settings(BaseSettings):
     LLM_MAX_TOKENS: int = 2000
     LLM_TEMPERATURE: float = 0.3
     LLM_SYNTHESIS_TOP_K: int = 5
+
+    # Chatbot
+    CHATBOT_MAX_MESSAGES: int = 10
+    CHATBOT_REDIS_TTL_HOURS: int = 24
+    CHATBOT_GUIDE_TEMPERATURE: float = 0.7
+    CHATBOT_GUIDE_MAX_TOKENS: int = 500
+    CHATBOT_ADVISOR_TEMPERATURE: float = 0.3
+    CHATBOT_ADVISOR_MAX_TOKENS: int = 1000
 
     RAG_DOCS_PATH: str = "docs/RAGDocumentation"
     RAG_SCORE_THRESHOLD: float = 0.5

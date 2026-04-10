@@ -51,6 +51,10 @@ class Analysis(SQLModel, table=True):
     processing_attempts: int = Field(default=0)
     max_attempts: int = Field(default=3)
 
+    # Soft delete
+    is_deleted: bool = Field(default=False)
+    deleted_at: Optional[datetime] = Field(default=None)
+
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 

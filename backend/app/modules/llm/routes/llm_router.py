@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends
 
-from app.core.dependencies.access_control import require_auth
+from app.core.dependencies import allow_guest
 from app.modules.users.models import User
 from app.modules.llm.dependencies import SynthesisOrchestratorDep
 from app.modules.llm.schemas.llm_schemas import (
@@ -11,7 +13,7 @@ from app.modules.llm.schemas.llm_schemas import (
 )
 from app.shared.response import SuccessResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/llm")
 
 
 @router.post(
@@ -23,13 +25,13 @@ router = APIRouter()
         "Chạy song song RAG retrieval (Qdrant) và DB lookup (firstaid_guides), "
         "sau đó gọi LLM để tổng hợp hướng dẫn cá nhân hóa. "
         "B6 validation so sánh LLM output với DB guide — nếu không consistent sẽ fallback về DB. "
-        "**Yêu cầu xác thực.**"
+        "**Cho phép cả guest và user đã đăng nhập.**"
     ),
 )
 async def synthesize_response(
     request: LLMSynthesizeRequest,
     orchestrator: SynthesisOrchestratorDep,
-    current_user: User = Depends(require_auth),
+    current_user: Optional[User] = Depends(allow_guest),
 ) -> SuccessResponse:
     """
     B5 → B6 synthesis pipeline:
@@ -43,3 +45,4 @@ async def synthesize_response(
         message="Tổng hợp hướng dẫn sơ cứu thành công",
         data=result,
     )
+

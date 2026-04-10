@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useTranslation } from "react-i18next";
-import { 
-  getUsers, 
-  getUserDetail, 
-  updateUserStatus, 
-  type UserListItem, 
-  type UserDetail 
+import {
+  getUsers,
+  getUserDetail,
+  updateUserStatus,
+  type UserListItem,
+  type UserDetail
 } from "../../services/userService";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
-  Search, 
-  MoreVertical, 
-  ShieldAlert, 
+import {
+  Users,
+  UserCheck,
+  UserX,
+  Search,
+  MoreVertical,
+  ShieldAlert,
   ShieldBan,
   FileText,
   ChevronLeft,
@@ -34,7 +34,6 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [panelLoading, setPanelLoading] = useState(false);
-  
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -113,7 +112,7 @@ export default function UserManagementPage() {
       }
     }, 5 * 60_000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, roleFilter, statusFilter, currentPage]);
 
   const fetchUsers = async () => {
@@ -156,7 +155,7 @@ export default function UserManagementPage() {
     setSelectedUser({ ...user, scan_history: [] });
     setIsPanelOpen(true);
     setOpenDropdownId(null);
-    
+
     try {
       setPanelLoading(true);
       const detail = await getUserDetail(user.id);
@@ -231,7 +230,7 @@ export default function UserManagementPage() {
     const date = new Date(normalizedDateString);
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return "Vừa xong";
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
@@ -285,7 +284,7 @@ export default function UserManagementPage() {
 
   const handleBulkStatusChange = async (newStatus: "active" | "inactive") => {
     if (selectedUserIds.size === 0) return;
-    
+
     // Check if self-deactivating
     if (newStatus === "inactive" && selectedUserIds.has(currentAdminId)) {
       toast.error('Không thể tự khóa tài khoản của chính mình trong bulk action');
@@ -298,13 +297,13 @@ export default function UserManagementPage() {
 
   const executeBulkStatusChange = async () => {
     if (!bulkConfirmStatus || selectedUserIds.size === 0) return;
-    
+
     setBulkActionLoading(true);
     let successCount = 0;
     let failCount = 0;
 
     const idsArray = Array.from(selectedUserIds);
-    
+
     // Execute all API requests in parallel Promise.all
     await Promise.all(
       idsArray.map(async (id) => {
@@ -418,7 +417,7 @@ export default function UserManagementPage() {
 
       // Add Headers
       const headerRow = worksheet.addRow(headers);
-      
+
       // Style headers: green background (#17805F), white bold text, centered
       headerRow.eachCell((cell) => {
         cell.fill = {
@@ -478,7 +477,7 @@ export default function UserManagementPage() {
       link.download = `danh_sach_nguoi_dung_${new Date().toISOString().slice(0, 10)}.xlsx`;
       link.click();
       URL.revokeObjectURL(url);
-      
+
       toast.success('Đã xuất Excel thành công!');
     } catch (err) {
       console.error('Export Excel error:', err);
@@ -557,7 +556,7 @@ export default function UserManagementPage() {
         </div>
         <div className={styles.filterGroup}>
           <label>Lọc theo vai trò</label>
-          <select 
+          <select
             className={styles.filterSelect}
             value={roleFilter}
             onChange={handleRoleChange}
@@ -569,7 +568,7 @@ export default function UserManagementPage() {
         </div>
         <div className={styles.filterGroup}>
           <label>Lọc theo trạng thái</label>
-          <select 
+          <select
             className={styles.filterSelect}
             value={statusFilter}
             onChange={handleStatusChange}
@@ -594,14 +593,14 @@ export default function UserManagementPage() {
               Đã chọn {selectedUserIds.size} tài khoản
             </div>
             <div className={styles.bulkActionsGroup}>
-              <button 
+              <button
                 className={`${styles.btnBulkAction} ${styles.btnBulkActivate}`}
                 onClick={() => handleBulkStatusChange('active')}
                 disabled={bulkActionLoading}
               >
                 <ShieldAlert size={14} /> Mở khóa đã chọn
               </button>
-              <button 
+              <button
                 className={`${styles.btnBulkAction} ${styles.btnBulkDeactivate}`}
                 onClick={() => handleBulkStatusChange('inactive')}
                 disabled={bulkActionLoading}
@@ -628,8 +627,8 @@ export default function UserManagementPage() {
               <tr>
                 <th style={{ width: '40px', paddingRight: 0 }}>
                   <div className={styles.checkboxContainer}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className={styles.customCheckbox}
                       checked={isAllCurrentPageSelected}
                       ref={input => {
@@ -653,93 +652,93 @@ export default function UserManagementPage() {
               {users.map((user, idx) => {
                 const uniqueId = `${user.id}-${idx}`;
                 return (
-                <tr key={uniqueId}>
-                  <td style={{ width: '40px', paddingRight: 0 }}>
-                    <div className={styles.checkboxContainer}>
-                      <input 
-                        type="checkbox" 
-                        className={styles.customCheckbox}
-                        checked={selectedUserIds.has(user.id)}
-                        onChange={() => toggleUserSelection(user.id)}
-                      />
-                    </div>
-                  </td>
-                  <td>
-                    <div 
-                      className={styles.userInfo} 
-                      onClick={() => openUserDetail(user)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div 
-                        className={styles.avatar}
-                        style={{ backgroundColor: getAvatarColor(user.full_name) }}
+                  <tr key={uniqueId}>
+                    <td style={{ width: '40px', paddingRight: 0 }}>
+                      <div className={styles.checkboxContainer}>
+                        <input
+                          type="checkbox"
+                          className={styles.customCheckbox}
+                          checked={selectedUserIds.has(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div
+                        className={styles.userInfo}
+                        onClick={() => openUserDetail(user)}
+                        style={{ cursor: "pointer" }}
                       >
-                        {getInitials(user.full_name)}
-                      </div>
-                      <div className={styles.userDetails}>
-                        <span className={styles.userName}>{user.full_name || "Chưa đặt tên"}</span>
-                        <span className={styles.userEmail}>{user.email}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`${styles.roleBadge} ${user.role.toLowerCase() === 'admin' ? styles.roleAdmin : styles.roleUser}`}>
-                      {user.role.toLowerCase() === 'admin' ? 'Quản trị viên' : 'Người dùng'}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${user.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
-                      {user.status === 'active' ? 'Hoạt động' : 'Đã khóa'}
-                    </span>
-                  </td>
-                  <td>{user.uploads_count || 0}</td>
-                  <td style={{ color: "#64748b" }}>{getRelativeTime(user.last_active_at)}</td>
-                  <td className={styles.actionsCell} style={{ paddingRight: "1.5rem" }}>
-                    <button 
-                      className={`${styles.btnActionMenu} ${openDropdownId === uniqueId ? styles.active : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenDropdownId(openDropdownId === uniqueId ? null : uniqueId);
-                      }}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    {openDropdownId === uniqueId && (
-                      <div className={styles.actionDropdown} ref={dropdownRef}>
-                        <button 
-                          className={styles.actionItem}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openUserDetail(user);
-                          }}
+                        <div
+                          className={styles.avatar}
+                          style={{ backgroundColor: getAvatarColor(user.full_name) }}
                         >
-                          <FileText size={16} /> Xem chi tiết
-                        </button>
-                        {user.status === "active" ? (
-                          <button 
-                            className={`${styles.actionItem} ${styles.actionDeactivate}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleUserStatus(user.id, idx);
-                            }}
-                          >
-                            <ShieldBan size={16} /> Vô hiệu hóa
-                          </button>
-                        ) : (
-                          <button 
-                            className={`${styles.actionItem} ${styles.actionActivate}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleUserStatus(user.id, idx);
-                            }}
-                          >
-                            <ShieldAlert size={16} /> Kích hoạt
-                          </button>
-                        )}
+                          {getInitials(user.full_name)}
+                        </div>
+                        <div className={styles.userDetails}>
+                          <span className={styles.userName}>{user.full_name || "Chưa đặt tên"}</span>
+                          <span className={styles.userEmail}>{user.email}</span>
+                        </div>
                       </div>
-                    )}
-                  </td>
-                </tr>
+                    </td>
+                    <td>
+                      <span className={`${styles.roleBadge} ${user.role.toLowerCase() === 'admin' ? styles.roleAdmin : styles.roleUser}`}>
+                        {user.role.toLowerCase() === 'admin' ? 'Quản trị viên' : 'Người dùng'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${user.status === 'active' ? styles.statusActive : styles.statusInactive}`}>
+                        {user.status === 'active' ? 'Hoạt động' : 'Đã khóa'}
+                      </span>
+                    </td>
+                    <td>{user.uploads_count || 0}</td>
+                    <td style={{ color: "#64748b" }}>{getRelativeTime(user.last_active_at)}</td>
+                    <td className={styles.actionsCell} style={{ paddingRight: "1.5rem" }}>
+                      <button
+                        className={`${styles.btnActionMenu} ${openDropdownId === uniqueId ? styles.active : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdownId(openDropdownId === uniqueId ? null : uniqueId);
+                        }}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                      {openDropdownId === uniqueId && (
+                        <div className={styles.actionDropdown} ref={dropdownRef}>
+                          <button
+                            className={styles.actionItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openUserDetail(user);
+                            }}
+                          >
+                            <FileText size={16} /> Xem chi tiết
+                          </button>
+                          {user.status === "active" ? (
+                            <button
+                              className={`${styles.actionItem} ${styles.actionDeactivate}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleUserStatus(user.id, idx);
+                              }}
+                            >
+                              <ShieldBan size={16} /> Vô hiệu hóa
+                            </button>
+                          ) : (
+                            <button
+                              className={`${styles.actionItem} ${styles.actionActivate}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleUserStatus(user.id, idx);
+                              }}
+                            >
+                              <ShieldAlert size={16} /> Kích hoạt
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -750,7 +749,7 @@ export default function UserManagementPage() {
       {/* Pagination */}
       {!loading && totalPages > 1 && (
         <div className={styles.pagination}>
-          <button 
+          <button
             className={styles.paginationBtn}
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -782,7 +781,7 @@ export default function UserManagementPage() {
               return null;
             })}
           </div>
-          <button 
+          <button
             className={styles.paginationBtn}
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -814,7 +813,7 @@ export default function UserManagementPage() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className={styles.panelContent}>
               {/* User Info Summary */}
               {!panelLoading && (
@@ -853,15 +852,15 @@ export default function UserManagementPage() {
 
               <h3 className={styles.scanHistoryTitle}>Lịch sử quét ({selectedUser.scan_history?.length || 0})</h3>
               {panelLoading ? (
-                 <div className={styles.loadingContainer}>
-                   <div className={styles.loadingSpinner}></div>
-                   <div className={styles.loadingText}>Đang tải chi tiết...</div>
-                 </div>
+                <div className={styles.loadingContainer}>
+                  <div className={styles.loadingSpinner}></div>
+                  <div className={styles.loadingText}>Đang tải chi tiết...</div>
+                </div>
               ) : !selectedUser.scan_history || selectedUser.scan_history.length === 0 ? (
-                 <div className={styles.emptyState}>
-                   <FileText size={48} />
-                   <p>Chưa có lịch sử quét nào.</p>
-                 </div>
+                <div className={styles.emptyState}>
+                  <FileText size={48} />
+                  <p>Chưa có lịch sử quét nào.</p>
+                </div>
               ) : (
                 <div className={styles.scanList}>
                   {selectedUser.scan_history.map(scan => {

@@ -17,13 +17,6 @@ from app.modules.audit.services.audit_service import AuditService
 
 
 class AnalysisOrchestrationService:
-    """
-    Orchestrates wound analysis workflow including:
-    - Guest session management
-    - Image processing
-    - Audit logging
-    """
-
     def __init__(
         self,
         image_service: ImageProcessingService,
@@ -42,9 +35,19 @@ class AnalysisOrchestrationService:
         guest_session_id: Optional[UUID],
         request: Request,
     ) -> tuple[Optional[UUID], Optional[UUID]]:
-        """Create guest session if user_id and guest_session_id are both None."""
-        if user_id or guest_session_id:
-            return user_id, guest_session_id
+        """Create guest session if user_id and guest_session_id are both None,
+        or if guest_session_id is stale (not found in DB)."""
+        if user_id:
+            return user_id, None
+
+        # Validate existing guest_session_id
+        if guest_session_id:
+            try:
+                await self.guest_service.get_session(guest_session_id)
+                return user_id, guest_session_id
+            except Exception:
+                # Session expired or not found — create a new one
+                pass
 
         session_data = await self.guest_service.create_session(
             CreateGuestSessionRequest(
@@ -52,7 +55,7 @@ class AnalysisOrchestrationService:
                 user_agent=request.headers.get("User-Agent"),
             )
         )
-        return user_id, session_data.guest_session_id
+        return user_id, session_data.session_id
 
     async def _log_audit(
         self,

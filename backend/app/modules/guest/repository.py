@@ -62,12 +62,12 @@ class GuestRepository(BaseRepository[GuestSession]):
             update(Analysis)
             .where(
                 Analysis.analysis_id == analysis_id,
-                Analysis.session_id.is_not(None),
+                Analysis.guest_session_id.is_not(None),
                 Analysis.user_id.is_(None)
             )
             .values(
                 user_id=user_id,
-                session_id=None,
+                guest_session_id=None,
                 updated_at=datetime.now(timezone.utc).replace(tzinfo=None)
             )
         )

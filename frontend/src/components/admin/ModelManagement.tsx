@@ -374,45 +374,45 @@ export default function ModelManagement() {
                       return (
                         <>
                           {paginatedVersions.map((version) => (
-                      <div key={version.model_id} className={styles.versionRow}>
-                        <div className={styles.versionInfo}>
-                          <span className={`${styles.versionTag} ${version.is_active ? styles.active : styles.inactive}`}>
-                            {version.version_tag}
-                          </span>
-                          <div>
-                            <div className={`${styles.versionStatus} ${version.is_active ? styles.active : styles.inactive}`}>
-                              {version.is_active && <CheckCircle2 size={12} />}
-                              {version.is_active ? t('admin.model_management.filters.active') : t('admin.model_management.filters.inactive')}
-                            </div>
-                            <div className={styles.versionDate}>
-                              {new Date(version.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                        </div>
+                            <div key={version.model_id} className={styles.versionRow}>
+                              <div className={styles.versionInfo}>
+                                <span className={`${styles.versionTag} ${version.is_active ? styles.active : styles.inactive}`}>
+                                  {version.version_tag}
+                                </span>
+                                <div>
+                                  <div className={`${styles.versionStatus} ${version.is_active ? styles.active : styles.inactive}`}>
+                                    {version.is_active && <CheckCircle2 size={12} />}
+                                    {version.is_active ? t('admin.model_management.filters.active') : t('admin.model_management.filters.inactive')}
+                                  </div>
+                                  <div className={styles.versionDate}>
+                                    {new Date(version.created_at).toLocaleDateString()}
+                                  </div>
+                                </div>
+                              </div>
 
-                        <div className={styles.versionActions}>
-                          {!version.is_active && (
-                            <button className={`${styles.btnAction} ${styles.btnActivate}`} onClick={() => handleActivate(version.model_id)}>
-                              <Play size={14} /> {t('admin.model_management.activate')}
-                            </button>
-                          )}
-                          {version.is_active && (
-                            <button className={`${styles.btnAction} ${styles.btnDeactivate}`} onClick={() => handleDeactivate(version.model_id)}>
-                              <Pause size={14} /> {t('admin.model_management.deactivate')}
-                            </button>
-                          )}
-                          <button className={`${styles.btnAction} ${styles.btnView}`} onClick={() => handleViewDetails(version)}>
-                            <Eye size={14} />
-                          </button>
-                          <button
-                            className={`${styles.btnAction} ${styles.btnDelete}`}
-                            onClick={() => setDeleteConfirm({ open: true, modelId: version.model_id })}
-                            disabled={version.is_active}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
+                              <div className={styles.versionActions}>
+                                {!version.is_active && (
+                                  <button className={`${styles.btnAction} ${styles.btnActivate}`} onClick={() => handleActivate(version.model_id)}>
+                                    <Play size={14} /> {t('admin.model_management.activate')}
+                                  </button>
+                                )}
+                                {version.is_active && (
+                                  <button className={`${styles.btnAction} ${styles.btnDeactivate}`} onClick={() => handleDeactivate(version.model_id)}>
+                                    <Pause size={14} /> {t('admin.model_management.deactivate')}
+                                  </button>
+                                )}
+                                <button className={`${styles.btnAction} ${styles.btnView}`} onClick={() => handleViewDetails(version)}>
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  className={`${styles.btnAction} ${styles.btnDelete}`}
+                                  onClick={() => setDeleteConfirm({ open: true, modelId: version.model_id })}
+                                  disabled={version.is_active}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
                           ))}
                           {totalVPages > 1 && (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0 0.25rem', borderTop: '1px solid #e2e8f0', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>

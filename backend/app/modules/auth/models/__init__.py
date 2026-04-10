@@ -1,7 +1,17 @@
 from .verification_token import VerificationToken
-from .user_roles import UserRole
-from .permissions import Permission
+from .token_family import TokenFamily
 from .roles import Role
+from .permissions import Permission
+from .user_roles import UserRole
 from .role_permissions import RolePermission
+from .device_session import DeviceSession
 
-__all__ = ["VerificationToken", "UserRole", "Permission", "Role", "RolePermission"]
+__all__ = [
+    "VerificationToken",
+    "TokenFamily",
+    "Role",
+    "Permission",
+    "UserRole",
+    "RolePermission",
+    "DeviceSession",
+]

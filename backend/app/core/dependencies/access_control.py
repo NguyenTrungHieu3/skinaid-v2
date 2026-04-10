@@ -44,7 +44,7 @@ async def get_current_user(
     if user.last_active_at is None or (now - user.last_active_at).total_seconds() > 300:
         user.last_active_at = now
         db.add(user)
-        await db.commit()
+        await db.flush()
 
     return user
 
@@ -130,7 +130,7 @@ def allow_access(
         if user.last_active_at is None or (now - user.last_active_at).total_seconds() > 300:
             user.last_active_at = now
             db.add(user)
-            await db.commit()
+            await db.flush()
 
         return user
 

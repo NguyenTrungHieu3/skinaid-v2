@@ -8,8 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
 
 from app.core.dependencies.access_control import require_admin, require_auth
 from app.modules.users.models import User
-from app.modules.rag.dependencies import get_rag_document_service
-from app.modules.rag.services.rag_document_service import RAGDocumentService
+from app.modules.rag.dependencies import RagDocumentSvc
 from app.modules.rag.services.qdrant_service import qdrant_service
 from app.modules.rag.schemas.rag_document_schemas import (
     RAGDocumentDeleteResponse,
@@ -20,7 +19,7 @@ from app.modules.rag.schemas.rag_document_schemas import (
 from app.modules.rag.schemas.rag_schemas import RAGRetrieveRequest, RAGRetrieveResponse
 from app.shared.response import SuccessResponse
 
-router = APIRouter(tags=["RAG - Knowledge Retrieval"])
+router = APIRouter(prefix="/rag")
 
 @router.post(
     "/documents",
@@ -36,13 +35,13 @@ router = APIRouter(tags=["RAG - Knowledge Retrieval"])
 )
 async def upload_document(
     background_tasks: BackgroundTasks,
+    service: RagDocumentSvc,
+    current_user: User = Depends(require_admin),
     file: UploadFile = File(..., description="File tài liệu cần index"),
     doc_metadata: Optional[str] = Query(
         None,
         description='Metadata JSON (vd: \'{"topic": "burns", "source": "WHO"}\')',
     ),
-    service: RAGDocumentService = Depends(get_rag_document_service),
-    current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     parsed_metadata = None
     if doc_metadata:
@@ -71,6 +70,8 @@ async def upload_document(
     description="Lấy danh sách tài liệu RAG với phân trang và filter theo status/file_type.",
 )
 async def list_documents(
+    service: RagDocumentSvc,
+    current_user: User = Depends(require_admin),
     skip: int = Query(0, ge=0, description="Offset (bỏ qua N bản ghi đầu)"),
     limit: int = Query(20, ge=1, le=100, description="Số bản ghi mỗi trang"),
     status_filter: Optional[str] = Query(
@@ -82,8 +83,6 @@ async def list_documents(
         None,
         description="Lọc theo loại file: pdf|md|txt|docx|html|csv",
     ),
-    service: RAGDocumentService = Depends(get_rag_document_service),
-    current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     items, total = await service.list_documents(
         skip=skip,
@@ -109,7 +108,7 @@ async def list_documents(
 )
 async def get_document(
     doc_id: uuid.UUID,
-    service: RAGDocumentService = Depends(get_rag_document_service),
+    service: RagDocumentSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     doc = await service.get_document(doc_id)
@@ -130,7 +129,7 @@ async def get_document(
 )
 async def delete_document(
     doc_id: uuid.UUID,
-    service: RAGDocumentService = Depends(get_rag_document_service),
+    service: RagDocumentSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     file_name, vectors_deleted = await service.delete_document(doc_id)
@@ -156,7 +155,7 @@ async def delete_document(
 )
 async def retrieve(
     request: RAGRetrieveRequest,
-    service: RAGDocumentService = Depends(get_rag_document_service),
+    service: RagDocumentSvc,
     current_user: User = Depends(require_auth),
 ) -> SuccessResponse:
     result = await service.search(

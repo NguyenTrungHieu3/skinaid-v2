@@ -265,6 +265,7 @@ const AnalysisResultPage = () => {
     setLlmGuidance(null);
     try {
       const res = await synthesizeGuidance({
+        analysis_id: analysis_id,          // ← persist LLM output vào DB
         wound_type: wound.wound_type,
         severity: wound.severity,
         sub_type: wound.sub_type ?? undefined,

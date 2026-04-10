@@ -50,7 +50,6 @@
     "reset_password_button": "Reset Password",
     "reset_password_button_sub": "Update!",
     "reset_password_back_to_login": "Back to Login",
-
     "session_expired": {
       "title": "Session expired",
       "message": "Your session has ended. Please log in again to continue.",
@@ -368,7 +367,6 @@
     },
     "view": "View",
     "analysis": "Analysis",
-
     "search_placeholder": "Search events...",
     "filter_label": "Filter",
     "date_filters": {
@@ -466,7 +464,6 @@
     "emergency_contact": "Emergency Contact",
     "crop_title": "Edit profile picture",
     "crop_zoom": "Zoom",
-
     "validation": {
       "fullName_invalid": "Full name must not contain numbers or special characters.",
       "fullName_too_short": "Full name is too short.",
@@ -695,7 +692,8 @@
           "wound_analysis": "Wound analysis",
           "firstaid_guide": "First aid guide",
           "system": "System"
-        }
+        },
+        "view_all": "View All"
       }
     },
     "user_management": {
@@ -854,6 +852,7 @@
         "headers": {
           "time": "Time",
           "type": "Level",
+          "type": "Level",
           "username": "Username",
           "role": "Role",
           "action": "Action",
@@ -894,6 +893,19 @@
           "user": "User",
           "admin": "Admin",
           "guest": "Guest"
+        },
+        "all_log_types": "All Log Types",
+        "all_levels": "All Levels",
+        "log_types": {
+          "admin_action": "Admin Action",
+          "user_activity": "User Activity",
+          "system_error": "System Error"
+        },
+        "levels": {
+          "info": "Info",
+          "success": "Success",
+          "warning": "Warning",
+          "error": "Error"
         }
       },
       "types": {
@@ -982,6 +994,76 @@
         "last_updated": "Last Updated"
       },
       "close": "Close"
+    },
+    "model_management": {
+      "title": "AI Model Management",
+      "subtitle": "Manage AI model lifecycle",
+      "upload_model": "Upload Model",
+      "total_models": "Total Models",
+      "active_version": "Active Version",
+      "total_versions": "Total Versions",
+      "no_active_warning_title": "No Active Model",
+      "no_active_warning": "No active model for: {{types}}. AI analysis is currently unavailable.",
+      "filters": {
+        "model_type": "Model Type",
+        "all_types": "All Types",
+        "detection": "Detection",
+        "classification": "Classification",
+        "segmentation": "Segmentation",
+        "severity_scoring": "Severity Scoring",
+        "status": "Status",
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive",
+        "search": "Search",
+        "search_placeholder": "Enter search keyword..."
+      },
+      "actions": {
+        "upload_new_version": "Upload New Version",
+        "view_details": "View Details"
+      },
+      "activate": "Activate",
+      "rollback": "Rollback",
+      "delete": "Delete",
+      "view_details": "View Details",
+      "loading": "Loading...",
+      "no_models": "No models found",
+      "version": "version",
+      "versions": "versions",
+      "no_active_version": "No active version",
+      "deactivate": "Deactivate",
+      "model_type": "Model Type",
+      "upload_date": "Upload Date",
+      "metrics": "Performance Metrics",
+      "none": "None",
+      "messages": {
+        "activate_success": "Activated successfully",
+        "rollback_success": "Rolled back successfully",
+        "delete_success": "Deleted successfully",
+        "upload_success": "Upload successful!",
+        "error": "An error occurred",
+        "deactivate_success": "Deactivated successfully"
+      },
+      "confirm": {
+        "delete_title": "Confirm Delete",
+        "delete_message": "Are you sure you want to delete this model version? This action cannot be undone.",
+        "rollback_title": "Confirm Rollback",
+        "rollback_message": "Are you sure you want to rollback to the previous version? The current active version will be replaced.",
+        "yes": "Yes, proceed"
+      },
+      "upload_modal": {
+        "title": "Upload AI Model",
+        "select_file": "Select Model File",
+        "drag_drop": "Drag and drop file or click to browse",
+        "file_types": "Supported: .pt, .pth, .h5, .onnx, .safetensors",
+        "max_size": "Max size: 500MB",
+        "model_type_label": "Model Type",
+        "version_tag_label": "Version Tag (e.g., v1.0.0)",
+        "description_label": "Description (optional)",
+        "uploading": "Uploading...",
+        "upload_success": "Upload successful!",
+        "upload_failed": "Upload failed"
+      }
     }
   },
   "severity_alert": {

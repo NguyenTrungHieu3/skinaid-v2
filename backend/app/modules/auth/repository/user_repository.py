@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.modules.auth.models.roles import Role
 from app.modules.users.models import User
 from app.modules.auth.models.user_roles import UserRole
-from app.modules.profile.models import UserProfile
+from app.modules.users.models import UserProfile
 from app.shared.base_repository import BaseRepository
 
 

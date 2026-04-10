@@ -1,12 +1,15 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 
-from app.core.dependencies import allow_guest, get_db
-from app.modules.ai.dependencies import get_guest_session_id
-from app.modules.ai.mappers.response_mapper import ResponseMapper
+from app.core.dependencies import allow_guest
+from app.modules.ai.dependencies import (
+    OrchestrationSvc,
+    WoundAnalysisSvc,
+    ResponseMapperDep,
+    get_guest_session_id,
+)
 from app.modules.ai.schemas.wound_analysis_schemas import (
     BatchAnalysisResponse,
     WoundAnalysisDetailResponse,
@@ -24,6 +27,7 @@ from app.modules.audit.audit_repository import AuditRepository
 from app.modules.audit.services.audit_service import AuditService
 from app.modules.users.models import User
 from app.shared.exceptions import (
+    BadRequestError,
     ForbiddenError,
     NotFoundError,
     UnauthorizedError,
@@ -31,47 +35,17 @@ from app.shared.exceptions import (
 from app.shared.response import SuccessResponse
 from app.shared.constants import messages as Message
 
-router = APIRouter(prefix="/ai", tags=["AI Analysis"])
-
-
-def get_wound_analysis_service(
-    db: AsyncSession = Depends(get_db),
-) -> WoundAnalysisService:
-    return WoundAnalysisService(db)
-
-
-def get_image_processing_service(
-    db: AsyncSession = Depends(get_db),
-) -> ImageProcessingService:
-    return ImageProcessingService(db)
-
-
-def get_analysis_orchestration_service(
-    db: AsyncSession = Depends(get_db),
-    image_service: ImageProcessingService = Depends(get_image_processing_service),
-) -> AnalysisOrchestrationService:
-    guest_repo = GuestRepository(db)
-    guest_service = GuestService(guest_repo, db)
-    audit_repo = AuditRepository(db)
-    audit_service = AuditService(audit_repo)
-    return AnalysisOrchestrationService(
-        image_service=image_service,
-        guest_service=guest_service,
-        audit_service=audit_service,
-        db=db,
-    )
+router = APIRouter(prefix="/ai")
 
 
 @router.post("/analyze", response_model=SuccessResponse)
 async def analyze_wound_image(
+    orchestration_service: OrchestrationSvc,
     request: Request,
-    file: UploadFile = File(..., description="Wound image (JPEG/PNG, max 5MB)"),
+    response: Response,
     current_user: Optional[User] = Depends(allow_guest),
     guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
-    db: AsyncSession = Depends(get_db),
-    orchestration_service: AnalysisOrchestrationService = Depends(
-        get_analysis_orchestration_service
-    ),
+    file: UploadFile = File(..., description="Wound image (JPEG/PNG, max 5MB)"),
 ):
     """Analyze wound image (user or guest)."""
     user_id = current_user.user_id if current_user else None
@@ -83,6 +57,18 @@ async def analyze_wound_image(
         request=request,
     )
 
+    # If a new guest session was created (old one expired), update the cookie
+    if not user_id and hasattr(response_data, 'guest_session_id') and response_data.guest_session_id:
+        actual_session_id = str(response_data.guest_session_id)
+        if not guest_session_id or str(guest_session_id) != actual_session_id:
+            response.set_cookie(
+                key="guest_session_id",
+                value=actual_session_id,
+                max_age=3600,  # 1 hour
+                httponly=False,  # Frontend needs to read it
+                samesite="lax",
+            )
+
     return SuccessResponse(
         message=Message.AI_ANALYSIS_SUCCESS_MSG,
         data=response_data,
@@ -91,11 +77,12 @@ async def analyze_wound_image(
 
 @router.get("/history", response_model=SuccessResponse)
 async def get_analysis_history(
-    limit: int = 50,
-    offset: int = 0,
+    analysis_service: WoundAnalysisSvc,
+    response_mapper: ResponseMapperDep,
     current_user: Optional[User] = Depends(allow_guest),
     guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
-    analysis_service: WoundAnalysisService = Depends(get_wound_analysis_service),
+    limit: int = 50,
+    offset: int = 0,
 ):
     """Get analysis history for user or guest session."""
     user_id = current_user.user_id if current_user else None
@@ -112,7 +99,6 @@ async def get_analysis_history(
         offset=offset,
     )
 
-    response_mapper = ResponseMapper()
     events = [
         response_mapper.map_wound_analysis(a, include_detections=False)
         for a in analyses
@@ -133,10 +119,11 @@ async def get_analysis_history(
 
 @router.get("/analysis/{analysis_id}", response_model=SuccessResponse)
 async def get_analysis_detail(
+    analysis_service: WoundAnalysisSvc,
+    response_mapper: ResponseMapperDep,
     analysis_id: UUID,
     current_user: Optional[User] = Depends(allow_guest),
     guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
-    analysis_service: WoundAnalysisService = Depends(get_wound_analysis_service),
 ):
     """Get detailed analysis result by ID."""
     user_id = current_user.user_id if current_user else None
@@ -155,7 +142,6 @@ async def get_analysis_detail(
         if not guest_session_id or guest_session_id != analysis.guest_session_id:
             raise ForbiddenError(message=Message.AI_ACCESS_DENIED_MSG)
 
-    response_mapper = ResponseMapper()
     response_data = response_mapper.map_wound_analysis(
         analysis, include_detections=True
     )
@@ -168,10 +154,10 @@ async def get_analysis_detail(
 
 @router.delete("/analysis/{analysis_id}", response_model=SuccessResponse)
 async def delete_analysis(
+    analysis_service: WoundAnalysisSvc,
     analysis_id: UUID,
     current_user: Optional[User] = Depends(allow_guest),
     guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
-    analysis_service: WoundAnalysisService = Depends(get_wound_analysis_service),
 ):
     """Soft delete an analysis result."""
     user_id = current_user.user_id if current_user else None
@@ -200,30 +186,23 @@ async def delete_analysis(
 
 @router.post("/analyze/batch", response_model=SuccessResponse)
 async def analyze_multiple_wound_images(
+    orchestration_service: OrchestrationSvc,
     request: Request,
+    current_user: Optional[User] = Depends(allow_guest),
+    guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
     files: List[UploadFile] = File(
         ...,
         description="List of wound images (JPEG/PNG, max 5MB, max 5 images)",
-    ),
-    current_user: Optional[User] = Depends(allow_guest),
-    guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
-    orchestration_service: AnalysisOrchestrationService = Depends(
-        get_analysis_orchestration_service
     ),
 ):
     """Analyze multiple wound images (max 5)."""
     user_id = current_user.user_id if current_user else None
 
     if len(files) == 0:
-        from app.shared.exceptions import BadRequestError
-        from app.shared.constants import error_codes as ErrorCode
-
         raise BadRequestError(message="At least one image file is required")
 
     max_files = 5
     if len(files) > max_files:
-        from app.shared.exceptions import BadRequestError
-
         raise BadRequestError(
             message=f"Number of files exceeds limit ({max_files} files)",
             details={"max_files": max_files, "provided": len(files)},

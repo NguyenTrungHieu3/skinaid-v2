@@ -14,7 +14,6 @@ from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,
     FirstAidGuideResponse,
     GuideStatsResponse,
-    GuideValidationResponse,
     UpdateGuideRequest,
 )
 

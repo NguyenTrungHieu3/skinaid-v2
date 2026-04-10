@@ -1,33 +1,70 @@
-from fastapi import APIRouter, Depends
+from __future__ import annotations
+
+import logging
+from typing import Optional
 from uuid import UUID
-from app.modules.chatbot.services.stub_service import ChatbotStubService
+
+from fastapi import APIRouter, Depends, Query
+
+from app.core.dependencies.access_control import require_auth
+from app.modules.chatbot.dependencies import ChatSvcDep
 from app.modules.chatbot.schemas.chat_schemas import (
-    ChatMessageRequest,
     ChatMessageResponse,
-    ChatHistoryResponse,
+    CreateSessionRequest,
+    CreateSessionResponse,
+    SendMessageRequest,
+    SessionDetailResponse,
+    SessionSummaryResponse,
 )
+from app.modules.users.models import User
 from app.shared.response import SuccessResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
 @router.post(
-    "/message",
-    response_model=SuccessResponse[ChatMessageResponse],
-    summary="Send a chatbot message (PBI-26)",
-    description="Send a message to the chatbot and receive a reply. **Stub:** Returns mock response until real chatbot is implemented.",
+    "/sessions",
+    response_model=SuccessResponse[CreateSessionResponse],
+    summary="Tạo phiên chat mới",
+    description=(
+        "Tạo session mới. Nếu truyền `analysis_id` → **Wound Advisor** (lưu DB). "
+        "Nếu không → **App Guide** (lưu Redis 24h)."
+    ),
 )
-async def send_chatbot_message(
-    request: ChatMessageRequest,
-    stub_service: ChatbotStubService = Depends(),
+async def create_session(
+    request: CreateSessionRequest,
+    chat_svc: ChatSvcDep,
+    current_user: User = Depends(require_auth),
 ) -> SuccessResponse:
-    """
-    Send a message to the chatbot and receive a reply.
-    
-    **Stub:** Returns mock response until real chatbot is implemented.
-    """
-    result = await stub_service.send_message(request.message)
-    
+    result = await chat_svc.create_session(
+        user_id=current_user.user_id,
+        analysis_id=request.analysis_id,
+    )
+    return SuccessResponse(
+        message="Tạo phiên chat thành công",
+        data=result,
+    )
+
+
+@router.post(
+    "/sessions/{session_id}/messages",
+    response_model=SuccessResponse[ChatMessageResponse],
+    summary="Gửi tin nhắn và nhận phản hồi AI",
+    description="Gửi tin nhắn trong phiên chat. AI sẽ trả lời dựa trên mode (Wound Advisor / App Guide).",
+)
+async def send_message(
+    session_id: UUID,
+    request: SendMessageRequest,
+    chat_svc: ChatSvcDep,
+    current_user: User = Depends(require_auth),
+) -> SuccessResponse:
+    result = await chat_svc.send_message(
+        user_id=current_user.user_id,
+        session_id=session_id,
+        message=request.message,
+    )
     return SuccessResponse(
         message="Tin nhắn đã được gửi",
         data=result,
@@ -35,23 +72,64 @@ async def send_chatbot_message(
 
 
 @router.get(
-    "/history/{session_id}",
-    response_model=SuccessResponse[ChatHistoryResponse],
-    summary="Get chat history (PBI-26)",
-    description="Get chat history for a session. **Stub:** Returns empty list until real chatbot is implemented.",
+    "/sessions/{session_id}",
+    response_model=SuccessResponse[SessionDetailResponse],
+    summary="Chi tiết phiên chat + lịch sử tin nhắn",
 )
-async def get_chat_history(
+async def get_session_detail(
     session_id: UUID,
-    stub_service: ChatbotStubService = Depends(),
+    chat_svc: ChatSvcDep,
+    current_user: User = Depends(require_auth),
 ) -> SuccessResponse:
-    """
-    Get chat history for a session.
-    
-    **Stub:** Returns empty list until real chatbot is implemented.
-    """
-    result = await stub_service.get_history(session_id)
-    
+    result = await chat_svc.get_session_detail(
+        user_id=current_user.user_id,
+        session_id=session_id,
+    )
     return SuccessResponse(
-        message="Lấy lịch sử chat thành công",
+        message="Lấy chi tiết phiên chat thành công",
         data=result,
     )
+
+
+@router.get(
+    "/sessions",
+    response_model=SuccessResponse[list[SessionSummaryResponse]],
+    summary="Danh sách phiên chat",
+    description="Mặc định chỉ trả Wound Advisor sessions (DB). Thêm `include_general=true` để bao gồm App Guide.",
+)
+async def list_sessions(
+    chat_svc: ChatSvcDep,
+    current_user: User = Depends(require_auth),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    include_general: bool = Query(False),
+) -> SuccessResponse:
+    summaries, total = await chat_svc.list_sessions(
+        user_id=current_user.user_id,
+        skip=skip,
+        limit=limit,
+        include_general=include_general,
+    )
+    return SuccessResponse(
+        message="Lấy danh sách phiên chat thành công",
+        data=summaries,
+        extra={"total": total, "skip": skip, "limit": limit},
+    )
+
+
+@router.delete(
+    "/sessions/{session_id}",
+    response_model=SuccessResponse,
+    summary="Kết thúc phiên chat",
+    description="Wound Advisor → soft close (giữ lịch sử). App Guide → xoá khỏi Redis.",
+)
+async def delete_session(
+    session_id: UUID,
+    chat_svc: ChatSvcDep,
+    current_user: User = Depends(require_auth),
+) -> SuccessResponse:
+    await chat_svc.delete_session(
+        user_id=current_user.user_id,
+        session_id=session_id,
+    )
+    return SuccessResponse(message="Đã kết thúc phiên chat")

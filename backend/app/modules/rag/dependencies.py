@@ -11,7 +11,6 @@ from app.modules.rag.services.rag_document_service import RAGDocumentService
 async def get_rag_repository(
     db: AsyncSession = Depends(get_db),
 ) -> RAGDocumentRepository:
-    """Factory: tạo RAGDocumentRepository với session từ request."""
     return RAGDocumentRepository(db)
 
 
@@ -19,7 +18,6 @@ async def get_rag_document_service(
     repository: RAGDocumentRepository = Depends(get_rag_repository),
     db: AsyncSession = Depends(get_db),
 ) -> RAGDocumentService:
-    """Factory: tạo RAGDocumentService với repo và session."""
     return RAGDocumentService(repository=repository, db=db)
 
 RagDocumentRepo = Annotated[RAGDocumentRepository, Depends(get_rag_repository)]

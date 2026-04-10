@@ -50,11 +50,9 @@ class ChunkingService:
         text: str,
         use_contextual: bool | None = None,
     ) -> list[ChunkOutput]:
-        """
-        Chia text thành chunks semantic + (tùy chọn) thêm context LLM.
-        """
+        """Split text into semantic chunks with optional LLM context."""
         if not text or not text.strip():
-            logger.debug("[ChunkingService] Text rỗng, bỏ qua chunking.")
+            logger.debug("[ChunkingService] Empty text, skipping chunking.")
             return []
 
         should_contextualize = (
@@ -65,11 +63,11 @@ class ChunkingService:
             raw_chunks = await self._semantic_chunk(text)
 
             if not raw_chunks:
-                logger.warning("[ChunkingService] Semantic chunking trả về 0 chunks.")
+                logger.warning("[ChunkingService] Semantic chunking returned 0 chunks.")
                 return []
 
             logger.info(
-                "[ChunkingService] Semantic chunking: %d chunks từ %d chars text.",
+                "[ChunkingService] Semantic chunking: %d chunks from %d chars.",
                 len(raw_chunks),
                 len(text),
             )
@@ -83,7 +81,7 @@ class ChunkingService:
                 ]
 
             logger.info(
-                "[ChunkingService] Chunking hoàn tất: %d chunks (contextual=%s).",
+                "[ChunkingService] Chunking complete: %d chunks (contextual=%s).",
                 len(chunks),
                 should_contextualize,
             )
@@ -93,12 +91,12 @@ class ChunkingService:
             raise
         except Exception as exc:
             raise RAGIndexingError(
-                message="Chunking thất bại",
+                message="Chunking failed",
                 details={"error": str(exc), "text_length": len(text)},
             ) from exc
 
     async def _semantic_chunk(self, text: str) -> list[str]:
-        """Chia text bằng SemanticChunker trong threadpool. Lọc chunk quá ngắn/dài."""
+        """Split text using SemanticChunker in a threadpool. Filters out too-short or too-long chunks."""
         chunker = self._get_semantic_chunker()
 
         import asyncio
@@ -111,7 +109,7 @@ class ChunkingService:
             for chunk in chunks:
                 if len(chunk) < _MIN_CHUNK_CHARS:
                     logger.debug(
-                        "[ChunkingService] Bỏ qua chunk quá ngắn (%d chars).", len(chunk)
+                        "[ChunkingService] Skipping chunk that is too short (%d chars).", len(chunk)
                     )
                     continue
                 if len(chunk) > _MAX_CHUNK_CHARS:
@@ -124,7 +122,7 @@ class ChunkingService:
         return await asyncio.get_event_loop().run_in_executor(None, _run_sync)
 
     def _split_long_chunk(self, text: str) -> list[str]:
-        """Fallback splitter cho chunk quá dài: chia theo paragraph rồi theo sentence."""
+        """Fallback splitter for oversized chunks: split by paragraph then by sentence."""
         paragraphs = [p.strip() for p in re.split(r"\n\n+", text) if p.strip()]
 
         if all(len(p) <= _MAX_CHUNK_CHARS for p in paragraphs):
@@ -150,7 +148,7 @@ class ChunkingService:
     async def _add_context_to_chunks(
         self, full_document: str, raw_chunks: list[str]
     ) -> list[ChunkOutput]:
-        """Gọi LLM song song để sinh context cho mỗi chunk."""
+        """Call LLM concurrently to generate context for each chunk."""
         doc_preview = self._truncate_document_for_context(full_document)
 
         tasks = [
@@ -175,7 +173,7 @@ class ChunkingService:
         chunk: str,
         chunk_index: int,
     ) -> str:
-        """Sinh context cho một chunk với retry + Semaphore."""
+        """Generate context for a single chunk with retry and Semaphore throttling."""
         async with self._semaphore:
             last_exc: Exception | None = None
 
@@ -190,7 +188,7 @@ class ChunkingService:
                         break
                     delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
                     logger.warning(
-                        "[ChunkingService] Chunk %d: RateLimitError (lần %d/%d). Chờ %.1fs...",
+                        "[ChunkingService] Chunk %d: RateLimitError (attempt %d/%d). Waiting %.1fs...",
                         chunk_index,
                         attempt,
                         _MAX_RETRY,
@@ -200,21 +198,21 @@ class ChunkingService:
 
                 except Exception as exc:
                     logger.warning(
-                        "[ChunkingService] Chunk %d: Không thể generate context (%s). Dùng context rỗng.",
+                        "[ChunkingService] Chunk %d: Cannot generate context (%s). Using empty context.",
                         chunk_index,
                         str(exc)[:100],
                     )
                     return ""
 
         logger.error(
-            "[ChunkingService] Chunk %d: Hết %d retry (RateLimit). Dùng context rỗng.",
+            "[ChunkingService] Chunk %d: Exhausted %d retries (RateLimit). Using empty context.",
             chunk_index,
             _MAX_RETRY,
         )
         return ""
 
     async def _call_context_llm(self, doc_preview: str, chunk: str) -> str:
-        """Gọi LLM để sinh 1-2 câu context cho một chunk theo kỹ thuật Contextual Retrieval."""
+        """Call LLM to generate 1-2 sentence context for a chunk using Contextual Retrieval."""
         llm = self._get_context_llm()
 
         prompt = (
@@ -239,7 +237,7 @@ class ChunkingService:
         return str(content).strip()
 
     def _get_semantic_chunker(self) -> SemanticChunker:
-        """Tạo SemanticChunker lần đầu khi cần."""
+        """Lazily create SemanticChunker on first use."""
         if self._semantic_chunker is None:
             embedder = OpenAIEmbeddings(
                 model=_SEMANTIC_EMBEDDING_MODEL,
@@ -253,13 +251,13 @@ class ChunkingService:
                 breakpoint_threshold_amount=95,
             )
             logger.info(
-                "[ChunkingService] SemanticChunker khởi tạo (model=%s, threshold=percentile/95).",
+                "[ChunkingService] SemanticChunker initialized (model=%s, threshold=percentile/95).",
                 _SEMANTIC_EMBEDDING_MODEL,
             )
         return self._semantic_chunker
 
     def _get_context_llm(self) -> ChatOpenAI:
-        """Tạo ChatOpenAI client lần đầu khi cần."""
+        """Lazily create ChatOpenAI client on first use."""
         if self._context_llm is None:
             self._context_llm = ChatOpenAI(
                 model=_CONTEXT_LLM_MODEL,
@@ -269,13 +267,13 @@ class ChunkingService:
                 max_retries=0,
             )
             logger.info(
-                "[ChunkingService] Context LLM khởi tạo (model=%s).",
+                "[ChunkingService] Context LLM initialized (model=%s).",
                 _CONTEXT_LLM_MODEL,
             )
         return self._context_llm
 
     def _truncate_document_for_context(self, document: str) -> str:
-        """Rút gọn document xuống _MAX_DOC_FOR_CONTEXT chars, giữ 70% đầu + 30% cuối."""
+        """Truncate document to _MAX_DOC_FOR_CONTEXT chars, keeping 70% head + 30% tail."""
         if len(document) <= _MAX_DOC_FOR_CONTEXT:
             return document
 
@@ -285,7 +283,7 @@ class ChunkingService:
         head = document[:head_size]
         tail = document[-tail_size:]
 
-        return f"{head}\n\n[... nội dung được rút gọn ...]\n\n{tail}"
+        return f"{head}\n\n[... content truncated ...]\n\n{tail}"
 
 
 chunking_service = ChunkingService()

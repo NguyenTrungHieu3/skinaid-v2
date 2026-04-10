@@ -6,11 +6,6 @@ from .models.permissions import Permission
 from .models.user_roles import UserRole
 from .models.role_permissions import RolePermission
 
-# Dịch vụ
-from .service import AuthService
-
-
-
 # Schemas
 from .schemas.api import (
     ChangePasswordRequest,
@@ -33,7 +28,6 @@ __all__ = [
     "Permission",
     "UserRole",
     "RolePermission",
-    "AuthService",
     "UserBase",
     "UserCreate",
     "UserLogin",

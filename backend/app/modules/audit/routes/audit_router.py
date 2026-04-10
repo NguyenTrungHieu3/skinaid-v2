@@ -8,22 +8,14 @@ from fastapi import APIRouter, Depends, Query
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.shared.response import SuccessResponse
 from app.modules.audit.schemas.api import AuditLogFilterParams, AuditLogListResponse
-from app.modules.audit.audit_repository import AuditRepository
-from app.modules.audit.services.audit_service import AuditService
-from app.core.dependencies import get_db, require_admin
+from app.modules.audit.dependencies import AuditSvc
+from app.core.dependencies import require_admin
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/audit", tags=["Audit Logs"])
-
-
-def get_audit_service(db: AsyncSession = Depends(get_db)) -> AuditService:
-    """Dependency to get AuditService instance."""
-    repository = AuditRepository(db)
-    return AuditService(repository)
 
 
 @router.get(
@@ -33,6 +25,8 @@ def get_audit_service(db: AsyncSession = Depends(get_db)) -> AuditService:
     description="Get paginated, filterable audit logs for admin monitoring."
 )
 async def get_audit_logs(
+    service: AuditSvc,
+    current_user: User = Depends(require_admin),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     user_id: Optional[UUID] = Query(None, description="Filter by user ID"),
@@ -46,8 +40,6 @@ async def get_audit_logs(
     end_date: Optional[datetime] = Query(None, description="Filter to date"),
     log_type: Optional[str] = Query(None, description="Filter by log type: admin_action / user_activity / system_error"),
     level: Optional[str] = Query(None, description="Filter by level: info / warning / error"),
-    service: AuditService = Depends(get_audit_service),
-    current_user: User = Depends(require_admin),
 ):
     """
     Get all audit logs with full filtering and pagination.

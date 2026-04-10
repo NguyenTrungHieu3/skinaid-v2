@@ -260,8 +260,8 @@ export default function RagManagement() {
   // Client-side search filtering (search is local since the API doesn't have search)
   const filteredDocs = searchTerm
     ? documents.filter((d) =>
-        d.file_name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      d.file_name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : documents
 
   // ── Loading State ────────────────────────────────────────
@@ -462,9 +462,8 @@ export default function RagManagement() {
                   ) : (
                     <button
                       key={page}
-                      className={`${styles.pageNumber} ${
-                        currentPage === page ? styles.pageNumberActive : ''
-                      }`}
+                      className={`${styles.pageNumber} ${currentPage === page ? styles.pageNumberActive : ''
+                        }`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}

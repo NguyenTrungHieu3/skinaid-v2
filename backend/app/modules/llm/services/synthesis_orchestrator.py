@@ -9,6 +9,8 @@ from typing import Final
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.ai.repository.wound_analysis_repository import WoundAnalysisRepository
+from app.modules.ai.services.wound_analysis_service import WoundAnalysisService
 from app.modules.firstaid.repository import FirstAidRepository
 from app.modules.firstaid.service import FirstAidService
 from app.modules.llm.exceptions import LLMContextBuildError
@@ -49,34 +51,10 @@ class SynthesisOrchestrator:
         self._firstaid_service = FirstAidService(
             repository=FirstAidRepository(db), db=db
         )
-        # Audit logging for system errors (non-blocking)
-        try:
-            self._audit_service = AuditService(AuditRepository(db))
-        except Exception:
-            self._audit_service = None
-
-    async def _log_system_error(
-        self,
-        action: str,
-        error_message: str,
-        details: dict | None = None,
-    ) -> None:
-        """Log a system error to audit_logs. Never raises."""
-        if not self._audit_service:
-            return
-        try:
-            await self._audit_service.log_event(
-                action=action,
-                success=False,
-                log_type="system_error",
-                level="error",
-                description=error_message[:500],
-                error_message=error_message[:500],
-                resource_type="system",
-                details=details,
-            )
-        except Exception:
-            logger.warning("Failed to write system error audit log for %s", action)
+        self._wound_analysis_service = WoundAnalysisService(
+            repository=WoundAnalysisRepository(db),
+            first_aid_service=self._firstaid_service,
+        )
 
     # Public API
 
@@ -134,6 +112,29 @@ class SynthesisOrchestrator:
             )
 
         processing_time_ms = int((time.monotonic() - start_ms) * 1000)
+
+        # ── Step 6: Persist structured_guidance vào Detection.firstaid_snapshot
+        if request.analysis_id is not None and structured is not None:
+            try:
+                rows = await self._wound_analysis_service.persist_llm_guidance(
+                    analysis_id=request.analysis_id,
+                    wound_type=request.wound_type,
+                    severity=request.severity,
+                    structured_guidance=structured.model_dump(),
+                )
+                logger.info(
+                    "[SynthesisOrchestrator] Persisted LLM guidance → %d detection(s) updated "
+                    "(analysis_id=%s, wound_type=%s, severity=%s).",
+                    rows,
+                    request.analysis_id,
+                    request.wound_type,
+                    request.severity,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "[SynthesisOrchestrator] Persist LLM guidance thất bại (non-blocking): %s",
+                    str(exc)[:200],
+                )
 
         return LLMSynthesizeResponse(
             guidance=guidance,

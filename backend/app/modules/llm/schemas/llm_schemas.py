@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Literal, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -15,6 +16,10 @@ VALID_SEVERITIES = ["mild", "moderate", "severe"]
 class LLMSynthesizeRequest(BaseModel):
     """Input cho B5 synthesis — wound_type + severity + optional questionnaire answers."""
 
+    analysis_id: Optional[UUID] = Field(
+        default=None,
+        description="UUID của analysis — nếu cung cấp, structured_guidance sẽ được lưu vào Detection.firstaid_snapshot sau synthesis",
+    )
     wound_type: str = Field(
         ...,
         description="Loại vết thương từ AI result (abrasion, cut, burn, ...)",

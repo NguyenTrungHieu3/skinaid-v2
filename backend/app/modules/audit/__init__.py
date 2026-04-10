@@ -1,4 +1,1 @@
-from app.modules.audit.services.audit_service import AuditService
-
-
-__all__ = ["AuditService"]
+# audit module — import explicitly from submodules to avoid circular imports

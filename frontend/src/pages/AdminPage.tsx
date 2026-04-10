@@ -44,6 +44,7 @@ export default function AdminPage() {
     switch (currentPage) {
       case 'dashboard':
         return <AdminDashboard onNavigate={setCurrentPage} />;
+        return <AdminDashboard onNavigate={setCurrentPage} />;
       case 'users':
         return <UserManagement />;
       case 'firstaid':
