@@ -1,40 +1,58 @@
-# Stage 1: Build
+# ============================================================
+# frontend/Dockerfile — SkinAid Frontend (Multi-stage)
+# ============================================================
+# Stage 1: Build React app với Vite
+# Stage 2: Serve static files với nginx:alpine
+# Final image size: ~30 MB (chỉ nginx + built files)
+# ============================================================
+
+# ─────────────────────────────────────────────────────────
+# Stage 1: Builder
+# ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
 
-# Build argument cho API URL
-ARG VITE_API_URL=http://localhost:8000/api/v1
-ENV VITE_API_URL=$VITE_API_URL
-
-# Thiết lập working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Cài đặt dependencies
-RUN npm ci --legacy-peer-deps
+# Copy package files first → npm ci → cache hiệu quả
+COPY package.json package-lock.json ./
+RUN npm ci --prefer-offline
 
 # Copy source code
 COPY . .
 
-# Build ứng dụng (Vite output ra thư mục 'dist')
+# Build args → trở thành VITE_ env vars lúc build
+# Truyền vào khi docker build:
+#   --build-arg VITE_API_URL=https://yourdomain.com/api/v1
+#   --build-arg VITE_BACKEND_URL=https://yourdomain.com
+ARG VITE_API_URL
+ARG VITE_BACKEND_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+
+# Vite build → output ra /app/dist
 RUN npm run build
 
-# Stage 2: Production với Nginx
-FROM nginx:alpine
+# ─────────────────────────────────────────────────────────
+# Stage 2: Serve
+# ─────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine AS serve
 
-# Copy file cấu hình nginx
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx config (SPA routing + proxy /api)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy build output từ stage builder (Vite output là 'dist')
+# Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80
+# Non-root: nginx chạy bằng user nginx (mặc định trong nginx:alpine)
+# Port 80 → cần quyền bind, dùng nginx:alpine đã config sẵn
+
 EXPOSE 80
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:80/ > /dev/null || exit 1
 
-# Lệnh để Nginx chạy
 CMD ["nginx", "-g", "daemon off;"]

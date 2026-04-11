@@ -1,6 +1,8 @@
 import logging
 import json
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 class MockEmailService:
@@ -16,10 +18,10 @@ class MockEmailService:
             "type": "verification",
             "email": email,
             "token": token,
-            "verification_link": f"http://localhost:3000/verify-email?token={token}&email={email}"
+            "verification_link": f"{settings.BASE_URL}/verify-email?token={token}&email={email}"
         }
         logger.info(f"Mock: Sending verification email to {email} with token {token}")
-        logger.info(f"Mock: Verification link: http://localhost:3000/verify-email?token={token}&email={email}")
+        logger.info(f"Mock: Verification link: {settings.BASE_URL}/verify-email?token={token}&email={email}")
         self.sent_emails.append(email_data)
         return True
 
@@ -41,10 +43,10 @@ class MockEmailService:
             "type": "password_reset",
             "email": email,
             "token": token,
-            "reset_link": f"http://localhost:3000/reset-password?token={token}&email={email}"
+            "reset_link": f"{settings.BASE_URL}/reset-password?token={token}&email={email}"
         }
         logger.info(f"Mock: Sending password reset email to {email} with token {token}")
-        logger.info(f"Mock: Reset link: http://localhost:3000/reset-password?token={token}&email={email}")
+        logger.info(f"Mock: Reset link: {settings.BASE_URL}/reset-password?token={token}&email={email}")
         self.sent_emails.append(email_data)
         return True
 

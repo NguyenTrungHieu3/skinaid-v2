@@ -197,24 +197,27 @@ yarn-debug.log*
 yarn-error.log*
 .npm
 .yarn-integrity
-package-lock.json
-yarn.lock
+# package-lock.json và yarn.lock PHẢI được commit
+# npm ci trong Dockerfile cần package-lock.json để reproducible build
+# package-lock.json
+# yarn.lock
 
-# Docker
-.dockerignore
+# Docker — .dockerignore của từng service được commit (cần thiết để build)
+# Không bỏ qua .dockerignore!
 
 # AI/ML specific - Ignore large model files but track folder structure
-models/*.pkl
-models/*.pickle
-models/*.joblib
-models/*.h5
-models/*.hdf5
-models/*.pt
-models/*.pth
-models/*.onnx
-models/*.tflite
-models/*.bin
-models/*.safetensors
+# Pattern nằm ở thư mục con (ai_ml/models/) nên dùng **
+**/*.pkl
+**/*.pickle
+**/*.joblib
+**/*.h5
+**/*.hdf5
+**/*.pt
+**/*.pth
+**/*.onnx
+**/*.tflite
+**/*.bin
+**/*.safetensors
 models/*.tar.gz
 models/*.zip
 
@@ -291,7 +294,13 @@ alembic/versions/*
 runtime/
 pids/
 
-# SSL certificates
+# SSL certificates — KHÔNG commit private keys lên git!
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+nginx/ssl/*.csr
+nginx/ssl/*.p12
+nginx/ssl/*.pfx
 *.pem
 *.key
 *.crt

@@ -1,10 +1,14 @@
 # ============================================================
-# docker-compose.yml — SkinAid LOCAL / DEVELOPMENT
+# docker-compose.prod.yml — SkinAid PRODUCTION (AWS EC2)
 # ============================================================
-# Usage: docker compose up
-# Services gọi nhau bằng service name (Docker DNS nội bộ)
-# Code được mount vào container → hot reload hoạt động
-# Redis + Qdrant expose port ra host để dùng với dev tools
+# Usage: docker compose -f docker-compose.prod.yml up -d
+#
+# Target: AWS EC2 t3.medium (2 vCPU, 4 GB RAM)
+# Điều chỉnh mem_limit / cpus phù hợp spec EC2 thực tế.
+#
+# ⚠️  Redis + Qdrant KHÔNG expose port ra host
+# ⚠️  Chỉ nginx expose 80 (HTTPS terminate tại load balancer hoặc Certbot)
+# ⚠️  Tất cả services dùng restart: always
 # ============================================================
 
 services:
@@ -15,22 +19,26 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: skinaid_postgres
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-skinaid_db}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"   # expose cho pgAdmin / DBeaver dev
+    # KHÔNG expose port — chỉ backend mới kết nối
     networks:
-      - skinaid_net
+      - skinaid_internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
   # ──────────────────────────────────────────────────────
   # Redis
@@ -38,19 +46,23 @@ services:
   redis:
     image: redis:7-alpine
     container_name: skinaid_redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"   # expose cho RedisInsight dev
+    # KHÔNG expose port
     networks:
-      - skinaid_net
+      - skinaid_internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.25"
 
   # ──────────────────────────────────────────────────────
   # Qdrant (Vector DB)
@@ -58,19 +70,22 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.13.0
     container_name: skinaid_qdrant
-    restart: unless-stopped
+    restart: always
     volumes:
       - qdrant_data:/qdrant/storage
-    ports:
-      - "6333:6333"   # HTTP REST — expose cho Qdrant dashboard dev
-      - "6334:6334"   # gRPC
+    # KHÔNG expose port
     networks:
-      - skinaid_net
+      - skinaid_internal
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:6333/readyz || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
 
   # ──────────────────────────────────────────────────────
   # AI Service
@@ -79,27 +94,27 @@ services:
     build:
       context: ./ai_ml
       dockerfile: Dockerfile
+    image: skinaid-ai:latest
     container_name: skinaid_ai
-    restart: unless-stopped
+    restart: always
     env_file:
-      - ./ai_ml/.env
-    environment:
-      API_HOST: "0.0.0.0"
-      API_PORT: "8001"
-      RELOAD: "true"     # hot reload cho dev
+      - ./ai_ml/.env.prod
     volumes:
-      - ./ai_ml:/app                          # mount code → hot reload
-      - ai_model_weights:/app/models          # models persist
-    ports:
-      - "8001:8001"
+      - ai_model_weights:/app/models   # model weights persist qua deploy
+    # KHÔNG expose port — backend gọi qua internal network
     networks:
-      - skinaid_net
+      - skinaid_internal
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
       interval: 30s
-      timeout: 10s
-      start_period: 60s
+      timeout: 15s
+      start_period: 90s    # torch load chậm
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G       # torch cần nhiều RAM
+          cpus: "1.0"
 
   # ──────────────────────────────────────────────────────
   # Backend Service
@@ -108,23 +123,22 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: skinaid-backend:latest
     container_name: skinaid_backend
-    restart: unless-stopped
+    restart: always
     env_file:
-      - ./backend/.env
+      - ./backend/.env.prod
     environment:
-      DATABASE_URL: "postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-skinaid_db}"
+      DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
       REDIS_URL: "redis://redis:6379/0"
       QDRANT: "http://qdrant:6333/"
       AI_SERVICE_URL: "http://ai_ml:8001"
     volumes:
-      - ./backend:/app                        # mount code → hot reload
       - backend_uploads:/app/uploads
       - backend_logs:/app/logs
-    ports:
-      - "8000:8000"
+    # KHÔNG expose port — nginx proxy qua internal network
     networks:
-      - skinaid_net
+      - skinaid_internal
     depends_on:
       postgres:
         condition: service_healthy
@@ -140,39 +154,84 @@ services:
       timeout: 10s
       start_period: 30s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.75"
 
   # ──────────────────────────────────────────────────────
-  # Frontend (dev server — Vite)
+  # Frontend (nginx serve static + reverse proxy API)
   # ──────────────────────────────────────────────────────
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL}
+    image: skinaid-frontend:latest
     container_name: skinaid_frontend
-    restart: unless-stopped
-    working_dir: /app
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
-    environment:
-      VITE_API_URL: "http://localhost:8000/api/v1"
-      VITE_BACKEND_URL: "http://localhost:8000"
-    volumes:
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
-    ports:
-      - "5173:5173"
+    restart: always
     networks:
-      - skinaid_net
+      - skinaid_internal
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  # ──────────────────────────────────────────────────────
+  # Nginx — Reverse Proxy (điểm vào duy nhất từ Internet)
+  # ──────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: skinaid_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro              # SSL certs (certbot)
+      - nginx_logs:/var/log/nginx
+    networks:
+      - skinaid_internal
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: "0.25"
 
 # ──────────────────────────────────────────────────────
-# Networks
+# Networks — internal only (không map ra host)
 # ──────────────────────────────────────────────────────
 networks:
-  skinaid_net:
+  skinaid_internal:
     driver: bridge
+    internal: false    # nginx cần ra Internet (DNS resolve, v.v.)
 
 # ──────────────────────────────────────────────────────
-# Volumes
+# Volumes — persist data qua container restart/update
 # ──────────────────────────────────────────────────────
 volumes:
   postgres_data:
@@ -181,4 +240,4 @@ volumes:
   ai_model_weights:
   backend_uploads:
   backend_logs:
-  frontend_node_modules:
+  nginx_logs:

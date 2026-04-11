@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import List
+from pydantic import field_validator
+from typing import List, Union
 
 
 class AISettings(BaseSettings):
@@ -9,6 +10,13 @@ class AISettings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     AI_MODEL_VERSION: str = "YOLOv11 and EfficientnetB3"
+
+    # ================== Server ==================
+    # Dùng 0.0.0.0 để Docker container có thể nhận request từ bên ngoài
+    API_HOST: str = "0.0.0.0"
+    API_PORT: int = 8001
+    WORKERS: int = 1
+    RELOAD: bool = False
 
     # ================== YOLO Detection Model ==================
     YOLO_MODEL_NAME: str = "yolov11"
@@ -45,10 +53,19 @@ class AISettings(BaseSettings):
     ]
     
     # ================== CORS Configuration ==================
-    CORS_ORIGINS: List[str] = [
+    # Đọc từ env: AI_CORS_ORIGINS=http://backend:8000,http://localhost:8000
+    CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Parse comma-separated string or return list as-is."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # ================== Rate Limiting Configuration ==================
     RATE_LIMIT: str = "100/day"
