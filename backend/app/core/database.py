@@ -34,4 +34,4 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db():
     import app.shared.models_registry  # noqa: F401
     async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        await conn.run_sync(SQLModel.metadata.create_all, checkfirst=True)
