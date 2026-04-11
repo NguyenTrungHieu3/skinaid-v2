@@ -2,7 +2,7 @@
 import styles from "./HomePage.module.css";
 import { Link, useLocation } from "react-router-dom";
 import Footer from "../components/layout/Footer";
-import { FaPlay, FaVideo } from "react-icons/fa";
+import { FaPlay } from "react-icons/fa";
 import Logo from "../assets/images/home-page/skin-hero-home.png";
 import DetectedImage from "../assets/images/home-page/anhDaNhanDien.png";
 import WoundImage from "../assets/images/home-page/anhVetTray.png";
