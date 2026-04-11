@@ -4,7 +4,22 @@
 .env.development
 .env.test
 .env.production
+.env.prod
 *.env
+**/.env.prod
+**/.env.local
+**/.env.production
+
+# Service-specific env files (explicit)
+backend/.env
+backend/.env.prod
+backend/.env.local
+ai_ml/.env
+ai_ml/.env.prod
+ai_ml/.env.local
+frontend/.env.local
+frontend/.env.production
+frontend/.env.prod
 
 # Python
 __pycache__/
