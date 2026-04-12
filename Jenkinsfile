@@ -52,7 +52,7 @@ pipeline {
         DEPLOY_DIR               = '/opt/skinaid'
         DOCKER_BUILDKIT          = '1'
         COMPOSE_DOCKER_CLI_BUILD = '1'
-        // Repo SSH URL — thay <your-github-username> đúng tên user/org
+        // Repo SSH URL
         REPO_URL                 = 'git@github.com:NguyenTrungHieu3/skinaid-v2.git'
         BRANCH                   = 'production'
     }
@@ -80,12 +80,12 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: "*/${BRANCH}"]],
                     userRemoteConfigs: [[
-                        url           : "${REPO_URL}",
-                        credentialsId : 'github-ssh'
+                        url: "${REPO_URL}",
+                        credentialsId: 'github-ssh'
                     ]],
                     extensions: [
-                        // Clone nhanh hơn (chỉ 1 commit gần nhất)
-                        [$class: 'CloneOption', depth: 1, shallow: true]
+                        [$class: 'CloneOption', depth: 1, shallow: true],
+                        [$class: 'GitLFSPull']
                     ]
                 ])
 
