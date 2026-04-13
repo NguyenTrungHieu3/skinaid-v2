@@ -312,7 +312,7 @@ pipeline {
 
                     FAILED=0
                     check_health "backend"  "skinaid_backend" "curl -sf http://localhost:8000/health"  || FAILED=1
-                    check_health "ai_ml"    "skinaid_ai"      "curl -sf http://localhost:8001/health"  || FAILED=1
+                    check_health "ai_ml"    "skinaid_ai"      "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\"" || FAILED=1
                     check_health "nginx"    "skinaid_nginx"   "curl -sf http://localhost/nginx-health" || FAILED=1
 
                     if [ $FAILED -eq 1 ]; then
