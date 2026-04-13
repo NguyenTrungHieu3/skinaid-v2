@@ -291,12 +291,13 @@ pipeline {
 
                     check_health() {
                         local NAME="$1"
-                        local URL="$2"
+                        local CONTAINER="$2"
+                        local CMD="$3"
                         local TRIES=0
                         local MAX=20    # 20 × 5s = 100s
 
                         printf "  %-20s " "$NAME"
-                        while ! curl -sf "$URL" > /dev/null 2>&1; do
+                        while ! docker exec "$CONTAINER" sh -c "$CMD" > /dev/null 2>&1; do
                             TRIES=$((TRIES + 1))
                             if [ $TRIES -ge $MAX ]; then
                                 echo "TIMEOUT ✗"
@@ -310,9 +311,9 @@ pipeline {
                     }
 
                     FAILED=0
-                    check_health "backend"  "http://localhost:8000/health"  || FAILED=1
-                    check_health "ai_ml"    "http://localhost:8001/health"  || FAILED=1
-                    check_health "nginx"    "http://localhost/nginx-health" || FAILED=1
+                    check_health "backend"  "skinaid_backend" "curl -sf http://localhost:8000/health"  || FAILED=1
+                    check_health "ai_ml"    "skinaid_ai"      "curl -sf http://localhost:8001/health"  || FAILED=1
+                    check_health "nginx"    "skinaid_nginx"   "curl -sf http://localhost/nginx-health" || FAILED=1
 
                     if [ $FAILED -eq 1 ]; then
                         echo ""
