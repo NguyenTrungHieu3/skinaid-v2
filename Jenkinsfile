@@ -237,7 +237,6 @@ pipeline {
                     set -a && [ -f backend/.env.prod ] && . backend/.env.prod ; set +a
 
                     docker compose -f $COMPOSE_FILE build \
-                        --no-cache \
                         --parallel \
                         $BUILD_SERVICES
 
