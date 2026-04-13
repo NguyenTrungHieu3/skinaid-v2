@@ -219,16 +219,10 @@ pipeline {
 
                     # rsync code từ Jenkins workspace → deploy dir
                     # Giữ lại .env.prod và nginx/ssl (không sync từ git)
-                    rsync -av --delete \
-                        --exclude='.git/' \
-                        --exclude='node_modules/' \
-                        --exclude='__pycache__/' \
-                        --exclude='*.pyc' \
-                        --exclude='.env*' \
-                        --exclude='nginx/ssl/' \
-                        $WORKSPACE/ $DEPLOY_DIR/
-
-                    echo "Sync complete ✓"
+                    cd $DEPLOY_DIR
+		    git fetch origin
+		    git reset --hard origin/production
+		    echo "Code synced via git"
 
                     # Build Docker images nếu có service cần rebuild
                     if [ -z "$BUILD_SERVICES" ]; then
