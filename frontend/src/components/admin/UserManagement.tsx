@@ -107,8 +107,8 @@ export default function UserManagementPage() {
           role: roleFilter !== "all" ? roleFilter : undefined,
           status: statusFilter !== "all" ? statusFilter : undefined,
         });
-        setUsers(data.items);
-        setTotalUsers(data.total);
+        setUsers(data.items || []);
+        setTotalUsers(data.total || 0);
       } catch {
       }
     }, 5 * 60_000);
@@ -126,8 +126,8 @@ export default function UserManagementPage() {
         role: roleFilter !== "all" ? roleFilter : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
-      setUsers(data.items);
-      setTotalUsers(data.total);
+      setUsers(data.items || []);
+      setTotalUsers(data.total || 0);
       setSelectedUserIds(new Set()); // Reset selections on filter/page change
     } catch (err) {
       console.error("Failed to fetch users", err);
@@ -255,8 +255,8 @@ export default function UserManagementPage() {
   const indexOfFirstUser = (currentPage - 1) * pageSize + 1;
   const indexOfLastUser = Math.min(currentPage * pageSize, totalUsers);
 
-  const activeUsersCount = useMemo(() => users.filter(u => u.status === "active").length, [users]);
-  const inactiveUsersCount = useMemo(() => users.filter(u => u.status === "inactive").length, [users]);
+  const activeUsersCount = useMemo(() => (users || []).filter(u => u.status === "active").length, [users]);
+  const inactiveUsersCount = useMemo(() => (users || []).filter(u => u.status === "inactive").length, [users]);
 
   // ─── Bulk Action Helpers ───────────────────────────────────────────────────
 
