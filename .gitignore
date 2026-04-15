@@ -290,12 +290,8 @@ pids/
 .kilo/
 .github/
 .gemini/
+./qwen
 
 
 # AI Generated Workspace
 .ai_workspace/
-
-# Test scripts
-backend/test_all_apis.py
-backend/HEAD_css.txt
-backend/MERGE_HEAD_css.txt

@@ -20,6 +20,10 @@ from app.modules.auth.models.device_session import DeviceSession
 from app.modules.notifications.models.notification import Notification
 from app.modules.rag.models.rag_document import RagDocument
 from app.modules.questionnaires.models import Questionnaire, Question, AnswerOption
+from app.modules.llm.models.llm_configuration import LLMConfiguration
+from app.modules.llm.models.llm_config_change_log import LLMConfigChangeLog
+from app.modules.llm.models.llm_usage_stat import LLMUsageStat
+from app.modules.llm.models.llm_budget_setting import LLMBudgetSetting
 
 __all__ = [
     "User", "VerificationToken", "Permission", "RolePermission", "Role",
@@ -28,5 +32,7 @@ __all__ = [
     "AIResult", "UserInput", "AIModel", "ModelVersionHistory", "ChatSession",
     "ChatMessage", "DeviceSession", "Notification",
     "RagDocument",
-    "Questionnaire", "Question", "AnswerOption"
+    "Questionnaire", "Question", "AnswerOption",
+    "LLMConfiguration", "LLMConfigChangeLog", "LLMUsageStat", "LLMBudgetSetting",
 ]
+
