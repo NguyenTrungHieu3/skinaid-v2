@@ -71,3 +71,32 @@ class LLMContextBuildError(InternalError):
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
+
+
+class LLMMaintenanceError(LLMException):
+    """LLM config đang trong chế độ bảo trì (HTTP 503)."""
+
+    status_code: int = 503
+    error_code: str = "LLM_MAINTENANCE"
+
+    def __init__(
+        self,
+        message: str = "Chức năng AI đang trong chế độ bảo trì, vui lòng thử lại sau",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message=message, details=details)
+
+
+class LLMInactiveError(LLMException):
+    """LLM config đang bị tắt (HTTP 503)."""
+
+    status_code: int = 503
+    error_code: str = "LLM_INACTIVE"
+
+    def __init__(
+        self,
+        message: str = "Chức năng AI hiện không khả dụng",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message=message, details=details)
+

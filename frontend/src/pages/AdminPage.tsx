@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList } from 'lucide-react';
+import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList, Brain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
@@ -8,6 +8,7 @@ import AdminLogs from '../components/admin/AdminLogs';
 import ModelManagement from '../components/admin/ModelManagement';
 import RagManagement from '../components/admin/RagManagement';
 import QuestionnaireManagement from '../components/admin/QuestionnaireManagement';
+import LLMManagement from '../components/admin/LLMManagement';
 import Sidebar from '../components/admin/Sidebar';
 import TopBar from '../components/admin/TopBar';
 import AdminFooter from '../components/admin/AdminFooter';
@@ -36,6 +37,7 @@ export default function AdminPage() {
     { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
     { id: 'questionnaires', label: 'Bộ câu hỏi', icon: ClipboardList },
     { id: 'models', label: t('admin.sidebar.model_management'), icon: Database },
+    { id: 'llm', label: 'Quản lý LLM', icon: Brain },
     { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Cơ sở tri thức'), icon: BookOpen },
     { id: 'logs', label: t('admin.sidebar.admin_logs'), icon: Shield },
   ];
@@ -51,6 +53,8 @@ export default function AdminPage() {
         return <FirstAidManagement />;
       case 'models':
         return <ModelManagement />;
+      case 'llm':
+        return <LLMManagement />;
       case 'rag':
         return <RagManagement />;
       case 'questionnaires':

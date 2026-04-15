@@ -33,6 +33,7 @@ from app.modules.chatbot.schemas.chat_schemas import (
 )
 from app.modules.chatbot.services.chat_prompt_builder import ChatPromptBuilder
 from app.modules.llm.services.llm_service import LLMService
+from app.modules.llm.services.config_resolver import resolve_llm_config
 
 logger = logging.getLogger(__name__)
 
@@ -252,11 +253,16 @@ class ChatService:
         )
         llm_messages = self._pb.build_messages(system_prompt, history, message)
 
+        # Resolve config from DB (checks active + maintenance)
+        llm_cfg = await resolve_llm_config(self._db, "chatbot_advisor")
+
         # Call LLM
         reply, tokens_used = await self._call_llm(
             llm_messages,
-            max_tokens=settings.CHATBOT_ADVISOR_MAX_TOKENS,
-            temperature=settings.CHATBOT_ADVISOR_TEMPERATURE,
+            max_tokens=llm_cfg.max_tokens,
+            temperature=llm_cfg.temperature,
+            config_key="chatbot_advisor",
+            model=llm_cfg.model_name,
         )
 
         # Save messages
@@ -309,11 +315,16 @@ class ChatService:
         system_prompt = self._pb.build_app_guide_prompt()
         llm_messages = self._pb.build_messages(system_prompt, history, message)
 
+        # Resolve config from DB (checks active + maintenance)
+        llm_cfg = await resolve_llm_config(self._db, "chatbot_guide")
+
         # Call LLM
         reply, tokens_used = await self._call_llm(
             llm_messages,
-            max_tokens=settings.CHATBOT_GUIDE_MAX_TOKENS,
-            temperature=settings.CHATBOT_GUIDE_TEMPERATURE,
+            max_tokens=llm_cfg.max_tokens,
+            temperature=llm_cfg.temperature,
+            config_key="chatbot_guide",
+            model=llm_cfg.model_name,
         )
 
         # Save to Redis
@@ -407,6 +418,8 @@ class ChatService:
         messages: list[dict[str, str]],
         max_tokens: int,
         temperature: float,
+        config_key: str = "chatbot_advisor",
+        model: str | None = None,
     ) -> tuple[str, int]:
         """Gọi LLMService — text mode (không JSON)."""
         try:
@@ -415,6 +428,8 @@ class ChatService:
                 max_tokens=max_tokens,
                 temperature=temperature,
                 response_format=None,  # text mode
+                config_key=config_key,
+                model=model,
             )
         except Exception as exc:
             raise ChatLLMError(
