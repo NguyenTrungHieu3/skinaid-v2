@@ -9,9 +9,9 @@ from app.modules.users.exceptions import (
     AvatarUploadError,
     ProfileNotFoundError,
 )
-from app.modules.users.models import UserProfile
-from app.modules.users.profile_repository import ProfileRepository
-from app.modules.users.profile_schemas import (
+from app.modules.users.models.user_profile import UserProfile
+from app.modules.users.repository.profile_repository import ProfileRepository
+from app.modules.users.schemas.profile_schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,

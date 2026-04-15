@@ -105,12 +105,13 @@ class Settings(BaseSettings):
     RAG_SCORE_THRESHOLD: float = 0.5
     RAG_SPARSE_MODEL: str = "Qdrant/bm25"
 
-    # CORS
-    CORS_ORIGINS: Union[List[str], str] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+    # CORS — đọc từ env var CORS_ORIGINS=https://a.com,https://b.com
+    # Validator bên dưới sẽ parse CSV string thành List
+    CORS_ORIGINS: Union[List[str], str] = (
+        "http://localhost:5173,"
+        "http://localhost:3000,"
+        "http://127.0.0.1:3000"
+    )
 
     @field_validator("DEBUG", mode="before")
     @classmethod

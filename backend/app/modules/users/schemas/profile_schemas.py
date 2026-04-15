@@ -36,7 +36,7 @@ class UserProfileBase(BaseModel):
         
         valid_genders = ['male', 'female', 'other']
         if v.lower() not in valid_genders:
-            raise ValueError(f'Giới tính phải là một trong: {', '.join(valid_genders)}')
+            raise ValueError(f"Giới tính phải là một trong: {', '.join(valid_genders)}")
         
         return v.lower()
 

@@ -136,13 +136,11 @@ class AIModel(SQLModel, table=True):
         description="User ID who deleted this model"
     )
     
-    # Indexes for common queries
+    # Indexes for common queries (chỉ composite indexes — single-field index dùng index=True trên Field)
     __table_args__ = (
         Index("ix_ai_models_type_active", "model_type", "is_active"),
         Index("ix_ai_models_type_deleted", "model_type", "is_deleted"),
-        Index("ix_ai_models_created_at", "created_at"),
         Index("ix_ai_models_deployed_at", "deployed_at"),
-        Index("ix_ai_models_activated_at", "activated_at"),
         Index("ix_ai_models_prev_active", "previously_active_version_id"),
         Index("uq_ai_models_type_version", "model_type", "version_tag", unique=True),
     )
@@ -233,5 +231,5 @@ class ModelVersionHistory(SQLModel, table=True):
     
     __table_args__ = (
         Index("ix_model_history_model_action", "model_id", "action"),
-        Index("ix_model_history_created_at", "created_at"),
+        # ix_model_history_created_at được tạo tự động từ index=True trên field created_at
     )

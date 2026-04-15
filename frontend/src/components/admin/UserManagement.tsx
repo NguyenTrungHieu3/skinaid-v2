@@ -8,6 +8,7 @@ import {
   type UserListItem,
   type UserDetail
 } from "../../services/userService";
+import { BACKEND_URL } from "../../services/api";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 import {
@@ -876,7 +877,7 @@ export default function UserManagementPage() {
                     const imageUrl = scan.image_url
                       ? scan.image_url.startsWith("http")
                         ? scan.image_url
-                        : `http://localhost:8000${scan.image_url}`
+                        : `${BACKEND_URL}${scan.image_url}`
                       : null;
 
                     return (

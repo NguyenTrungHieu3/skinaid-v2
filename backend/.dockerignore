@@ -1,0 +1,52 @@
+# ============================================================
+# backend/.dockerignore
+# ============================================================
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs + runtime dirs (created at container start)
+*.log
+logs/
+uploads/
+models/
+models_backup/
+models_temp/
+
+# Tests
+tests/
+test_*.py
+test_all_apis.py
+
+# Docs
+*.md
+docs/
+
+# Database
+*.db
+*.sqlite

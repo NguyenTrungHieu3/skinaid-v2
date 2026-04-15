@@ -1,0 +1,46 @@
+# ============================================================
+# ai_ml/.dockerignore
+# ============================================================
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Tests
+tests/
+test_*.py
+
+# Docs
+*.md
+docs/
+
+# Model files — UNCOMMENT nếu muốn mount qua volume thay vì COPY vào image
+# models/

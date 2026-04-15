@@ -1,0 +1,31 @@
+# ============================================================
+# frontend/.dockerignore
+# ============================================================
+# Dependencies (npm ci sẽ install lại)
+node_modules/
+
+# Build output (builder stage sẽ tạo)
+dist/
+
+# Environment files (dùng --build-arg thay thế)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docs
+*.md

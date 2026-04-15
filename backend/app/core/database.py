@@ -33,5 +33,36 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db():
     import app.shared.models_registry  # noqa: F401
+    import logging
+    logger = logging.getLogger(__name__)
+
     async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+        from sqlalchemy import inspect as sa_inspect
+
+        def _create_tables_if_needed(connection):
+            inspector = sa_inspect(connection)
+            existing_tables = set(inspector.get_table_names())
+
+            if existing_tables:
+                # DB was initialized via SQL file — skip create_all
+                # to avoid DuplicateTableError on indexes
+                expected = set(SQLModel.metadata.tables.keys())
+                missing = expected - existing_tables
+                if missing:
+                    logger.warning(
+                        f"DB has {len(existing_tables)} tables but missing: {missing}. "
+                        f"Please update your SQL schema file."
+                    )
+                else:
+                    logger.info(
+                        f"Database already initialized ({len(existing_tables)} tables). "
+                        f"Skipping create_all."
+                    )
+                return
+
+            # First-time setup — no tables exist, create everything
+            logger.info("Empty database detected. Running create_all...")
+            SQLModel.metadata.create_all(connection, checkfirst=True)
+            logger.info("Database tables created successfully.")
+
+        await conn.run_sync(_create_tables_if_needed)

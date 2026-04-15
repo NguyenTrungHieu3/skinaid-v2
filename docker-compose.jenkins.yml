@@ -1,0 +1,58 @@
+# =================================================================
+# docker-compose.jenkins.yml — Jenkins CI/CD Server
+# =================================================================
+# Chạy Jenkins như Docker container trên cùng EC2 với SkinAid
+#
+# Usage:
+#   docker compose -f docker-compose.jenkins.yml up -d
+#
+# Jenkins UI: http://<EC2_IP>:8080
+# Jenkins logs: docker compose -f docker-compose.jenkins.yml logs -f
+#
+# ⚠️  Jenkins chạy với Docker socket mount để có thể:
+#     - Gọi docker compose build/up trực tiếp
+#     - Không cần Docker-in-Docker (DinD) phức tạp hơn
+# =================================================================
+
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk21
+    container_name: skinaid_jenkins
+    restart: always
+    user: root    # cần root để gọi Docker socket
+    ports:
+      - "8080:8080"     # Jenkins Web UI
+      - "50000:50000"   # Jenkins agent connection port
+    volumes:
+      # Persist Jenkins data (jobs, plugins, config)
+      - jenkins_data:/var/jenkins_home
+      # Mount Docker socket → Jenkins có thể gọi docker commands trên host
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount Docker binary
+      - /usr/bin/docker:/usr/bin/docker
+      # Mount docker compose binary
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins
+      # Mount project directory (để deploy.sh chạy đúng đường dẫn)
+      - /opt/skinaid:/opt/skinaid
+    environment:
+      # Bỏ qua setup wizard lần đầu (dùng admin account mặc định)
+      # Comment dòng dưới nếu muốn setup thủ công qua UI
+      JAVA_OPTS: >-
+        -Djenkins.install.runSetupWizard=false
+        -Dhudson.model.DirectoryBrowserSupport.CSP=
+    networks:
+      - jenkins_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s   # Jenkins khởi động chậm
+      retries: 5
+
+networks:
+  jenkins_net:
+    driver: bridge
+
+volumes:
+  jenkins_data:
+    driver: local

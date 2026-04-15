@@ -1,25 +1,21 @@
 # ============================================================
-# backend/Dockerfile — SkinAid Backend Service
+# ai_ml/Dockerfile — SkinAid AI Service
 # ============================================================
-# Base: python:3.11-slim
-# ⚠️  Image size sẽ ~4-5 GB do torch + opencv + tesseract
+# Base: python:3.11-slim (torch+opencv cần glibc, không dùng alpine)
+# ⚠️  Image size sẽ ~3-4 GB do torch+torchvision+model weights
 # ============================================================
 FROM python:3.11-slim AS base
 
 # ── System dependencies ────────────────────────────────────
-# libglib2.0-0 libgl1 libgomp1 : opencv + torch
-# tesseract-ocr                 : pytesseract (OCR)
-# poppler-utils                 : pdf2image (PDF → image)
-# libpq-dev                     : psycopg2 (PostgreSQL C driver)
-# curl                          : health check
+# libglib2.0-0   : required by opencv-python
+# libgomp1       : required by torch (OpenMP)
+# libgl1         : required by opencv-python (libGL.so.1)
+# libgthread-2.0-0: required by opencv
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libglib2.0-0 \
-        libgl1 \
         libgomp1 \
+        libgl1 \
         libgthread-2.0-0 \
-        tesseract-ocr \
-        poppler-utils \
-        curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Non-root user ─────────────────────────────────────────
@@ -28,29 +24,37 @@ RUN groupadd -r skinaid && useradd -r -g skinaid skinaid
 WORKDIR /app
 
 # ── Install Python dependencies (cache layer) ─────────────
+# Copy requirements first → pip install → then copy source
+# Khi code thay đổi, layer pip install vẫn được cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# ── Copy application source ───────────────────────────────
+# ── Copy source code ──────────────────────────────────────
 COPY --chown=skinaid:skinaid . .
 
-# ── Create runtime directories ────────────────────────────
-RUN mkdir -p uploads logs models models_backup models_temp \
-    && chown -R skinaid:skinaid uploads logs models models_backup models_temp
+# ── Model weights ─────────────────────────────────────────
+# Model files được COPY vào image (nặng ~150MB)
+# Alternative: mount qua Docker volume nếu muốn update model không rebuild image
+# COPY --chown=skinaid:skinaid models/ models/
 
 # ── Switch to non-root ────────────────────────────────────
 USER skinaid
 
 # ── Environment defaults ───────────────────────────────────
-ENV PYTHONUNBUFFERED=1 \
+ENV API_HOST=0.0.0.0 \
+    API_PORT=8001 \
+    RELOAD=false \
+    WORKERS=1 \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-EXPOSE 8000
+EXPOSE 8001
 
 # ── Health check ──────────────────────────────────────────
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')" || exit 1
 
 # ── Start command ─────────────────────────────────────────
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Dùng shell form để nhận biến môi trường API_HOST/API_PORT
+CMD ["sh", "-c", "uvicorn main:app --host $API_HOST --port $API_PORT --workers $WORKERS"]

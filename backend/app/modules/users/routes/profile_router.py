@@ -8,9 +8,9 @@ from app.core.dependencies import (
     get_current_active_user,
     require_admin,
 )
-from app.modules.users.models import User
-from app.modules.users.profile_dependencies import ProfileSvc
-from app.modules.users.profile_schemas import (
+from app.modules.users.models.user import User
+from app.modules.users.dependencies import ProfileSvc
+from app.modules.users.schemas.profile_schemas import (
     AvatarDeleteResponse,
     AvatarUploadResponse,
     ProfileStatisticsResponse,

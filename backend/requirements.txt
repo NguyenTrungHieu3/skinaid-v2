@@ -124,7 +124,7 @@ python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.22
 pytz==2026.1.post1
-pywin32==311
+# pywin32==311  # Windows-only — không cài được trên Linux/Docker
 PyYAML==6.0.3
 qdrant-client==1.17.1
 redis==5.2.1
