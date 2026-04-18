@@ -36,8 +36,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY --chown=skinaid:skinaid . .
 
 # ── Create runtime directories ────────────────────────────
-RUN mkdir -p uploads logs models models_backup models_temp \
-    && chown -R skinaid:skinaid uploads logs models models_backup models_temp
+RUN mkdir -p uploads logs models models_backup models_temp rag_docs \
+    && chown -R skinaid:skinaid uploads logs models models_backup models_temp rag_docs
 
 # ── Switch to non-root ────────────────────────────────────
 USER skinaid
