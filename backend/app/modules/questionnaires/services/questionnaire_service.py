@@ -155,6 +155,16 @@ class QuestionnaireService:
         await self.repo.delete(q)
         await self.db.flush()
 
+    async def bulk_delete_questionnaires(self, q_ids: List[UUID]) -> int:
+        """Delete multiple questionnaires by IDs. Returns count of deleted."""
+        deleted = 0
+        for q_id in q_ids:
+            q = await self._get_questionnaire_or_raise(q_id)
+            await self.repo.delete(q)
+            deleted += 1
+        await self.db.flush()
+        return deleted
+
     # ─── Question CRUD ─────────────────────────────────────────────────────────
 
     async def add_question(self, q_id: UUID, data: QuestionCreate) -> Question:
@@ -272,8 +282,11 @@ class QuestionnaireService:
                 }
             answer_text = str(row.get("answer_text", "")).strip()
             triage = str(row.get("triage_level", "green")).strip().lower()
-            if triage not in ("green", "yellow", "red"):
-                triage = "green"
+            triage_map = {
+                "green": "green", "yellow": "yellow", "red": "red",
+                "nhẹ": "green", "trung bình": "yellow", "nặng": "red", "vừa": "yellow",
+            }
+            triage = triage_map.get(triage, "green")
             if answer_text:
                 questions_map[order]["answers"].append({
                     "answer_text": answer_text,

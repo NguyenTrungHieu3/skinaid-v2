@@ -1,13 +1,17 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 from typing import List, Any
 from uuid import UUID
 
 from app.shared.response import SuccessResponse
 from app.modules.questionnaires.dependencies import QuestionnaireSvc
+from app.core.dependencies import require_admin
+from app.modules.users.models import User
+from app.modules.audit.dependencies import AuditSvc
 from app.modules.questionnaires.schemas.api import (
     QuestionnaireCreate, QuestionnaireUpdate, QuestionnaireResponse,
     QuestionCreate, QuestionUpdate, QuestionResponse,
     AnswerOptionCreate, AnswerOptionUpdate, AnswerOptionResponse,
+    BulkDeleteRequest, BulkDeleteResponse,
 )
 
 router = APIRouter(prefix="/questionnaires")
@@ -32,11 +36,54 @@ async def get_all_questionnaires(service: QuestionnaireSvc):
     summary="Tạo bộ câu hỏi mới",
     description="Tạo bộ câu hỏi mới kèm câu hỏi và đáp án (nếu có)",
 )
-async def create_questionnaire(data: QuestionnaireCreate, service: QuestionnaireSvc):
+async def create_questionnaire(
+    data: QuestionnaireCreate, 
+    service: QuestionnaireSvc,
+    audit_service: AuditSvc,
+    current_user: User = Depends(require_admin),
+):
     result = await service.create_questionnaire(data)
+    await audit_service.log_event(
+        action="create_questionnaire",
+        user_id=current_user.user_id,
+        resource_type="questionnaire",
+        resource_id=str(result.id),
+        details={"title": result.title, "wound_type": result.wound_type},
+        success=True,
+        description=f"Tạo bộ câu hỏi: {result.title}"
+    )
     return SuccessResponse(
         message="Tạo bộ câu hỏi thành công",
         data=result
+    )
+
+
+# ─── Bulk Delete (STATIC – must be before /{q_id}) ───────────────────────────
+
+@router.post(
+    "/bulk-delete",
+    response_model=SuccessResponse[BulkDeleteResponse],
+    summary="Xóa nhiều bộ câu hỏi",
+    description="Xóa hàng loạt bộ câu hỏi theo danh sách ID",
+)
+async def bulk_delete_questionnaires(
+    body: BulkDeleteRequest,
+    service: QuestionnaireSvc,
+    audit_service: AuditSvc,
+    current_user: User = Depends(require_admin),
+):
+    deleted = await service.bulk_delete_questionnaires(body.ids)
+    await audit_service.log_event(
+        action="bulk_delete_questionnaires",
+        user_id=current_user.user_id,
+        resource_type="questionnaire",
+        details={"ids": [str(i) for i in body.ids], "deleted_count": deleted},
+        success=True,
+        description=f"Xóa hàng loạt {deleted} bộ câu hỏi"
+    )
+    return SuccessResponse(
+        message=f"Đã xóa {deleted} bộ câu hỏi",
+        data=BulkDeleteResponse(deleted=deleted, message=f"Đã xóa {deleted} bộ câu hỏi thành công")
     )
 
 
@@ -137,8 +184,23 @@ async def get_questionnaire(q_id: UUID, service: QuestionnaireSvc):
     summary="Cập nhật bộ câu hỏi",
     description="Cập nhật tiêu đề, mô tả hoặc trạng thái bộ câu hỏi",
 )
-async def update_questionnaire(q_id: UUID, data: QuestionnaireUpdate, service: QuestionnaireSvc):
+async def update_questionnaire(
+    q_id: UUID, 
+    data: QuestionnaireUpdate, 
+    service: QuestionnaireSvc,
+    audit_service: AuditSvc,
+    current_user: User = Depends(require_admin),
+):
     result = await service.update_questionnaire(q_id, data)
+    await audit_service.log_event(
+        action="update_questionnaire",
+        user_id=current_user.user_id,
+        resource_type="questionnaire",
+        resource_id=str(q_id),
+        details={"title": result.title},
+        success=True,
+        description=f"Cập nhật bộ câu hỏi: {result.title}"
+    )
     return SuccessResponse(
         message="Cập nhật bộ câu hỏi thành công",
         data=result
@@ -151,8 +213,21 @@ async def update_questionnaire(q_id: UUID, data: QuestionnaireUpdate, service: Q
     summary="Xóa bộ câu hỏi",
     description="Xóa bộ câu hỏi kèm tất cả câu hỏi và đáp án",
 )
-async def delete_questionnaire(q_id: UUID, service: QuestionnaireSvc):
+async def delete_questionnaire(
+    q_id: UUID, 
+    service: QuestionnaireSvc,
+    audit_service: AuditSvc,
+    current_user: User = Depends(require_admin),
+):
     await service.delete_questionnaire(q_id)
+    await audit_service.log_event(
+        action="delete_questionnaire",
+        user_id=current_user.user_id,
+        resource_type="questionnaire",
+        resource_id=str(q_id),
+        success=True,
+        description=f"Xóa bộ câu hỏi ID: {q_id}"
+    )
     return SuccessResponse(message="Xóa bộ câu hỏi thành công")
 
 @router.post(

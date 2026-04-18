@@ -89,6 +89,9 @@ class RAGDocumentService:
         )
 
         doc = await self.repository.create(doc)
+        
+        # Explicit commit to avoid race condition with background task (Read Committed isolation)
+        await self.db.commit()
 
         logger.info(
             "[RAGDocumentService] Created RagDocument id=%s, file='%s', status=pending",

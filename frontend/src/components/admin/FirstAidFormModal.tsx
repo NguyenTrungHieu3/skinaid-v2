@@ -322,7 +322,7 @@ export default function FirstAidFormModal({
                             </button>
                             <button
                                 type="submit"
-                                className={styles.adminBtnPrimary}
+                                className={styles.btnPrimary}
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? (

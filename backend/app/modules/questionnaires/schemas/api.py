@@ -6,8 +6,7 @@ from uuid import UUID
 
 # Canonical wound types — must stay in sync with VALID_WOUND_TYPES in import_service
 ALLOWED_WOUND_TYPES = {
-    "burn", "abrasion", "bruise", "fungal", "laceration",
-    "rash", "normal", "cut", "acne", "psoriasis",
+    "burn", "abrasion", "bruise", "fungal", "acne", "psoriasis",
 }
 
 ALLOWED_TRIAGE_LEVELS = {"green", "yellow", "red"}
@@ -162,8 +161,12 @@ class QuestionnaireUpdate(BaseModel):
                 raise ValueError("Tiêu đề không được để trống")
         return v
 
-class QuestionnaireResponse(QuestionnaireBase):
+class QuestionnaireResponse(BaseModel):
     questionnaire_id: UUID
+    wound_type: str
+    title: str
+    description: Optional[str] = None
+    is_active: bool = False
     questions: List[QuestionResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -231,3 +234,14 @@ class BulkFilesImportResponse(BaseModel):
     file_results: List[FileResultItem] = []
     errors: List[str] = []
 
+
+# ─── Bulk Delete Schemas ─────────────────────────────────────────────────────
+
+class BulkDeleteRequest(BaseModel):
+    """Request for bulk delete endpoint."""
+    ids: List[UUID] = Field(..., min_length=1, description="Danh sách ID bộ câu hỏi cần xóa")
+
+class BulkDeleteResponse(BaseModel):
+    """Response for bulk delete endpoint."""
+    deleted: int
+    message: str

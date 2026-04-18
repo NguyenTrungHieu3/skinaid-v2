@@ -13,6 +13,28 @@ from app.modules.questionnaires.exceptions import ImportValidationError
 
 logger = logging.getLogger(__name__)
 
+# Mapping Vietnamese → English for triage_level
+TRIAGE_MAP = {
+    "green": "green", "yellow": "yellow", "red": "red",
+    "nhẹ": "green", "trung bình": "yellow", "nặng": "red",
+    "vừa": "yellow",  # alias
+}
+
+# Mapping Vietnamese → English for wound_type
+WOUND_TYPE_MAP = {
+    "burn": "burn", "bỏng": "burn", "bỏng (burn)": "burn",
+    "abrasion": "abrasion", "trầy xước": "abrasion", "trầy xước (abrasion)": "abrasion",
+    "bruise": "bruise", "bầm tím": "bruise", "bầm tím (bruise)": "bruise",
+    "fungal": "fungal", "nấm da": "fungal", "nấm da (fungal)": "fungal",
+    "acne": "acne", "mụn trứng cá": "acne", "mụn trứng cá (acne)": "acne",
+    "psoriasis": "psoriasis", "vảy nến": "psoriasis", "vảy nến (psoriasis)": "psoriasis",
+    # (Removed previous extraneous types, but can keep mapping for safety if user imports an old file)
+    "laceration": "laceration", "vết rách": "laceration", "vết rách (laceration)": "laceration",
+    "rash": "rash", "phát ban": "rash", "phát ban (rash)": "rash",
+    "normal": "normal", "bình thường": "normal", "bình thường (normal)": "normal",
+    "cut": "cut", "vết cắt": "cut", "vết cắt (cut)": "cut",
+}
+
 
 # ─── File Dispatch (called by router — single entry point) ───────────────────
 
@@ -54,8 +76,7 @@ REQUIRED_FULL_COLUMNS = {"wound_type", "title", "question_order", "question_text
 
 # Canonical wound types (must stay in sync with frontend WOUND_TYPES_FORM)
 VALID_WOUND_TYPES = {
-    "burn", "abrasion", "bruise", "fungal", "laceration", "rash", "normal",
-    "cut", "acne", "psoriasis"
+    "burn", "abrasion", "bruise", "fungal", "acne", "psoriasis"
 }
 
 
@@ -91,8 +112,9 @@ def parse_csv(content: bytes) -> Tuple[List[dict], List[str]]:
     for i, row in enumerate(reader, start=2):
         normalized = {k.strip().lower(): v.strip() for k, v in row.items()}
         triage = normalized.get("triage_level", "green").lower()
-        if triage not in ("green", "yellow", "red"):
-            errors.append(f"Dòng {i}: triage_level '{triage}' không hợp lệ (green/yellow/red)")
+        triage = TRIAGE_MAP.get(triage, None)
+        if triage is None:
+            errors.append(f"Dòng {i}: triage_level '{normalized.get('triage_level', '')}' không hợp lệ (nhẹ/trung bình/nặng)")
             triage = "green"
 
         try:
@@ -154,8 +176,9 @@ def parse_excel(content: bytes) -> Tuple[List[dict], List[str]]:
             continue
 
         triage = normalized.get("triage_level", "green").lower()
-        if triage not in ("green", "yellow", "red"):
-            errors.append(f"Dòng {i}: triage_level '{triage}' không hợp lệ, dùng 'green'")
+        triage = TRIAGE_MAP.get(triage, None)
+        if triage is None:
+            errors.append(f"Dòng {i}: triage_level '{normalized.get('triage_level', '')}' không hợp lệ")
             triage = "green"
 
         try:
@@ -237,6 +260,7 @@ def _normalize_row_full(raw: dict, row_num: int, errors: List[str]) -> dict | No
     n = {k.strip().lower(): str(v).strip() if v is not None else "" for k, v in raw.items()}
 
     wound_type = n.get("wound_type", "").strip().lower()
+    wound_type = WOUND_TYPE_MAP.get(wound_type, wound_type) # Fallback to original if not found
     if not wound_type:
         errors.append(f"Dòng {row_num}: wound_type rỗng, bỏ qua")
         return None
@@ -251,8 +275,9 @@ def _normalize_row_full(raw: dict, row_num: int, errors: List[str]) -> dict | No
         return None  # silently skip blank question rows (separator rows)
 
     triage = n.get("triage_level", "green").strip().lower()
-    if triage not in ("green", "yellow", "red"):
-        errors.append(f"Dòng {row_num}: triage_level '{triage}' không hợp lệ → dùng 'green'")
+    triage = TRIAGE_MAP.get(triage, None)
+    if triage is None:
+        errors.append(f"Dòng {row_num}: triage_level '{n.get('triage_level', '')}' không hợp lệ")
         triage = "green"
 
     try:
