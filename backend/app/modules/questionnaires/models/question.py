@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from app.modules.questionnaires.models.questionnaire import Questionnaire
+    from app.modules.questionnaires.models.answer_option import AnswerOption
 
 
 def _current_timestamp() -> datetime:

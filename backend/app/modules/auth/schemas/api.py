@@ -101,6 +101,13 @@ class UserLogin(BaseModel):
 
     user_name: str
     password: str
+    device_id: Optional[str] = Field(default=None, max_length=100)
+    platform: Optional[str] = Field(default=None, max_length=20, description="ios | android | web")
+    app_version: Optional[str] = Field(default=None, max_length=50)
+    os_version: Optional[str] = Field(default=None, max_length=50)
+    device_model: Optional[str] = Field(default=None, max_length=100)
+    device_name: Optional[str] = Field(default=None, max_length=255)
+    push_token: Optional[str] = None
 
 
 class RefreshTokenRequest(BaseModel):

@@ -1,6 +1,5 @@
 import logging
 from typing import Optional, Sequence
-from uuid import UUID
 
 from sqlmodel import select
 from sqlalchemy import desc

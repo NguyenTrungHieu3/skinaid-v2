@@ -281,7 +281,7 @@ class QuestionnaireService:
                 })
 
         # Create questions and answers
-        for idx, (order, q_data) in enumerate(questions_map.items(), start=1):
+        for _idx, (order, q_data) in enumerate(questions_map.items(), start=1):
             question = Question(
                 question_text=q_data["question_text"],
                 order_index=order,

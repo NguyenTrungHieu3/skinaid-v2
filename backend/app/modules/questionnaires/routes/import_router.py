@@ -5,8 +5,6 @@ from uuid import UUID
 import io
 import logging
 
-logger = logging.getLogger(__name__)
-
 from app.shared.response import SuccessResponse
 from app.modules.questionnaires.dependencies import QuestionnaireSvc
 from app.modules.questionnaires.schemas.api import (
@@ -16,6 +14,8 @@ from app.modules.questionnaires.schemas.api import (
 )
 from app.modules.questionnaires.services import import_service as imp
 from app.modules.questionnaires.exceptions import ImportValidationError
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/questionnaires")
@@ -89,7 +89,7 @@ async def preview_import(file: UploadFile = File(...)):
     try:
         rows, errors = imp.parse_file(file.filename, file_content)
     except ImportValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
+        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     return SuccessResponse(
         message="Trích xuất xem trước thành công",
@@ -111,7 +111,7 @@ async def preview_full_import(file: UploadFile = File(...)):
     try:
         groups, errors = imp.parse_full_file(file.filename, file_content)
     except ImportValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
+        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     return SuccessResponse(
         message="Trích xuất xem trước thành công",
@@ -154,7 +154,7 @@ async def import_full_questionnaire(
     try:
         groups, errors = imp.parse_full_file(file.filename, file_content)
     except ImportValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
+        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     if not groups:
         raise HTTPException(
@@ -188,7 +188,7 @@ async def import_bulk_questionnaires(
     try:
         groups, errors = imp.parse_full_file(file.filename, file_content)
     except ImportValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
+        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     if not groups:
         raise HTTPException(
@@ -282,7 +282,7 @@ async def import_file(
     try:
         rows, errors = imp.parse_file(file.filename, file_content)
     except ImportValidationError as exc:
-        raise HTTPException(status_code=400, detail=exc.message)
+        raise HTTPException(status_code=400, detail=exc.message) from exc
 
     if not rows and errors:
         raise HTTPException(status_code=422, detail={"parse_errors": errors})

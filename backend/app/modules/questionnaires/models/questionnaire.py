@@ -1,7 +1,10 @@
 from sqlmodel import SQLModel, Field, Relationship
 from uuid import uuid4, UUID
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
+
+if TYPE_CHECKING:
+    from app.modules.questionnaires.models.question import Question
 
 
 def _current_timestamp() -> datetime:
