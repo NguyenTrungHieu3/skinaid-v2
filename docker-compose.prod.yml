@@ -140,6 +140,7 @@ services:
       AI_SERVICE_URL: "http://ai_ml:8001"
     volumes:
       - backend_uploads:/app/uploads
+      - backend_rag_docs:/app/rag_docs
       - backend_logs:/app/logs
     # KHÔNG expose port — nginx proxy qua internal network
     networks:
@@ -242,6 +243,7 @@ volumes:
   redis_data:
   qdrant_data:
   ai_model_weights:
+  backend_rag_docs:
   backend_uploads:
   backend_logs:
   nginx_logs:
