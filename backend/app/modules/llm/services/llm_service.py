@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Final
 
 from openai import AsyncOpenAI, APIConnectionError, APITimeoutError, RateLimitError
@@ -47,17 +48,21 @@ class LLMService:
         max_tokens: int | None = None,
         temperature: float | None = None,
         response_format: object = _SENTINEL,
+        config_key: str = "unknown",
+        model: str | None = None,
     ) -> tuple[str, int]:
         """Gọi OpenAI chat completion, retry tối đa 2 lần khi rate limit, trả về (content, tokens_used)."""
         _max_tokens = max_tokens if max_tokens is not None else settings.LLM_MAX_TOKENS
         _temperature = temperature if temperature is not None else settings.LLM_TEMPERATURE
+        _model = model if model is not None else settings.LLM_MODEL
         _response_format = {"type": "json_object"} if response_format is _SENTINEL else response_format
         client = self._get_client()
+        _start_time = time.monotonic()
 
         total_prompt_chars = sum(len(m.get("content", "")) for m in messages)
         logger.info(
             "[LLMService] Calling LLM — model=%s, max_completion_tokens=%d, prompt_chars≈%d.",
-            settings.LLM_MODEL,
+            _model,
             _max_tokens,
             total_prompt_chars,
         )
@@ -67,7 +72,7 @@ class LLMService:
         for attempt in range(1, _MAX_RETRY + 2):  
             try:
                 create_kwargs = dict(
-                    model=settings.LLM_MODEL,
+                    model=_model,
                     messages=messages,  # type: ignore[arg-type]
                     max_completion_tokens=_max_tokens,
                     temperature=_temperature,
@@ -97,7 +102,7 @@ class LLMService:
                     raise LLMInvalidResponseError(
                         message="LLM trả về nội dung rỗng",
                         details={
-                            "model": settings.LLM_MODEL,
+                            "model": _model,
                             "attempt": attempt,
                             "finish_reason": finish_reason,
                         },
@@ -108,10 +113,25 @@ class LLMService:
                 )
 
                 logger.info(
-                    "[LLMService] Synthesis thành công (model=%s, tokens=%d, attempt=%d).",
-                    settings.LLM_MODEL,
+                    "[LLMService] Thành công (model=%s, tokens=%d, attempt=%d).",
+                    _model,
                     tokens_used,
                     attempt,
+                )
+
+                # Record usage stats
+                from app.modules.llm.services.usage_recorder import fire_and_forget_usage
+                _elapsed_ms = int((time.monotonic() - _start_time) * 1000)
+                _prompt_tokens = response.usage.prompt_tokens if response.usage else 0
+                _completion_tokens = response.usage.completion_tokens if response.usage else 0
+                fire_and_forget_usage(
+                    config_key=config_key,
+                    model_name=_model,
+                    tokens_prompt=_prompt_tokens,
+                    tokens_completion=_completion_tokens,
+                    tokens_total=tokens_used,
+                    response_time_ms=_elapsed_ms,
+                    success=True,
                 )
 
                 return content, tokens_used
@@ -130,25 +150,43 @@ class LLMService:
                 await asyncio.sleep(delay)
 
             except (APIConnectionError, APITimeoutError) as exc:
+                from app.modules.llm.services.usage_recorder import fire_and_forget_usage
+                _elapsed_ms = int((time.monotonic() - _start_time) * 1000)
+                fire_and_forget_usage(
+                    config_key=config_key,
+                    model_name=_model,
+                    response_time_ms=_elapsed_ms,
+                    success=False,
+                    error_message=str(exc)[:200],
+                )
                 raise LLMServiceUnavailableError(
                     message="Không thể kết nối đến OpenAI API",
-                    details={"error": str(exc)[:200], "model": settings.LLM_MODEL},
+                    details={"error": str(exc)[:200], "model": _model},
                 ) from exc
 
             except (LLMInvalidResponseError,):
                 raise
 
             except Exception as exc:
+                from app.modules.llm.services.usage_recorder import fire_and_forget_usage
+                _elapsed_ms = int((time.monotonic() - _start_time) * 1000)
+                fire_and_forget_usage(
+                    config_key=config_key,
+                    model_name=_model,
+                    response_time_ms=_elapsed_ms,
+                    success=False,
+                    error_message=str(exc)[:200],
+                )
                 raise LLMServiceUnavailableError(
                     message="Lỗi không xác định khi gọi OpenAI API",
-                    details={"error": str(exc)[:200], "model": settings.LLM_MODEL},
+                    details={"error": str(exc)[:200], "model": _model},
                 ) from exc
 
         logger.error(
             "[LLMService] Hết %d retry do RateLimitError. Model=%s.",
             _MAX_RETRY,
-            settings.LLM_MODEL,
+            _model,
         )
         raise LLMRateLimitError(
-            details={"model": settings.LLM_MODEL, "retries": _MAX_RETRY},
+            details={"model": _model, "retries": _MAX_RETRY},
         ) from last_exc

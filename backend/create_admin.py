@@ -1,9 +1,4 @@
-#!/usr/bin/env python3
-"""
-SkinAid Admin User Creation Script
-Creates an admin user in the database
-"""
-
+# Create Admin Account
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from argon2 import PasswordHasher  # ← THAY ĐỔI: Dùng Argon2 thay vì bcrypt

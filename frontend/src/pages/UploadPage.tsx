@@ -273,6 +273,11 @@ const UploadPage = () => {
     try {
       const response = await analyzeImage(formData);
       if (response.data.success) {
+        // Update guest session if backend returned a new/refreshed one
+        const newSessionId = response.data.data?.guest_session_id;
+        if (newSessionId && !token) {
+          localStorage.setItem("guest_session_id", newSessionId);
+        }
         navigate(`/analysis-result/${response.data.data.analysis_id}`);
       } else {
         setErrorMessage(response.data.message);

@@ -23,6 +23,7 @@ from app.modules.llm.schemas.llm_schemas import (
     SynthesisContext,
 )
 from app.modules.llm.services.llm_service import LLMService
+from app.modules.llm.services.config_resolver import resolve_llm_config
 from app.modules.llm.services.prompt_builder import PromptBuilder
 from app.modules.rag.services.qdrant_service import RetrievedChunk, qdrant_service
 from app.core.config import settings
@@ -83,13 +84,22 @@ class SynthesisOrchestrator:
                 details={"error": str(exc)[:200]},
             ) from exc
 
-        # ── Step 3: Gọi LLM
-        llm_output, tokens_used = await self._llm_service.call(messages)
+        # ── Step 3: Resolve config from DB + check active/maintenance
+        llm_cfg = await resolve_llm_config(self._db, "synthesis")
 
-        # ── Step 4: B6 Validation
+        # ── Step 4: Gọi LLM với config từ DB
+        llm_output, tokens_used = await self._llm_service.call(
+            messages,
+            model=llm_cfg.model_name,
+            temperature=llm_cfg.temperature,
+            max_tokens=llm_cfg.max_tokens,
+            config_key="synthesis",
+        )
+
+        # ── Step 5: B6 Validation
         validated, source, confidence = self._validate_b6(llm_output, context.db_guide)
 
-        # ── Step 5: Chọn guidance cuối cùng
+        # ── Step 6: Chọn guidance cuối cùng
         if source == "db" and context.db_guide is not None:
             guidance = self._format_db_guide_as_text(context.db_guide)
             structured = self._build_structured_from_db(context.db_guide)

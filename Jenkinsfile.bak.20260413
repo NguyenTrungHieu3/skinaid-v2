@@ -219,10 +219,16 @@ pipeline {
 
                     # rsync code từ Jenkins workspace → deploy dir
                     # Giữ lại .env.prod và nginx/ssl (không sync từ git)
-                    cd $DEPLOY_DIR
-		    git fetch origin
-		    git reset --hard origin/production
-		    echo "Code synced via git"
+                    rsync -av --delete \
+                        --exclude='.git/' \
+                        --exclude='node_modules/' \
+                        --exclude='__pycache__/' \
+                        --exclude='*.pyc' \
+                        --exclude='.env*' \
+                        --exclude='nginx/ssl/' \
+                        $WORKSPACE/ $DEPLOY_DIR/
+
+                    echo "Sync complete ✓"
 
                     # Build Docker images nếu có service cần rebuild
                     if [ -z "$BUILD_SERVICES" ]; then
@@ -237,6 +243,7 @@ pipeline {
                     set -a && [ -f backend/.env.prod ] && . backend/.env.prod ; set +a
 
                     docker compose -f $COMPOSE_FILE build \
+                        --no-cache \
                         --parallel \
                         $BUILD_SERVICES
 
@@ -291,13 +298,12 @@ pipeline {
 
                     check_health() {
                         local NAME="$1"
-                        local CONTAINER="$2"
-                        local CMD="$3"
+                        local URL="$2"
                         local TRIES=0
                         local MAX=20    # 20 × 5s = 100s
 
                         printf "  %-20s " "$NAME"
-                        while ! docker exec "$CONTAINER" sh -c "$CMD" > /dev/null 2>&1; do
+                        while ! curl -sf "$URL" > /dev/null 2>&1; do
                             TRIES=$((TRIES + 1))
                             if [ $TRIES -ge $MAX ]; then
                                 echo "TIMEOUT ✗"
@@ -311,9 +317,9 @@ pipeline {
                     }
 
                     FAILED=0
-                    check_health "backend"  "skinaid_backend" "curl -sf http://localhost:8000/health"  || FAILED=1
-                    check_health "ai_ml"    "skinaid_ai"      "python3 /app/check_health.py" || FAILED=1
-                    check_health "nginx"    "skinaid_nginx"   "curl -sf http://localhost/nginx-health" || FAILED=1
+                    check_health "backend"  "http://localhost:8000/health"  || FAILED=1
+                    check_health "ai_ml"    "http://localhost:8001/health"  || FAILED=1
+                    check_health "nginx"    "http://localhost/nginx-health" || FAILED=1
 
                     if [ $FAILED -eq 1 ]; then
                         echo ""
