@@ -10,7 +10,7 @@ from app.modules.users.schemas.api import (
 from app.core.dependencies import require_admin
 from app.modules.users.models.user import User
 
-router = APIRouter(prefix="/admin/users")
+router = APIRouter(prefix="/users")
 
 
 @router.get(

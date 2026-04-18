@@ -1,26 +1,34 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import List, Optional
-from fastapi import HTTPException
 from datetime import datetime, timezone
-from sqlalchemy import select, update
+from sqlalchemy import update
+from collections import OrderedDict
 
-from app.modules.questionnaires.repository import QuestionnaireRepository
-from app.modules.questionnaires.models import Questionnaire, Question, AnswerOption
-from app.modules.questionnaires.schemas import (
+from app.modules.questionnaires.repository.questionnaire_repository import QuestionnaireRepository
+from app.modules.questionnaires.models.questionnaire import Questionnaire
+from app.modules.questionnaires.models.question import Question
+from app.modules.questionnaires.models.answer_option import AnswerOption
+from app.modules.questionnaires.schemas.api import (
     QuestionnaireCreate, QuestionnaireUpdate,
     QuestionCreate, QuestionUpdate,
     AnswerOptionCreate, AnswerOptionUpdate
 )
+from app.modules.questionnaires.exceptions import (
+    QuestionnaireNotFoundError,
+    QuestionNotFoundError,
+    AnswerNotFoundError,
+)
+
 
 def _current_timestamp() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class QuestionnaireService:
-    def __init__(self, session: AsyncSession):
-        self.session = session
-        self.repo = QuestionnaireRepository(session)
+    def __init__(self, db: AsyncSession, repository: QuestionnaireRepository):
+        self.db = db
+        self.repo = repository
 
     # ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -36,7 +44,28 @@ class QuestionnaireService:
         if exclude_id:
             stmt = stmt.where(Questionnaire.questionnaire_id != exclude_id)
         stmt = stmt.values(is_active=False, updated_at=_current_timestamp())
-        await self.session.execute(stmt)
+        await self.db.execute(stmt)
+
+    async def _get_questionnaire_or_raise(self, q_id: UUID) -> Questionnaire:
+        """Get questionnaire by ID or raise QuestionnaireNotFoundError."""
+        q = await self.repo.get_questionnaire_by_id(q_id)
+        if not q:
+            raise QuestionnaireNotFoundError(str(q_id))
+        return q
+
+    async def _get_question_or_raise(self, question_id: UUID) -> Question:
+        """Get question by ID or raise QuestionNotFoundError."""
+        question = await self.repo.get_question(question_id)
+        if not question:
+            raise QuestionNotFoundError(str(question_id))
+        return question
+
+    async def _get_answer_or_raise(self, answer_id: UUID) -> AnswerOption:
+        """Get answer by ID or raise AnswerNotFoundError."""
+        ans = await self.repo.get_answer(answer_id)
+        if not ans:
+            raise AnswerNotFoundError(str(answer_id))
+        return ans
 
     # ─── Questionnaire CRUD ───────────────────────────────────────────────────
 
@@ -47,10 +76,7 @@ class QuestionnaireService:
         return await self.repo.get_active_by_wound_type(wound_type)
 
     async def get_by_id(self, q_id: UUID) -> Questionnaire:
-        q = await self.repo.get_by_id(q_id)
-        if not q:
-            raise HTTPException(status_code=404, detail="Questionnaire not found")
-        return q
+        return await self._get_questionnaire_or_raise(q_id)
 
     async def create_questionnaire(self, data: QuestionnaireCreate) -> Questionnaire:
         # If creating as active → deactivate others for same wound_type first
@@ -63,7 +89,7 @@ class QuestionnaireService:
             description=data.description,
             is_active=data.is_active
         )
-        self.repo.create(q)
+        await self.repo.create(q)
 
         if data.questions:
             for q_data in data.questions:
@@ -74,7 +100,7 @@ class QuestionnaireService:
                     is_active=q_data.is_active,
                     questionnaire=q
                 )
-                self.repo.create(question)
+                await self.repo.create(question)
                 if q_data.answers:
                     for a_data in q_data.answers:
                         ans = AnswerOption(
@@ -85,14 +111,14 @@ class QuestionnaireService:
                             metadata_tags=a_data.metadata_tags,
                             question=question
                         )
-                        self.repo.create(ans)
+                        await self.repo.create(ans)
 
-        await self.session.commit()
-        await self.session.refresh(q)
-        return await self.repo.get_by_id(q.questionnaire_id)
+        await self.db.flush()
+        await self.db.refresh(q)
+        return await self.repo.get_questionnaire_by_id(q.questionnaire_id)
 
     async def update_questionnaire(self, q_id: UUID, data: QuestionnaireUpdate) -> Questionnaire:
-        q = await self.get_by_id(q_id)
+        q = await self._get_questionnaire_or_raise(q_id)
 
         if data.title is not None:
             q.title = data.title
@@ -107,32 +133,32 @@ class QuestionnaireService:
             q.is_active = data.is_active
 
         q.updated_at = _current_timestamp()
-        await self.session.commit()
-        await self.session.refresh(q)
+        await self.db.flush()
+        await self.db.refresh(q)
         return q
 
     async def activate_questionnaire(self, q_id: UUID) -> Questionnaire:
         """Promote this questionnaire to active, deactivating all others for same wound_type."""
-        q = await self.get_by_id(q_id)
+        q = await self._get_questionnaire_or_raise(q_id)
         if q.is_active:
             return q  # Already active, no-op
 
         await self._deactivate_others(q.wound_type, exclude_id=q_id)
         q.is_active = True
         q.updated_at = _current_timestamp()
-        await self.session.commit()
-        await self.session.refresh(q)
+        await self.db.flush()
+        await self.db.refresh(q)
         return q
 
     async def delete_questionnaire(self, q_id: UUID):
-        q = await self.get_by_id(q_id)
+        q = await self._get_questionnaire_or_raise(q_id)
         await self.repo.delete(q)
-        await self.session.commit()
+        await self.db.flush()
 
     # ─── Question CRUD ─────────────────────────────────────────────────────────
 
     async def add_question(self, q_id: UUID, data: QuestionCreate) -> Question:
-        q = await self.get_by_id(q_id)
+        q = await self._get_questionnaire_or_raise(q_id)
         question = Question(
             question_text=data.question_text,
             order_index=data.order_index,
@@ -140,7 +166,7 @@ class QuestionnaireService:
             is_active=data.is_active,
             questionnaire_id=q.questionnaire_id
         )
-        self.repo.create(question)
+        await self.repo.create(question)
         if data.answers:
             for a_data in data.answers:
                 ans = AnswerOption(
@@ -151,17 +177,15 @@ class QuestionnaireService:
                     metadata_tags=a_data.metadata_tags,
                     question=question
                 )
-                self.repo.create(ans)
+                await self.repo.create(ans)
 
         q.updated_at = _current_timestamp()
-        await self.session.commit()
-        await self.session.refresh(question)
+        await self.db.flush()
+        await self.db.refresh(question)
         return await self.repo.get_question(question.question_id)
 
     async def update_question(self, question_id: UUID, data: QuestionUpdate) -> Question:
-        question = await self.repo.get_question(question_id)
-        if not question:
-            raise HTTPException(status_code=404, detail="Question not found")
+        question = await self._get_question_or_raise(question_id)
 
         if data.question_text is not None:
             question.question_text = data.question_text
@@ -173,23 +197,19 @@ class QuestionnaireService:
             question.is_active = data.is_active
 
         question.updated_at = _current_timestamp()
-        await self.session.commit()
-        await self.session.refresh(question)
+        await self.db.flush()
+        await self.db.refresh(question)
         return question
 
     async def delete_question(self, question_id: UUID):
-        question = await self.repo.get_question(question_id)
-        if not question:
-            raise HTTPException(status_code=404, detail="Question not found")
+        question = await self._get_question_or_raise(question_id)
         await self.repo.delete(question)
-        await self.session.commit()
+        await self.db.flush()
 
     # ─── Answer CRUD ───────────────────────────────────────────────────────────
 
     async def add_answer(self, question_id: UUID, data: AnswerOptionCreate) -> AnswerOption:
-        question = await self.repo.get_question(question_id)
-        if not question:
-            raise HTTPException(status_code=404, detail="Question not found")
+        await self._get_question_or_raise(question_id)
 
         ans = AnswerOption(
             answer_text=data.answer_text,
@@ -199,15 +219,13 @@ class QuestionnaireService:
             metadata_tags=data.metadata_tags,
             question_id=question_id
         )
-        self.repo.create(ans)
-        await self.session.commit()
-        await self.session.refresh(ans)
+        await self.repo.create(ans)
+        await self.db.flush()
+        await self.db.refresh(ans)
         return ans
 
     async def update_answer(self, answer_id: UUID, data: AnswerOptionUpdate) -> AnswerOption:
-        ans = await self.repo.get_answer(answer_id)
-        if not ans:
-            raise HTTPException(status_code=404, detail="Answer not found")
+        ans = await self._get_answer_or_raise(answer_id)
 
         if data.answer_text is not None:
             ans.answer_text = data.answer_text
@@ -221,16 +239,14 @@ class QuestionnaireService:
             ans.metadata_tags = data.metadata_tags
 
         ans.updated_at = _current_timestamp()
-        await self.session.commit()
-        await self.session.refresh(ans)
+        await self.db.flush()
+        await self.db.refresh(ans)
         return ans
 
     async def delete_answer(self, answer_id: UUID):
-        ans = await self.repo.get_answer(answer_id)
-        if not ans:
-            raise HTTPException(status_code=404, detail="Answer not found")
+        ans = await self._get_answer_or_raise(answer_id)
         await self.repo.delete(ans)
-        await self.session.commit()
+        await self.db.flush()
 
     # ─── Import from CSV/Excel ─────────────────────────────────────────────────
 
@@ -241,10 +257,9 @@ class QuestionnaireService:
         Import questions+answers from parsed rows.
         rows format: [{question_order, question_text, is_multiple_choice, answer_text, triage_level}, ...]
         """
-        q = await self.get_by_id(q_id)
+        q = await self._get_questionnaire_or_raise(q_id)
 
         # Group by question_order
-        from collections import OrderedDict
         questions_map: dict[int, dict] = OrderedDict()
         for row in rows:
             order = int(row.get("question_order", 1))
@@ -274,7 +289,7 @@ class QuestionnaireService:
                 is_active=True,
                 questionnaire_id=q.questionnaire_id
             )
-            self.repo.create(question)
+            await self.repo.create(question)
             for ans_idx, ans_data in enumerate(q_data["answers"]):
                 ans = AnswerOption(
                     answer_text=ans_data["answer_text"],
@@ -282,11 +297,11 @@ class QuestionnaireService:
                     order_index=ans_idx,
                     question=question
                 )
-                self.repo.create(ans)
+                await self.repo.create(ans)
 
         q.updated_at = _current_timestamp()
-        await self.session.commit()
-        return await self.repo.get_by_id(q.questionnaire_id)
+        await self.db.flush()
+        return await self.repo.get_questionnaire_by_id(q.questionnaire_id)
 
     async def import_full_questionnaire(
         self, q_group: dict, auto_activate: bool = False
@@ -307,7 +322,7 @@ class QuestionnaireService:
             description=q_group.get("description") or None,
             is_active=is_active,
         )
-        self.repo.create(q)
+        await self.repo.create(q)
 
         for q_data in q_group.get("questions", []):
             question = Question(
@@ -317,7 +332,7 @@ class QuestionnaireService:
                 is_active=True,
                 questionnaire=q,
             )
-            self.repo.create(question)
+            await self.repo.create(question)
             for ans_idx, ans_data in enumerate(q_data.get("answers", [])):
                 ans = AnswerOption(
                     answer_text=ans_data["answer_text"],
@@ -325,11 +340,11 @@ class QuestionnaireService:
                     order_index=ans_idx,
                     question=question,
                 )
-                self.repo.create(ans)
+                await self.repo.create(ans)
 
-        await self.session.commit()
-        await self.session.refresh(q)
-        return await self.repo.get_by_id(q.questionnaire_id)
+        await self.db.flush()
+        await self.db.refresh(q)
+        return await self.repo.get_questionnaire_by_id(q.questionnaire_id)
 
     async def import_bulk_questionnaires(
         self, q_groups: list[dict], auto_activate: bool = False
@@ -351,7 +366,7 @@ class QuestionnaireService:
         Return coverage status for all canonical wound types.
         Shows which wound types have an active questionnaire and which don't.
         """
-        from app.modules.questionnaires.import_export_service import VALID_WOUND_TYPES
+        from app.modules.questionnaires.services.import_service import VALID_WOUND_TYPES
 
         all_qs = await self.repo.get_all()
 
@@ -385,4 +400,101 @@ class QuestionnaireService:
             "covered": sum(1 for v in coverage.values() if v["has_active"]),
             "uncovered": sum(1 for v in coverage.values() if not v["has_active"]),
         }
+
+    async def import_bulk_files(
+        self, files_data: list[tuple[str, bytes]], auto_activate: bool = False
+    ) -> dict:
+        """
+        Process multiple uploaded files for import.
+        files_data: list of (filename, content_bytes) tuples.
+        Returns {imported, questionnaires, file_results, errors}.
+        """
+        from app.modules.questionnaires.services.import_service import parse_full_file
+        from app.modules.questionnaires.exceptions import ImportValidationError
+
+        all_groups: list = []
+        all_errors: list = []
+        file_results: list = []
+
+        for filename, content in files_data:
+            try:
+                try:
+                    groups, errors = parse_full_file(filename, content)
+                except ImportValidationError:
+                    file_results.append({
+                        "filename": filename,
+                        "status": "error",
+                        "message": "Định dạng không hỗ trợ (chỉ CSV hoặc Excel)",
+                        "questionnaires": [],
+                    })
+                    continue
+
+                if errors:
+                    all_errors.extend([f"[{filename}] {e}" for e in errors])
+
+                if not groups:
+                    file_results.append({
+                        "filename": filename,
+                        "status": "error",
+                        "message": "Không có dữ liệu hợp lệ trong file",
+                        "questionnaires": [],
+                    })
+                    continue
+
+                all_groups.extend(groups)
+                file_results.append({
+                    "filename": filename,
+                    "status": "ok",
+                    "message": f"Tìm thấy {len(groups)} bộ câu hỏi",
+                    "questionnaires_count": len(groups),
+                })
+            except Exception as exc:
+                file_results.append({
+                    "filename": filename,
+                    "status": "error",
+                    "message": f"Lỗi đọc file: {type(exc).__name__}: {exc}",
+                    "questionnaires": [],
+                })
+
+        results = []
+        if all_groups:
+            results = await self.import_bulk_questionnaires(all_groups, auto_activate=auto_activate)
+
+        return {
+            "imported": len(results),
+            "questionnaires": results,
+            "file_results": file_results,
+            "errors": all_errors,
+        }
+
+    async def export_bulk(
+        self, ids: list[str], fmt: str
+    ) -> tuple[bytes, str, str]:
+        """
+        Export multiple questionnaires by IDs.
+        Returns (file_bytes, filename, media_type).
+        Raises QuestionnaireNotFoundError if no valid questionnaires found.
+        """
+        from app.modules.questionnaires.services import export_service as exp
+
+        questionnaires = []
+        for q_id in ids:
+            try:
+                q = await self.get_by_id(UUID(q_id))
+                questionnaires.append(q)
+            except Exception:
+                pass  # skip invalid IDs
+
+        if not questionnaires:
+            raise QuestionnaireNotFoundError("Không tìm thấy bộ câu hỏi nào")
+
+        count = len(questionnaires)
+        if fmt == "csv":
+            return exp.export_bulk_to_csv(questionnaires), f"questionnaires_export_{count}.csv", "text/csv"
+        elif fmt == "excel":
+            return exp.export_bulk_to_excel(questionnaires), f"questionnaires_export_{count}.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif fmt == "docx":
+            return exp.export_bulk_to_docx(questionnaires), f"questionnaires_export_{count}.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else:  # pdf
+            return exp.export_bulk_to_pdf(questionnaires), f"questionnaires_export_{count}.pdf", "application/pdf"
 

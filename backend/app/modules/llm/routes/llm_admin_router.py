@@ -30,7 +30,7 @@ from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/admin/llm")
+router = APIRouter(prefix="/llm")
 
 
 def _get_config_service(db: AsyncSession = Depends(get_db)) -> LLMConfigService:
