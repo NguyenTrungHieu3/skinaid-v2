@@ -388,7 +388,6 @@ class LLMConfigService:
         """
         import time
         from openai import AsyncOpenAI
-        from app.modules.llm.services.llm_config_service import AVAILABLE_MODELS, _VALID_MODEL_IDS
 
         cfg = await self._repo.get_by_config_key(config_key)
         if not cfg:
@@ -435,7 +434,7 @@ class LLMConfigService:
                 success=False,
                 error_message=str(exc)[:200],
             )
-            raise ValueError(f"Lỗi khi gọi LLM: {str(exc)[:300]}")
+            raise ValueError(f"Lỗi khi gọi LLM: {str(exc)[:300]}") from exc
 
         elapsed_ms = int((time.monotonic() - start_ms) * 1000)
 

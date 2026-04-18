@@ -136,7 +136,7 @@ async def switch_model(
             data=SwitchModelResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.put(
@@ -174,7 +174,7 @@ async def set_maintenance(
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 3: Activate / Deactivate ───────────────────────────
@@ -214,7 +214,7 @@ async def toggle_active(
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 4: Update Parameters ───────────────────────────────
@@ -255,7 +255,7 @@ async def update_params(
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 5: Test Prompt ─────────────────────────────────
@@ -283,7 +283,7 @@ async def test_prompt(
             data=TestPromptResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 6: Change Logs (Audit) ───────────────────────────
@@ -378,4 +378,4 @@ async def update_budget(
             data=BudgetSettingsResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e

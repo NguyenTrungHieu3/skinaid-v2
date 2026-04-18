@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
+import aiofiles
 from fastapi import BackgroundTasks, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +24,6 @@ from app.modules.rag.repository.rag_document_repository import RAGDocumentReposi
 from app.modules.rag.services.chunking_service import chunking_service
 from app.modules.rag.services.loader_service import loader_service
 from app.modules.rag.services.qdrant_service import ChunkInput, qdrant_service
-from app.modules.rag.schemas.rag_document_schemas import RAGDocumentResponse
 from app.modules.rag.schemas.rag_schemas import KnowledgeChunk, RAGRetrieveResponse
 
 logger = logging.getLogger(__name__)
@@ -72,11 +73,12 @@ class RAGDocumentService:
             )
 
         docs_dir = Path(settings.RAG_DOCS_PATH)
-        docs_dir.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(docs_dir.mkdir, parents=True, exist_ok=True)
 
         storage_path = str(docs_dir / safe_filename)
         file_bytes = await file.read()
-        Path(storage_path).write_bytes(file_bytes)
+        async with aiofiles.open(storage_path, "wb") as f:
+            await f.write(file_bytes)
 
         logger.info("[RAGDocumentService] Saved file: %s (%d bytes)", storage_path, len(file_bytes))
 

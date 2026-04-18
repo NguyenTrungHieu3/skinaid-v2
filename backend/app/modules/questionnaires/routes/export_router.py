@@ -4,11 +4,11 @@ from uuid import UUID
 import io
 import logging
 
-logger = logging.getLogger(__name__)
-
 from app.modules.questionnaires.dependencies import QuestionnaireSvc
 from app.modules.questionnaires.services import export_service as exp
 from app.modules.questionnaires.exceptions import QuestionnaireNotFoundError
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/questionnaires")
@@ -39,7 +39,7 @@ async def export_bulk(body: dict, service: QuestionnaireSvc):
     try:
         file_bytes, filename, media_type = await service.export_bulk(ids, fmt)
     except QuestionnaireNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=exc.message)
+        raise HTTPException(status_code=404, detail=exc.message) from exc
 
     return Response(
         content=file_bytes,

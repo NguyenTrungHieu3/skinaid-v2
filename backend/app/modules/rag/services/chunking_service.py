@@ -87,7 +87,7 @@ class ChunkingService:
             )
             return chunks
 
-        except (RAGIndexingError,):
+        except RAGIndexingError:
             raise
         except Exception as exc:
             raise RAGIndexingError(
@@ -164,7 +164,7 @@ class ChunkingService:
 
         return [
             ChunkOutput(content=chunk, context=ctx, chunk_index=i)
-            for i, (chunk, ctx) in enumerate(zip(raw_chunks, context_results))
+            for i, (chunk, ctx) in enumerate(zip(raw_chunks, context_results, strict=True))
         ]
 
     async def _generate_context_with_retry(
@@ -175,15 +175,12 @@ class ChunkingService:
     ) -> str:
         """Generate context for a single chunk with retry and Semaphore throttling."""
         async with self._semaphore:
-            last_exc: Exception | None = None
-
             for attempt in range(1, _MAX_RETRY + 1):
                 try:
                     context = await self._call_context_llm(doc_preview, chunk)
                     return context
 
-                except RateLimitError as exc:
-                    last_exc = exc
+                except RateLimitError:
                     if attempt == _MAX_RETRY:
                         break
                     delay = _RETRY_BASE_DELAY * (2 ** (attempt - 1))

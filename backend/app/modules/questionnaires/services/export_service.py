@@ -5,11 +5,10 @@ Export Service for Questionnaire module.
 import io
 import csv
 import logging
-from typing import List
-
-logger = logging.getLogger(__name__)
 
 from app.modules.questionnaires.models.questionnaire import Questionnaire
+
+logger = logging.getLogger(__name__)
 
 TRIAGE_COLORS = {
     "green":  (0.18, 0.80, 0.44),
@@ -34,10 +33,10 @@ def _render_docx_questionnaire(doc, questionnaire: Questionnaire):
     # Meta info
     status_text = "✅ Đang hoạt động" if questionnaire.is_active else "📝 Bản nháp"
     meta = doc.add_paragraph()
-    meta.add_run(f"Loại vết thương: ").bold = True
+    meta.add_run("Loại vết thương: ").bold = True
     meta.add_run(questionnaire.wound_type)
     meta.add_run("   |   ")
-    meta.add_run(f"Trạng thái: ").bold = True
+    meta.add_run("Trạng thái: ").bold = True
     meta.add_run(status_text)
     if questionnaire.description:
         desc = doc.add_paragraph()

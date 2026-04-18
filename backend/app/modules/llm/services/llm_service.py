@@ -164,7 +164,7 @@ class LLMService:
                     details={"error": str(exc)[:200], "model": _model},
                 ) from exc
 
-            except (LLMInvalidResponseError,):
+            except LLMInvalidResponseError:
                 raise
 
             except Exception as exc:

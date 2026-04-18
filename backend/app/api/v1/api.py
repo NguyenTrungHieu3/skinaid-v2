@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.modules.auth.router import router as auth_router
+from app.modules.auth.routes.device_router import router as device_router
 from app.modules.users.routes.profile_router import router as profile_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.ai.routes.model_management_router import router as model_management_router
@@ -23,6 +24,7 @@ from app.modules.notifications.router import router as notifications_router
 router = APIRouter()
 
 router.include_router(auth_router, tags=["Authentication"])
+router.include_router(device_router, tags=["Device Sessions"])
 router.include_router(profile_router, tags=["User Profile Management"])
 router.include_router(ai_router, tags=["AI Processing"])
 router.include_router(model_management_router, tags=["AI Model Management"])

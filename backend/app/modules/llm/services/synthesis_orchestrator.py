@@ -27,8 +27,6 @@ from app.modules.llm.services.config_resolver import resolve_llm_config
 from app.modules.llm.services.prompt_builder import PromptBuilder
 from app.modules.rag.services.qdrant_service import RetrievedChunk, qdrant_service
 from app.core.config import settings
-from app.modules.audit.audit_repository import AuditRepository
-from app.modules.audit.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
