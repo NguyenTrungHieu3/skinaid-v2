@@ -13,7 +13,8 @@ import {
   Ban,
   Download,
   FileSpreadsheet,
-  Upload
+  Upload,
+  X
 } from "lucide-react";
 import StatCard from "./shared/StatCard";
 import { useTranslation } from "react-i18next";
@@ -108,6 +109,28 @@ export default function FirstAidManagement() {
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  // Import Preview
+  interface ImportPreviewRow {
+    rowIndex: number;
+    title: string;
+    wound_type: string;
+    severity: string;
+    sub_type: string;
+    description: string;
+    steps: string[];
+    dos: string[];
+    donts: string[];
+    supplies_needed: string[];
+    estimated_healing_time: string;
+    sourceName: string;
+    sourceUrl: string;
+    is_active: boolean;
+    selected: boolean;
+    error?: string;
+  }
+  const [showImportPreview, setShowImportPreview] = useState(false);
+  const [importPreviewData, setImportPreviewData] = useState<ImportPreviewRow[]>([]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -619,7 +642,7 @@ export default function FirstAidManagement() {
           wound_type: selectedWoundType !== "all" && selectedWoundType !== "" ? selectedWoundType : undefined,
           severity: selectedSeverity !== "all" && selectedSeverity !== "" ? selectedSeverity : undefined,
           is_active: selectedActiveStatus !== "all" ? selectedActiveStatus === "active" : undefined,
-          search: debouncedSearchQuery || undefined,
+          search: searchTerm || undefined,
           limit: EXPORT_LIMIT,
           offset: currentOffset,
         });
@@ -646,7 +669,7 @@ export default function FirstAidManagement() {
       const headers = [
         'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
         'Mô tả', 'Các bước thực hiện', 'Nên làm', 'Không nên làm',
-        'Vật tư y tế', 'Thời gian phục hồi', 'Nguồn tham khảo', 'Trạng thái'
+        'Vật tư y tế', 'Thời gian phục hồi', 'Nguồn tham khảo', 'URL nguồn', 'Trạng thái'
       ];
       const headerRow = worksheet.addRow(headers);
       
@@ -670,6 +693,10 @@ export default function FirstAidManagement() {
           if (typeof s === "string") return s;
           return s.name || "";
         };
+        const getSourceUrl = (s: any) => {
+          if (!s || typeof s === "string") return "";
+          return s.url || "";
+        };
 
         const row = worksheet.addRow([
           guide.title || "",
@@ -683,6 +710,7 @@ export default function FirstAidManagement() {
           (guide.supplies_needed || []).join('\n'),
           guide.estimated_healing_time || "",
           getSourceName(guide.source),
+          getSourceUrl(guide.source),
           guide.is_active ? "Hoạt động" : "Không hoạt động"
         ]);
 
@@ -701,7 +729,7 @@ export default function FirstAidManagement() {
       worksheet.columns = [
         { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
         { width: 30 }, { width: 45 }, { width: 35 }, { width: 35 },
-        { width: 25 }, { width: 18 }, { width: 20 }, { width: 15 }
+        { width: 25 }, { width: 18 }, { width: 20 }, { width: 30 }, { width: 15 }
       ];
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -731,7 +759,7 @@ export default function FirstAidManagement() {
       'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
       'Mô tả (Không bắt buộc)', 'Các bước thực hiện (Xuống dòng cho mỗi bước bằng Alt+Enter)', 
       'Nên làm (Xuống dòng cho mỗi mục)', 'Không nên làm (Xuống dòng cho mỗi mục)',
-      'Vật tư y tế (Xuống dòng cho mỗi mục)', 'Thời gian phục hồi', 'Nguồn tham khảo (Website/Tên)', 'Trạng thái (Hoạt động / Không hoạt động)'
+      'Vật tư y tế (Xuống dòng cho mỗi mục)', 'Thời gian phục hồi', 'Nguồn tham khảo (Tên)', 'URL nguồn (Không bắt buộc)', 'Trạng thái (Hoạt động / Không hoạt động)'
     ];
     const headerRow = worksheet.addRow(headers);
     
@@ -751,6 +779,7 @@ export default function FirstAidManagement() {
       "Gạc vô trùng\nNước sạch",
       "3-5 ngày",
       "Bộ Y Tế",
+      "https://moh.gov.vn",
       "Hoạt động"
     ]);
 
@@ -761,7 +790,7 @@ export default function FirstAidManagement() {
     worksheet.columns = [
       { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
       { width: 25 }, { width: 50 }, { width: 40 }, { width: 40 },
-      { width: 25 }, { width: 18 }, { width: 25 }, { width: 35 }
+      { width: 25 }, { width: 18 }, { width: 25 }, { width: 30 }, { width: 35 }
     ];
 
     const buffer = await workbook.xlsx.writeBuffer();
@@ -780,7 +809,6 @@ export default function FirstAidManagement() {
     if (!file) return;
 
     try {
-      setImporting(true);
       const arrayBuffer = await file.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
@@ -793,9 +821,7 @@ export default function FirstAidManagement() {
 
       const rows: any[] = [];
       worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber > 1) { // Skip header row
-          rows.push(row.values);
-        }
+        if (rowNumber > 1) rows.push({ values: row.values, rowNumber });
       });
 
       if (rows.length === 0) {
@@ -803,89 +829,153 @@ export default function FirstAidManagement() {
         return;
       }
 
-      let successCount = 0;
-      let failCount = 0;
+      const wMap: Record<string, string> = {
+        'bỏng': 'burn', 'trầy xước': 'abrasion', 'vết cắt': 'cut', 'cắt': 'cut',
+        'bầm tím': 'bruise', 'mụn': 'acne', 'mụn trứng cá': 'acne', 'nấm': 'fungal', 'nấm da': 'fungal', 'vảy nến': 'psoriasis',
+      };
 
-      // Ensure sequential API calls to prevent overwhelming backend
-      for (const row of rows) {
-        try {
-          // row.values is 1-indexed array in exceljs
-          // 1: Tiêu đề, 2: Loại vết thương, 3: Mức độ, 4: Phụ, 5: Mô tả, 6: Các bước, 7: Nên, 8: Không nên, 9: Vật tư, 10: T/G phục hồi, 11: Nguồn, 12: Trạng thái
-          const title = String(row[1] || '').trim();
-          let wound_type = String(row[2] || '').trim();
-          let severity = String(row[3] || '').trim();
-          
-          if (!wound_type || !severity) continue; // Skip invalid row
+      const parsed: ImportPreviewRow[] = rows.map(({ values: row, rowNumber }) => {
+        const title = String(row[1] || '').trim();
+        let wound_type = String(row[2] || '').trim();
+        let severity = String(row[3] || '').trim();
 
-          // Normalize severity matching backend enums ("mild", "moderate", "severe")
-          if (severity.toLowerCase() === 'nhẹ') severity = 'mild';
-          else if (severity.toLowerCase() === 'vừa') severity = 'moderate';
-          else if (severity.toLowerCase() === 'nặng') severity = 'severe';
-          else if (severity.toLowerCase() === 'rất nặng') severity = 'severe';
+        // Normalize wound type first (needed for severity check)
+        wound_type = wMap[wound_type.toLowerCase()] || wound_type;
 
-          // Normalize wound_type
-          const wMap: Record<string, string> = {
-            'bỏng': 'burn',
-            'trầy xước': 'abrasion',
-            'vết cắt': 'cut',
-            'cắt': 'cut',
-            'bầm tím': 'bruise',
-            'mụn': 'acne',
-            'nấm': 'fungal',
-            'vảy nến': 'psoriasis',
-          };
-          wound_type = wMap[wound_type.toLowerCase()] || wound_type;
+        // Wound types that don't require severity
+        const noSeverityTypes = ['psoriasis', 'fungal'];
 
-          const sub_type = String(row[4] || '').trim();
-          const description = String(row[5] || '').trim();
-          
-          const parseArray = (str: string) => str.split('\n').map(s => s.trim()).filter(s => s);
-          
-          const steps = parseArray(String(row[6] || ''));
-          const dos = parseArray(String(row[7] || ''));
-          const donts = parseArray(String(row[8] || ''));
-          const supplies_needed = parseArray(String(row[9] || ''));
-          const estimated_healing_time = String(row[10] || '').trim();
-          
-          const sourceName = String(row[11] || '').trim();
-          const isActive = String(row[12] || '').trim().toLowerCase() === 'hoạt động';
-
-          await createFirstAidGuide({
-            title,
-            wound_type,
-            severity,
-            sub_type: sub_type || undefined,
-            description: description || undefined,
-            steps: steps.length > 0 ? steps : ["Liên hệ cứu thương"],
-            dos,
-            donts,
-            supplies_needed,
-            estimated_healing_time: estimated_healing_time || undefined,
-            source: { name: sourceName || "Hệ thống" },
-            is_active: isActive
-          });
-          successCount++;
-        } catch (error) {
-          console.error("Row import failed:", row, error);
-          failCount++;
+        // Normalize severity
+        if (severity) {
+          const s = severity.toLowerCase();
+          if (s === 'nhẹ') severity = 'mild';
+          else if (s === 'vừa' || s === 'trung bình') severity = 'moderate';
+          else if (s === 'nặng' || s === 'rất nặng') severity = 'severe';
+        } else if (noSeverityTypes.includes(wound_type.toLowerCase())) {
+          severity = 'general'; // Auto-set for psoriasis/fungal
         }
-      }
 
-      if (successCount > 0) {
-        success(`Đã import thành công ${successCount} hướng dẫn!`);
-        fetchGuides();
-      }
-      if (failCount > 0) {
-        toastError(`${failCount} dòng bị lỗi và không thể import.`);
-      }
+        const parseArray = (str: string) => str.split('\n').map(s => s.trim()).filter(s => s);
+
+        let error: string | undefined;
+        if (!wound_type) error = 'Thiếu loại vết thương';
+        else if (!severity && !noSeverityTypes.includes(wound_type.toLowerCase())) error = 'Thiếu mức độ nghiêm trọng';
+        if (!title) error = 'Thiếu tiêu đề';
+
+        return {
+          rowIndex: rowNumber,
+          title,
+          wound_type,
+          severity,
+          sub_type: String(row[4] || '').trim(),
+          description: String(row[5] || '').trim(),
+          steps: parseArray(String(row[6] || '')),
+          dos: parseArray(String(row[7] || '')),
+          donts: parseArray(String(row[8] || '')),
+          supplies_needed: parseArray(String(row[9] || '')),
+          estimated_healing_time: String(row[10] || '').trim(),
+          sourceName: String(row[11] || '').trim(),
+          sourceUrl: String(row[12] || '').trim(),
+          is_active: String(row[13] || '').trim().toLowerCase() === 'hoạt động',
+          selected: !error,
+          error,
+        };
+      });
+
+      setImportPreviewData(parsed);
+      setShowImportPreview(true);
     } catch (err) {
       console.error("Parse file error:", err);
       toastError("Lỗi đọc file Excel. Vui lòng thử lại bằng file mẫu.");
     } finally {
-      setImporting(false);
-      // Reset input so the same file can be selected again
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleConfirmImport = async () => {
+    const selectedRows = importPreviewData.filter(r => r.selected && !r.error);
+    if (selectedRows.length === 0) {
+      toastError('Không có dòng nào được chọn để import.');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      let successCount = 0;
+      const failedRows: { rowIndex: number; reason: string }[] = [];
+
+      for (const row of selectedRows) {
+        try {
+          await createFirstAidGuide({
+            title: row.title,
+            wound_type: row.wound_type,
+            severity: row.severity,
+            sub_type: row.sub_type || undefined,
+            description: row.description || undefined,
+            steps: row.steps.length > 0 ? row.steps : ['Liên hệ cứu thương'],
+            dos: row.dos,
+            donts: row.donts,
+            supplies_needed: row.supplies_needed,
+            estimated_healing_time: row.estimated_healing_time || undefined,
+            source: { name: row.sourceName || 'Hệ thống', url: row.sourceUrl || undefined },
+            is_active: row.is_active,
+          });
+          successCount++;
+        } catch (error: any) {
+          const status = error?.response?.status;
+          let reason = 'Lỗi không xác định';
+          if (status === 409) {
+            reason = `Đã tồn tại (${row.wound_type}/${row.severity})`;
+          } else if (status === 422) {
+            reason = 'Dữ liệu không hợp lệ';
+          } else if (error?.response?.data?.message) {
+            reason = error.response.data.message;
+          } else if (error?.response?.data?.detail) {
+            reason = String(error.response.data.detail);
+          }
+          failedRows.push({ rowIndex: row.rowIndex, reason });
+        }
+      }
+
+      // Update preview to show errors on failed rows
+      if (failedRows.length > 0) {
+        setImportPreviewData(prev => prev.map(r => {
+          const failed = failedRows.find(f => f.rowIndex === r.rowIndex);
+          if (failed) return { ...r, error: failed.reason, selected: false };
+          return r;
+        }));
+        toastError(`${failedRows.length} dòng bị lỗi:\n${failedRows.map(f => `• Dòng ${f.rowIndex}: ${f.reason}`).join('\n')}`);
+      }
+
+      if (successCount > 0) {
+        success(`Đã import thành công ${successCount}/${selectedRows.length} hướng dẫn!`);
+        fetchGuides();
+        fetchStatistics();
+      }
+
+      // Only close if all succeeded
+      if (failedRows.length === 0) {
+        setShowImportPreview(false);
+        setImportPreviewData([]);
+      }
+    } catch (err) {
+      console.error('Import error:', err);
+      toastError('Có lỗi xảy ra khi import.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const togglePreviewRow = (rowIndex: number) => {
+    setImportPreviewData(prev => prev.map(r =>
+      r.rowIndex === rowIndex ? { ...r, selected: !r.selected } : r
+    ));
+  };
+
+  const toggleAllPreviewRows = (checked: boolean) => {
+    setImportPreviewData(prev => prev.map(r =>
+      r.error ? r : { ...r, selected: checked }
+    ));
   };
 
   // Handle deactivate guide
@@ -942,8 +1032,21 @@ export default function FirstAidManagement() {
       bruise: "Bầm tím",
       burn: "Bỏng",
       cut: "Vết cắt",
+      acne: "Mụn",
+      fungal: "Nấm da",
+      psoriasis: "Vảy nến",
     };
     return typeMap[woundType.toLowerCase()] || woundType;
+  };
+
+  const formatSeverity = (severity: string) => {
+    const sevMap: Record<string, string> = {
+      mild: "Nhẹ",
+      moderate: "Vừa",
+      severe: "Nặng",
+      general: "Chung",
+    };
+    return sevMap[severity.toLowerCase()] || severity;
   };
 
   return (
@@ -954,7 +1057,7 @@ export default function FirstAidManagement() {
           <h1>{t("admin.first_aid.title")}</h1>
           <p>{t("admin.first_aid.subtitle")}</p>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+        <div className={styles.headerActions}>
           <input 
             type="file" 
             accept=".xlsx,.csv" 
@@ -963,60 +1066,38 @@ export default function FirstAidManagement() {
             onChange={handleImportExcel} 
           />
           <button 
-            className={styles.btnSecondary} 
+            className={styles.btnOutline} 
             onClick={() => fileInputRef.current?.click()} 
             disabled={importing || exporting}
-            style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem', background: 'white', color: '#17805f', border: '1.5px solid #17805f' }}
             title="Import dữ liệu sơ cứu từ file Excel"
-            onMouseOver={(e) => e.currentTarget.style.background = '#f0fdf9'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'white'}
           >
-            {importing ? <Loader2 size={15} className={styles.spin} /> : <Upload size={15} />} 
-            Import dữ liệu
+            {importing ? <Loader2 size={16} className={styles.spin} /> : <Upload size={16} />} 
+            Import
           </button>
           
-          <div style={{ position: "relative" }} ref={exportRef}>
+          <div className={styles.exportWrapper} ref={exportRef}>
             <button 
-              className={styles.btnSecondary} 
+              className={styles.btnOutline} 
               onClick={() => setExportDropdownOpen(!exportDropdownOpen)} 
               disabled={importing || exporting}
-              style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem', background: 'white', color: '#17805f', border: '1.5px solid #17805f' }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#f0fdf9'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'white'}
             >
-              {exporting ? <Loader2 size={15} className={styles.spin} /> : <Download size={15} />} 
-              Export 
+              {exporting ? <Loader2 size={16} className={styles.spin} /> : <Download size={16} />} 
+              Export
             </button>
             {exportDropdownOpen && (
-              <div style={{
-                position: "absolute",
-                top: "100%",
-                right: 0,
-                marginTop: "0.5rem",
-                background: "white",
-                border: "1px solid #e2e8f0",
-                borderRadius: "0.5rem",
-                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)",
-                zIndex: 50,
-                minWidth: "180px",
-                padding: "0.5rem"
-              }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", padding: "0.5rem 0.5rem 0.25rem 0.5rem" }}>Tùy chọn xuất</div>
+              <div className={styles.exportDropdown}>
+                <div className={styles.dropdownLabel}>Tùy chọn xuất</div>
                 <button
+                  className={styles.dropdownItem}
                   onClick={() => { setExportDropdownOpen(false); handleExportExcel(); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem", background: "none", border: "none", fontSize: "0.875rem", cursor: "pointer", color: "#334155", textAlign: "left", borderRadius: "0.25rem" }}
-                  onMouseOver={(e) => e.currentTarget.style.background = "#f1f5f9"}
-                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
                 >
                   <FileSpreadsheet size={15} /> Xuất dữ liệu
                 </button>
-                <div style={{ height: "1px", background: "#e2e8f0", margin: "0.25rem 0" }} />
-                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", padding: "0.5rem 0.5rem 0.25rem 0.5rem" }}>Dành cho thêm mới</div>
+                <div className={styles.dropdownDivider} />
+                <div className={styles.dropdownLabel}>Dành cho thêm mới</div>
                 <button
+                  className={styles.dropdownItem}
                   onClick={() => { setExportDropdownOpen(false); handleDownloadTemplate(); }}
-                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem", background: "none", border: "none", fontSize: "0.875rem", cursor: "pointer", color: "#334155", textAlign: "left", borderRadius: "0.25rem" }}
-                  onMouseOver={(e) => e.currentTarget.style.background = "#f1f5f9"}
-                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
                 >
                   <Download size={15} /> Tải file mẫu
                 </button>
@@ -1408,6 +1489,106 @@ export default function FirstAidManagement() {
         }
         isLoading={isDeletingGuide !== null}
       />
+
+      {/* Import Preview Modal */}
+      {showImportPreview && (
+        <div className={styles.modalOverlay} onClick={() => !importing && setShowImportPreview(false)}>
+          <div className={styles.importPreviewModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>Xem trước dữ liệu Import</h2>
+                <p className={styles.modalSubtitle}>
+                  {importPreviewData.filter(r => r.selected && !r.error).length} / {importPreviewData.length} dòng được chọn
+                  {importPreviewData.some(r => r.error) && (
+                    <span style={{ color: '#ef4444', marginLeft: '0.5rem' }}>
+                      • {importPreviewData.filter(r => r.error).length} dòng lỗi
+                    </span>
+                  )}
+                </p>
+              </div>
+              <button className={styles.modalClose} onClick={() => !importing && setShowImportPreview(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className={styles.importPreviewBody}>
+              <table className={styles.previewTable}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px' }}>
+                      <input
+                        type="checkbox"
+                        checked={importPreviewData.filter(r => !r.error).every(r => r.selected)}
+                        onChange={e => toggleAllPreviewRows(e.target.checked)}
+                      />
+                    </th>
+                    <th>#</th>
+                    <th>Tiêu đề</th>
+                    <th>Loại</th>
+                    <th>Mức độ</th>
+                    <th>Số bước</th>
+                    <th>Nguồn</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importPreviewData.map(row => (
+                    <tr key={row.rowIndex} className={row.error ? styles.previewRowError : row.selected ? styles.previewRowSelected : ''}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={row.selected}
+                          disabled={!!row.error}
+                          onChange={() => togglePreviewRow(row.rowIndex)}
+                        />
+                      </td>
+                      <td>{row.rowIndex}</td>
+                      <td>
+                        <div className={styles.previewTitle}>{row.title || '—'}</div>
+                        {row.description && <div className={styles.previewDesc}>{row.description.substring(0, 60)}...</div>}
+                        {row.error && <div className={styles.previewError}>{row.error}</div>}
+                      </td>
+                      <td>{formatWoundType(row.wound_type) || '—'}</td>
+                      <td>
+                        <span className={`${styles.badge} ${getSeverityBadgeClass(row.severity)}`}>
+                          {formatSeverity(row.severity)}
+                        </span>
+                      </td>
+                      <td>{row.steps.length}</td>
+                      <td>
+                        <div>{row.sourceName || '—'}</div>
+                        {row.sourceUrl && <div className={styles.previewUrl}>{row.sourceUrl.substring(0, 30)}...</div>}
+                      </td>
+                      <td>
+                        <span className={`${styles.badge} ${row.is_active ? styles.badgeSuccess : styles.badgeDefault}`}>
+                          {row.is_active ? 'Hoạt động' : 'Tắt'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className={styles.importPreviewFooter}>
+              <button
+                className={styles.btnOutline}
+                onClick={() => { setShowImportPreview(false); setImportPreviewData([]); }}
+                disabled={importing}
+              >
+                Hủy
+              </button>
+              <button
+                className={styles.btnPrimary}
+                onClick={handleConfirmImport}
+                disabled={importing || importPreviewData.filter(r => r.selected && !r.error).length === 0}
+              >
+                {importing ? <><Loader2 size={16} className={styles.spin} /> Đang import...</> : <>
+                  <Upload size={16} /> Import {importPreviewData.filter(r => r.selected && !r.error).length} dòng
+                </>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

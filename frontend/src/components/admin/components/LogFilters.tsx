@@ -7,7 +7,6 @@ interface LogFiltersProps {
     search: string;
     logType: string;
     level: string;
-    role: string;
     dateRange: string;
   };
   onFilterChange: (key: string, value: string) => void;
@@ -56,23 +55,9 @@ const LogFilters: React.FC<LogFiltersProps> = ({
             className={styles.filterSelect}
           >
             <option value="all">{t('admin.logs.filters.all_levels')}</option>
-            <option value="info">{t('admin.logs.filters.levels.info')}</option>
             <option value="success">{t('admin.logs.filters.levels.success')}</option>
             <option value="warning">{t('admin.logs.filters.levels.warning')}</option>
             <option value="error">{t('admin.logs.filters.levels.error')}</option>
-          </select>
-        </div>
-
-        <div className={styles.filterSelectWrapper}>
-          <select
-            value={filters.role}
-            onChange={(e) => onFilterChange('role', e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="all">{t('admin.logs.filters.all_roles')}</option>
-            <option value="admin">{t('admin.logs.filters.roles.admin')}</option>
-            <option value="user">{t('admin.logs.filters.roles.user')}</option>
-            <option value="guest">{t('admin.logs.filters.roles.guest')}</option>
           </select>
         </div>
 

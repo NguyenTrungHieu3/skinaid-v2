@@ -145,7 +145,7 @@ async def create_guide(
         action="create_first_aid_guide",
         user_id=current_user.user_id,
         resource_type="first_aid_guide",
-        resource_id=str(guide.id),
+        resource_id=str(guide.firstaidguide_id),
         details={"wound_type": guide.wound_type, "severity": guide.severity},
         success=True,
         description=f"Tạo hướng dẫn sơ cứu cho {guide.wound_type} - {guide.severity}"

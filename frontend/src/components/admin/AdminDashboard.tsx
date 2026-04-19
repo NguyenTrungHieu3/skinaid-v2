@@ -35,7 +35,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
   const [dashboardLogs, setDashboardLogs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [llmMonthlyCost, setLlmMonthlyCost] = useState<number>(0);
+  const [llmTotalRequests, setLlmTotalRequests] = useState<number>(0);
   const [firstAidTotal, setFirstAidTotal] = useState<number>(0);
 
   useEffect(() => {
@@ -89,9 +89,9 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         }
       }
 
-      // LLM monthly cost
-      if (llmRes?.success && llmRes.data?.budget) {
-        setLlmMonthlyCost(llmRes.data.budget.monthly_estimated_cost ?? 0);
+      // LLM total requests
+      if (llmRes?.success && llmRes.data) {
+        setLlmTotalRequests(llmRes.data.total_requests ?? 0);
       }
 
       // First aid guides total
@@ -184,7 +184,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
       </div>
 
-      <DashboardStats overview={overview} period={period} llmMonthlyCost={llmMonthlyCost} firstAidTotal={firstAidTotal} />
+      <DashboardStats overview={overview} period={period} llmTotalRequests={llmTotalRequests} firstAidTotal={firstAidTotal} />
 
       <DashboardCharts
         woundTypeData={woundTypeData}

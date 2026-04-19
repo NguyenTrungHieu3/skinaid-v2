@@ -32,8 +32,7 @@ export default function AdminLogs() {
   const [filters, setFilters] = useState({
     search: "",
     logType: "all",   // admin_action / user_activity / system_error
-    level: "all",     // info / warning / error
-    role: "all",
+    level: "all",     // success / warning / error
     dateRange: "all",
   });
 
@@ -73,11 +72,6 @@ export default function AdminLogs() {
         params.success = false;
       } else if (filters.level !== "all") {
         params.level = filters.level;
-      }
-
-      // Add role filter
-      if (filters.role !== "all") {
-        params.role_name = filters.role;
       }
 
       // Map dateRange to start_date and end_date
@@ -158,7 +152,7 @@ export default function AdminLogs() {
   };
 
   // Track if filters changed to reset page
-  const filtersKey = `${filters.search}|${filters.logType}|${filters.level}|${filters.role}|${filters.dateRange}`;
+  const filtersKey = `${filters.search}|${filters.logType}|${filters.level}|${filters.dateRange}`;
 
   useEffect(() => {
     // When filters change, always fetch from page 1
