@@ -20,13 +20,15 @@ class NotificationRepository(BaseRepository[Notification]):
 
     async def get_user_notifications(
         self,
-        user_id: UUID,
+        user_id: Optional[UUID],
         skip: int = 0,
         limit: int = 20,
         unread_only: bool = False,
         notification_type: Optional[str] = None,
     ) -> Tuple[List[Notification], int]:
-        filters = [Notification.user_id == user_id]
+        filters = []
+        if user_id is not None:
+            filters.append(Notification.user_id == user_id)
 
         if unread_only:
             filters.append(Notification.read_at.is_(None))
@@ -61,6 +63,15 @@ class NotificationRepository(BaseRepository[Notification]):
                 Notification.user_id == user_id,
                 Notification.read_at.is_(None),
             )
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one()
+
+    async def count_unread_all(self) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Notification)
+            .where(Notification.read_at.is_(None))
         )
         result = await self.db.execute(stmt)
         return result.scalar_one()

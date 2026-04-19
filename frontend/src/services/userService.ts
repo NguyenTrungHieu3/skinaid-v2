@@ -56,7 +56,7 @@ export interface UpdateStatusResponse {
  * Fetch list of users with pagination and filtering
  */
 export const getUsers = async (params: GetUsersParams): Promise<GetUsersResponse> => {
-  const response = await apiClient.get("/admin/users", {
+  const response = await apiClient.get("/users", {
     params: {
       page: params.page,
       limit: params.page_size,
@@ -95,7 +95,7 @@ export const getUsers = async (params: GetUsersParams): Promise<GetUsersResponse
  * Fetch detailed user information including scan history
  */
 export const getUserDetail = async (userId: string): Promise<UserDetail> => {
-  const response = await apiClient.get(`/admin/users/${userId}`);
+  const response = await apiClient.get(`/users/${userId}`);
 
   // Backend: SuccessResponse { data: { user: UserDetailInfo } }
   const raw = response.data;
@@ -122,7 +122,7 @@ export const updateUserStatus = async (
   status: "active" | "inactive"
 ): Promise<UpdateStatusResponse> => {
   const response = await apiClient.patch(
-    `/admin/users/${userId}/status`,
+    `/users/${userId}/status`,
     { is_active: status === "active" }
   );
 

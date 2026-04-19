@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import logging
 import re
 import unicodedata
@@ -323,7 +322,7 @@ class LoaderService:
     def _lxml_available() -> bool:
         """Kiểm tra lxml có khả dụng không."""
         try:
-            import lxml  # type: ignore[import-untyped]  # noqa: F401
+            import lxml  # noqa: F401  # type: ignore[import-untyped]
             return True
         except ImportError:
             return False

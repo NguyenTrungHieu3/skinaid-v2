@@ -8,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
 
 from app.core.dependencies.access_control import require_admin, require_auth
 from app.modules.users.models import User
+from app.modules.audit.dependencies import AuditSvc
 from app.modules.rag.dependencies import RagDocumentSvc
 from app.modules.rag.services.qdrant_service import qdrant_service
 from app.modules.rag.schemas.rag_document_schemas import (
@@ -36,6 +37,7 @@ router = APIRouter(prefix="/rag")
 async def upload_document(
     background_tasks: BackgroundTasks,
     service: RagDocumentSvc,
+    audit_service: AuditSvc,
     current_user: User = Depends(require_admin),
     file: UploadFile = File(..., description="File tài liệu cần index"),
     doc_metadata: Optional[str] = Query(
@@ -55,6 +57,16 @@ async def upload_document(
         background_tasks=background_tasks,
         uploaded_by=current_user.user_id,
         doc_metadata=parsed_metadata,
+    )
+
+    await audit_service.log_event(
+        action="upload_rag_document",
+        user_id=current_user.user_id,
+        resource_type="rag_document",
+        resource_id=str(doc.id),
+        details={"file_name": doc.file_name, "file_type": doc.file_type},
+        success=True,
+        description=f"Tải lên tài liệu cơ sở tri thức: {doc.file_name}"
     )
 
     return SuccessResponse(
@@ -130,9 +142,20 @@ async def get_document(
 async def delete_document(
     doc_id: uuid.UUID,
     service: RagDocumentSvc,
+    audit_service: AuditSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     file_name, vectors_deleted = await service.delete_document(doc_id)
+
+    await audit_service.log_event(
+        action="delete_rag_document",
+        user_id=current_user.user_id,
+        resource_type="rag_document",
+        resource_id=str(doc_id),
+        details={"file_name": file_name, "vectors_deleted": vectors_deleted},
+        success=True,
+        description=f"Xóa tài liệu cơ sở tri thức: {file_name}"
+    )
 
     return SuccessResponse(
         message=f"Đã xóa tài liệu '{file_name}' và {vectors_deleted} vectors",

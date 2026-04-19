@@ -23,7 +23,7 @@ import type {
  * - Runtime status monitoring
  */
 
-const BASE_URL = '/admin/models';
+const BASE_URL = '/models';
 
 /**
  * List all AI models with filtering

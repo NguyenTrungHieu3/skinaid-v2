@@ -14,6 +14,14 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .pageTitle h1 {
@@ -32,6 +40,7 @@
 .btnPrimary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   background: linear-gradient(to right, #1E9378, #17805f);
@@ -39,10 +48,12 @@
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
+  line-height: normal;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(30, 147, 120, 0.3);
+  white-space: nowrap;
 }
 
 .btnPrimary svg {

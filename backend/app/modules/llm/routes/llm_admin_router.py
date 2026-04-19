@@ -26,11 +26,12 @@ from app.modules.llm.schemas.llm_admin_schemas import (
     BudgetSettingsResponse,
     UpdateBudgetRequest,
 )
+from app.modules.audit.dependencies import AuditSvc
 from app.shared.response import SuccessResponse
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/admin/llm")
+router = APIRouter(prefix="/llm")
 
 
 def _get_config_service(db: AsyncSession = Depends(get_db)) -> LLMConfigService:
@@ -110,6 +111,7 @@ async def get_available_models(
 async def switch_model(
     config_key: str,
     body: SwitchModelRequest,
+    audit_service: AuditSvc,
     service: LLMConfigService = Depends(_get_config_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
@@ -120,12 +122,21 @@ async def switch_model(
             admin_id=current_user.user_id,
             reason=body.reason,
         )
+        await audit_service.log_event(
+            action="update_llm_config",
+            user_id=current_user.user_id,
+            resource_type="llm_config",
+            resource_id=config_key,
+            details={"old_model": result["old_model"], "new_model": result["new_model"], "action": "switch_model"},
+            success=True,
+            description=f"Switched LLM model for {config_key} to {result['new_model']}"
+        )
         return SuccessResponse(
             message=result["message"],
             data=SwitchModelResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.put(
@@ -137,6 +148,7 @@ async def switch_model(
 async def set_maintenance(
     config_key: str,
     body: SetMaintenanceRequest,
+    audit_service: AuditSvc,
     service: LLMConfigService = Depends(_get_config_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
@@ -148,12 +160,21 @@ async def set_maintenance(
             admin_id=current_user.user_id,
         )
         status_text = "bật" if body.enabled else "tắt"
+        await audit_service.log_event(
+            action="update_llm_config",
+            user_id=current_user.user_id,
+            resource_type="llm_config",
+            resource_id=config_key,
+            details={"maintenance_enabled": body.enabled, "action": "set_maintenance"},
+            success=True,
+            description=f"Maintenance {status_text} cho cấu hình '{config_key}'"
+        )
         return SuccessResponse(
             message=f"Đã {status_text} chế độ bảo trì cho '{config_key}'",
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 3: Activate / Deactivate ───────────────────────────
@@ -167,6 +188,7 @@ async def set_maintenance(
 async def toggle_active(
     config_key: str,
     body: ToggleActiveRequest,
+    audit_service: AuditSvc,
     service: LLMConfigService = Depends(_get_config_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
@@ -178,12 +200,21 @@ async def toggle_active(
             reason=body.reason,
         )
         status_text = "kích hoạt" if body.is_active else "tắt"
+        await audit_service.log_event(
+            action="update_llm_config",
+            user_id=current_user.user_id,
+            resource_type="llm_config",
+            resource_id=config_key,
+            details={"is_active": body.is_active, "action": "toggle_active"},
+            success=True,
+            description=f"Đã {status_text} cấu hình '{config_key}'"
+        )
         return SuccessResponse(
             message=f"Đã {status_text} cấu hình '{config_key}'",
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 4: Update Parameters ───────────────────────────────
@@ -197,6 +228,7 @@ async def toggle_active(
 async def update_params(
     config_key: str,
     body: UpdateParamsRequest,
+    audit_service: AuditSvc,
     service: LLMConfigService = Depends(_get_config_service),
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
@@ -209,12 +241,21 @@ async def update_params(
             admin_id=current_user.user_id,
             reason=body.reason,
         )
+        await audit_service.log_event(
+            action="update_llm_config",
+            user_id=current_user.user_id,
+            resource_type="llm_config",
+            resource_id=config_key,
+            details={"temperature": body.temperature, "max_tokens": body.max_tokens, "top_k": body.top_k, "action": "update_params"},
+            success=True,
+            description=f"Cập nhật tham số LLM cho '{config_key}'"
+        )
         return SuccessResponse(
             message=f"Đã cập nhật tham số cho '{config_key}'",
             data=LLMConfigResponse(**config),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 5: Test Prompt ─────────────────────────────────
@@ -242,7 +283,7 @@ async def test_prompt(
             data=TestPromptResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 # ── Phase 6: Change Logs (Audit) ───────────────────────────
@@ -337,4 +378,4 @@ async def update_budget(
             data=BudgetSettingsResponse(**result),
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e

@@ -14,7 +14,7 @@ from app.core.dependencies import require_admin
 from app.modules.users.models.user import User
 from app.middleware.rate_limit import limiter
 
-router = APIRouter(prefix="/admin/users")
+router = APIRouter(prefix="/users")
 
 
 @router.post(

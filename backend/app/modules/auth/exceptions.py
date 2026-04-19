@@ -120,3 +120,31 @@ class InvalidResetTokenError(BadRequestError):
         super().__init__(
             message="Password reset token is invalid or expired",
         )
+
+
+class DeviceSessionNotFoundError(NotFoundError):
+
+    error_code = "AUTH_DEVICE_SESSION_NOT_FOUND"
+
+    def __init__(self, identifier: str = "") -> None:
+        detail = f" ({identifier})" if identifier else ""
+        super().__init__(
+            message=f"Device session not found{detail}",
+            details={"session_id": identifier} if identifier else None,
+        )
+
+
+class DeviceInactiveError(ForbiddenError):
+
+    error_code = "AUTH_DEVICE_INACTIVE"
+
+    def __init__(self) -> None:
+        super().__init__(message="Device session has been revoked")
+
+
+class DeviceForbiddenError(ForbiddenError):
+
+    error_code = "AUTH_DEVICE_FORBIDDEN"
+
+    def __init__(self) -> None:
+        super().__init__(message="You do not own this device session")

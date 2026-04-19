@@ -34,7 +34,7 @@ class NotificationService:
 
     async def list_notifications(
         self,
-        user_id: UUID,
+        user_id: Optional[UUID],
         skip: int = 0,
         limit: int = 20,
         unread_only: bool = False,
@@ -47,7 +47,10 @@ class NotificationService:
             unread_only=unread_only,
             notification_type=notification_type,
         )
-        unread_count = await self._repository.count_unread(user_id)
+        if user_id is not None:
+            unread_count = await self._repository.count_unread(user_id)
+        else:
+            unread_count = await self._repository.count_unread_all()
         return NotificationListResponse(
             items=[NotificationResponse.model_validate(n) for n in items],
             total=total,
@@ -59,12 +62,12 @@ class NotificationService:
         return UnreadCountResponse(unread_count=count)
 
     async def mark_read(
-        self, notification_id: UUID, current_user_id: UUID
+        self, notification_id: UUID, current_user_id: UUID, is_admin: bool = False
     ) -> NotificationResponse:
         notification = await self._repository.get_by_id(notification_id)
         if notification is None:
             raise NotificationNotFoundError(str(notification_id))
-        if notification.user_id != current_user_id:
+        if notification.user_id != current_user_id and not is_admin:
             raise NotificationForbiddenError()
 
         updated = await self._repository.mark_as_read(notification)
@@ -74,11 +77,11 @@ class NotificationService:
         updated_count = await self._repository.mark_all_read(user_id)
         return {"updated_count": updated_count}
 
-    async def delete(self, notification_id: UUID, current_user_id: UUID) -> None:
+    async def delete(self, notification_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
         notification = await self._repository.get_by_id(notification_id)
         if notification is None:
             raise NotificationNotFoundError(str(notification_id))
-        if notification.user_id != current_user_id:
+        if notification.user_id != current_user_id and not is_admin:
             raise NotificationForbiddenError()
 
         await self._repository.delete(notification)

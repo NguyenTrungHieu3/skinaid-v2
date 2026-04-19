@@ -105,7 +105,19 @@ export default function FirstAidManagement() {
   // Import/Export States
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
+        setExportDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -942,15 +954,7 @@ export default function FirstAidManagement() {
           <h1>{t("admin.first_aid.title")}</h1>
           <p>{t("admin.first_aid.subtitle")}</p>
         </div>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <button 
-            className={styles.btnSecondary} 
-            onClick={handleDownloadTemplate} 
-            disabled={importing || exporting}
-          >
-            <Download size={16} /> Mẫu Import
-          </button>
-          
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
           <input 
             type="file" 
             accept=".xlsx,.csv" 
@@ -962,26 +966,70 @@ export default function FirstAidManagement() {
             className={styles.btnSecondary} 
             onClick={() => fileInputRef.current?.click()} 
             disabled={importing || exporting}
+            style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem', background: 'white', color: '#17805f', border: '1.5px solid #17805f' }}
+            title="Import dữ liệu sơ cứu từ file Excel"
+            onMouseOver={(e) => e.currentTarget.style.background = '#f0fdf9'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'white'}
           >
-            {importing ? <Loader2 size={16} className={styles.spin} /> : <Upload size={16} />} 
-            Import
+            {importing ? <Loader2 size={15} className={styles.spin} /> : <Upload size={15} />} 
+            Import dữ liệu
           </button>
           
-          <button 
-            className={styles.btnSecondary} 
-            onClick={handleExportExcel} 
-            disabled={importing || exporting}
-          >
-            {exporting ? <Loader2 size={16} className={styles.spin} /> : <FileSpreadsheet size={16} />} 
-            Export
-          </button>
+          <div style={{ position: "relative" }} ref={exportRef}>
+            <button 
+              className={styles.btnSecondary} 
+              onClick={() => setExportDropdownOpen(!exportDropdownOpen)} 
+              disabled={importing || exporting}
+              style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem', background: 'white', color: '#17805f', border: '1.5px solid #17805f' }}
+              onMouseOver={(e) => e.currentTarget.style.background = '#f0fdf9'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+            >
+              {exporting ? <Loader2 size={15} className={styles.spin} /> : <Download size={15} />} 
+              Export 
+            </button>
+            {exportDropdownOpen && (
+              <div style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: "0.5rem",
+                background: "white",
+                border: "1px solid #e2e8f0",
+                borderRadius: "0.5rem",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1)",
+                zIndex: 50,
+                minWidth: "180px",
+                padding: "0.5rem"
+              }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", padding: "0.5rem 0.5rem 0.25rem 0.5rem" }}>Tùy chọn xuất</div>
+                <button
+                  onClick={() => { setExportDropdownOpen(false); handleExportExcel(); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem", background: "none", border: "none", fontSize: "0.875rem", cursor: "pointer", color: "#334155", textAlign: "left", borderRadius: "0.25rem" }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
+                >
+                  <FileSpreadsheet size={15} /> Xuất dữ liệu
+                </button>
+                <div style={{ height: "1px", background: "#e2e8f0", margin: "0.25rem 0" }} />
+                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", padding: "0.5rem 0.5rem 0.25rem 0.5rem" }}>Dành cho thêm mới</div>
+                <button
+                  onClick={() => { setExportDropdownOpen(false); handleDownloadTemplate(); }}
+                  style={{ width: "100%", display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem", background: "none", border: "none", fontSize: "0.875rem", cursor: "pointer", color: "#334155", textAlign: "left", borderRadius: "0.25rem" }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "#f1f5f9"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
+                >
+                  <Download size={15} /> Tải file mẫu
+                </button>
+              </div>
+            )}
+          </div>
 
           <button 
             className={styles.btnPrimary} 
             onClick={handleOpenAddModal} 
             disabled={importing || exporting}
           >
-            <Plus size={20} />
+            <Plus size={18} />
             {t("admin.first_aid.add_guidance")}
           </button>
         </div>

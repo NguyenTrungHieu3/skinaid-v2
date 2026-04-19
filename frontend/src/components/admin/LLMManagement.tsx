@@ -84,6 +84,10 @@ export default function LLMManagement() {
   const [editBudget, setEditBudget] = useState(0)
   const [editInputPrice, setEditInputPrice] = useState(0.40)
   const [editOutputPrice, setEditOutputPrice] = useState(1.60)
+
+  // Helper: backend stores price_per_1k, but user sees price_per_1M
+  const perMToPerK = (perM: number) => perM / 1000
+  const perKToPerM = (perK: number) => perK * 1000
   const [savingBudget, setSavingBudget] = useState(false)
 
   useEffect(() => {
@@ -415,8 +419,8 @@ export default function LLMManagement() {
   const openBudgetModal = () => {
     if (usageStats?.budget) {
       setEditBudget(usageStats.budget.monthly_budget_usd)
-      setEditInputPrice(usageStats.budget.price_per_1k_input_tokens)
-      setEditOutputPrice(usageStats.budget.price_per_1k_output_tokens)
+      setEditInputPrice(perKToPerM(usageStats.budget.price_per_1k_input_tokens))
+      setEditOutputPrice(perKToPerM(usageStats.budget.price_per_1k_output_tokens))
     }
     setBudgetModalOpen(true)
   }
@@ -426,8 +430,8 @@ export default function LLMManagement() {
     try {
       const result = await llmService.updateBudget({
         monthly_budget_usd: editBudget,
-        price_per_1k_input_tokens: editInputPrice,
-        price_per_1k_output_tokens: editOutputPrice,
+        price_per_1k_input_tokens: perMToPerK(editInputPrice),
+        price_per_1k_output_tokens: perMToPerK(editOutputPrice),
       })
       if (result.success) {
         toast.success('Cập nhật budget thành công')
@@ -874,8 +878,12 @@ export default function LLMManagement() {
                 <div className={styles.usageStatLabel}>Tổng requests</div>
               </div>
               <div className={styles.usageStat}>
-                <div className={styles.usageStatValue}>{usageStats.total_tokens.toLocaleString()}</div>
-                <div className={styles.usageStatLabel}>Tổng tokens</div>
+                <div className={styles.usageStatValue}>{usageStats.total_prompt_tokens.toLocaleString()}</div>
+                <div className={styles.usageStatLabel}>Input tokens</div>
+              </div>
+              <div className={styles.usageStat}>
+                <div className={styles.usageStatValue}>{usageStats.total_completion_tokens.toLocaleString()}</div>
+                <div className={styles.usageStatLabel}>Output tokens</div>
               </div>
               <div className={styles.usageStat}>
                 <div className={styles.usageStatValue}>{usageStats.avg_response_time_ms}ms</div>
@@ -929,7 +937,7 @@ export default function LLMManagement() {
                   </div>
                 )}
                 <div className={styles.budgetMeta}>
-                  <span>{usageStats.budget.monthly_total_tokens.toLocaleString()} tokens tháng này</span>
+                  <span>{usageStats.budget.monthly_prompt_tokens.toLocaleString()} input · {usageStats.budget.monthly_completion_tokens.toLocaleString()} output tokens tháng này</span>
                   {usageStats.budget.monthly_budget_usd > 0 && (
                     <span className={
                       usageStats.budget.budget_usage_percent > 80
@@ -949,7 +957,8 @@ export default function LLMManagement() {
                   <tr>
                     <th>Cấu hình</th>
                     <th>Requests</th>
-                    <th>Tokens</th>
+                    <th>Input Tokens</th>
+                    <th>Output Tokens</th>
                     <th>Avg Time</th>
                     <th>Thành công</th>
                   </tr>
@@ -963,7 +972,8 @@ export default function LLMManagement() {
                       <tr key={s.config_key}>
                         <td>{s.display_name}</td>
                         <td>{s.total_requests.toLocaleString()}</td>
-                        <td>{s.total_tokens.toLocaleString()}</td>
+                        <td>{s.total_prompt_tokens.toLocaleString()}</td>
+                        <td>{s.total_completion_tokens.toLocaleString()}</td>
                         <td>{s.avg_response_time_ms}ms</td>
                         <td>
                           <span className={styles.successBadge}>{successPct}%</span>
@@ -1306,7 +1316,7 @@ export default function LLMManagement() {
                 </p>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Giá / 1K input tokens (USD)</label>
+                <label className={styles.formLabel}>Giá / 1M input tokens (USD)</label>
                 <input
                   type="number"
                   className={styles.paramNumberInput}
@@ -1320,7 +1330,7 @@ export default function LLMManagement() {
                 </p>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Giá / 1K output tokens (USD)</label>
+                <label className={styles.formLabel}>Giá / 1M output tokens (USD)</label>
                 <input
                   type="number"
                   className={styles.paramNumberInput}
@@ -1339,7 +1349,7 @@ export default function LLMManagement() {
                 Hủy
               </button>
               <button
-                className={styles.btnPrimary}
+                className={styles.btnSubmit}
                 onClick={handleSaveBudget}
                 disabled={savingBudget}
               >

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import allow_guest, require_admin
 from app.modules.users.models import User
+from app.modules.audit.dependencies import AuditSvc
 from app.modules.firstaid.dependencies import FirstAidSvc
 from app.modules.firstaid.schemas.api import (
     CreateGuideRequest,
@@ -135,9 +136,21 @@ async def validate_availability(
 async def create_guide(
     request: CreateGuideRequest,
     service: FirstAidSvc,
+    audit_service: AuditSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     guide = await service.create_guide(request, current_user.user_id)
+    
+    await audit_service.log_event(
+        action="create_first_aid_guide",
+        user_id=current_user.user_id,
+        resource_type="first_aid_guide",
+        resource_id=str(guide.id),
+        details={"wound_type": guide.wound_type, "severity": guide.severity},
+        success=True,
+        description=f"Tạo hướng dẫn sơ cứu cho {guide.wound_type} - {guide.severity}"
+    )
+    
     return SuccessResponse(
         message="Tạo hướng dẫn thành công",
         data=FirstAidGuideResponse.model_validate(guide),
@@ -170,9 +183,21 @@ async def update_guide(
     guide_id: UUID,
     request: UpdateGuideRequest,
     service: FirstAidSvc,
+    audit_service: AuditSvc,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     guide = await service.update_guide(guide_id, request)
+    
+    await audit_service.log_event(
+        action="update_first_aid_guide",
+        user_id=current_user.user_id,
+        resource_type="first_aid_guide",
+        resource_id=str(guide_id),
+        details={"wound_type": guide.wound_type, "severity": guide.severity},
+        success=True,
+        description=f"Cập nhật hướng dẫn sơ cứu: {guide.wound_type} - {guide.severity}"
+    )
+    
     return SuccessResponse(
         message="Cập nhật thành công",
         data=FirstAidGuideResponse.model_validate(guide),
@@ -187,10 +212,22 @@ async def update_guide(
 async def delete_guide(
     guide_id: UUID,
     service: FirstAidSvc,
+    audit_service: AuditSvc,
     hard_delete: bool = False,
     current_user: User = Depends(require_admin),
 ) -> SuccessResponse:
     await service.delete_guide(guide_id, hard_delete)
+    
+    await audit_service.log_event(
+        action="delete_first_aid_guide",
+        user_id=current_user.user_id,
+        resource_type="first_aid_guide",
+        resource_id=str(guide_id),
+        details={"hard_delete": hard_delete},
+        success=True,
+        description=f"Xóa hướng dẫn sơ cứu ID: {guide_id}"
+    )
+    
     return SuccessResponse(
         message="Xóa thành công",
         data={"guide_id": str(guide_id), "hard_delete": hard_delete},

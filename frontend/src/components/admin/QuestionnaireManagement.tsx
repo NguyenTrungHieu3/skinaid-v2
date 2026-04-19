@@ -31,6 +31,7 @@ import {
   updateQuestionnaire,
   activateQuestionnaire,
   deleteQuestionnaire,
+  bulkDeleteQuestionnaires,
   addQuestion,
   updateQuestion,
   deleteQuestion,
@@ -67,13 +68,9 @@ const WOUND_TYPE_LABEL: Record<string, string> = {
   abrasion:   'Trầy xước (Abrasion)',
   bruise:     'Bầm tím (Bruise)',
   burn:       'Bỏng (Burn)',
-  cut:        'Vết cắt (Cut)',
   acne:       'Mụn trứng cá (Acne)',
   fungal:     'Nấm da (Fungal)',
   psoriasis:  'Vảy nến (Psoriasis)',
-  laceration: 'Vết rách (Laceration)',
-  rash:       'Phát ban (Rash)',
-  normal:     'Bình thường (Normal)',
 };
 
 // Canonical list dùng trong form Create (đồng bộ với backend VALID_WOUND_TYPES)
@@ -81,18 +78,14 @@ const WOUND_TYPES_FORM = [
   { value: 'abrasion',   label: WOUND_TYPE_LABEL.abrasion },
   { value: 'bruise',     label: WOUND_TYPE_LABEL.bruise },
   { value: 'burn',       label: WOUND_TYPE_LABEL.burn },
-  { value: 'cut',        label: WOUND_TYPE_LABEL.cut },
   { value: 'acne',       label: WOUND_TYPE_LABEL.acne },
   { value: 'fungal',     label: WOUND_TYPE_LABEL.fungal },
   { value: 'psoriasis',  label: WOUND_TYPE_LABEL.psoriasis },
-  { value: 'laceration', label: WOUND_TYPE_LABEL.laceration },
-  { value: 'rash',       label: WOUND_TYPE_LABEL.rash },
-  { value: 'normal',     label: WOUND_TYPE_LABEL.normal },
 ];
 
 const TRIAGE_CONFIG = {
   green:  { label: 'Nhẹ',  badgeClass: styles.badgeGreen },
-  yellow: { label: 'Vừa',  badgeClass: styles.badgeYellow },
+  yellow: { label: 'Trung bình',  badgeClass: styles.badgeYellow },
   red:    { label: 'Nặng', badgeClass: styles.badgeRed },
 };
 
@@ -112,6 +105,7 @@ type ModalType =
   | 'import'
   | 'importUnified'
   | 'exportBulk'
+  | 'bulkDelete'
   | null;
 
 export default function QuestionnaireManagement() {
@@ -149,6 +143,9 @@ export default function QuestionnaireManagement() {
   // Bulk export state
   const [exportSelectedIds, setExportSelectedIds] = useState<Set<string>>(new Set());
   const [exportFormat, setExportFormat] = useState<'csv' | 'excel' | 'docx' | 'pdf'>('excel');
+  // Bulk delete state
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false);
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<Set<string>>(new Set());
 
   // ─── Modal state ───────────────────────────────────────────────────────────
   const [modal, setModal] = useState<ModalType>(null);
@@ -362,6 +359,48 @@ export default function QuestionnaireManagement() {
       toastError(err?.message ?? 'Xuất file thất bại');
     } finally {
       setExporting(false);
+    }
+  };
+
+  // ─── Bulk Delete ─────────────────────────────────────────────────────
+  const toggleBulkDeleteMode = () => {
+    setBulkDeleteMode((prev) => !prev);
+    setBulkDeleteIds(new Set());
+  };
+
+  const toggleBulkDeleteId = (id: string) => {
+    setBulkDeleteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllBulkDelete = () => {
+    if (bulkDeleteIds.size === filteredQuestionnaires.length) {
+      setBulkDeleteIds(new Set());
+    } else {
+      setBulkDeleteIds(new Set(filteredQuestionnaires.map((q) => q.questionnaire_id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (bulkDeleteIds.size === 0) return;
+    try {
+      setSubmitting(true);
+      const result = await bulkDeleteQuestionnaires(Array.from(bulkDeleteIds));
+      success(result.message);
+      closeModal();
+      setBulkDeleteMode(false);
+      setBulkDeleteIds(new Set());
+      if (selectedId && bulkDeleteIds.has(selectedId)) {
+        setSelectedId(null);
+      }
+      fetchAll();
+    } catch (err: any) {
+      toastError(err?.response?.data?.detail ?? 'Xóa hàng loạt thất bại');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -703,6 +742,14 @@ export default function QuestionnaireManagement() {
           >
             <Download size={15} /> Export bộ câu hỏi
           </button>
+          <button
+            className={`${styles.btnOutline} ${bulkDeleteMode ? styles.btnOutlineDanger : ''}`}
+            style={{ fontSize: '0.8rem', padding: '0.5rem 0.875rem' }}
+            onClick={toggleBulkDeleteMode}
+            title={bulkDeleteMode ? 'Thoát chế độ xóa' : 'Xóa nhiều bộ câu hỏi'}
+          >
+            <Trash2 size={15} /> {bulkDeleteMode ? 'Hủy chọn' : 'Xóa hàng loạt'}
+          </button>
           <button className={styles.adminBtnPrimary} onClick={openCreateQuestionnaire}>
             <PlusCircle size={18} />
             {t('admin.questionnaires.create_new')}
@@ -799,15 +846,68 @@ export default function QuestionnaireManagement() {
                 {filterWoundType ? `Không có bộ câu hỏi nào cho loại vết thương này` : 'Chưa có bộ câu hỏi nào'}
               </div>
             ) : (
-              paginatedQuestionnaires.map((q) => (
+              <>
+                {/* Bulk delete action bar */}
+                {bulkDeleteMode && (
+                  <div style={{
+                    padding: '0.625rem 1rem',
+                    background: 'linear-gradient(to right, #fef2f2, #fff1f2)',
+                    borderBottom: '1px solid #fecaca',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem',
+                    flexWrap: 'wrap',
+                  }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: '#991b1b', fontWeight: 600, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={bulkDeleteIds.size === filteredQuestionnaires.length && filteredQuestionnaires.length > 0}
+                        onChange={toggleAllBulkDelete}
+                        style={{ accentColor: '#dc2626', width: '16px', height: '16px' }}
+                      />
+                      Chọn tất cả ({bulkDeleteIds.size}/{filteredQuestionnaires.length})
+                    </label>
+                    <button
+                      disabled={bulkDeleteIds.size === 0}
+                      onClick={() => setModal('bulkDelete')}
+                      style={{
+                        padding: '0.375rem 0.875rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        background: bulkDeleteIds.size > 0 ? '#dc2626' : '#e5e7eb',
+                        color: bulkDeleteIds.size > 0 ? 'white' : '#9ca3af',
+                        border: 'none',
+                        borderRadius: '0.5rem',
+                        cursor: bulkDeleteIds.size > 0 ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Trash2 size={13} /> Xóa {bulkDeleteIds.size > 0 ? `(${bulkDeleteIds.size})` : ''}
+                    </button>
+                  </div>
+                )}
+                {paginatedQuestionnaires.map((q) => (
                 <div
                   key={q.questionnaire_id}
                   role="button"
                   tabIndex={0}
                   className={`${styles.questionnaireListItem} ${selectedId === q.questionnaire_id ? styles.active : ''}`}
-                  onClick={() => setSelectedId(q.questionnaire_id)}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelectedId(q.questionnaire_id)}
+                  onClick={() => bulkDeleteMode ? toggleBulkDeleteId(q.questionnaire_id) : setSelectedId(q.questionnaire_id)}
+                  onKeyDown={(e) => e.key === 'Enter' && (bulkDeleteMode ? toggleBulkDeleteId(q.questionnaire_id) : setSelectedId(q.questionnaire_id))}
                 >
+                  {bulkDeleteMode && (
+                    <input
+                      type="checkbox"
+                      checked={bulkDeleteIds.has(q.questionnaire_id)}
+                      onChange={() => toggleBulkDeleteId(q.questionnaire_id)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ accentColor: '#dc2626', width: '16px', height: '16px', flexShrink: 0, cursor: 'pointer' }}
+                    />
+                  )}
                   <div className={styles.listItemContent}>
                     <p className={styles.listItemTitle}>{q.title}</p>
                     <p className={styles.listItemMeta}>{WOUND_TYPE_LABEL[q.wound_type] ?? q.wound_type}</p>
@@ -816,7 +916,7 @@ export default function QuestionnaireManagement() {
                     <span className={`${styles.badge} ${q.is_active ? styles.badgeActive : styles.badgeDraft}`}>
                       {q.is_active ? 'Active' : 'Draft'}
                     </span>
-                    {!q.is_active && (
+                    {!q.is_active && !bulkDeleteMode && (
                       <button
                         className={styles.listItemActivateBtn}
                         onClick={(e) => { e.stopPropagation(); handleActivate(q); }}
@@ -827,7 +927,8 @@ export default function QuestionnaireManagement() {
                     )}
                   </div>
                 </div>
-              ))
+              ))}
+              </>
             )}
             {/* Pagination cho danh sách */}
             {filteredQuestionnaires.length > LIST_PAGE_SIZE && (
@@ -1149,6 +1250,58 @@ export default function QuestionnaireManagement() {
         </div>
       )}
 
+      {/* Bulk Delete Confirmation */}
+      {modal === 'bulkDelete' && (
+        <div className={styles.modalOverlay} onClick={closeModal}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Xóa Hàng Loạt</h2>
+              <button className={styles.modalClose} onClick={closeModal}><X size={16} /></button>
+            </div>
+            <div className={styles.modalBody}>
+              <div style={{
+                padding: '1rem',
+                background: '#fef2f2',
+                borderRadius: '0.75rem',
+                border: '1px solid #fecaca',
+                marginBottom: '1rem',
+              }}>
+                <p style={{ color: '#991b1b', fontSize: '0.9rem', fontWeight: 600, margin: '0 0 0.5rem 0' }}>
+                  ⚠️ Bạn đang xóa {bulkDeleteIds.size} bộ câu hỏi
+                </p>
+                <p style={{ color: '#b91c1c', fontSize: '0.8rem', margin: 0 }}>
+                  Tất cả câu hỏi và đáp án bên trong sẽ bị xóa vĩnh viễn và <strong>không thể hoàn tác</strong>.
+                </p>
+              </div>
+              <div style={{ maxHeight: '200px', overflowY: 'auto', fontSize: '0.85rem' }}>
+                {questionnaires
+                  .filter((q) => bulkDeleteIds.has(q.questionnaire_id))
+                  .map((q) => (
+                    <div key={q.questionnaire_id} style={{
+                      padding: '0.5rem 0.75rem',
+                      borderBottom: '1px solid #f1f5f9',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <span style={{ fontWeight: 500, color: '#1e293b' }}>{q.title}</span>
+                      <span className={`${styles.badge} ${q.is_active ? styles.badgeActive : styles.badgeDraft}`} style={{ fontSize: '0.65rem' }}>
+                        {q.is_active ? 'Active' : 'Draft'}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button className={styles.btnSecondary} onClick={closeModal}>Hủy</button>
+              <button className={styles.btnDanger} onClick={handleBulkDelete} disabled={submitting}>
+                {submitting ? <Loader2 size={14} /> : <Trash2 size={14} />} Xóa {bulkDeleteIds.size} bộ câu hỏi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Question */}
       {modal === 'createQuestion' && (
         <div className={styles.modalOverlay} onClick={closeModal}>
@@ -1263,11 +1416,11 @@ export default function QuestionnaireManagement() {
                   </p>
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Mức độ Triage *</label>
+                  <label>Mức độ nghiêm trọng *</label>
                   <select value={ansForm.triage_level} onChange={(e) => setAnsForm({ ...ansForm, triage_level: e.target.value as 'green' | 'yellow' | 'red' })}>
-                    <option value="green">🟢 Nhẹ (Green)</option>
-                    <option value="yellow">🟡 Vừa (Yellow)</option>
-                    <option value="red">🔴 Nặng (Red)</option>
+                    <option value="green">🟢 Nhẹ</option>
+                    <option value="yellow">🟡 Trung bình</option>
+                    <option value="red">🔴 Nặng</option>
                   </select>
                 </div>
               </div>
@@ -1306,11 +1459,11 @@ export default function QuestionnaireManagement() {
                   </p>
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Mức độ Triage *</label>
+                  <label>Mức độ nghiêm trọng *</label>
                   <select value={ansForm.triage_level} onChange={(e) => setAnsForm({ ...ansForm, triage_level: e.target.value as 'green' | 'yellow' | 'red' })}>
-                    <option value="green">🟢 Nhẹ (Green)</option>
-                    <option value="yellow">🟡 Vừa (Yellow)</option>
-                    <option value="red">🔴 Nặng (Red)</option>
+                    <option value="green">🟢 Nhẹ</option>
+                    <option value="yellow">🟡 Trung bình</option>
+                    <option value="red">🔴 Nặng</option>
                   </select>
                 </div>
               </div>
@@ -1400,7 +1553,7 @@ export default function QuestionnaireManagement() {
                     <table>
                       <thead>
                         <tr>
-                          <th>#</th><th>Câu hỏi</th><th>Đáp án</th><th>Triage</th>
+                          <th>#</th><th>Câu hỏi</th><th>Đáp án</th><th>Mức độ</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1414,7 +1567,7 @@ export default function QuestionnaireManagement() {
                                 row.triage_level === 'green' ? styles.badgeGreen
                                 : row.triage_level === 'yellow' ? styles.badgeYellow
                                 : styles.badgeRed
-                              }`}>{row.triage_level}</span>
+                              }`}>{TRIAGE_CONFIG[row.triage_level as keyof typeof TRIAGE_CONFIG]?.label ?? row.triage_level}</span>
                             </td>
                           </tr>
                         ))}

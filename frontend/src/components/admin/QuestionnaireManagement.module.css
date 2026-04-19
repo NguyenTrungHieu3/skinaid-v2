@@ -595,6 +595,16 @@
   background: #f0fdf9;
 }
 
+.btnOutlineDanger {
+  color: #dc2626;
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.btnOutlineDanger:hover {
+  background: #fee2e2;
+}
+
 .btnOutlineSm {
   padding: 0.3rem 0.625rem;
   font-size: 0.75rem;

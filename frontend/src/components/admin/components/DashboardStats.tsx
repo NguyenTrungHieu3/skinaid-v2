@@ -1,4 +1,4 @@
-import { Users, Image, Activity, Target } from 'lucide-react';
+import { Users, Image, Activity, Target, DollarSign, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import StatCard from '../shared/StatCard';
 import styles from './DashboardStats.module.css';
@@ -23,11 +23,19 @@ interface OverviewData {
 interface DashboardStatsProps {
   overview: OverviewData | null;
   period: string;
+  llmMonthlyCost?: number;
+  firstAidTotal?: number;
 }
 
-export default function DashboardStats({ overview }: DashboardStatsProps) {
+export default function DashboardStats({ overview, llmMonthlyCost = 0, firstAidTotal = 0 }: DashboardStatsProps) {
   const { t } = useTranslation();
   if (!overview) return null;
+
+  const formatCost = (cost: number) => {
+    if (cost < 0.01) return `$${cost.toFixed(6)}`;
+    if (cost < 1) return `$${cost.toFixed(4)}`;
+    return `$${cost.toFixed(2)}`;
+  };
 
   return (
     <div className={`${styles.adminCardList} ${styles.mt24}`}>
@@ -54,6 +62,18 @@ export default function DashboardStats({ overview }: DashboardStatsProps) {
         value={`${overview.model_accuracy.toFixed(1)}%`}
         label={t('admin.dashboard.stats.model_accuracy')}
         color="primary"
+      />
+      <StatCard
+        icon={DollarSign}
+        value={formatCost(llmMonthlyCost)}
+        label="Chi phí LLM tháng này"
+        color="orange"
+      />
+      <StatCard
+        icon={BookOpen}
+        value={firstAidTotal.toLocaleString()}
+        label="Hướng dẫn sơ cứu"
+        color="green"
       />
     </div>
   );

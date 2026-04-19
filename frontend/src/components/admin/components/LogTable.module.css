@@ -1,27 +1,31 @@
 .logsTableCard {
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   overflow: hidden;
+  border: 1px solid #f1f5f9;
 }
 
 .cardHeader {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: white;
 }
 
 .cardHeader h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: #1e293b;
+  letter-spacing: -0.01em;
 }
 
 .pageInfo {
   font-size: 0.875rem;
+  font-weight: 500;
   color: #64748b;
 }
 
@@ -41,32 +45,36 @@
 
 .logsTable th {
   background-color: #f8fafc;
-  padding: 1rem 1.5rem;
-  text-align: center;
+  padding: 1rem 1.25rem;
+  text-align: left;
   font-weight: 600;
   color: #475569;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
 }
 
 .logsTable td {
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid #e2e8f0;
   color: #334155;
   vertical-align: middle;
-  text-align: center;
+  text-align: left;
+  transition: background-color 0.15s ease;
 }
 
 .logsTable tr:last-child td {
   border-bottom: none;
 }
 
-.logsTable tr:hover {
+.logsTable tr:hover td {
   background-color: #f8fafc;
 }
 
 .logTime {
-  font-family: 'Fira Code', monospace;
+  font-family: 'Fira Code', 'Roboto Mono', monospace;
   color: #64748b;
   font-size: 0.8rem;
   white-space: nowrap;
@@ -75,63 +83,42 @@
 .logTypeBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 9999px;
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: capitalize;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  white-space: nowrap;
 }
 
 .logBadgeError {
   background-color: #fef2f2;
-  color: #ef4444;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
 }
 
 .logBadgeWarning {
   background-color: #fffbeb;
-  color: #f59e0b;
+  color: #d97706;
+  border: 1px solid #fef3c7;
 }
 
 .logBadgeSuccess {
-  background-color: #f0fdf4;
-  color: #10b981;
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
 }
 
 .logBadgeInfo {
   background-color: #eff6ff;
-  color: #3b82f6;
-}
-
-.severityBadge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-}
-
-.severityBadgeHigh {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.severityBadgeMedium {
-  background-color: #fef3c7;
-  color: #92400e;
-}
-
-.severityBadgeLow {
-  background-color: #dcfce7;
-  color: #166534;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
 }
 
 .logMessage {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
+  max-width: 350px;
 }
 
 .logsPagination {
@@ -139,65 +126,72 @@
   border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: center;
+  background-color: #f8fafc;
 }
 
 .loadingState,
 .errorState,
 .emptyState {
-  padding: 4rem 2rem;
+  padding: 5rem 2rem;
   text-align: center;
   color: #64748b;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .spinner {
   animation: spin 1s linear infinite;
-  color: #3b82f6;
+  color: #17805f;
+  width: 32px;
+  height: 32px;
 }
 
 .paginationBtn {
-  padding: 0.5rem 1rem;
-  background-color: #3b82f6;
+  padding: 0.625rem 1.25rem;
+  background-color: #17805f;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .paginationBtn:hover {
-  background-color: #2563eb;
+  background-color: #126d4f;
+  box-shadow: 0 4px 6px -1px rgba(23, 128, 95, 0.2);
 }
 
 .viewButton {
-  background: none;
-  border: none;
+  background: white;
+  border: 1px solid #e2e8f0;
   color: #64748b;
   cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
-  transition: all 0.2s;
+  padding: 0.4rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .viewButton:hover {
-  background-color: #d4f4e8;
-  color: #047857;
+  background-color: #f0fdf9;
+  color: #17805f;
+  border-color: #17805f;
+  transform: translateY(-1px);
 }
 
 .userCell {
-  color: #1E9378;
+  color: #0f172a;
   font-weight: 600;
 }
 
 .standardCell {
-  color: #334155;
+  color: #475569;
   font-weight: 500;
 }
 
@@ -206,31 +200,29 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  white-space: nowrap;
 }
 
 .roleBadgePurple {
-  background-color: #f3e8ff;
-  color: #7c3aed;
-  border-color: #e9d5ff;
+  background-color: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ede9fe;
 }
 
 .roleBadgeGray {
-  background-color: #f1f5f9;
+  background-color: #f8fafc;
   color: #475569;
-  border-color: #e2e8f0;
+  border: 1px solid #e2e8f0;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
