@@ -183,7 +183,7 @@ class FirstAidService:
             raise FirstAidGuideNotFoundError(str(guide_id))
 
         if hard_delete:
-            await self.repository.delete(guide_id)
+            await self.repository.delete(guide)
         else:
             # Pass entity to soft_delete, not ID
             await self.repository.soft_delete(guide)

@@ -63,7 +63,7 @@ async def upload_document(
         action="upload_rag_document",
         user_id=current_user.user_id,
         resource_type="rag_document",
-        resource_id=str(doc.id),
+        resource_id=str(doc.rag_document_id),
         details={"file_name": doc.file_name, "file_type": doc.file_type},
         success=True,
         description=f"Tải lên tài liệu cơ sở tri thức: {doc.file_name}"

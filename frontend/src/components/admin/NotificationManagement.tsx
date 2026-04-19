@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { toast, Toaster } from 'sonner';
 import {
-  Bell, BellOff, Send, Search, Trash2, Eye, Check, CheckCheck,
+  Bell, BellOff, Send, Search, Trash2, Eye,
   ChevronLeft, ChevronRight, X, Loader2, Filter, Plus,
   AlertCircle, Clock, Users, Megaphone,
+  Settings, Info, AlertTriangle, Gift, Activity, type LucideIcon,
 } from 'lucide-react';
 import * as notificationService from '../../services/notificationService';
 import type { NotificationItem, CreateNotificationPayload } from '../../services/notificationService';
@@ -28,13 +29,13 @@ const PRIORITY_OPTIONS = [
   { value: 'high', label: 'Cao' },
 ];
 
-const TYPE_DISPLAY: Record<string, { label: string; icon: string; className: string }> = {
-  analysis_complete: { label: 'Phân tích', icon: '🔬', className: 'typeAnalysis' },
-  system: { label: 'Hệ thống', icon: '⚙️', className: 'typeSystem' },
-  admin: { label: 'Quản trị', icon: '🔔', className: 'typeAdmin' },
-  info: { label: 'Thông tin', icon: 'ℹ️', className: 'typeInfo' },
-  warning: { label: 'Cảnh báo', icon: '⚠️', className: 'typeWarning' },
-  promotion: { label: 'Khuyến mãi', icon: '🎉', className: 'typePromotion' },
+const TYPE_DISPLAY: Record<string, { label: string; Icon: LucideIcon; color: string; className: string }> = {
+  analysis_complete: { label: 'Phân tích', Icon: Activity, color: '#6366f1', className: 'typeAnalysis' },
+  system:           { label: 'Hệ thống', Icon: Settings, color: '#64748b', className: 'typeSystem' },
+  admin:            { label: 'Quản trị', Icon: Bell, color: '#0ea5e9', className: 'typeAdmin' },
+  info:             { label: 'Thông tin', Icon: Info, color: '#3b82f6', className: 'typeInfo' },
+  warning:          { label: 'Cảnh báo', Icon: AlertTriangle, color: '#f59e0b', className: 'typeWarning' },
+  promotion:        { label: 'Khuyến mãi', Icon: Gift, color: '#ec4899', className: 'typePromotion' },
 };
 
 const PRIORITY_DISPLAY: Record<string, { label: string; className: string }> = {
@@ -74,7 +75,6 @@ export default function NotificationManagement() {
   // Data
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [total, setTotal] = useState(0);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Pagination
@@ -85,7 +85,6 @@ export default function NotificationManagement() {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [readFilter, setReadFilter] = useState('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Create modal
@@ -120,12 +119,10 @@ export default function NotificationManagement() {
       const data = await notificationService.getAllNotifications({
         skip,
         limit: itemsPerPage,
-        unread_only: readFilter === 'unread',
         notification_type: typeFilter !== 'all' ? typeFilter : undefined,
       });
       setNotifications(data.items);
       setTotal(data.total);
-      setUnreadCount(data.unread_count);
     } catch {
       toast.error('Không thể tải danh sách thông báo');
     } finally {
@@ -136,7 +133,7 @@ export default function NotificationManagement() {
   useEffect(() => {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, typeFilter, readFilter, searchTerm]);
+  }, [currentPage, typeFilter, searchTerm]);
 
   // Debounce search
   useEffect(() => {
@@ -148,13 +145,6 @@ export default function NotificationManagement() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  // Stats
-  const stats = useMemo(() => ({
-    total,
-    unread: unreadCount,
-    read: total - unreadCount,
-  }), [total, unreadCount]);
-
   // Client-side search filter
   const filteredNotifs = searchTerm
     ? notifications.filter(n =>
@@ -162,32 +152,6 @@ export default function NotificationManagement() {
       n.body.toLowerCase().includes(searchTerm.toLowerCase())
     )
     : notifications;
-
-  // ── Mark Read ─────────────────────────────────────────────
-
-  const handleMarkRead = async (notif: NotificationItem) => {
-    if (notif.is_read) return;
-    try {
-      await notificationService.markAsRead(notif.notification_id);
-      setNotifications(prev => prev.map(n =>
-        n.notification_id === notif.notification_id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      toast.success('Đã đánh dấu đã đọc');
-    } catch {
-      toast.error('Không thể đánh dấu đã đọc');
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    try {
-      await notificationService.markAllRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, read_at: n.read_at || new Date().toISOString() })));
-      setUnreadCount(0);
-      toast.success('Đã đánh dấu tất cả đã đọc');
-    } catch {
-      toast.error('Không thể đánh dấu tất cả đã đọc');
-    }
-  };
 
   // ── Delete ────────────────────────────────────────────────
 
@@ -318,9 +282,7 @@ export default function NotificationManagement() {
 
       {/* Stats */}
       <div className={styles.statsGrid}>
-        <StatCard icon={Bell} value={stats.total} label="Tổng thông báo" color="default" />
-        <StatCard icon={AlertCircle} value={stats.unread} label="Chưa đọc" color="yellow" />
-        <StatCard icon={Check} value={stats.read} label="Đã đọc" color="green" />
+        <StatCard icon={Bell} value={total} label="Tổng thông báo" color="default" />
         <StatCard icon={Megaphone} value={0} label="Đã gửi hôm nay" color="default" />
       </div>
 
@@ -353,28 +315,7 @@ export default function NotificationManagement() {
             <option value="warning">Cảnh báo</option>
           </select>
         </div>
-        <div className={styles.filterGroup}>
-          <label>Trạng thái</label>
-          <select
-            className={styles.filterSelect}
-            value={readFilter}
-            onChange={(e) => { setReadFilter(e.target.value); setCurrentPage(1); }}
-          >
-            <option value="all">Tất cả</option>
-            <option value="unread">Chưa đọc</option>
-          </select>
-        </div>
       </div>
-
-      {/* Action bar */}
-      {unreadCount > 0 && (
-        <div className={styles.actionBar}>
-          <button className={styles.btnMarkAll} onClick={handleMarkAllRead}>
-            <CheckCheck size={14} />
-            Đánh dấu tất cả đã đọc ({unreadCount})
-          </button>
-        </div>
-      )}
 
       {/* Table */}
       <div className={styles.tableCard}>
@@ -398,19 +339,21 @@ export default function NotificationManagement() {
                   <th>Thông báo</th>
                   <th>Loại</th>
                   <th>Độ ưu tiên</th>
-                  <th>Trạng thái</th>
                   <th>Thời gian</th>
                   <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredNotifs.map((notif) => {
-                  const typeInfo = TYPE_DISPLAY[notif.notification_type] || { label: notif.notification_type, icon: '🔔', className: '' };
+                  const typeInfo = TYPE_DISPLAY[notif.notification_type] || { label: notif.notification_type, Icon: Bell, color: '#64748b', className: '' };
                   const prioInfo = PRIORITY_DISPLAY[notif.priority] || { label: notif.priority, className: '' };
+                  const TypeIcon = typeInfo.Icon;
                   return (
-                    <tr key={notif.notification_id} className={!notif.is_read ? styles.rowUnread : ''}>
+                    <tr key={notif.notification_id}>
                       <td>
-                        <span className={styles.notifIcon}>{typeInfo.icon}</span>
+                        <span className={styles.notifIcon} style={{ color: typeInfo.color }}>
+                          <TypeIcon size={18} />
+                        </span>
                       </td>
                       <td>
                         <div
@@ -433,17 +376,6 @@ export default function NotificationManagement() {
                         </span>
                       </td>
                       <td>
-                        {notif.is_read ? (
-                          <span className={`${styles.badge} ${styles.statusRead}`}>
-                            <Check size={10} /> Đã đọc
-                          </span>
-                        ) : (
-                          <span className={`${styles.badge} ${styles.statusUnread}`}>
-                            <Clock size={10} /> Chưa đọc
-                          </span>
-                        )}
-                      </td>
-                      <td>
                         <span className={styles.timeText}>{getRelativeTime(notif.created_at)}</span>
                       </td>
                       <td>
@@ -455,15 +387,6 @@ export default function NotificationManagement() {
                           >
                             <Eye size={14} />
                           </button>
-                          {!notif.is_read && (
-                            <button
-                              className={`${styles.btnIcon} ${styles.btnCheck}`}
-                              title="Đánh dấu đã đọc"
-                              onClick={() => handleMarkRead(notif)}
-                            >
-                              <Check size={14} />
-                            </button>
-                          )}
                           <button
                             className={`${styles.btnIcon} ${styles.btnDelete}`}
                             title="Xóa"

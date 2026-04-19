@@ -6,10 +6,10 @@ import {
   Brain, MessageSquare, BookOpen, Cpu, CheckCircle2,
   XCircle, AlertTriangle, Settings, Info, RefreshCw,
   Wrench, X, Power, SlidersHorizontal, Zap, History, BarChart3,
-  DollarSign, Filter
+  Filter, Activity, Clock, CheckCircle
 } from 'lucide-react'
 import * as llmService from '../../services/llmManagementService'
-import type { LLMConfigResponse, LLMAvailableModel, TestPromptResponse, ChangeLogEntry, UsageStatsResponse, BudgetInfo } from '../../types/llm'
+import type { LLMConfigResponse, LLMAvailableModel, TestPromptResponse, ChangeLogEntry, UsageStatsResponse } from '../../types/llm'
 import StatCard from './shared/StatCard'
 import styles from './LLMManagement.module.css'
 
@@ -79,16 +79,7 @@ export default function LLMManagement() {
   const [usagePeriod, setUsagePeriod] = useState(30)
   const [usageFilter, setUsageFilter] = useState('')
 
-  // Phase 8: Budget modal
-  const [budgetModalOpen, setBudgetModalOpen] = useState(false)
-  const [editBudget, setEditBudget] = useState(0)
-  const [editInputPrice, setEditInputPrice] = useState(0.40)
-  const [editOutputPrice, setEditOutputPrice] = useState(1.60)
-
-  // Helper: backend stores price_per_1k, but user sees price_per_1M
-  const perMToPerK = (perM: number) => perM / 1000
-  const perKToPerM = (perK: number) => perK * 1000
-  const [savingBudget, setSavingBudget] = useState(false)
+  // Phase 8: Budget modal — removed (use OpenAI dashboard instead)
 
   useEffect(() => {
     loadData()
@@ -414,36 +405,7 @@ export default function LLMManagement() {
     loadUsageStats(usagePeriod, key)
   }
 
-  // ── Phase 8: Budget ────────────────────────────────────
-
-  const openBudgetModal = () => {
-    if (usageStats?.budget) {
-      setEditBudget(usageStats.budget.monthly_budget_usd)
-      setEditInputPrice(perKToPerM(usageStats.budget.price_per_1k_input_tokens))
-      setEditOutputPrice(perKToPerM(usageStats.budget.price_per_1k_output_tokens))
-    }
-    setBudgetModalOpen(true)
-  }
-
-  const handleSaveBudget = async () => {
-    setSavingBudget(true)
-    try {
-      const result = await llmService.updateBudget({
-        monthly_budget_usd: editBudget,
-        price_per_1k_input_tokens: perMToPerK(editInputPrice),
-        price_per_1k_output_tokens: perMToPerK(editOutputPrice),
-      })
-      if (result.success) {
-        toast.success('Cập nhật budget thành công')
-        setBudgetModalOpen(false)
-        loadUsageStats(usagePeriod, usageFilter)
-      }
-    } catch {
-      toast.error('Lỗi khi cập nhật budget')
-    } finally {
-      setSavingBudget(false)
-    }
-  }
+  // ── Phase 8: Budget — removed (use OpenAI dashboard instead) ──
 
   // --- LOADING ---
   if (loading) {
@@ -878,118 +840,14 @@ export default function LLMManagement() {
                 <div className={styles.usageStatLabel}>Tổng requests</div>
               </div>
               <div className={styles.usageStat}>
-                <div className={styles.usageStatValue}>{usageStats.total_prompt_tokens.toLocaleString()}</div>
-                <div className={styles.usageStatLabel}>Input tokens</div>
-              </div>
-              <div className={styles.usageStat}>
-                <div className={styles.usageStatValue}>{usageStats.total_completion_tokens.toLocaleString()}</div>
-                <div className={styles.usageStatLabel}>Output tokens</div>
+                <div className={styles.usageStatValue}>{usageStats.success_rate}%</div>
+                <div className={styles.usageStatLabel}>Tỷ lệ thành công</div>
               </div>
               <div className={styles.usageStat}>
                 <div className={styles.usageStatValue}>{usageStats.avg_response_time_ms}ms</div>
                 <div className={styles.usageStatLabel}>Avg response time</div>
               </div>
-              <div className={styles.usageStat}>
-                <div className={styles.usageStatValue}>{usageStats.success_rate}%</div>
-                <div className={styles.usageStatLabel}>Tỷ lệ thành công</div>
-              </div>
-              <div className={`${styles.usageStat} ${styles.costStat}`}>
-                <div className={styles.usageStatValue}>
-                  <DollarSign size={16} />
-                  {usageStats.estimated_cost < 0.01
-                    ? usageStats.estimated_cost.toFixed(6)
-                    : usageStats.estimated_cost.toFixed(4)}
-                </div>
-                <div className={styles.usageStatLabel}>Ước tính chi phí (USD)</div>
-              </div>
             </div>
-
-            {/* Budget Progress */}
-            {usageStats.budget && (
-              <div className={styles.budgetSection}>
-                <div className={styles.budgetHeader}>
-                  <div>
-                    <span className={styles.budgetTitle}>Budget tháng này</span>
-                    <span className={styles.budgetCost}>
-                      ${usageStats.budget.monthly_estimated_cost < 0.01
-                        ? usageStats.budget.monthly_estimated_cost.toFixed(6)
-                        : usageStats.budget.monthly_estimated_cost.toFixed(4)}
-                      {usageStats.budget.monthly_budget_usd > 0 && (
-                        <> / ${usageStats.budget.monthly_budget_usd.toFixed(2)}</>
-                      )}
-                    </span>
-                  </div>
-                  <button className={styles.budgetSettingsBtn} onClick={openBudgetModal}>
-                    <Settings size={14} />
-                    Cài đặt
-                  </button>
-                </div>
-                {usageStats.budget.monthly_budget_usd > 0 && (
-                  <div className={styles.budgetBarWrap}>
-                    <div
-                      className={`${styles.budgetBar} ${
-                        usageStats.budget.budget_usage_percent > 80 ? styles.budgetWarning : ''
-                      } ${
-                        usageStats.budget.budget_usage_percent > 100 ? styles.budgetDanger : ''
-                      }`}
-                      style={{ width: `${Math.min(usageStats.budget.budget_usage_percent, 100)}%` }}
-                    ></div>
-                  </div>
-                )}
-                <div className={styles.budgetMeta}>
-                  <span>{usageStats.budget.monthly_prompt_tokens.toLocaleString()} input · {usageStats.budget.monthly_completion_tokens.toLocaleString()} output tokens tháng này</span>
-                  {usageStats.budget.monthly_budget_usd > 0 && (
-                    <span className={
-                      usageStats.budget.budget_usage_percent > 80
-                        ? styles.budgetPctWarning
-                        : styles.budgetPctNormal
-                    }>
-                      {usageStats.budget.budget_usage_percent}% đã sử dụng
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {usageStats.per_config.length > 0 && (
-              <table className={styles.usageTable}>
-                <thead>
-                  <tr>
-                    <th>Cấu hình</th>
-                    <th>Requests</th>
-                    <th>Input Tokens</th>
-                    <th>Output Tokens</th>
-                    <th>Avg Time</th>
-                    <th>Thành công</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usageStats.per_config.map(s => {
-                    const successPct = s.total_requests > 0
-                      ? Math.round((s.success_count / s.total_requests) * 100)
-                      : 100
-                    return (
-                      <tr key={s.config_key}>
-                        <td>{s.display_name}</td>
-                        <td>{s.total_requests.toLocaleString()}</td>
-                        <td>{s.total_prompt_tokens.toLocaleString()}</td>
-                        <td>{s.total_completion_tokens.toLocaleString()}</td>
-                        <td>{s.avg_response_time_ms}ms</td>
-                        <td>
-                          <span className={styles.successBadge}>{successPct}%</span>
-                          <div className={styles.progressBarWrap}>
-                            <div
-                              className={styles.progressBar}
-                              style={{ width: `${successPct}%` }}
-                            ></div>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
           </>
         ) : (
           <div className={styles.auditEmpty}>
@@ -1287,79 +1145,6 @@ export default function LLMManagement() {
         </div>
       )}
 
-      {/* ── Budget Settings Modal ─────────────────────────── */}
-      {budgetModalOpen && (
-        <div className={styles.modalOverlay} onClick={() => setBudgetModalOpen(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <div>
-                <h2>Cài đặt Budget & Giá token</h2>
-                <p className={styles.modalSubtitle}>Thiết lập ngân sách hàng tháng và giá token</p>
-              </div>
-              <button className={styles.modalClose} onClick={() => setBudgetModalOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Budget hàng tháng (USD)</label>
-                <input
-                  type="number"
-                  className={styles.paramNumberInput}
-                  min={0}
-                  step={1}
-                  value={editBudget}
-                  onChange={(e) => setEditBudget(Math.max(0, parseFloat(e.target.value) || 0))}
-                />
-                <p className={styles.paramHint}>
-                  0 = không giới hạn. Hệ thống sẽ cảnh báo khi vượt 80% budget.
-                </p>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Giá / 1M input tokens (USD)</label>
-                <input
-                  type="number"
-                  className={styles.paramNumberInput}
-                  min={0}
-                  step={0.01}
-                  value={editInputPrice}
-                  onChange={(e) => setEditInputPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                />
-                <p className={styles.paramHint}>
-                  GPT-4.1-mini: $0.40 • GPT-4.1-nano: $0.10 • GPT-4.1: $2.00
-                </p>
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Giá / 1M output tokens (USD)</label>
-                <input
-                  type="number"
-                  className={styles.paramNumberInput}
-                  min={0}
-                  step={0.01}
-                  value={editOutputPrice}
-                  onChange={(e) => setEditOutputPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                />
-                <p className={styles.paramHint}>
-                  GPT-4.1-mini: $1.60 • GPT-4.1-nano: $0.40 • GPT-4.1: $8.00
-                </p>
-              </div>
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.btnCancel} onClick={() => setBudgetModalOpen(false)}>
-                Hủy
-              </button>
-              <button
-                className={styles.btnSubmit}
-                onClick={handleSaveBudget}
-                disabled={savingBudget}
-              >
-                {savingBudget && <span className={styles.spinnerInline}></span>}
-                {savingBudget ? 'Đang lưu...' : 'Lưu cài đặt'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
