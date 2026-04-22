@@ -37,9 +37,20 @@ class UserRepository(BaseRepository[User]):
             )
 
         # Apply status filter
+        # "active"   → only currently active & verified accounts
+        # "inactive" → explicitly deactivated accounts
+        # "pending"  → not yet verified
         if status:
-            is_active = status.lower() == 'active'
-            query = query.where(self.model.is_active == is_active)
+            status_norm = status.lower()
+            if status_norm == "active":
+                query = query.where(
+                    self.model.is_active == true(),
+                    self.model.is_verified == true(),
+                )
+            elif status_norm == "inactive":
+                query = query.where(self.model.is_active == false())
+            elif status_norm == "pending":
+                query = query.where(self.model.is_verified == false())
 
         # Apply role filter
         if role:

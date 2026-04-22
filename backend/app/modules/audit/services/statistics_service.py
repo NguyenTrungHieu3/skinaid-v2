@@ -305,7 +305,7 @@ class StatisticsService:
                 return f"{diff.seconds // 60} phút trước"
             else:
                 return "Vừa xong"
-        except:
+        except (TypeError, ValueError, AttributeError):
             return "Không xác định"
 
     def _get_date_range(self, period: str) -> Tuple[datetime, datetime]:

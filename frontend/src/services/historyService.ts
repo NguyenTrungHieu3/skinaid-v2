@@ -1,4 +1,4 @@
-import api, { BACKEND_URL } from "./api";
+import api, { BACKEND_URL, resolveImageUrl } from "./api";
 import {
   type ApiSuccessResponse,
 } from "../types/responseTypes";
@@ -65,23 +65,28 @@ export const deleteAnalysis = async (
 
 // --- CÁC HÀM BIẾN ĐỔI (TRANSFORMERS) ---
 
+const buildImageUrl = resolveImageUrl;
+
 /**
  * Biến đổi API response (list) thành data cho Timeline (HistoryEvent)
  */
 export function transformApiHistoryToTimeline(
   apiData: ApiWoundAnalysisResponse[]
 ): HistoryEvent[] {
-  return apiData.map((event) => ({
-    id: event.analysis_id,
-    title: `${new Date(event.created_at).toLocaleDateString(
-      "en-US"
-    )}`,
-    date: event.created_at,
-    status: event.total_detections === 0
-      ? "No wounds detected"
-      : `${event.total_detections} detection(s)`,
-    imageUrl: `${BACKEND_URL}${event.image_url}`,
-  }));
+  return apiData.map((event) => {
+    const topWound = event.significant_wounds?.[0];
+    return {
+      id: event.analysis_id,
+      title: `${new Date(event.created_at).toLocaleDateString("en-US")}`,
+      date: event.created_at,
+      status: event.total_detections === 0
+        ? "No wounds detected"
+        : `${event.total_detections} detection(s)`,
+      imageUrl: buildImageUrl(event.image_url),
+      severity: topWound?.severity || "",
+      woundType: topWound?.wound_type || "",
+    };
+  });
 }
 
 /**
@@ -142,7 +147,7 @@ export function transformApiDetailToCombinedEvent(
     status: apiEvent.total_detections === 0
       ? "No wounds detected"
       : `${apiEvent.total_detections} detection(s)`,
-    imageUrl: `${BACKEND_URL}${apiEvent.image_url}`,
+    imageUrl: buildImageUrl(apiEvent.image_url),
     detail: details,
   };
 }

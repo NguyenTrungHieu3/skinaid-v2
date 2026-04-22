@@ -17,7 +17,7 @@ import {
   type SignificantWound,
   type StructuredGuidance,
 } from "../services/aiService";
-import { BACKEND_URL } from "../services/api";
+import { BACKEND_URL, resolveImageUrl } from "../services/api";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import html2canvas from "html2canvas";
@@ -540,7 +540,7 @@ const AnalysisResultPage = () => {
           <div className={styles.visualGroup}>
             <div className={styles.imageArea}>
               <AnalyzedImage
-                imageSrc={`${BACKEND_URL}${analysisData.image_url}`}
+                imageSrc={resolveImageUrl(analysisData.image_url)}
                 boundingBox={currentWoundData.bounding_box}
                 label={`${currentWoundData.wound_type} ${currentWoundData.confidence_score}`}
               />
@@ -597,7 +597,7 @@ const AnalysisResultPage = () => {
       {analysisData && (
         <AnalysisReportTemplate
           wounds={woundsToExport}
-          imageUrl={`${BACKEND_URL}${analysisData.image_url}`}
+          imageUrl={resolveImageUrl(analysisData.image_url)}
           reportId={analysis_id || "UNK"}
           fileName={analysisData.file_name}
           analyzedAt={analysisData.analyzed_at}
