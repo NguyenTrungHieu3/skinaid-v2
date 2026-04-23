@@ -96,3 +96,19 @@ class WoundParser:
 
         logger.warning(f"Unknown wound type '{normalized}', using as-is")
         return normalized
+
+    @staticmethod
+    def map_sub_type_for_database(ai_sub_type: str) -> str:
+        """Map AI sub_types to Vietnamese equivalents used in the FirstAidGuide database."""
+        if not ai_sub_type:
+            return ai_sub_type
+            
+        normalized = ai_sub_type.lower().strip()
+        
+        # Translation map
+        mapping = {
+            "skintear": "rách da",
+            "blister": "phồng rộp"
+        }
+        
+        return mapping.get(normalized, ai_sub_type)

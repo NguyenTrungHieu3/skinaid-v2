@@ -963,13 +963,17 @@
         "saving": "Đang lưu..."
       },
       "options": {
-        "abrasion": "Trầy xước / Mài mòn",
-        "bruise": "Bầm tím / Chấn thương phần mềm",
+        "abrasion": "Trầy xước",
+        "bruise": "Bầm tím",
         "burn": "Bỏng",
-        "cut": "Vết cắt / Vết rách",
+        "cut": "Vết cắt",
+        "acne": "Mụn trứng cá",
+        "fungal": "Nấm da",
+        "psoriasis": "Vảy nến",
         "mild": "Nhẹ",
         "moderate": "Trung bình",
-        "severe": "Nghiêm trọng"
+        "severe": "Nghiêm trọng",
+        "general": "Chung"
       }
     },
     "first_aid_view": {

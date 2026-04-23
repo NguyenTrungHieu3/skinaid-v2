@@ -969,13 +969,17 @@
         "saving": "Saving..."
       },
       "options": {
-        "abrasion": "Scratch / Abrasion",
-        "bruise": "Bruise / Contusion",
+        "abrasion": "Abrasion",
+        "bruise": "Bruise",
         "burn": "Burn",
-        "cut": "Cut / Laceration",
+        "cut": "Cut",
+        "acne": "Acne",
+        "fungal": "Fungal Infection",
+        "psoriasis": "Psoriasis",
         "mild": "Mild",
         "moderate": "Moderate",
-        "severe": "Severe"
+        "severe": "Severe",
+        "general": "General"
       }
     },
     "first_aid_view": {

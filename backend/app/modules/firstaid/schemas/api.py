@@ -100,7 +100,36 @@ class UpdateGuideRequest(BaseModel):
     dos: Optional[List[str]] = None
     donts: Optional[List[str]] = None
     supplies_needed: Optional[List[str]] = None
-    source: Optional[str] = None
+    source: Optional[GuideSource] = None  # Fixed: was Optional[str], must match CreateGuideRequest
 
     estimated_healing_time: Optional[str] = None
     is_active: Optional[bool] = None
+
+
+class BulkImportRequest(BaseModel):
+    """Request body for bulk importing first aid guides from Excel."""
+    guides: List[CreateGuideRequest]
+    # Metadata about the import session (for audit trail)
+    filename: Optional[str] = None
+    total_rows_in_file: Optional[int] = None
+    skipped_rows: Optional[int] = None   # Rows with errors that were excluded
+    # If True: imported guides are set active + existing active same-type guides are deactivated
+    auto_deactivate_conflicts: bool = False
+
+
+class BulkImportFailedItem(BaseModel):
+    """Detail of a single failed import row."""
+    index: int                  # 0-based index within the request list
+    title: Optional[str] = None
+    wound_type: Optional[str] = None
+    reason: str
+
+
+class BulkImportResponse(BaseModel):
+    """Result of a bulk import operation."""
+    total_submitted: int
+    success_count: int
+    failed_count: int
+    failed_items: List[BulkImportFailedItem] = []
+    filename: Optional[str] = None
+    imported_ids: List[str] = []        # UUIDs of successfully created guides
