@@ -319,3 +319,5 @@ nginx/ssl/*.pfx
 
 # AI Generated Workspace
 .ai_workspace/
+# Added by code-review-graph
+.code-review-graph/

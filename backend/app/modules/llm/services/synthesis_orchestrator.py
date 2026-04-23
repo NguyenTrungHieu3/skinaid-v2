@@ -97,52 +97,27 @@ class SynthesisOrchestrator:
         # ── Step 5: B6 Validation
         validated, source, confidence = self._validate_b6(llm_output, context.db_guide)
 
-        # ── Step 6: Chọn guidance cuối cùng
+        # Step 6: Choose final guidance
         if source == "db" and context.db_guide is not None:
             guidance = self._format_db_guide_as_text(context.db_guide)
             structured = self._build_structured_from_db(context.db_guide)
-            logger.info(
-                "[SynthesisOrchestrator] B6: LLM không consistent (confidence=%.2f) "
-                "→ fallback DB guide.",
-                confidence,
-            )
         else:
             guidance = llm_output
             structured = self._parse_structured_output(llm_output)
-            if structured is None:
-                logger.warning(
-                    "[SynthesisOrchestrator] JSON parse thất bại — structured_guidance=None."
-                )
-            logger.info(
-                "[SynthesisOrchestrator] B6: LLM consistent (confidence=%.2f) "
-                "→ dùng LLM output.",
-                confidence,
-            )
 
         processing_time_ms = int((time.monotonic() - start_ms) * 1000)
 
-        # ── Step 6: Persist structured_guidance vào Detection.firstaid_snapshot
+        # Step 6: Persist structured_guidance
         if request.analysis_id is not None and structured is not None:
             try:
-                rows = await self._wound_analysis_service.persist_llm_guidance(
+                await self._wound_analysis_service.persist_llm_guidance(
                     analysis_id=request.analysis_id,
                     wound_type=request.wound_type,
                     severity=request.severity,
                     structured_guidance=structured.model_dump(),
                 )
-                logger.info(
-                    "[SynthesisOrchestrator] Persisted LLM guidance → %d detection(s) updated "
-                    "(analysis_id=%s, wound_type=%s, severity=%s).",
-                    rows,
-                    request.analysis_id,
-                    request.wound_type,
-                    request.severity,
-                )
-            except Exception as exc:
-                logger.warning(
-                    "[SynthesisOrchestrator] Persist LLM guidance thất bại (non-blocking): %s",
-                    str(exc)[:200],
-                )
+            except Exception:
+                pass
 
         return LLMSynthesizeResponse(
             guidance=guidance,
@@ -181,10 +156,6 @@ class SynthesisOrchestrator:
 
         rag_chunks: list[RAGChunkSnapshot] = []
         if isinstance(rag_result, Exception):
-            logger.warning(
-                "[SynthesisOrchestrator] RAG retrieval thất bại (%s). Tiếp tục không có RAG.",
-                str(rag_result)[:150],
-            )
             await self._log_system_error(
                 action="rag_error",
                 error_message=f"RAG retrieval failed: {str(rag_result)[:300]}",
@@ -199,16 +170,9 @@ class SynthesisOrchestrator:
                 for chunk in rag_result
                 if isinstance(chunk, RetrievedChunk)
             ]
-            logger.info(
-                "[SynthesisOrchestrator] RAG: %d chunks retrieved.", len(rag_chunks)
-            )
 
         db_guide_snapshot: DBGuideSnapshot | None = None
         if isinstance(db_result, Exception):
-            logger.warning(
-                "[SynthesisOrchestrator] DB lookup thất bại (%s). Tiếp tục không có DB guide.",
-                str(db_result)[:150],
-            )
             await self._log_system_error(
                 action="llm_api_error",
                 error_message=f"DB guide lookup failed: {str(db_result)[:300]}",
@@ -222,15 +186,6 @@ class SynthesisOrchestrator:
                 donts=db_result.extract_list(db_result.donts),
                 supplies_needed=db_result.extract_list(db_result.supplies_needed),
                 estimated_healing_time=db_result.estimated_healing_time,
-            )
-            logger.info(
-                "[SynthesisOrchestrator] DB guide found: '%s'.", db_guide_snapshot.title
-            )
-        else:
-            logger.info(
-                "[SynthesisOrchestrator] DB guide: không có guide cho %s/%s.",
-                request.wound_type,
-                request.severity,
             )
 
         return SynthesisContext(
@@ -247,76 +202,63 @@ class SynthesisOrchestrator:
         llm_output: str,
         db_guide: DBGuideSnapshot | None,
     ) -> tuple[bool, str, float]:
-        """Keyword match LLM output vs DB guide — ratio ≥ threshold → (True, "llm"), else (False, "db")."""
         if db_guide is None:
             return True, "llm", 1.0
 
         keywords = self._extract_keywords(db_guide)
-
         if not keywords:
             return True, "llm", 1.0
 
         llm_lower = llm_output.lower()
-        matched = sum(1 for kw in keywords if kw in llm_lower)
-        ratio = matched / len(keywords)
+        matched = 0
+        for kw in keywords:
+            if kw in llm_lower:
+                matched += 1
 
-        logger.debug(
-            "[SynthesisOrchestrator] B6: %d/%d keywords matched (ratio=%.2f, threshold=%.2f).",
-            matched,
-            len(keywords),
-            ratio,
-            _B6_MATCH_THRESHOLD,
-        )
+        ratio = matched / len(keywords)
 
         if ratio >= _B6_MATCH_THRESHOLD:
             return True, "llm", ratio
-        else:
-            return False, "db", ratio
+        return False, "db", ratio
 
     def _extract_keywords(self, db_guide: DBGuideSnapshot) -> list[str]:
-        """Extract từ khóa từ steps + dos: tokenize, deduplicate, min 3 / max 8 keywords."""
         source_items = db_guide.steps + db_guide.dos
         if not source_items:
             return []
 
-        raw_tokens: list[str] = []
+        all_tokens: list[str] = []
         for item in source_items:
             tokens = re.findall(r"[a-zA-ZÀ-ỹà-ỹ]{4,}", item.lower())
-            raw_tokens.extend(tokens)
+            all_tokens.extend(tokens)
 
-        seen: set[str] = set()
-        keywords: list[str] = []
-        for token in raw_tokens:
+        seen = set()
+        unique = []
+        for token in all_tokens:
             if token not in seen:
                 seen.add(token)
-                keywords.append(token)
-            if len(keywords) >= _B6_MAX_KEYWORDS:
+                unique.append(token)
+            if len(unique) >= _B6_MAX_KEYWORDS:
                 break
 
-        if len(keywords) < _B6_MIN_KEYWORDS:
+        if len(unique) < _B6_MIN_KEYWORDS:
             return []
-
-        return keywords
+        return unique
 
     @staticmethod
     def _parse_structured_output(llm_text: str) -> StructuredGuidance | None:
-        """Extract và parse JSON từ LLM output, trả None nếu thất bại."""
-        # LLM đôi khi bọc JSON trong ```json ... ```
         json_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", llm_text, re.DOTALL)
         if json_match:
             raw_json = json_match.group(1)
         else:
-            # Thử tìm bare JSON object
             brace_match = re.search(r"\{.*\}", llm_text, re.DOTALL)
-            raw_json = brace_match.group(0) if brace_match else llm_text.strip()
+            if brace_match:
+                raw_json = brace_match.group(0)
+            else:
+                raw_json = llm_text.strip()
 
         try:
             data = json.loads(raw_json)
         except (json.JSONDecodeError, ValueError):
-            logger.warning(
-                "[SynthesisOrchestrator] Không parse được JSON từ LLM output. "
-                "Preview: %s", llm_text[:200]
-            )
             return None
 
         if not isinstance(data, dict):

@@ -2,438 +2,218 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
+from uuid import UUID, uuid4
 
-from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
-from langchain_qdrant import FastEmbedSparse, QdrantVectorStore, RetrievalMode
-from qdrant_client import QdrantClient, AsyncQdrantClient  
-from qdrant_client.http import models as rest
-from qdrant_client.http.exceptions import UnexpectedResponse
+from openai import AsyncOpenAI
+from qdrant_client import AsyncQdrantClient, models
 
 from app.core.config import settings
-from app.modules.rag.exceptions import (
-    QdrantCollectionError,
-    QdrantDeleteError,
-    QdrantSearchError,
-    QdrantUpsertError,
-    RAGServiceNotInitializedError,
-)
+from app.modules.rag.exceptions import QdrantOperationError
 
 logger = logging.getLogger(__name__)
 
-DENSE_VECTOR_NAME = "dense"
-SPARSE_VECTOR_NAME = "sparse"
-DENSE_VECTOR_DIM = settings.RAG_EMBEDDING_DIMENSION
-
-_LANGCHAIN_DENSE_VECTOR_KEY = DENSE_VECTOR_NAME
-_LANGCHAIN_SPARSE_VECTOR_KEY = SPARSE_VECTOR_NAME
+_EMBED_BATCH = 100
 
 
 @dataclass
 class RetrievedChunk:
-    """A chunk returned from hybrid search."""
 
-    point_id: str
-    document_id: str
-    chunk_index: int
-    file_type: str
-    content: str
-    context: str
+    text: str
     score: float
+    document_id: Optional[str]
+    chunk_index: Optional[int]
     metadata: dict[str, Any]
-
-    @classmethod
-    def from_langchain_document(
-        cls, doc: Document, score: float
-    ) -> "RetrievedChunk":
-        meta = doc.metadata or {}
-        return cls(
-            point_id=str(meta.get("_id", "")),
-            document_id=str(meta.get("document_id", "")),
-            chunk_index=int(meta.get("chunk_index", 0)),
-            file_type=str(meta.get("file_type", "")),
-            content=doc.page_content,
-            context=str(meta.get("context", "")),
-            score=score,
-            metadata=meta,
-        )
-
-
-@dataclass
-class ChunkInput:
-    """A chunk to be indexed into Qdrant."""
-
-    document_id: str
-    chunk_index: int
-    file_type: str
-    content: str
-    context: str
 
 
 class QdrantService:
-
     def __init__(self) -> None:
-        self._collection_name: str = settings.RAG_COLLECTION_NAME
-        self._qdrant_url: str = settings.QDRANT
-        self._openai_api_key: str = settings.OPEN_API_KEY
-        self._score_threshold: float = settings.RAG_SCORE_THRESHOLD
+        self._client: Optional[AsyncQdrantClient] = None
+        self._openai: Optional[AsyncOpenAI] = None
+        self._collection = settings.RAG_COLLECTION_NAME
+        self._dim = settings.RAG_EMBEDDING_DIMENSION
+        self._embed_model = settings.OPEN_EMBEDDING_MODEL
 
-        self._sync_client: QdrantClient | None = None
-        self._client: AsyncQdrantClient | None = None
-        self._dense_embedder: OpenAIEmbeddings | None = None
-        self._sparse_embedder: FastEmbedSparse | None = None
-        self._vector_store: QdrantVectorStore | None = None
-        self._initialized: bool = False
+    @property
+    def collection_name(self) -> str:
+        return self._collection
 
     async def initialize(self) -> None:
-        if self._initialized:
-            logger.debug("[QdrantService] Already initialized, skipping.")
-            return
-
-        logger.info("[QdrantService] Initializing...")
-
-        self._client = AsyncQdrantClient(url=self._qdrant_url)
-        self._sync_client = QdrantClient(url=self._qdrant_url)
-
-        self._dense_embedder = OpenAIEmbeddings(
-            model="text-embedding-3-large",
-            dimensions=DENSE_VECTOR_DIM,
-            api_key=self._openai_api_key,  # type: ignore[arg-type]
-        )
-
-        self._sparse_embedder = FastEmbedSparse(model_name="Qdrant/bm25")
-
-        await self._ensure_collection()
-
-        self._vector_store = QdrantVectorStore(
-            client=self._sync_client,
-            collection_name=self._collection_name,
-            embedding=self._dense_embedder,
-            sparse_embedding=self._sparse_embedder,
-            retrieval_mode=RetrievalMode.HYBRID,
-            vector_name=_LANGCHAIN_DENSE_VECTOR_KEY,
-            sparse_vector_name=_LANGCHAIN_SPARSE_VECTOR_KEY,
-        )
-
-        self._initialized = True
-        logger.info(
-            "[QdrantService] Initialized successfully. Collection: %s",
-            self._collection_name,
-        )
+        try:
+            self._client = AsyncQdrantClient(url=settings.QDRANT)
+            self._openai = AsyncOpenAI(api_key=settings.OPEN_API_KEY)
+            await self._ensure_collection()
+        except Exception as exc:
+            logger.warning("Qdrant init failed: %s", exc)
 
     async def close(self) -> None:
-        if self._sync_client:
-            self._sync_client.close()
-        if self._client:
+        if self._client is not None:
             await self._client.close()
-            logger.info("[QdrantService] Qdrant connection closed.")
-        self._initialized = False
+            self._client = None
 
-    async def create_collection(self, recreate: bool = False) -> None:
-        self._check_initialized()
+    async def _ensure_collection(self) -> None:
         assert self._client is not None
-
-        try:
-            exists = await self._collection_exists()
-
-            if exists and recreate:
-                logger.warning(
-                    "[QdrantService] Deleting collection '%s' to recreate.",
-                    self._collection_name,
-                )
-                await self._client.delete_collection(self._collection_name)
-                exists = False
-
-            if exists:
-                logger.info(
-                    "[QdrantService] Collection '%s' already exists, skipping creation.",
-                    self._collection_name,
-                )
+        if await self._client.collection_exists(self._collection):
+            info = await self._client.get_collection(self._collection)
+            vectors_cfg = info.config.params.vectors
+            is_unnamed = isinstance(vectors_cfg, models.VectorParams)
+            size_ok = is_unnamed and vectors_cfg.size == self._dim
+            if size_ok:
                 return
+            await self._client.delete_collection(self._collection)
 
-            await self._create_collection_with_named_vectors()
-            logger.info(
-                "[QdrantService] Created collection '%s'.", self._collection_name
+        await self._client.create_collection(
+            collection_name=self._collection,
+            vectors_config=models.VectorParams(size=self._dim, distance=models.Distance.COSINE),
+        )
+        await self._client.create_payload_index(
+            collection_name=self._collection,
+            field_name="document_id",
+            field_schema=models.PayloadSchemaType.KEYWORD,
+        )
+
+    # ── Embedding ─────────────────────────────────────────
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        if self._openai is None:
+            self._openai = AsyncOpenAI(api_key=settings.OPEN_API_KEY)
+
+        vectors: list[list[float]] = []
+        for i in range(0, len(texts), _EMBED_BATCH):
+            batch = texts[i : i + _EMBED_BATCH]
+            resp = await self._openai.embeddings.create(
+                model=self._embed_model, input=batch
             )
+            vectors.extend(d.embedding for d in resp.data)
+        return vectors
 
-        except (QdrantCollectionError, RAGServiceNotInitializedError):
-            raise
-        except Exception as exc:
-            raise QdrantCollectionError(
-                message=f"Cannot create Qdrant collection '{self._collection_name}'",
-                details={"error": str(exc), "collection": self._collection_name},
-            ) from exc
-
-    async def upsert_documents(self, chunks: list[ChunkInput]) -> int:
-        self._check_initialized()
-        assert self._vector_store is not None
-
-        if not chunks:
-            logger.debug("[QdrantService] upsert_documents called with empty list, skipping.")
+    # ── Write ─────────────────────────────────────────────
+    async def upsert_chunks(
+        self,
+        *,
+        document_id: UUID,
+        embed_texts: list[str],
+        original_chunks: list[str],
+        doc_metadata: Optional[dict[str, Any]] = None,
+    ) -> int:
+        """Embed + upsert. Returns số points đã upsert."""
+        if self._client is None:
+            raise QdrantOperationError("Qdrant client chưa init")
+        if len(embed_texts) != len(original_chunks):
+            raise QdrantOperationError("embed_texts và original_chunks phải cùng length")
+        if not embed_texts:
             return 0
 
-        try:
-            documents = [self._chunk_to_langchain_document(c) for c in chunks]
-            point_ids = await self._vector_store.aadd_documents(documents)
-
-            logger.info(
-                "[QdrantService] Upserted %d chunks (sample document_id: %s).",
-                len(point_ids),
-                chunks[0].document_id if chunks else "N/A",
+        vectors = await self.embed_texts(embed_texts)
+        base_meta = dict(doc_metadata or {})
+        points: list[models.PointStruct] = []
+        for idx, (vec, orig) in enumerate(zip(vectors, original_chunks)):
+            payload = {
+                "document_id": str(document_id),
+                "chunk_index": idx,
+                "text": orig,
+                **base_meta,
+            }
+            points.append(
+                models.PointStruct(id=str(uuid4()), vector=vec, payload=payload)
             )
-            return len(point_ids)
 
-        except (QdrantUpsertError, RAGServiceNotInitializedError):
-            raise
+        try:
+            await self._client.upsert(
+                collection_name=self._collection, points=points, wait=True
+            )
         except Exception as exc:
-            raise QdrantUpsertError(
-                message="Failed to upsert chunks into Qdrant",
-                details={
-                    "error": str(exc),
-                    "chunk_count": len(chunks),
-                    "document_id": chunks[0].document_id if chunks else None,
-                },
-            ) from exc
+            raise QdrantOperationError(f"Upsert failed: {exc}") from exc
+        return len(points)
 
-    async def hybrid_search(
+    # ── Delete ────────────────────────────────────────────
+    async def delete_by_document_id(self, document_id: UUID) -> int:
+        if self._client is None:
+            raise QdrantOperationError("Qdrant client chưa init")
+
+        flt = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="document_id",
+                    match=models.MatchValue(value=str(document_id)),
+                )
+            ]
+        )
+        try:
+            # Count trước để báo về FE
+            count = (
+                await self._client.count(
+                    collection_name=self._collection, count_filter=flt
+                )
+            ).count
+            await self._client.delete(
+                collection_name=self._collection,
+                points_selector=models.FilterSelector(filter=flt),
+                wait=True,
+            )
+            return int(count)
+        except Exception as exc:
+            raise QdrantOperationError(f"Delete failed: {exc}") from exc
+
+    # ── Read ──────────────────────────────────────────────
+    async def search(
         self,
         query: str,
         top_k: int = 5,
-        filters: dict[str, Any] | None = None,
-        score_threshold: float | None = None,
+        score_threshold: Optional[float] = None,
     ) -> list[RetrievedChunk]:
-        self._check_initialized()
-        assert self._vector_store is not None
-
-        if not query or not query.strip():
-            raise QdrantSearchError(
-                message="Query cannot be empty",
-                details={"query": query},
-            )
-
-        threshold = score_threshold if score_threshold is not None else self._score_threshold
-
-        try:
-            qdrant_filter = self._build_qdrant_filter(filters)
-            results: list[tuple[Document, float]] = (
-                await self._vector_store.asimilarity_search_with_relevance_scores(
-                    query=query,
-                    k=top_k,
-                    filter=qdrant_filter,
-                    score_threshold=threshold,
+        if self._client is None:
+            raise QdrantOperationError("Qdrant client chưa init")
+        vectors = await self.embed_texts([query])
+        resp = await self._client.query_points(
+            collection_name=self._collection,
+            query=vectors[0],
+            limit=top_k,
+            score_threshold=score_threshold,
+            with_payload=True,
+        )
+        out: list[RetrievedChunk] = []
+        for pt in resp.points:
+            payload = pt.payload or {}
+            out.append(
+                RetrievedChunk(
+                    text=str(payload.get("text", "")),
+                    score=float(pt.score),
+                    document_id=payload.get("document_id"),
+                    chunk_index=payload.get("chunk_index"),
+                    metadata={
+                        k: v
+                        for k, v in payload.items()
+                        if k not in {"text", "document_id", "chunk_index"}
+                    },
                 )
             )
+        return out
 
-            retrieved = [
-                RetrievedChunk.from_langchain_document(doc, score)
-                for doc, score in results
-            ]
+    async def hybrid_search(
+        self, query: str, top_k: int = 5
+    ) -> list[RetrievedChunk]:
+        """Alias giữ backward-compat — hiện dense-only."""
+        return await self.search(query=query, top_k=top_k)
 
-            logger.info(
-                "[QdrantService] Hybrid search '%s...' → %d results (top_k=%d, threshold=%.2f).",
-                query[:50],
-                len(retrieved),
-                top_k,
-                threshold,
-            )
-            return retrieved
-
-        except (QdrantSearchError, RAGServiceNotInitializedError):
-            raise
-        except Exception as exc:
-            raise QdrantSearchError(
-                message="Hybrid search failed",
-                details={
-                    "error": str(exc),
-                    "query_preview": query[:100],
-                    "filters": filters,
-                    "top_k": top_k,
-                },
-            ) from exc
-
-    async def delete_by_document_id(self, document_id: str) -> int:
-        self._check_initialized()
-        assert self._client is not None
-
-        if not document_id or not document_id.strip():
-            raise QdrantDeleteError(
-                message="document_id cannot be empty",
-                details={"document_id": document_id},
-            )
-
+    async def count_points(self) -> int:
+        if self._client is None:
+            return 0
         try:
-            count_before = await self._count_points_by_document_id(document_id)
+            resp = await self._client.count(collection_name=self._collection)
+            return int(resp.count)
+        except Exception:
+            return 0
 
-            if count_before == 0:
-                logger.info(
-                    "[QdrantService] No points found for document_id='%s'.",
-                    document_id,
-                )
-                return 0
-
-            await self._client.delete(
-                collection_name=self._collection_name,
-                points_selector=rest.FilterSelector(
-                    filter=rest.Filter(
-                        must=[
-                            rest.FieldCondition(
-                                key="metadata.document_id",
-                                match=rest.MatchValue(value=document_id),
-                            )
-                        ]
-                    )
-                ),
-            )
-
-            logger.info(
-                "[QdrantService] Deleted %d points for document_id='%s'.",
-                count_before,
-                document_id,
-            )
-            return count_before
-
-        except (QdrantDeleteError, RAGServiceNotInitializedError):
-            raise
-        except Exception as exc:
-            raise QdrantDeleteError(
-                message=f"Cannot delete points for document '{document_id}'",
-                details={"error": str(exc), "document_id": document_id},
-            ) from exc
-
-    async def get_collection_info(self) -> dict[str, Any]:
-        self._check_initialized()
-        assert self._client is not None
-
-        try:
-            info = await self._client.get_collection(self._collection_name)
-            return {
-                "collection_name": self._collection_name,
-                "points_count": info.points_count,
-                "status": info.status.value if info.status else "unknown",
-                "vectors_count": getattr(info, "indexed_vectors_count", None),
-                "indexed_vectors_count": info.indexed_vectors_count,
-            }
-        except Exception as exc:
-            raise QdrantCollectionError(
-                message="Cannot retrieve collection info",
-                details={"error": str(exc), "collection": self._collection_name},
-            ) from exc
-
-    def _check_initialized(self) -> None:
-        if not self._initialized:
-            raise RAGServiceNotInitializedError()
-
-    async def _ensure_collection(self) -> None:
-        exists = await self._collection_exists()
-        if not exists:
-            await self._create_collection_with_named_vectors()
-            logger.info(
-                "[QdrantService] Created new collection '%s'.",
-                self._collection_name,
-            )
-        else:
-            logger.info(
-                "[QdrantService] Collection '%s' already exists.",
-                self._collection_name,
-            )
-
-    async def _collection_exists(self) -> bool:
-        assert self._client is not None
-        try:
-            await self._client.get_collection(self._collection_name)
-            return True
-        except UnexpectedResponse:
+    async def ping(self) -> bool:
+        if self._client is None:
             return False
+        try:
+            await self._client.get_collections()
+            return True
         except Exception:
             return False
-
-    async def _create_collection_with_named_vectors(self) -> None:
-        assert self._client is not None
-        await self._client.create_collection(
-            collection_name=self._collection_name,
-            vectors_config={
-                DENSE_VECTOR_NAME: rest.VectorParams(
-                    size=DENSE_VECTOR_DIM,
-                    distance=rest.Distance.COSINE,
-                    hnsw_config=rest.HnswConfigDiff(
-                        m=16,
-                        ef_construct=100,
-                    ),
-                )
-            },
-            sparse_vectors_config={
-                SPARSE_VECTOR_NAME: rest.SparseVectorParams(
-                    index=rest.SparseIndexParams(
-                        on_disk=False,
-                    )
-                )
-            },
-        )
-
-        await self._client.create_payload_index(
-            collection_name=self._collection_name,
-            field_name="metadata.document_id",
-            field_schema=rest.PayloadSchemaType.KEYWORD,
-        )
-        await self._client.create_payload_index(
-            collection_name=self._collection_name,
-            field_name="metadata.file_type",
-            field_schema=rest.PayloadSchemaType.KEYWORD,
-        )
-
-    def _chunk_to_langchain_document(self, chunk: ChunkInput) -> Document:
-        embed_text = f"{chunk.context}\n\n{chunk.content}" if chunk.context else chunk.content
-
-        return Document(
-            page_content=embed_text,
-            metadata={
-                "document_id": chunk.document_id,
-                "chunk_index": chunk.chunk_index,
-                "file_type": chunk.file_type,
-                "content": chunk.content,
-                "context": chunk.context,
-            },
-        )
-
-    def _build_qdrant_filter(
-        self, filters: dict[str, Any] | None
-    ) -> rest.Filter | None:
-        if not filters:
-            return None
-
-        conditions: list[rest.FieldCondition] = []
-
-        for key in ("document_id", "file_type"):
-            value = filters.get(key)
-            if value is not None:
-                conditions.append(
-                    rest.FieldCondition(
-                        key=f"metadata.{key}",
-                        match=rest.MatchValue(value=str(value)),
-                    )
-                )
-
-        if not conditions:
-            return None
-
-        return rest.Filter(must=conditions)
-
-    async def _count_points_by_document_id(self, document_id: str) -> int:
-        assert self._client is not None
-        result = await self._client.count(
-            collection_name=self._collection_name,
-            count_filter=rest.Filter(
-                must=[
-                    rest.FieldCondition(
-                        key="metadata.document_id",
-                        match=rest.MatchValue(value=document_id),
-                    )
-                ]
-            ),
-            exact=True,
-        )
-        return result.count
 
 
 qdrant_service = QdrantService()

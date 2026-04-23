@@ -84,13 +84,29 @@ export interface LLMSynthesizeResponse {
 // --- 2. HÀM GỌI API ---
 
 /**
+ * Global abort controller for in-flight AI requests.
+ * Call abortActiveAnalysis() on logout to cancel pending /ai/analyze calls (TC-LO-09).
+ */
+let activeAnalysisController: AbortController | null = null;
+
+export const abortActiveAnalysis = () => {
+  if (activeAnalysisController) {
+    activeAnalysisController.abort();
+    activeAnalysisController = null;
+  }
+};
+
+/**
  * 1. POST /ai/analyze
  * Gửi file ảnh lên để bắt đầu phân tích.
  */
-export const analyzeImage = (formData: FormData) => {
+export const analyzeImage = (formData: FormData, signal?: AbortSignal) => {
+  activeAnalysisController = new AbortController();
+  const finalSignal = signal ?? activeAnalysisController.signal;
   return apiClient.post<SuccessResponse<AnalysisPostResponse>>(
     "/ai/analyze",
-    formData
+    formData,
+    { signal: finalSignal }
   );
 };
 
