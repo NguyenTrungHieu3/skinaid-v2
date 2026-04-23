@@ -34,6 +34,8 @@ class WoundDetectionInput(BaseModel):
     severity: Optional[str] = Field(default=None)
     confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
 
+    model_config = ConfigDict(populate_by_name=True)
+
     @field_validator("wound_type")
     @classmethod
     def _norm_wound_type(cls, v: str) -> str:
@@ -53,11 +55,12 @@ class WoundDetectionInput(BaseModel):
         if v is None:
             return None
         v = v.strip().lower()
-        if v not in ALLOWED_SEVERITIES:
-            raise ValueError(
-                f"severity phải thuộc {sorted(ALLOWED_SEVERITIES)}"
-            )
-        return v
+        # Chỉ map về known severities, unknown values (e.g. "string" từ Swagger) → None
+        if v in ALLOWED_SEVERITIES:
+            return v
+        if v == "general":
+            return v
+        return None
 
 class ResolveQuestionnairesRequest(BaseModel):
     detections: List[WoundDetectionInput] = Field(..., min_length=1)

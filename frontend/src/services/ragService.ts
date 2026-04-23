@@ -72,7 +72,24 @@ export const getRagDocuments = async (
   const url = `/rag/documents${queryString ? `?${queryString}` : ''}`;
 
   const response = await apiClient.get(url);
-  return response.data;
+  const raw = response.data;
+
+  // Backend returns DocumentListResponse trực tiếp ({total, skip, limit, items}),
+  // không bọc trong {success, data}. Normalize tại đây để đồng bộ với
+  // uploadRagDocument / deleteRagDocument.
+  if (raw && Array.isArray(raw.items)) {
+    return {
+      success: true,
+      message: 'OK',
+      data: {
+        items: raw.items,
+        total: raw.total ?? 0,
+        skip: raw.skip ?? 0,
+        limit: raw.limit ?? 0,
+      },
+    };
+  }
+  return raw;
 };
 
 /**
@@ -96,15 +113,21 @@ export const uploadRagDocument = async (
   const formData = new FormData();
   formData.append('file', file);
 
-  let url = '/rag/documents';
+  // Backend expects doc_metadata as a Form field (not query string)
   if (metadata && metadata.trim()) {
-    url += `?doc_metadata=${encodeURIComponent(metadata.trim())}`;
+    formData.append('doc_metadata', metadata.trim());
   }
 
-  const response = await apiClient.post(url, formData, {
+  const response = await apiClient.post('/rag/documents', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return response.data;
+
+  // Backend returns DocumentResponse directly (not wrapped), normalize it
+  const raw = response.data;
+  if (raw && raw.rag_document_id) {
+    return { success: true, message: 'Upload thành công', data: raw };
+  }
+  return raw;
 };
 
 /**
@@ -114,7 +137,21 @@ export const deleteRagDocument = async (
   docId: string
 ): Promise<ApiResponse<RagDocumentDeleteData>> => {
   const response = await apiClient.delete(`/rag/documents/${docId}`);
-  return response.data;
+  const raw = response.data;
+  // Backend returns DocumentDeleteResponse directly, normalize it
+  if (raw && raw.rag_document_id) {
+    return {
+      success: true,
+      message: 'Xóa thành công',
+      data: {
+        rag_document_id: raw.rag_document_id,
+        file_name: raw.file_name ?? '',
+        vectors_deleted: raw.deleted_points ?? 0,
+        message: 'Xóa thành công',
+      },
+    };
+  }
+  return raw;
 };
 
 /**

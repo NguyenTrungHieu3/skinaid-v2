@@ -15,6 +15,7 @@ export interface NotificationItem {
   action_url: string | null;
   image_url: string | null;
   priority: string;
+  severity: string;
   scheduled_at: string | null;
   sent_at: string | null;
   delivered_at: string | null;
@@ -41,7 +42,10 @@ export interface UnreadCountResponse {
 }
 
 export interface CreateNotificationPayload {
-  user_id: string;
+  /** "specific" (default) → gửi đến 1 user, phải có user_id.
+   *  "all"               → broadcast toàn bộ user active, không cần user_id. */
+  recipient_type?: 'specific' | 'all';
+  user_id?: string;          // bắt buộc khi recipient_type='specific'
   title: string;
   body: string;
   notification_type: string;
@@ -49,6 +53,14 @@ export interface CreateNotificationPayload {
   action_url?: string;
   image_url?: string;
   priority?: string;
+  severity?: string;
+}
+
+export interface BroadcastResult {
+  sent_count: number;
+  recipient_type: string;
+  title: string;
+  notification_type: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +77,17 @@ export const getNotifications = async (params?: {
   notification_type?: string;
 }): Promise<NotificationListResponse> => {
   const response = await apiClient.get("/notifications", { params });
+  const raw = response.data;
+  return raw.data || raw;
+};
+
+/**
+ * Get a single notification by ID
+ */
+export const getNotificationById = async (
+  notificationId: string
+): Promise<NotificationItem> => {
+  const response = await apiClient.get(`/notifications/${notificationId}`);
   const raw = response.data;
   return raw.data || raw;
 };

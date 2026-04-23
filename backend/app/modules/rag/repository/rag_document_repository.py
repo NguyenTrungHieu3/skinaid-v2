@@ -26,10 +26,13 @@ class RagDocumentRepository(BaseRepository[RagDocument]):
         skip: int = 0,
         limit: int = 50,
         status: Optional[str] = None,
+        file_type: Optional[str] = None,
     ) -> tuple[list[RagDocument], int]:
         filters = []
         if status:
             filters.append(RagDocument.status == status)
+        if file_type:
+            filters.append(RagDocument.file_type == file_type.lower())
 
         stmt = (
             select(RagDocument)

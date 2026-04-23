@@ -36,6 +36,7 @@ class DocumentListResponse(BaseModel):
 
 class DocumentDeleteResponse(BaseModel):
     rag_document_id: UUID
+    file_name: str = ""
     deleted_points: int = Field(0, description="Số Qdrant points đã xóa")
     message: str = "Document deleted"
 

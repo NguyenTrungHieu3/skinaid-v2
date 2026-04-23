@@ -83,7 +83,9 @@ class RagDocumentService:
         )
         doc.file_size_bytes = size
         doc = await self._repo.create(doc)
-        await self._session.flush()
+        await self._session.commit()
+        await self._session.refresh(doc)
+
 
         background_tasks.add_task(
             self._indexing.index_document, doc.rag_document_id
@@ -96,9 +98,10 @@ class RagDocumentService:
         skip: int = 0,
         limit: int = 50,
         status: Optional[str] = None,
+        file_type: Optional[str] = None,
     ) -> tuple[list[RagDocument], int]:
         return await self._repo.list_documents(
-            skip=skip, limit=limit, status=status
+            skip=skip, limit=limit, status=status, file_type=file_type
         )
 
     async def get_document(self, doc_id: UUID) -> RagDocument:

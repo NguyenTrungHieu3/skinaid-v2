@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { toast, Toaster } from 'sonner';
 import {
   Bell, BellOff, Send, Search, Trash2, Eye,
-  ChevronLeft, ChevronRight, X, Loader2, Filter, Plus,
-  AlertCircle, Clock, Users, Megaphone,
+  ChevronLeft, ChevronRight, X, Loader2, Plus,
+  AlertCircle, Users, Megaphone, CheckCircle, Check,
   Settings, Info, AlertTriangle, Gift, Activity, type LucideIcon,
 } from 'lucide-react';
 import * as notificationService from '../../services/notificationService';
-import type { NotificationItem, CreateNotificationPayload } from '../../services/notificationService';
+import type { NotificationItem, CreateNotificationPayload, BroadcastResult } from '../../services/notificationService';
+
 import { getUsers } from '../../services/userService';
 import type { UserListItem } from '../../services/userService';
 import StatCard from './shared/StatCard';
@@ -71,7 +72,11 @@ const getRelativeTime = (dateStr: string) => {
 
 // ── Component ─────────────────────────────────────────────
 
-export default function NotificationManagement() {
+interface NotificationManagementProps {
+  onNavigate?: (page: string) => void;
+}
+
+export default function NotificationManagement({ onNavigate }: NotificationManagementProps) {
   // Data
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -85,11 +90,14 @@ export default function NotificationManagement() {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Create modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  // recipient type: 'specific' | 'all'
+  const [recipientType, setRecipientType] = useState<'specific' | 'all'>('specific');
   const [userSearchInput, setUserSearchInput] = useState('');
   const [userSearchResults, setUserSearchResults] = useState<UserListItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -120,6 +128,7 @@ export default function NotificationManagement() {
         skip,
         limit: itemsPerPage,
         notification_type: typeFilter !== 'all' ? typeFilter : undefined,
+        unread_only: statusFilter === 'unread' ? true : undefined,
       });
       setNotifications(data.items);
       setTotal(data.total);
@@ -133,7 +142,7 @@ export default function NotificationManagement() {
   useEffect(() => {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, typeFilter, searchTerm]);
+  }, [currentPage, typeFilter, statusFilter, searchTerm]);
 
   // Debounce search
   useEffect(() => {
@@ -153,7 +162,49 @@ export default function NotificationManagement() {
     )
     : notifications;
 
-  // ── Delete ────────────────────────────────────────────────
+  // Deduplicate for admin view: Group broadcast notifications together
+  const deduplicatedNotifs = useMemo(() => {
+    const grouped: NotificationItem[] = [];
+    
+    for (const notif of filteredNotifs) {
+      // Find an existing notification that looks identical (same title, body, type, and created within 10 seconds of each other)
+      const isDuplicate = grouped.find(g => 
+        g.title === notif.title && 
+        g.body === notif.body && 
+        g.notification_type === notif.notification_type &&
+        Math.abs(new Date(g.created_at).getTime() - new Date(notif.created_at).getTime()) < 10000
+      );
+
+      if (isDuplicate) {
+        // Tag the existing item as a broadcast so we can display a badge
+        (isDuplicate as NotificationItem & { isBroadcast?: boolean; broadcastCount?: number }).isBroadcast = true;
+        (isDuplicate as NotificationItem & { broadcastCount?: number }).broadcastCount = ((isDuplicate as NotificationItem & { broadcastCount?: number }).broadcastCount || 1) + 1;
+      } else {
+        grouped.push({ ...notif }); // copy so we can safely mutate
+      }
+    }
+    return grouped;
+  }, [filteredNotifs]);
+
+  // ── Read All / Mark as read ────────────────────────────────────────────────
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllRead();
+      toast.success('Đã đánh dấu tất cả là đã đọc');
+      fetchNotifications();
+    } catch {
+      toast.error('Đánh dấu thất bại');
+    }
+  };
+
+  const handleViewDetail = (notif: NotificationItem) => {
+    if (onNavigate) {
+      onNavigate(`notification_detail_${notif.notification_id}`);
+    } else {
+      setSelectedNotif(notif);
+      setShowDetail(true);
+    }
+  };
 
   const confirmDelete = (notif: NotificationItem) => {
     setDeleteTarget(notif);
@@ -202,7 +253,7 @@ export default function NotificationManagement() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedUser) {
+    if (recipientType === 'specific' && !selectedUser) {
       toast.error('Vui lòng chọn người nhận');
       return;
     }
@@ -213,15 +264,24 @@ export default function NotificationManagement() {
     try {
       setCreating(true);
       const payload: CreateNotificationPayload = {
-        user_id: selectedUser.id,
+        recipient_type: recipientType,
         title: createForm.title.trim(),
         body: createForm.body.trim(),
         notification_type: createForm.notification_type,
         priority: createForm.priority,
         action_url: createForm.action_url.trim() || undefined,
+        ...(recipientType === 'specific' && selectedUser ? { user_id: selectedUser.id } : {}),
       };
-      await notificationService.createNotification(payload);
-      toast.success(`Đã gửi thông báo cho "${selectedUser.full_name || selectedUser.email}"`);
+
+      const raw = await notificationService.createNotification(payload);
+
+      if (recipientType === 'all') {
+        const result = raw as unknown as BroadcastResult;
+        toast.success(`Đã broadcast đến ${result.sent_count} người dùng`);
+      } else {
+        toast.success(`Đã gửi thông báo cho "${selectedUser!.full_name || selectedUser!.email}"`);
+      }
+
       setShowCreateModal(false);
       resetCreateForm();
       fetchNotifications();
@@ -234,6 +294,7 @@ export default function NotificationManagement() {
 
   const resetCreateForm = () => {
     setCreateForm({ title: '', body: '', notification_type: 'system', priority: 'normal', action_url: '' });
+    setRecipientType('specific');
     setSelectedUser(null);
     setUserSearchInput('');
     setUserSearchResults([]);
@@ -301,6 +362,18 @@ export default function NotificationManagement() {
           </div>
         </div>
         <div className={styles.filterGroup}>
+          <label>Trạng thái</label>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+          >
+            <option value="all">Tất cả</option>
+            <option value="unread">Chưa đọc</option>
+            <option value="read">Đã đọc</option>
+          </select>
+        </div>
+        <div className={styles.filterGroup}>
           <label>Loại thông báo</label>
           <select
             className={styles.filterSelect}
@@ -315,6 +388,11 @@ export default function NotificationManagement() {
             <option value="warning">Cảnh báo</option>
           </select>
         </div>
+        <div className={styles.actionBar}>
+          <button className={styles.btnMarkAll} onClick={handleMarkAllRead}>
+            <CheckCircle size={14} /> Đánh dấu tất cả đã đọc
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -325,7 +403,7 @@ export default function NotificationManagement() {
               <Loader2 size={24} className={styles.spin} />
               <p>Đang tải danh sách thông báo...</p>
             </div>
-          ) : filteredNotifs.length === 0 ? (
+          ) : deduplicatedNotifs.length === 0 ? (
             <div className={styles.emptyState}>
               <BellOff size={48} />
               <p>Không tìm thấy thông báo nào</p>
@@ -337,6 +415,7 @@ export default function NotificationManagement() {
                 <tr>
                   <th style={{ width: '40px' }}></th>
                   <th>Thông báo</th>
+                  <th>Trạng thái</th>
                   <th>Loại</th>
                   <th>Độ ưu tiên</th>
                   <th>Thời gian</th>
@@ -344,7 +423,7 @@ export default function NotificationManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredNotifs.map((notif) => {
+                {deduplicatedNotifs.map((notif) => {
                   const typeInfo = TYPE_DISPLAY[notif.notification_type] || { label: notif.notification_type, Icon: Bell, color: '#64748b', className: '' };
                   const prioInfo = PRIORITY_DISPLAY[notif.priority] || { label: notif.priority, className: '' };
                   const TypeIcon = typeInfo.Icon;
@@ -358,12 +437,29 @@ export default function NotificationManagement() {
                       <td>
                         <div
                           className={styles.notifCell}
-                          onClick={() => { setSelectedNotif(notif); setShowDetail(true); }}
+                          onClick={() => handleViewDetail(notif)}
                           style={{ cursor: 'pointer' }}
                         >
-                          <div className={styles.notifCellTitle}>{notif.title}</div>
+                          <div className={styles.notifCellTitle}>
+                            {notif.title}
+                            {(notif as NotificationItem & { isBroadcast?: boolean }).isBroadcast && (
+                              <span style={{
+                                marginLeft: '8px', fontSize: '0.7rem', padding: '2px 6px', 
+                                background: '#e0e7ff', color: '#4338ca', borderRadius: '4px', fontWeight: 600
+                              }}>
+                                Gửi tất cả
+                              </span>
+                            )}
+                          </div>
                           <div className={styles.notifCellBody}>{notif.body}</div>
                         </div>
+                      </td>
+                      <td>
+                        {notif.is_read ? (
+                          <span className={`${styles.badge} ${styles.statusRead}`}>Đã đọc</span>
+                        ) : (
+                          <span className={`${styles.badge} ${styles.statusUnread}`}>Chưa đọc</span>
+                        )}
                       </td>
                       <td>
                         <span className={`${styles.badge} ${styles[typeInfo.className] || ''}`}>
@@ -383,7 +479,7 @@ export default function NotificationManagement() {
                           <button
                             className={`${styles.btnIcon} ${styles.btnView}`}
                             title="Xem chi tiết"
-                            onClick={() => { setSelectedNotif(notif); setShowDetail(true); }}
+                            onClick={() => handleViewDetail(notif)}
                           >
                             <Eye size={14} />
                           </button>
@@ -460,7 +556,56 @@ export default function NotificationManagement() {
             </div>
             <form onSubmit={handleCreate}>
               <div className={styles.modalBody}>
-                {/* User selection */}
+                {/* Recipient type toggle */}
+                <div className={styles.formGroup}>
+                  <label className={styles.formLabel}>Đối tượng nhận</label>
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontWeight: recipientType === 'specific' ? 600 : 400 }}>
+                      <input
+                        type="radio"
+                        name="recipientType"
+                        value="specific"
+                        checked={recipientType === 'specific'}
+                        onChange={() => { setRecipientType('specific'); setSelectedUser(null); setUserSearchInput(''); setUserSearchResults([]); }}
+                      />
+                      Người dùng cụ thể
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontWeight: recipientType === 'all' ? 600 : 400 }}>
+                      <input
+                        type="radio"
+                        name="recipientType"
+                        value="all"
+                        checked={recipientType === 'all'}
+                        onChange={() => { setRecipientType('all'); setSelectedUser(null); setUserSearchInput(''); setUserSearchResults([]); }}
+                      />
+                      <Users size={14} /> Tất cả người dùng
+                    </label>
+                  </div>
+                </div>
+
+                {/* Warning khi chọn broadcast */}
+                {recipientType === 'all' && (
+                  <div style={{
+                    background: 'rgba(245,158,11,0.1)',
+                    border: '1px solid rgba(245,158,11,0.4)',
+                    borderRadius: '8px',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.5rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                  }}>
+                    <AlertCircle size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <span>
+                      Thông báo sẽ được gửi đến <strong>tất cả người dùng đang hoạt động</strong> trong hệ thống.
+                      Hãy kiểm tra kỹ nội dung trước khi gửi.
+                    </span>
+                  </div>
+                )}
+
+                {/* User selection (chỉ hiện khi specific) */}
+                {recipientType === 'specific' && (
                 <div className={styles.formGroup}>
                   <label className={styles.formLabel}>
                     Người nhận <span className={styles.required}>*</span>
@@ -518,6 +663,7 @@ export default function NotificationManagement() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Title */}
                 <div className={styles.formGroup}>

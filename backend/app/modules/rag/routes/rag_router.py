@@ -29,6 +29,8 @@ from app.modules.rag.schemas.rag_document_schemas import (
 from app.modules.rag.services.qdrant_service import QdrantService
 from app.modules.rag.services.rag_document_service import RagDocumentService
 from app.modules.users.models import User
+from app.modules.audit.dependencies import get_audit_service
+from app.modules.audit.services.audit_service import AuditService
 
 router = APIRouter(prefix="/rag", tags=["RAG - Knowledge Retrieval"])
 
@@ -45,6 +47,7 @@ async def upload_document(
         default=None,
         description='JSON string optional (e.g. {"wound_type": "burn"})',
     ),
+    audit_service: AuditService = Depends(get_audit_service),
     current_user: User = Depends(require_admin),
     service: RagDocumentService = Depends(get_rag_document_service),
 ) -> DocumentResponse:
@@ -54,6 +57,17 @@ async def upload_document(
         doc_metadata_raw=doc_metadata,
         background_tasks=background_tasks,
     )
+    
+    await audit_service.log_event(
+        action="upload_rag_document",
+        user_id=current_user.user_id,
+        resource_type="rag_document",
+        resource_id=str(doc.rag_document_id),
+        details={"file_name": doc.file_name, "file_type": doc.file_type},
+        success=True,
+        description=f"Tải lên tài liệu cơ sở tri thức: {doc.file_name}"
+    )
+    
     return DocumentResponse.model_validate(doc)
 
 
@@ -62,11 +76,15 @@ async def list_documents(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     status_filter: Optional[str] = Query(None, alias="status"),
+    file_type_filter: Optional[str] = Query(None, alias="file_type"),
     _admin: User = Depends(require_admin),
     service: RagDocumentService = Depends(get_rag_document_service),
 ) -> DocumentListResponse:
     items, total = await service.list_documents(
-        skip=skip, limit=limit, status=status_filter
+        skip=skip,
+        limit=limit,
+        status=status_filter,
+        file_type=file_type_filter,
     )
     return DocumentListResponse(
         total=total,
@@ -89,12 +107,26 @@ async def get_document(
 @router.delete("/documents/{doc_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
     doc_id: UUID,
+    audit_service: AuditService = Depends(get_audit_service),
     _admin: User = Depends(require_admin),
     service: RagDocumentService = Depends(get_rag_document_service),
 ) -> DocumentDeleteResponse:
+    doc = await service.get_document(doc_id)
+    file_name = doc.file_name
     deleted = await service.delete_document(doc_id)
+    
+    await audit_service.log_event(
+        action="delete_rag_document",
+        user_id=_admin.user_id,
+        resource_type="rag_document",
+        resource_id=str(doc_id),
+        details={"file_name": file_name, "vectors_deleted": deleted},
+        success=True,
+        description=f"Xóa tài liệu cơ sở tri thức: {file_name}"
+    )
+    
     return DocumentDeleteResponse(
-        rag_document_id=doc_id, deleted_points=deleted
+        rag_document_id=doc_id, file_name=file_name, deleted_points=deleted
     )
 
 

@@ -25,7 +25,7 @@ from app.modules.llm.schemas.llm_schemas import (
 from app.modules.llm.services.llm_service import LLMService
 from app.modules.llm.services.config_resolver import resolve_llm_config
 from app.modules.llm.services.prompt_builder import PromptBuilder
-from app.modules.rag.services.qdrant_service import RetrievedChunk, qdrant_service
+from app.modules.rag.services.qdrant_service import QdrantService, RetrievedChunk, qdrant_service
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -43,17 +43,21 @@ class SynthesisOrchestrator:
         db: AsyncSession,
         llm_service: LLMService,
         prompt_builder: PromptBuilder,
+        firstaid_service: FirstAidService | None = None,
+        wound_analysis_service: WoundAnalysisService | None = None,
+        qdrant: QdrantService | None = None,
     ) -> None:
         self._db = db
         self._llm_service = llm_service
         self._prompt_builder = prompt_builder
-        self._firstaid_service = FirstAidService(
+        self._firstaid_service = firstaid_service or FirstAidService(
             repository=FirstAidRepository(db), db=db
         )
-        self._wound_analysis_service = WoundAnalysisService(
+        self._wound_analysis_service = wound_analysis_service or WoundAnalysisService(
             repository=WoundAnalysisRepository(db),
             first_aid_service=self._firstaid_service,
         )
+        self._qdrant = qdrant or qdrant_service
 
     # Public API
 
@@ -95,19 +99,22 @@ class SynthesisOrchestrator:
         )
 
         # ── Step 5: B6 Validation
-        validated, source, confidence = self._validate_b6(llm_output, context.db_guide)
+        validated, source, match_ratio = self._validate_b6(llm_output, context.db_guide)
 
         # Step 6: Choose final guidance
         if source == "db" and context.db_guide is not None:
             guidance = self._format_db_guide_as_text(context.db_guide)
             structured = self._build_structured_from_db(context.db_guide)
+            # DB là authoritative khi fallback → confidence=1.0 (không lẫn với match_ratio)
+            confidence = 1.0
         else:
             guidance = llm_output
             structured = self._parse_structured_output(llm_output)
+            confidence = match_ratio
 
         processing_time_ms = int((time.monotonic() - start_ms) * 1000)
 
-        # Step 6: Persist structured_guidance
+        # Step 7: Persist structured_guidance
         if request.analysis_id is not None and structured is not None:
             try:
                 await self._wound_analysis_service.persist_llm_guidance(
@@ -117,7 +124,10 @@ class SynthesisOrchestrator:
                     structured_guidance=structured.model_dump(),
                 )
             except Exception:
-                pass
+                logger.exception(
+                    "persist_guidance_error - Failed to persist structured guidance for analysis_id=%s",
+                    request.analysis_id,
+                )
 
         return LLMSynthesizeResponse(
             guidance=guidance,
@@ -137,10 +147,10 @@ class SynthesisOrchestrator:
     ) -> SynthesisContext:
         """Chạy song song RAG retrieval và DB lookup, lỗi từng task log warning không block flow."""
         rag_query = (
-            f"{request.wound_type} {request.severity} {request.user_description}"
-        )
+            f"{request.wound_type} {request.severity} {request.user_description or ''}"
+        ).strip()
 
-        rag_task = qdrant_service.hybrid_search(
+        rag_task = self._qdrant.hybrid_search(
             query=rag_query,
             top_k=request.top_k_rag,
         )
@@ -156,15 +166,14 @@ class SynthesisOrchestrator:
 
         rag_chunks: list[RAGChunkSnapshot] = []
         if isinstance(rag_result, Exception):
-            await self._log_system_error(
-                action="rag_error",
-                error_message=f"RAG retrieval failed: {str(rag_result)[:300]}",
-                details={"error_type": type(rag_result).__name__},
+            logger.error(
+                "rag_error - RAG retrieval failed: %s, error_type: %s", 
+                str(rag_result)[:300], type(rag_result).__name__
             )
         elif isinstance(rag_result, list):
             rag_chunks = [
                 RAGChunkSnapshot(
-                    content=chunk.content,
+                    content=chunk.text,
                     relevance_score=chunk.score,
                 )
                 for chunk in rag_result
@@ -173,10 +182,9 @@ class SynthesisOrchestrator:
 
         db_guide_snapshot: DBGuideSnapshot | None = None
         if isinstance(db_result, Exception):
-            await self._log_system_error(
-                action="llm_api_error",
-                error_message=f"DB guide lookup failed: {str(db_result)[:300]}",
-                details={"error_type": type(db_result).__name__},
+            logger.error(
+                "db_lookup_error - DB guide lookup failed: %s, error_type: %s",
+                str(db_result)[:300], type(db_result).__name__
             )
         elif db_result is not None:
             db_guide_snapshot = DBGuideSnapshot(
@@ -212,7 +220,8 @@ class SynthesisOrchestrator:
         llm_lower = llm_output.lower()
         matched = 0
         for kw in keywords:
-            if kw in llm_lower:
+            # Dùng word-boundary để tránh false-positive (ví dụ "vết" match "vết thương" lẫn "vết bẩn")
+            if re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", llm_lower):
                 matched += 1
 
         ratio = matched / len(keywords)
