@@ -1,4 +1,32 @@
 {
+  "errors": {
+    "generic": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "network": "Lỗi mạng. Vui lòng kiểm tra kết nối.",
+    "server": "Lỗi máy chủ. Vui lòng thử lại sau.",
+    "auth": {
+      "invalid_credentials": "Tên đăng nhập hoặc mật khẩu không đúng.",
+      "invalid_reset_token": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.",
+      "account_locked": "Tài khoản của bạn đã bị khóa.",
+      "account_deactivated": "Tài khoản đã bị vô hiệu hóa.",
+      "weak_password": "Mật khẩu không đủ mạnh.",
+      "old_password_incorrect": "Mật khẩu hiện tại không đúng."
+    },
+    "user": {
+      "not_found": "Không tìm thấy người dùng."
+    },
+    "map": {
+      "service_unavailable": "Dịch vụ bản đồ tạm thời không khả dụng.",
+      "not_found": "Không tìm thấy địa điểm."
+    },
+    "upload": {
+      "invalid_file": "Định dạng tệp không hợp lệ. Vui lòng tải lên JPEG, PNG hoặc JPG.",
+      "file_too_large": "Kích thước tệp vượt quá 5 MB.",
+      "dimension_invalid": "Kích thước ảnh phải nằm trong khoảng 100x100 đến 4096x4096."
+    },
+    "ai": {
+      "processing_failed": "Xử lý ảnh thất bại. Vui lòng thử lại."
+    }
+  },
   "title": {
     "home_page": "Trang chủ - SkinAid",
     "upload_page": "Tải ảnh lên - SkinAid",
@@ -963,13 +991,17 @@
         "saving": "Đang lưu..."
       },
       "options": {
-        "abrasion": "Trầy xước / Mài mòn",
-        "bruise": "Bầm tím / Chấn thương phần mềm",
+        "abrasion": "Trầy xước",
+        "bruise": "Bầm tím",
         "burn": "Bỏng",
-        "cut": "Vết cắt / Vết rách",
+        "cut": "Vết cắt",
+        "acne": "Mụn trứng cá",
+        "fungal": "Nấm da",
+        "psoriasis": "Vảy nến",
         "mild": "Nhẹ",
         "moderate": "Trung bình",
-        "severe": "Nghiêm trọng"
+        "severe": "Nghiêm trọng",
+        "general": "Chung"
       }
     },
     "first_aid_view": {

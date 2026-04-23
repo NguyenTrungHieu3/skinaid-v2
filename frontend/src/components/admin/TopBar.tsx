@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Bell, ChevronRight, AlertTriangle, LogOut, Home, AlertCircle, XCircle, CheckCircle, Loader2, BellOff } from "lucide-react";
+import { Bell, ChevronRight, AlertTriangle, LogOut, Home, XCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../contexts/AuthContext";
-import { getAuditLogs } from "../../services/auditService";
-import type { AuditLog } from "../../services/auditService";
+import * as notificationService from "../../services/notificationService";
+import type { NotificationItem } from "../../services/notificationService";
 import styles from "./TopBar.module.css";
 
 // Map page ids to Vietnamese labels for breadcrumb
@@ -19,24 +19,16 @@ const PAGE_LABELS: Record<string, string> = {
   notifications: 'Thông báo',
 };
 
-// Label map for audit actions
-const ACTION_LABELS: Record<string, string> = {
-  ai_analysis_failed: 'Phân tích AI thất bại',
-  rag_indexing_failed: 'Đánh chỉ mục RAG thất bại',
-  llm_error: 'Lỗi LLM',
-  auth_failed: 'Xác thực thất bại',
-  upload_failed: 'Tải lên thất bại',
-  system_error: 'Lỗi hệ thống',
-};
 
-const getLevelStyle = (level: string, success: boolean) => {
-  if (!success || level === 'error') {
+
+const getLevelStyle = (severity: string) => {
+  if (severity === 'error') {
     return { icon: XCircle, color: '#ef4444', badge: '#fee2e2' };
   }
-  if (level === 'warning') {
+  if (severity === 'warning') {
     return { icon: AlertTriangle, color: '#f59e0b', badge: '#fef3c7' };
   }
-  return { icon: CheckCircle, color: '#17805f', badge: '#dcfce7' };
+  return { icon: Bell, color: '#17805f', badge: '#dcfce7' };
 };
 
 interface TopBarProps {
@@ -52,75 +44,65 @@ export default function TopBar({ onToggleSidebar, currentPage, onPageChange }: T
   const [showLogoutMenu, setShowLogoutMenu] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // Alert state — shows audit error/warning logs
-  const [showAlerts, setShowAlerts] = useState(false);
-  const [alerts, setAlerts] = useState<AuditLog[]>([]);
-  const [alertCount, setAlertCount] = useState(0);
-  const [alertLoading, setAlertLoading] = useState(false);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const alertRef = useRef<HTMLDivElement>(null);
+  // Alert state — shows notifications
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  // Fetch count of failed events
-  const fetchAlertCount = useCallback(async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      const res = await getAuditLogs({ success: false, limit: 50, page: 1 });
-      if (res.success && res.data) {
-        const undismissed = res.data.logs.filter(
-          (l: AuditLog) => !dismissed.has(l.audit_action_id)
-        );
-        setAlertCount(undismissed.length);
-      }
+      const count = await notificationService.getUnreadCount();
+      setUnreadCount(count);
     } catch {
       // silent fail
     }
-  }, [dismissed]);
+  }, []);
 
   useEffect(() => {
-    fetchAlertCount();
-    const interval = setInterval(fetchAlertCount, 60000);
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000);
     return () => clearInterval(interval);
-  }, [fetchAlertCount]);
+  }, [fetchUnreadCount]);
 
-  // Open alert panel
-  const openAlerts = async () => {
-    setShowAlerts(true);
-    setAlertLoading(true);
+  const openNotifs = async () => {
+    setShowNotifs(true);
+    setNotifLoading(true);
     try {
-      const res = await getAuditLogs({ success: false, limit: 20, page: 1 });
-      if (res.success && res.data) {
-        setAlerts(res.data.logs);
-        const undismissed = res.data.logs.filter(
-          (l: AuditLog) => !dismissed.has(l.audit_action_id)
-        );
-        setAlertCount(undismissed.length);
-      }
+      const res = await notificationService.getNotifications({ limit: 5 });
+      setNotifications(res.items);
+      setUnreadCount(res.unread_count);
     } catch {
       // silent
     } finally {
-      setAlertLoading(false);
+      setNotifLoading(false);
     }
   };
 
-  const toggleAlerts = () => {
-    if (showAlerts) {
-      setShowAlerts(false);
+  const toggleNotifs = () => {
+    if (showNotifs) {
+      setShowNotifs(false);
     } else {
-      openAlerts();
+      openNotifs();
     }
   };
 
-  const dismissAlert = (id: string, e: React.MouseEvent) => {
+  const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDismissed(prev => new Set([...prev, id]));
-    setAlerts(prev => prev.filter(a => a.audit_action_id !== id));
-    setAlertCount(prev => Math.max(0, prev - 1));
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications(prev => prev.map(n => n.notification_id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch {}
   };
 
-  const dismissAll = () => {
-    const ids = alerts.map(a => a.audit_action_id);
-    setDismissed(prev => new Set([...prev, ...ids]));
-    setAlerts([]);
-    setAlertCount(0);
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch {}
   };
 
   const getRelativeTime = (dateStr: string) => {
@@ -142,13 +124,13 @@ export default function TopBar({ onToggleSidebar, currentPage, onPageChange }: T
       if (showLogoutMenu && !(event.target as Element).closest(`.${styles.adminUserInfo}`)) {
         setShowLogoutMenu(false);
       }
-      if (showAlerts && alertRef.current && !alertRef.current.contains(event.target as Node)) {
-        setShowAlerts(false);
+      if (showNotifs && notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifs(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLogoutMenu, showAlerts]);
+  }, [showLogoutMenu, showNotifs]);
 
   const onLogoutClick = () => {
     setShowLogoutMenu(false);
@@ -210,120 +192,97 @@ export default function TopBar({ onToggleSidebar, currentPage, onPageChange }: T
           {/* Right: bell + user */}
           <div className={styles.adminTopbarActions}>
             {/* Alert Bell */}
-            <div className={styles.notifContainer} ref={alertRef}>
+            <div className={styles.notifContainer} ref={notifRef}>
               <button
-                className={`${styles.bellBtn} ${showAlerts ? styles.bellBtnActive : ''}`}
-                title="Cảnh báo hệ thống"
-                onClick={toggleAlerts}
+                className={`${styles.bellBtn} ${showNotifs ? styles.bellBtnActive : ''}`}
+                title="Thông báo"
+                onClick={toggleNotifs}
               >
                 <Bell size={20} />
-                {alertCount > 0 && (
+                {unreadCount > 0 && (
                   <span className={styles.bellBadge}>
-                    {alertCount > 99 ? '99+' : alertCount}
+                    {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {/* Alert Dropdown */}
-              {showAlerts && (
+              {showNotifs && (
                 <div className={styles.notifPanel}>
                   <div className={styles.notifHeader}>
                     <div className={styles.notifHeaderTitle}>
-                      <AlertCircle size={15} className={styles.headerAlertIcon} />
-                      <h3>Cảnh báo hệ thống</h3>
+                      <Bell size={15} className={styles.headerAlertIcon} />
+                      <h3>Thông báo</h3>
                     </div>
                     <div className={styles.notifHeaderActions}>
-                      {alerts.length > 0 && (
-                        <button className={styles.notifMarkAllBtn} onClick={dismissAll}>
-                          Bỏ qua tất cả
+                      {unreadCount > 0 && (
+                        <button className={styles.notifMarkAllBtn} onClick={handleMarkAllRead}>
+                          Đánh dấu đã đọc
                         </button>
                       )}
                       <button
                         className={styles.notifViewAllBtn}
-                        onClick={() => { setShowAlerts(false); onPageChange?.('logs'); }}
+                        onClick={() => { setShowNotifs(false); onPageChange?.('notifications'); }}
                       >
-                        Xem nhật ký
+                        Xem tất cả
                       </button>
                     </div>
                   </div>
 
                   <div className={styles.notifList}>
-                    {alertLoading ? (
+                    {notifLoading ? (
                       <div className={styles.notifLoading}>
                         <Loader2 size={20} className={styles.spin} />
                         <span>Đang tải...</span>
                       </div>
-                    ) : alerts.length === 0 ? (
+                    ) : notifications.length === 0 ? (
                       <div className={styles.notifEmpty}>
-                        <BellOff size={32} />
-                        <p>Không có cảnh báo nào</p>
-                        <span>Hệ thống đang hoạt động bình thường</span>
+                        <CheckCircle size={32} color="#10b981" />
+                        <p>Không có thông báo nào</p>
+                        <span>Bạn đã xem hết thông báo</span>
                       </div>
                     ) : (
-                      alerts.map((alert) => {
-                        const lv = getLevelStyle(alert.level, alert.success);
+                      notifications.map((notif) => {
+                        const lv = getLevelStyle(notif.severity || 'info');
                         const Icon = lv.icon;
-                        const label = ACTION_LABELS[alert.action] || alert.action;
                         return (
                           <div
-                            key={alert.audit_action_id}
-                            className={`${styles.notifItem} ${styles.notifItemUnread}`}
-                            style={{ borderLeftColor: lv.color }}
+                            key={notif.notification_id}
+                            className={`${styles.notifItem} ${!notif.is_read ? styles.notifItemUnread : ''}`}
+                            style={{ borderLeftColor: lv.color, cursor: 'pointer' }}
+                            onClick={() => {
+                              setShowNotifs(false);
+                              onPageChange?.(`notification_detail_${notif.notification_id}`);
+                            }}
                           >
                             <div className={styles.notifIconWrap} style={{ background: lv.badge }}>
                               <Icon size={16} color={lv.color} />
                             </div>
                             <div className={styles.notifContent}>
-                              <div className={styles.notifTitle}>{label}</div>
-                              {alert.description && (
-                                <div className={styles.notifBody}>{alert.description}</div>
-                              )}
-                              {alert.error_message && (
-                                <div className={`${styles.notifBody} ${styles.notifError}`}>
-                                  {alert.error_message}
-                                </div>
-                              )}
+                              <div className={styles.notifTitle}>{notif.title}</div>
+                              <div className={styles.notifBody}>{notif.body}</div>
                               <div className={styles.notifMeta}>
-                                <span
-                                  className={styles.notifType}
-                                  style={{ color: lv.color, background: lv.badge }}
-                                >
-                                  {!alert.success || alert.level === 'error' ? 'Lỗi' : 'Cảnh báo'}
-                                </span>
-                                {alert.resource_type && (
-                                  <span className={styles.notifResource}>{alert.resource_type}</span>
-                                )}
                                 <span className={styles.notifTime}>
-                                  {getRelativeTime(alert.timestamp)}
+                                  {getRelativeTime(notif.created_at)}
                                 </span>
                               </div>
                             </div>
-                            <div className={styles.notifActions}>
-                              <button
-                                className={styles.notifDeleteBtn}
-                                onClick={(e) => dismissAlert(alert.audit_action_id, e)}
-                                title="Bỏ qua"
-                              >
-                                <XCircle size={13} />
-                              </button>
-                            </div>
+                            {!notif.is_read && (
+                              <div className={styles.notifActions}>
+                                <button
+                                  className={styles.notifDeleteBtn}
+                                  onClick={(e) => handleMarkAsRead(notif.notification_id, e)}
+                                  title="Đánh dấu đã đọc"
+                                >
+                                  <CheckCircle size={13} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })
                     )}
                   </div>
-
-                  {alerts.length > 0 && (
-                    <div className={styles.notifFooter}>
-                      <span>{alerts.length} sự kiện lỗi gần đây</span>
-                      <button
-                        className={styles.notifFooterLink}
-                        onClick={() => { setShowAlerts(false); onPageChange?.('logs'); }}
-                      >
-                        Xem chi tiết →
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

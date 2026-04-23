@@ -14,6 +14,7 @@ _ADMIN_ACTIONS = {
     "activate_user", "deactivate_user",
     "upload_ai_model", "activate_ai_model", "rollback_ai_model", "delete_ai_model",
     "update_llm_config", "toggle_vision_fallback", "rollback_llm_config",
+    "bulk_import_first_aid",   # Audit trail for Excel bulk import
 }
 
 _SYSTEM_ERROR_ACTIONS = {

@@ -12,9 +12,8 @@ import {
   RefreshCw,
   Ban,
   Download,
-  FileSpreadsheet,
   Upload,
-  X
+  X,
 } from "lucide-react";
 import StatCard from "./shared/StatCard";
 import { useTranslation } from "react-i18next";
@@ -25,6 +24,7 @@ import {
   createFirstAidGuide,
   updateFirstAidGuide,
   deleteFirstAidGuide,
+  bulkImportFirstAidGuides,
 } from "../../services/firstAidService";
 import { useToast } from "../../contexts/ToastContext";
 import FirstAidViewModal from "./FirstAidViewModal";
@@ -106,9 +106,14 @@ export default function FirstAidManagement() {
   // Import/Export States
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Export Modal State
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportGuideList, setExportGuideList] = useState<Guide[]>([]);
+  const [exportSelected, setExportSelected] = useState<Set<string>>(new Set());
+  const [loadingExportList, setLoadingExportList] = useState(false);
 
   // Import Preview
   interface ImportPreviewRow {
@@ -131,16 +136,11 @@ export default function FirstAidManagement() {
   }
   const [showImportPreview, setShowImportPreview] = useState(false);
   const [importPreviewData, setImportPreviewData] = useState<ImportPreviewRow[]>([]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportRef.current && !exportRef.current.contains(event.target as Node)) {
-        setExportDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Track filename and total rows for audit log metadata
+  const [importFilename, setImportFilename] = useState<string>('');
+  const [importTotalRows, setImportTotalRows] = useState<number>(0);
+  // false (default) = import as inactive | true = import as active + deactivate existing same-type
+  const [importAutoActivate, setImportAutoActivate] = useState<boolean>(false);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -162,6 +162,8 @@ export default function FirstAidManagement() {
   const [selectedSeverity, setSelectedSeverity] = useState("");
   const [selectedActiveStatus, setSelectedActiveStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  // BUG-05 FIX: Separate debounced value — only this triggers the API call
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   // Statistics
   const [stats, setStats] = useState<Stats>({
@@ -244,8 +246,9 @@ export default function FirstAidManagement() {
       if (selectedActiveStatus !== "all") {
         params.is_active = selectedActiveStatus === "true";
       }
-      if (searchTerm && searchTerm.trim()) {
-        params.search = searchTerm.trim();
+      // BUG-05 FIX: Use debouncedSearchTerm (not raw searchTerm) in API call
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = debouncedSearchTerm.trim();
       }
 
       const response = await searchFirstAidGuides(params);
@@ -272,10 +275,23 @@ export default function FirstAidManagement() {
     fetchStatistics();
   }, []);
 
+  // BUG-05 FIX: Debounce effect — wait 400ms after user stops typing
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 400);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchTerm]);
+
   useEffect(() => {
     setPage(1);
     fetchGuides();
-  }, [selectedWoundType, selectedSeverity, selectedActiveStatus, searchTerm]);
+  }, [selectedWoundType, selectedSeverity, selectedActiveStatus, debouncedSearchTerm]);
 
   useEffect(() => {
     fetchGuides();
@@ -627,53 +643,73 @@ export default function FirstAidManagement() {
 
   // ─── Export & Import Helpers ───────────────────────────────────────────────
 
-  const handleExportExcel = async () => {
+  // ─── Open Export Modal: fetch all guides then let user pick ───────────────
+
+  const handleOpenExportModal = async () => {
     try {
-      setExporting(true);
-      
-      // Fetch all guides paginated
-      let allGuides: Guide[] = [];
-      let currentOffset = 0;
-      const EXPORT_LIMIT = 100;
+      setLoadingExportList(true);
+      setShowExportModal(true);
+      setExportSelected(new Set());
+
+      let all: Guide[] = [];
+      let offset = 0;
+      const LIMIT = 100;
       let hasMore = true;
 
       while (hasMore) {
-        const response: any = await searchFirstAidGuides({
-          wound_type: selectedWoundType !== "all" && selectedWoundType !== "" ? selectedWoundType : undefined,
-          severity: selectedSeverity !== "all" && selectedSeverity !== "" ? selectedSeverity : undefined,
-          is_active: selectedActiveStatus !== "all" ? selectedActiveStatus === "active" : undefined,
-          search: searchTerm || undefined,
-          limit: EXPORT_LIMIT,
-          offset: currentOffset,
-        });
-
-        if (response.data && response.data.length > 0) {
-          allGuides = [...allGuides, ...response.data];
-          currentOffset += EXPORT_LIMIT;
-          if (response.extra && response.extra.total <= allGuides.length) hasMore = false;
-          if (response.data.length < EXPORT_LIMIT) hasMore = false;
+        const res: any = await searchFirstAidGuides({ limit: LIMIT, offset });
+        if (res.data && res.data.length > 0) {
+          all = [...all, ...res.data];
+          offset += LIMIT;
+          if (!res.data || res.data.length < LIMIT) hasMore = false;
+          if (res.extra && res.extra.total <= all.length) hasMore = false;
         } else {
           hasMore = false;
         }
       }
 
-      if (allGuides.length === 0) {
-        toastError("Không có dữ liệu để xuất");
-        setExporting(false);
-        return;
-      }
+      setExportGuideList(all);
+      // Default: select all
+      setExportSelected(new Set(all.map(g => g.firstaidguide_id)));
+    } catch (err) {
+      toastError('Không thể tải danh sách hướng dẫn.');
+      setShowExportModal(false);
+    } finally {
+      setLoadingExportList(false);
+    }
+  };
+
+  // ─── Confirm Export: generate Excel from selected guides ──────────────────
+  const handleConfirmExport = async () => {
+    const guidesToExport = exportGuideList.filter(g => exportSelected.has(g.firstaidguide_id));
+    if (guidesToExport.length === 0) {
+      toastError('Chưa chọn hướng dẫn nào để xuất.');
+      return;
+    }
+
+    try {
+      setExporting(true);
+
+      // Mapping enum → Vietnamese (khớp format import)
+      const woundTypeViMap: Record<string, string> = {
+        abrasion: 'Trầy xước', bruise: 'Bầm tím', burn: 'Bỏng',
+        cut: 'Vết cắt', acne: 'Mụn trứng cá', fungal: 'Nấm da', psoriasis: 'Vảy nến',
+      };
+      const severityViMap: Record<string, string> = {
+        mild: 'Nhẹ', moderate: 'Trung bình', severe: 'Nặng', general: '',
+      };
 
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Sơ cứu');
+      // Sheet name khớp file mẫu
+      const worksheet = workbook.addWorksheet('Hướng dẫn sơ cứu');
 
+      // Headers — khớp chính xác với huong_dan_so_cuu_skinaid_v2.xlsx
       const headers = [
         'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
         'Mô tả', 'Các bước thực hiện', 'Nên làm', 'Không nên làm',
-        'Vật tư y tế', 'Thời gian phục hồi', 'Nguồn tham khảo', 'URL nguồn', 'Trạng thái'
+        'Vật tư y tế', 'Thời gian phục hồi', 'Nguồn tham khảo', 'URL nguồn', 'Trạng thái',
       ];
       const headerRow = worksheet.addRow(headers);
-      
-      // Style headers
       headerRow.eachCell((cell) => {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17805F' } };
         cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
@@ -682,54 +718,48 @@ export default function FirstAidManagement() {
           top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
           left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
           bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-          right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+          right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
         };
       });
 
-      // Add Data Rows
-      allGuides.forEach(guide => {
-        const getSourceName = (s: any) => {
-          if (!s) return "";
-          if (typeof s === "string") return s;
-          return s.name || "";
-        };
-        const getSourceUrl = (s: any) => {
-          if (!s || typeof s === "string") return "";
-          return s.url || "";
-        };
+      guidesToExport.forEach(guide => {
+        const getSourceName = (s: any) => (!s ? '' : typeof s === 'string' ? s : s.name || '');
+        const getSourceUrl  = (s: any) => (!s || typeof s === 'string' ? '' : s.url || '');
+
+        const woundTypeVi = woundTypeViMap[guide.wound_type?.toLowerCase()] || guide.wound_type || '';
+        const severityVi  = severityViMap[guide.severity?.toLowerCase()] ?? guide.severity ?? '';
 
         const row = worksheet.addRow([
-          guide.title || "",
-          guide.wound_type || "",
-          guide.severity || "",
-          guide.sub_type || "",
-          guide.description || "",
-          (guide.steps || []).join('\n'),
-          (guide.dos || []).join('\n'),
-          (guide.donts || []).join('\n'),
+          guide.title                      || '',
+          woundTypeVi,
+          severityVi,
+          guide.sub_type                   || '',
+          guide.description                || '',
+          (guide.steps           || []).join('\n'),
+          (guide.dos             || []).join('\n'),
+          (guide.donts           || []).join('\n'),
           (guide.supplies_needed || []).join('\n'),
-          guide.estimated_healing_time || "",
+          guide.estimated_healing_time     || '',
           getSourceName(guide.source),
           getSourceUrl(guide.source),
-          guide.is_active ? "Hoạt động" : "Không hoạt động"
+          guide.is_active ? 'Hoạt động' : 'Không hoạt động',
         ]);
 
         row.eachCell({ includeEmpty: true }, (cell) => {
           cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
           cell.border = {
-            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-            left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            top:    { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left:   { style: 'thin', color: { argb: 'FFD1D5DB' } },
             bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
-            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+            right:  { style: 'thin', color: { argb: 'FFD1D5DB' } },
           };
         });
       });
 
-      // Column widths
       worksheet.columns = [
-        { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
-        { width: 30 }, { width: 45 }, { width: 35 }, { width: 35 },
-        { width: 25 }, { width: 18 }, { width: 20 }, { width: 30 }, { width: 15 }
+        { width: 30 }, { width: 16 }, { width: 14 }, { width: 16 },
+        { width: 35 }, { width: 50 }, { width: 40 }, { width: 40 },
+        { width: 28 }, { width: 20 }, { width: 22 }, { width: 32 }, { width: 16 },
       ];
 
       const buffer = await workbook.xlsx.writeBuffer();
@@ -742,66 +772,18 @@ export default function FirstAidManagement() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      success("Xuất file Excel thành công!");
+      window.URL.revokeObjectURL(url);
+
+      success(`Đã xuất ${guidesToExport.length} hướng dẫn thành công!`);
+      setShowExportModal(false);
+      setExportGuideList([]);
+      setExportSelected(new Set());
     } catch (err) {
-      console.error("Export error", err);
-      toastError("Có lỗi xảy ra khi xuất file.");
+      console.error('Export error', err);
+      toastError('Có lỗi xảy ra khi xuất file.');
     } finally {
       setExporting(false);
     }
-  };
-
-  const handleDownloadTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Template Sơ cứu');
-
-    const headers = [
-      'Tiêu đề', 'Loại vết thương', 'Mức độ', 'Phân loại phụ',
-      'Mô tả (Không bắt buộc)', 'Các bước thực hiện (Xuống dòng cho mỗi bước bằng Alt+Enter)', 
-      'Nên làm (Xuống dòng cho mỗi mục)', 'Không nên làm (Xuống dòng cho mỗi mục)',
-      'Vật tư y tế (Xuống dòng cho mỗi mục)', 'Thời gian phục hồi', 'Nguồn tham khảo (Tên)', 'URL nguồn (Không bắt buộc)', 'Trạng thái (Hoạt động / Không hoạt động)'
-    ];
-    const headerRow = worksheet.addRow(headers);
-    
-    headerRow.eachCell((cell) => {
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17805F' } };
-      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-      cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-    });
-
-    // Sample Row
-    const sampleRow = worksheet.addRow([
-      "Sơ cứu Bỏng Cấp độ 1", "Bỏng", "Nhẹ", "",
-      "Cách sơ cứu cơ bản khi bị bỏng nhẹ ở nhà.",
-      "1. Làm mát vết bỏng dưới vòi nước chảy từ 10-15 phút.\n2. Bôi mỡ nhẹ nếu cần, không nặn bong bóng.",
-      "Làm mát ngay lập tức\nĐể hở vết thương",
-      "Không dùng đá lạnh chườm trực tiếp\nKhông bôi kem đánh răng",
-      "Gạc vô trùng\nNước sạch",
-      "3-5 ngày",
-      "Bộ Y Tế",
-      "https://moh.gov.vn",
-      "Hoạt động"
-    ]);
-
-    sampleRow.eachCell((cell) => {
-      cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
-    });
-
-    worksheet.columns = [
-      { width: 25 }, { width: 15 }, { width: 12 }, { width: 15 },
-      { width: 25 }, { width: 50 }, { width: 40 }, { width: 40 },
-      { width: 25 }, { width: 18 }, { width: 25 }, { width: 30 }, { width: 35 }
-    ];
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `template_huong_dan_so_cuu.xlsx`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
   };
 
   const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -883,6 +865,8 @@ export default function FirstAidManagement() {
       });
 
       setImportPreviewData(parsed);
+      setImportFilename(file.name);         // save for audit log
+      setImportTotalRows(parsed.length);    // save total rows parsed
       setShowImportPreview(true);
     } catch (err) {
       console.error("Parse file error:", err);
@@ -901,62 +885,67 @@ export default function FirstAidManagement() {
 
     try {
       setImporting(true);
-      let successCount = 0;
-      const failedRows: { rowIndex: number; reason: string }[] = [];
 
-      for (const row of selectedRows) {
-        try {
-          await createFirstAidGuide({
-            title: row.title,
-            wound_type: row.wound_type,
-            severity: row.severity,
-            sub_type: row.sub_type || undefined,
-            description: row.description || undefined,
-            steps: row.steps.length > 0 ? row.steps : ['Liên hệ cứu thương'],
-            dos: row.dos,
-            donts: row.donts,
-            supplies_needed: row.supplies_needed,
-            estimated_healing_time: row.estimated_healing_time || undefined,
-            source: { name: row.sourceName || 'Hệ thống', url: row.sourceUrl || undefined },
-            is_active: row.is_active,
-          });
-          successCount++;
-        } catch (error: any) {
-          const status = error?.response?.status;
-          let reason = 'Lỗi không xác định';
-          if (status === 409) {
-            reason = `Đã tồn tại (${row.wound_type}/${row.severity})`;
-          } else if (status === 422) {
-            reason = 'Dữ liệu không hợp lệ';
-          } else if (error?.response?.data?.message) {
-            reason = error.response.data.message;
-          } else if (error?.response?.data?.detail) {
-            reason = String(error.response.data.detail);
-          }
-          failedRows.push({ rowIndex: row.rowIndex, reason });
-        }
-      }
+      // Build bulk payload — includes metadata for audit log
+      const skippedRows = importPreviewData.filter(r => r.error).length;
 
-      // Update preview to show errors on failed rows
-      if (failedRows.length > 0) {
+      // Resolve is_active: unchecked = always inactive, checked = always active
+      const resolveActive = (): boolean => importAutoActivate;
+
+      const payload = {
+        guides: selectedRows.map(row => ({
+          title: row.title,
+          wound_type: row.wound_type,
+          severity: row.severity,
+          sub_type: row.sub_type || undefined,
+          description: row.description || undefined,
+          steps: row.steps.length > 0 ? row.steps : ['Liên hệ cứu thương'],
+          dos: row.dos,
+          donts: row.donts,
+          supplies_needed: row.supplies_needed,
+          estimated_healing_time: row.estimated_healing_time || undefined,
+          source: { name: row.sourceName || 'Hệ thống', url: row.sourceUrl || undefined },
+          is_active: resolveActive(),
+        })),
+        filename: importFilename,
+        total_rows_in_file: importTotalRows,
+        skipped_rows: skippedRows,
+        auto_deactivate_conflicts: importAutoActivate,
+      };
+
+      const response = await bulkImportFirstAidGuides(payload);
+      const result = response.data;
+
+      // Update preview rows that failed
+      if (result.failed_count > 0) {
         setImportPreviewData(prev => prev.map(r => {
-          const failed = failedRows.find(f => f.rowIndex === r.rowIndex);
-          if (failed) return { ...r, error: failed.reason, selected: false };
+          const failedItem = result.failed_items.find(
+            fi => selectedRows[fi.index]?.rowIndex === r.rowIndex
+          );
+          if (failedItem) return { ...r, error: failedItem.reason, selected: false };
           return r;
         }));
-        toastError(`${failedRows.length} dòng bị lỗi:\n${failedRows.map(f => `• Dòng ${f.rowIndex}: ${f.reason}`).join('\n')}`);
+        toastError(
+          `${result.failed_count} dòng bị lỗi:\n` +
+          result.failed_items
+            .map(f => `• ${f.title || `Dòng ${f.index + 1}`}: ${f.reason}`)
+            .join('\n')
+        );
       }
 
-      if (successCount > 0) {
-        success(`Đã import thành công ${successCount}/${selectedRows.length} hướng dẫn!`);
+      if (result.success_count > 0) {
+        success(`Đã import thành công ${result.success_count}/${selectedRows.length} hướng dẫn!`);
         fetchGuides();
         fetchStatistics();
       }
 
-      // Only close if all succeeded
-      if (failedRows.length === 0) {
+      // Close modal only if all rows succeeded
+      if (result.failed_count === 0) {
         setShowImportPreview(false);
         setImportPreviewData([]);
+        setImportFilename('');
+        setImportTotalRows(0);
+        setImportAutoActivate(false);
       }
     } catch (err) {
       console.error('Import error:', err);
@@ -1075,35 +1064,17 @@ export default function FirstAidManagement() {
             Import
           </button>
           
-          <div className={styles.exportWrapper} ref={exportRef}>
-            <button 
-              className={styles.btnOutline} 
-              onClick={() => setExportDropdownOpen(!exportDropdownOpen)} 
-              disabled={importing || exporting}
-            >
-              {exporting ? <Loader2 size={16} className={styles.spin} /> : <Download size={16} />} 
-              Export
-            </button>
-            {exportDropdownOpen && (
-              <div className={styles.exportDropdown}>
-                <div className={styles.dropdownLabel}>Tùy chọn xuất</div>
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => { setExportDropdownOpen(false); handleExportExcel(); }}
-                >
-                  <FileSpreadsheet size={15} /> Xuất dữ liệu
-                </button>
-                <div className={styles.dropdownDivider} />
-                <div className={styles.dropdownLabel}>Dành cho thêm mới</div>
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => { setExportDropdownOpen(false); handleDownloadTemplate(); }}
-                >
-                  <Download size={15} /> Tải file mẫu
-                </button>
-              </div>
-            )}
-          </div>
+
+          {/* 1 nút Export duy nhất → mở modal chọn */}
+          <button
+            className={styles.btnOutline}
+            onClick={handleOpenExportModal}
+            disabled={importing || exporting}
+            title="Chọn hướng dẫn và xuất file Excel"
+          >
+            {exporting ? <Loader2 size={16} className={styles.spin} /> : <Download size={16} />}
+            Export
+          </button>
 
           <button 
             className={styles.btnPrimary} 
@@ -1290,8 +1261,8 @@ export default function FirstAidManagement() {
                       <span
                         className={`${styles.badge} ${styles.badgeWoundType}`}
                       >
-                        {guide.wound_type.charAt(0).toUpperCase() +
-                          guide.wound_type.slice(1)}
+                        {/* BUG-02 FIX: Use formatWoundType() for Vietnamese display */}
+                        {formatWoundType(guide.wound_type)}
                       </span>
                       {guide.sub_type && (
                         <span
@@ -1506,6 +1477,28 @@ export default function FirstAidManagement() {
                   )}
                 </p>
               </div>
+
+              {/* Checkbox tự động kích hoạt */}
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                fontSize: '13px', cursor: 'pointer', userSelect: 'none',
+                padding: '6px 10px', borderRadius: '8px',
+                background: importAutoActivate ? '#f0fdf4' : '#f9fafb',
+                border: `1px solid ${importAutoActivate ? '#86efac' : '#e5e7eb'}`,
+                transition: 'all 0.2s',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={importAutoActivate}
+                  onChange={e => setImportAutoActivate(e.target.checked)}
+                  disabled={importing}
+                  style={{ width: '15px', height: '15px', accentColor: '#17805f', cursor: 'pointer' }}
+                />
+                <span>
+                  Tự động <strong>kích hoạt</strong> và vô hiệu hóa các bộ cùng loại
+                </span>
+              </label>
+
               <button className={styles.modalClose} onClick={() => !importing && setShowImportPreview(false)}>
                 <X size={20} />
               </button>
@@ -1559,8 +1552,8 @@ export default function FirstAidManagement() {
                         {row.sourceUrl && <div className={styles.previewUrl}>{row.sourceUrl.substring(0, 30)}...</div>}
                       </td>
                       <td>
-                        <span className={`${styles.badge} ${row.is_active ? styles.badgeSuccess : styles.badgeDefault}`}>
-                          {row.is_active ? 'Hoạt động' : 'Tắt'}
+                        <span className={`${styles.badge} ${importAutoActivate ? styles.badgeSuccess : styles.badgeDefault}`}>
+                          {importAutoActivate ? 'Hoạt động' : 'Không hoạt động'}
                         </span>
                       </td>
                     </tr>
@@ -1584,6 +1577,126 @@ export default function FirstAidManagement() {
                 {importing ? <><Loader2 size={16} className={styles.spin} /> Đang import...</> : <>
                   <Upload size={16} /> Import {importPreviewData.filter(r => r.selected && !r.error).length} dòng
                 </>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ─── Export Modal ─────────────────────────────────────────────── */}
+      {showExportModal && (
+        <div className={styles.modalOverlay} onClick={() => !exporting && setShowExportModal(false)}>
+          <div className={styles.importPreviewModal} onClick={e => e.stopPropagation()} style={{ maxWidth: '760px' }}>
+            <div className={styles.modalHeader}>
+              <div>
+                <h2>Chọn hướng dẫn để xuất Excel</h2>
+                <p className={styles.modalSubtitle}>
+                  {exportSelected.size} / {exportGuideList.length} hướng dẫn được chọn
+                </p>
+              </div>
+              <button className={styles.modalClose} onClick={() => !exporting && setShowExportModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={styles.importPreviewBody}>
+              {loadingExportList ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <Loader2 size={28} className={styles.spin} style={{ color: '#17805f' }} />
+                  <p style={{ marginTop: '0.5rem', color: '#6b7280' }}>Đang tải danh sách...</p>
+                </div>
+              ) : exportGuideList.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>Không có hướng dẫn nào.</p>
+              ) : (
+                <table className={styles.previewTable}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40px' }}>
+                        <input
+                          type="checkbox"
+                          checked={exportSelected.size === exportGuideList.length && exportGuideList.length > 0}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setExportSelected(new Set(exportGuideList.map(g => g.firstaidguide_id)));
+                            } else {
+                              setExportSelected(new Set());
+                            }
+                          }}
+                        />
+                      </th>
+                      <th>Tiêu đề</th>
+                      <th>Loại vết thương</th>
+                      <th>Mức độ</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exportGuideList.map(guide => (
+                      <tr
+                        key={guide.firstaidguide_id}
+                        className={exportSelected.has(guide.firstaidguide_id) ? styles.previewRowSelected : ''}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setExportSelected(prev => {
+                            const next = new Set(prev);
+                            if (next.has(guide.firstaidguide_id)) next.delete(guide.firstaidguide_id);
+                            else next.add(guide.firstaidguide_id);
+                            return next;
+                          });
+                        }}
+                      >
+                        <td onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={exportSelected.has(guide.firstaidguide_id)}
+                            onChange={() => {
+                              setExportSelected(prev => {
+                                const next = new Set(prev);
+                                if (next.has(guide.firstaidguide_id)) next.delete(guide.firstaidguide_id);
+                                else next.add(guide.firstaidguide_id);
+                                return next;
+                              });
+                            }}
+                          />
+                        </td>
+                        <td>
+                          <div className={styles.previewTitle}>{guide.title}</div>
+                          {guide.sub_type && <div className={styles.previewDesc}>{guide.sub_type}</div>}
+                        </td>
+                        <td>{formatWoundType(guide.wound_type)}</td>
+                        <td>
+                          <span className={`${styles.badge} ${getSeverityBadgeClass(guide.severity)}`}>
+                            {formatSeverity(guide.severity)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`${styles.badge} ${guide.is_active ? styles.badgeSuccess : styles.badgeDefault}`}>
+                            {guide.is_active ? 'Hoạt động' : 'Tắt'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className={styles.importPreviewFooter}>
+              <button
+                className={styles.btnOutline}
+                onClick={() => { setShowExportModal(false); setExportGuideList([]); setExportSelected(new Set()); }}
+                disabled={exporting}
+              >
+                Hủy
+              </button>
+              <button
+                className={styles.btnPrimary}
+                onClick={handleConfirmExport}
+                disabled={exporting || exportSelected.size === 0 || loadingExportList}
+              >
+                {exporting
+                  ? <><Loader2 size={16} className={styles.spin} /> Đang xuất...</>
+                  : <><Download size={16} /> Xuất {exportSelected.size} hướng dẫn</>
+                }
               </button>
             </div>
           </div>

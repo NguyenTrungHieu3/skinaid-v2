@@ -46,6 +46,9 @@ class WoundAnalysisService:
         """Get matching first aid guide for detection"""
         original_wound_type = detection.get("wound_type", "unknown")
         original_severity = detection.get("severity", "mild")
+        
+        # Ưu tiên lấy sub_type trực tiếp từ kết quả AI (như "skintear", "blister")
+        sub_type = detection.get("sub_type")
 
         wound_info = WoundParser.parse_from_separate_fields(
             original_wound_type,
@@ -54,11 +57,17 @@ class WoundAnalysisService:
 
         mapped_wound_type = WoundParser.map_wound_type_for_database(
             wound_info["wound_type"])
+            
+        final_sub_type = sub_type if sub_type else wound_info["sub_type"]
+        
+        # Convert English AI subtypes (skintear, blister) to Vietnamese DB formats (rách da, phồng rộp)
+        if final_sub_type:
+            final_sub_type = WoundParser.map_sub_type_for_database(final_sub_type)
 
         guide = await self.first_aid_service.get_guide(
             wound_type=mapped_wound_type,
             severity=wound_info["severity"],
-            sub_type=wound_info["sub_type"]
+            sub_type=final_sub_type
         )
 
         return guide

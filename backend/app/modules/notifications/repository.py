@@ -9,6 +9,7 @@ from sqlalchemy import and_, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.notifications.models.notification import Notification
+from app.modules.users.models.user import User
 from app.shared.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,12 @@ logger = logging.getLogger(__name__)
 class NotificationRepository(BaseRepository[Notification]):
     def __init__(self, db: AsyncSession) -> None:
         super().__init__(Notification, db)
+
+    async def get_by_id(self, notification_id: UUID) -> Optional[Notification]:
+        """Lấy một notification theo ID."""
+        stmt = select(Notification).where(Notification.notification_id == notification_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def get_user_notifications(
         self,
@@ -95,3 +102,9 @@ class NotificationRepository(BaseRepository[Notification]):
         )
         result = await self.db.execute(stmt)
         return result.rowcount
+
+    async def get_all_active_user_ids(self) -> list[UUID]:
+        """Lấy danh sách user_id của tất cả user đang active (dùng cho broadcast)."""
+        stmt = select(User.user_id).where(User.is_active == True)  # noqa: E712
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

@@ -43,15 +43,20 @@ class VerificationToken(SQLModel, table=True):
         cls,
         email: str,
         token_type: str,
-        expires_in_hours: int = 24
+        expires_in_hours: int = 24,
+        expires_in_minutes: Optional[int] = None,
     ) -> "VerificationToken":
         """Tạo token xác thực mới."""
         current_time = datetime.now(timezone.utc).replace(tzinfo=None)
+        if expires_in_minutes is not None:
+            delta = timedelta(minutes=expires_in_minutes)
+        else:
+            delta = timedelta(hours=expires_in_hours)
         return cls(
             email=email,
             token=cls._generate_token(),
             token_type=token_type,
-            expires_at=current_time + timedelta(hours=expires_in_hours),
+            expires_at=current_time + delta,
             is_used=False,
             created_at=current_time,
         )

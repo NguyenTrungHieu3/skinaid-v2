@@ -104,7 +104,7 @@ class UserService:
             await self._check_and_handle_conflicts(user_data.email, user_data.user_name)
             new_user_id = await self._create_new_user_with_profile(user_data)
             await self._assign_role(new_user_id, user_data.role)
-            await self.db.commit()
+            await self.db.flush()
 
             new_user = await self.repository.get_by_id(new_user_id)
             if new_user:
@@ -256,7 +256,7 @@ class UserService:
                         message=f"Role '{user_data.role}' not found")
                 await self.repository.assign_role(user_id, role.role_id)
 
-            await self.db.commit()
+            await self.db.flush()
 
             await self.audit_service.log_event(
                 action="UPDATE_USER",
@@ -291,7 +291,6 @@ class UserService:
         try:
             await self.repository.soft_delete(user)
             await self._rename_deleted_user(user)
-            await self.db.commit()
 
             await self.audit_service.log_event(
                 action="DELETE_USER",
@@ -303,6 +302,8 @@ class UserService:
                 user_agent=user_agent,
                 details={"deleted_email": user.email},
             )
+
+            await self.db.flush()
 
             return True
         except UserManagementNotFoundError:
@@ -325,7 +326,7 @@ class UserService:
 
         try:
             user.is_active = is_active
-            await self.db.commit()
+            await self.db.flush()
 
             await self.audit_service.log_event(
                 action="UPDATE_USER_STATUS",
@@ -373,7 +374,7 @@ class UserService:
         )
 
         await self.token_repository.create_verification_token(verification_token)
-        await self.db.commit()
+        await self.db.flush()
         await email_service.send_verification_email_async(user.email, token_str)
 
     async def resend_verification_email(

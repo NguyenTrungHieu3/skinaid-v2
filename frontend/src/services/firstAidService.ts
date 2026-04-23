@@ -75,3 +75,34 @@ export const deleteFirstAidGuide = async (id: string, softDelete = true) => {
   const response = await apiClient.delete(`/first-aid/guides/${id}`, { params: { hard_delete: hardDelete } });
   return response.data;
 };
+
+// ── Bulk Import ──────────────────────────────────────────────────────────────
+
+export interface BulkImportPayload {
+  guides: FirstAidGuideCreateData[];
+  filename?: string;
+  total_rows_in_file?: number;
+  skipped_rows?: number;
+  auto_deactivate_conflicts?: boolean;
+}
+
+export interface BulkImportFailedItem {
+  index: number;
+  title?: string;
+  wound_type?: string;
+  reason: string;
+}
+
+export interface BulkImportResult {
+  total_submitted: number;
+  success_count: number;
+  failed_count: number;
+  failed_items: BulkImportFailedItem[];
+  filename?: string;
+  imported_ids: string[];
+}
+
+export const bulkImportFirstAidGuides = async (payload: BulkImportPayload): Promise<{ success: boolean; data: BulkImportResult; message: string }> => {
+  const response = await apiClient.post('/first-aid/guides/bulk-import', payload);
+  return response.data;
+};

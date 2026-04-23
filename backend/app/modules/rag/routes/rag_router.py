@@ -1,64 +1,63 @@
+"""RAG admin endpoints — exceptions handled by app-level handlers."""
 from __future__ import annotations
 
-import json
-import uuid
 from typing import Optional
+from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile, status
-
-from app.core.dependencies.access_control import require_admin, require_auth
-from app.modules.users.models import User
-from app.modules.audit.dependencies import AuditSvc
-from app.modules.rag.dependencies import RagDocumentSvc
-from app.modules.rag.services.qdrant_service import qdrant_service
-from app.modules.rag.schemas.rag_document_schemas import (
-    RAGDocumentDeleteResponse,
-    RAGDocumentListResponse,
-    RAGDocumentResponse,
-    RAGHealthResponse,
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    Query,
+    UploadFile,
+    status,
 )
-from app.modules.rag.schemas.rag_schemas import RAGRetrieveRequest, RAGRetrieveResponse
-from app.shared.response import SuccessResponse
 
-router = APIRouter(prefix="/rag")
+from app.core.dependencies import require_admin
+from app.modules.rag.dependencies import (
+    get_qdrant_service,
+    get_rag_document_service,
+)
+from app.modules.rag.schemas.rag_document_schemas import (
+    DocumentDeleteResponse,
+    DocumentListResponse,
+    DocumentResponse,
+    HealthResponse,
+)
+from app.modules.rag.services.qdrant_service import QdrantService
+from app.modules.rag.services.rag_document_service import RagDocumentService
+from app.modules.users.models import User
+from app.modules.audit.dependencies import get_audit_service
+from app.modules.audit.services.audit_service import AuditService
+
+router = APIRouter(prefix="/rag", tags=["RAG - Knowledge Retrieval"])
+
 
 @router.post(
     "/documents",
-    response_model=SuccessResponse[RAGDocumentResponse],
-    status_code=status.HTTP_201_CREATED,
-    summary="Upload tài liệu RAG (Admin)",
-    description=(
-        "Admin upload file tài liệu vào knowledge base. "
-        "File được lưu vào disk và indexing chạy bất đồng bộ (background task). "
-        "Response trả về ngay với status=pending. "
-        "Định dạng hỗ trợ: pdf, md, txt, docx, html, csv."
-    ),
+    response_model=DocumentResponse,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def upload_document(
     background_tasks: BackgroundTasks,
-    service: RagDocumentSvc,
-    audit_service: AuditSvc,
-    current_user: User = Depends(require_admin),
-    file: UploadFile = File(..., description="File tài liệu cần index"),
-    doc_metadata: Optional[str] = Query(
-        None,
-        description='Metadata JSON (vd: \'{"topic": "burns", "source": "WHO"}\')',
+    file: UploadFile = File(...),
+    doc_metadata: Optional[str] = Form(
+        default=None,
+        description='JSON string optional (e.g. {"wound_type": "burn"})',
     ),
-) -> SuccessResponse:
-    parsed_metadata = None
-    if doc_metadata:
-        try:
-            parsed_metadata = json.loads(doc_metadata)
-        except json.JSONDecodeError:
-            parsed_metadata = {"raw": doc_metadata}
-
-    doc = await service.upload_document(
+    audit_service: AuditService = Depends(get_audit_service),
+    current_user: User = Depends(require_admin),
+    service: RagDocumentService = Depends(get_rag_document_service),
+) -> DocumentResponse:
+    doc = await service.upload(
         file=file,
-        background_tasks=background_tasks,
         uploaded_by=current_user.user_id,
-        doc_metadata=parsed_metadata,
+        doc_metadata_raw=doc_metadata,
+        background_tasks=background_tasks,
     )
-
+    
     await audit_service.log_event(
         action="upload_rag_document",
         user_id=current_user.user_id,
@@ -68,159 +67,79 @@ async def upload_document(
         success=True,
         description=f"Tải lên tài liệu cơ sở tri thức: {doc.file_name}"
     )
+    
+    return DocumentResponse.model_validate(doc)
 
-    return SuccessResponse(
-        message=f"Upload thành công. Đang indexing '{doc.file_name}' ở nền...",
-        data=RAGDocumentResponse.model_validate(doc),
-        status_code=status.HTTP_201_CREATED,
-    )
 
-@router.get(
-    "/documents",
-    response_model=SuccessResponse[RAGDocumentListResponse],
-    summary="Danh sách tài liệu RAG (Admin)",
-    description="Lấy danh sách tài liệu RAG với phân trang và filter theo status/file_type.",
-)
+@router.get("/documents", response_model=DocumentListResponse)
 async def list_documents(
-    service: RagDocumentSvc,
-    current_user: User = Depends(require_admin),
-    skip: int = Query(0, ge=0, description="Offset (bỏ qua N bản ghi đầu)"),
-    limit: int = Query(20, ge=1, le=100, description="Số bản ghi mỗi trang"),
-    status_filter: Optional[str] = Query(
-        None,
-        alias="status",
-        description="Lọc theo trạng thái: pending|indexing|indexed|failed|deleted",
-    ),
-    file_type: Optional[str] = Query(
-        None,
-        description="Lọc theo loại file: pdf|md|txt|docx|html|csv",
-    ),
-) -> SuccessResponse:
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    file_type_filter: Optional[str] = Query(None, alias="file_type"),
+    _admin: User = Depends(require_admin),
+    service: RagDocumentService = Depends(get_rag_document_service),
+) -> DocumentListResponse:
     items, total = await service.list_documents(
         skip=skip,
         limit=limit,
         status=status_filter,
-        file_type=file_type,
+        file_type=file_type_filter,
+    )
+    return DocumentListResponse(
+        total=total,
+        skip=skip,
+        limit=limit,
+        items=[DocumentResponse.model_validate(d) for d in items],
     )
 
-    return SuccessResponse(
-        message=f"Tìm thấy {total} tài liệu RAG",
-        data=RAGDocumentListResponse(
-            items=[RAGDocumentResponse.model_validate(doc) for doc in items],
-            total=total,
-            skip=skip,
-            limit=limit,
-        ),
-    )
 
-@router.get(
-    "/documents/{doc_id}",
-    response_model=SuccessResponse[RAGDocumentResponse],
-    summary="Chi tiết tài liệu RAG (Admin)",
-)
+@router.get("/documents/{doc_id}", response_model=DocumentResponse)
 async def get_document(
-    doc_id: uuid.UUID,
-    service: RagDocumentSvc,
-    current_user: User = Depends(require_admin),
-) -> SuccessResponse:
+    doc_id: UUID,
+    _admin: User = Depends(require_admin),
+    service: RagDocumentService = Depends(get_rag_document_service),
+) -> DocumentResponse:
     doc = await service.get_document(doc_id)
-    return SuccessResponse(
-        message="Lấy thông tin tài liệu thành công",
-        data=RAGDocumentResponse.model_validate(doc),
-    )
+    return DocumentResponse.model_validate(doc)
 
-@router.delete(
-    "/documents/{doc_id}",
-    response_model=SuccessResponse[RAGDocumentDeleteResponse],
-    summary="Xóa tài liệu RAG (Admin)",
-    description=(
-        "Xóa tài liệu RAG. "
-        "Thứ tự: (1) xóa Qdrant vectors → (2) xóa DB record. "
-        "Đảm bảo không có orphan vectors trong Qdrant."
-    ),
-)
+
+@router.delete("/documents/{doc_id}", response_model=DocumentDeleteResponse)
 async def delete_document(
-    doc_id: uuid.UUID,
-    service: RagDocumentSvc,
-    audit_service: AuditSvc,
-    current_user: User = Depends(require_admin),
-) -> SuccessResponse:
-    file_name, vectors_deleted = await service.delete_document(doc_id)
-
+    doc_id: UUID,
+    audit_service: AuditService = Depends(get_audit_service),
+    _admin: User = Depends(require_admin),
+    service: RagDocumentService = Depends(get_rag_document_service),
+) -> DocumentDeleteResponse:
+    doc = await service.get_document(doc_id)
+    file_name = doc.file_name
+    deleted = await service.delete_document(doc_id)
+    
     await audit_service.log_event(
         action="delete_rag_document",
-        user_id=current_user.user_id,
+        user_id=_admin.user_id,
         resource_type="rag_document",
         resource_id=str(doc_id),
-        details={"file_name": file_name, "vectors_deleted": vectors_deleted},
+        details={"file_name": file_name, "vectors_deleted": deleted},
         success=True,
         description=f"Xóa tài liệu cơ sở tri thức: {file_name}"
     )
-
-    return SuccessResponse(
-        message=f"Đã xóa tài liệu '{file_name}' và {vectors_deleted} vectors",
-        data=RAGDocumentDeleteResponse(
-            rag_document_id=doc_id,
-            file_name=file_name,
-            vectors_deleted=vectors_deleted,
-        ),
+    
+    return DocumentDeleteResponse(
+        rag_document_id=doc_id, file_name=file_name, deleted_points=deleted
     )
 
-@router.post(
-    "/retrieve",
-    response_model=SuccessResponse[RAGRetrieveResponse],
-    summary="Tìm kiếm RAG knowledge",
-    description=(
-        "Hybrid search (dense + BM25 sparse) trên Qdrant knowledge base. "
-        "Trả về các chunks liên quan nhất theo relevance_score. "
-        "Dùng trong B5 pipeline sau khi user trả lời questionnaire."
-    ),
-)
-async def retrieve(
-    request: RAGRetrieveRequest,
-    service: RagDocumentSvc,
-    current_user: User = Depends(require_auth),
-) -> SuccessResponse:
-    result = await service.search(
-        query=request.query,
-        top_k=request.top_k,
-        filters=request.filters,
-    )
 
-    return SuccessResponse(
-        message="Truy xuất tri thức thành công",
-        data=result,
+@router.get("/health", response_model=HealthResponse)
+async def health(
+    qdrant: QdrantService = Depends(get_qdrant_service),
+) -> HealthResponse:
+    ok = await qdrant.ping()
+    points = await qdrant.count_points() if ok else None
+    return HealthResponse(
+        status="ok" if ok else "degraded",
+        qdrant_ok=ok,
+        collection=qdrant.collection_name,
+        points_count=points,
+        detail=None if ok else "Qdrant not reachable",
     )
-
-@router.get(
-    "/health",
-    response_model=SuccessResponse[RAGHealthResponse],
-    summary="Health check Qdrant collection (Admin)",
-    description="Kiểm tra trạng thái kết nối Qdrant và thông tin collection.",
-)
-async def health_check(
-    current_user: User = Depends(require_admin),
-) -> SuccessResponse:
-    try:
-        info = await qdrant_service.get_collection_info()
-        return SuccessResponse(
-            message="Qdrant đang hoạt động bình thường",
-            data=RAGHealthResponse(
-                collection_name=info.get("collection_name", ""),
-                status=info.get("status", "unknown"),
-                points_count=info.get("points_count", 0),
-                vectors_count=info.get("vectors_count"),
-                qdrant_connected=True,
-            ),
-        )
-    except Exception as exc:
-        return SuccessResponse(
-            message=f"Qdrant không khả dụng: {str(exc)}",
-            data=RAGHealthResponse(
-                collection_name="",
-                status="red",
-                points_count=0,
-                qdrant_connected=False,
-            ),
-            status_code=503,
-        )

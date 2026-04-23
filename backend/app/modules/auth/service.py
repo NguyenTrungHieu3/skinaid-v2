@@ -405,8 +405,8 @@ class AuthService:
 
             if jti:
                 revoked_count = await self.revoke_token_family(jti)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("[AuthService] logout token decode failed: %s", exc)
 
         await self._audit(
             action="user_logout",
@@ -474,7 +474,7 @@ class AuthService:
         token_entity = VerificationToken.create_token(
             email=email,
             token_type="password_reset",
-            expires_in_hours=1,
+            expires_in_minutes=30,
         )
         token_entity.token = reset_token
         await self.token_repo.create_verification_token(token_entity)

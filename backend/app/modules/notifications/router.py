@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from app.core.dependencies.access_control import require_admin, require_auth
 from app.modules.notifications.dependencies import NotificationSvc
 from app.modules.notifications.schemas.api import (
+    BroadcastNotificationResponse,
     CreateNotificationRequest,
     NotificationListResponse,
     NotificationResponse,
@@ -94,6 +95,20 @@ async def mark_all_read(
     return SuccessResponse(message="Đã đánh dấu tất cả đã đọc", data=data)
 
 
+@router.get(
+    "/{notification_id}",
+    response_model=SuccessResponse[NotificationResponse],
+    summary="[Admin/User] Chi tiết một notification",
+)
+async def get_notification(
+    notification_id: UUID,
+    service: NotificationSvc,
+    _: User = Depends(require_auth),
+) -> SuccessResponse:
+    data = await service.get_notification_by_id(notification_id)
+    return SuccessResponse(message="Lấy thông báo thành công", data=data)
+
+
 @router.patch(
     "/{notification_id}/read",
     response_model=SuccessResponse[NotificationResponse],
@@ -136,13 +151,24 @@ async def delete_notification(
 
 @router.post(
     "",
-    response_model=SuccessResponse[NotificationResponse],
     summary="Tạo notification cho user (admin)",
+    description=(
+        "**recipient_type='specific'** (mặc định): gửi đến 1 user, cần truyền `user_id`.\n\n"
+        "**recipient_type='all'**: broadcast đến toàn bộ user active, không cần `user_id`."
+    ),
 )
 async def create_notification(
     request: CreateNotificationRequest,
     service: NotificationSvc,
     _: User = Depends(require_admin),
 ) -> SuccessResponse:
+    if request.recipient_type == "all":
+        data = await service.create_broadcast(request)
+        return SuccessResponse(
+            message=f"Đã broadcast thông báo đến {data.sent_count} người dùng",
+            data=data,
+            status_code=201,
+        )
+    # recipient_type == "specific" — logic gốc
     data = await service.create_for_user(request)
     return SuccessResponse(message="Tạo notification thành công", data=data, status_code=201)

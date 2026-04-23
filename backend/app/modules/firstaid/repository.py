@@ -64,6 +64,21 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
             )
             result = await self.get_one_by_stmt(fallback_stmt)
 
+        # Fallback to "general" severity if the specific severity is not found
+        if not result and severity.lower() != "general":
+            general_severity_stmt = (
+                select(FirstAidGuide)
+                .where(
+                    func.lower(FirstAidGuide.wound_type) == func.lower(wound_type),
+                    func.lower(FirstAidGuide.severity) == "general",
+                    FirstAidGuide.is_active == True,
+                    FirstAidGuide.is_deleted == False,
+                )
+                .order_by(desc(FirstAidGuide.version))
+                .limit(1)
+            )
+            result = await self.get_one_by_stmt(general_severity_stmt)
+
         return result
 
     async def check_duplicate_active(
@@ -136,7 +151,10 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
             conditions.append(FirstAidGuide.is_active == is_active)
         if search_query:
             conditions.append(
-                FirstAidGuide.title.ilike(f"%{search_query}%")
+                or_(
+                    FirstAidGuide.title.ilike(f"%{search_query}%"),
+                    FirstAidGuide.wound_type.ilike(f"%{search_query}%"),
+                )
             )
 
         count_stmt = (
@@ -199,3 +217,34 @@ class FirstAidRepository(BaseRepository[FirstAidGuide]):
             "type_stats": type_result,
             "severity_stats": sev_result,
         }
+
+    async def deactivate_active_guides(
+        self,
+        wound_type: str,
+        severity: str,
+        exclude_id: Optional[Any] = None,
+    ) -> int:
+        """
+        Deactivate all active guides with matching wound_type + severity.
+        Returns the number of guides deactivated.
+        Optionally exclude a specific guide ID (e.g. the one just created).
+        """
+        from sqlalchemy import update as sa_update
+
+        conditions = [
+            func.lower(FirstAidGuide.wound_type) == func.lower(wound_type),
+            func.lower(FirstAidGuide.severity) == func.lower(severity),
+            FirstAidGuide.is_active == True,
+            FirstAidGuide.is_deleted == False,
+        ]
+        if exclude_id:
+            conditions.append(FirstAidGuide.firstaidguide_id != exclude_id)
+
+        stmt = (
+            sa_update(FirstAidGuide)
+            .where(and_(*conditions))
+            .values(is_active=False)
+            .execution_options(synchronize_session="fetch")
+        )
+        result = await self.db.execute(stmt)
+        return result.rowcount

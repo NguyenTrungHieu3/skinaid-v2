@@ -1,4 +1,32 @@
 {
+  "errors": {
+    "generic": "An error occurred. Please try again.",
+    "network": "Network error. Please check your connection.",
+    "server": "Server error. Please try again later.",
+    "auth": {
+      "invalid_credentials": "Invalid username or password.",
+      "invalid_reset_token": "Password reset link is invalid or has expired.",
+      "account_locked": "Your account has been locked.",
+      "account_deactivated": "Account has been deactivated.",
+      "weak_password": "Password is not strong enough.",
+      "old_password_incorrect": "Current password is incorrect."
+    },
+    "user": {
+      "not_found": "User not found."
+    },
+    "map": {
+      "service_unavailable": "Map service is temporarily unavailable.",
+      "not_found": "Location not found."
+    },
+    "upload": {
+      "invalid_file": "Invalid file format. Please upload JPEG, PNG, or JPG.",
+      "file_too_large": "File size exceeds 5 MB.",
+      "dimension_invalid": "Image dimensions must be between 100x100 and 4096x4096."
+    },
+    "ai": {
+      "processing_failed": "Image processing failed. Please try again."
+    }
+  },
   "title": {
     "home_page": "Home page - SkinAid",
     "upload_page": "Upload page - SkinAid",
@@ -969,13 +997,17 @@
         "saving": "Saving..."
       },
       "options": {
-        "abrasion": "Scratch / Abrasion",
-        "bruise": "Bruise / Contusion",
+        "abrasion": "Abrasion",
+        "bruise": "Bruise",
         "burn": "Burn",
-        "cut": "Cut / Laceration",
+        "cut": "Cut",
+        "acne": "Acne",
+        "fungal": "Fungal Infection",
+        "psoriasis": "Psoriasis",
         "mild": "Mild",
         "moderate": "Moderate",
-        "severe": "Severe"
+        "severe": "Severe",
+        "general": "General"
       }
     },
     "first_aid_view": {

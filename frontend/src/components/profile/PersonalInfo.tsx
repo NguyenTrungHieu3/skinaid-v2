@@ -112,11 +112,13 @@ const PersonalInfo = () => {
       errors.fullName = t("personalInfo.validation.fullName_too_short");
     }
 
-    // Phone
-    if (data.phone.trim() && !/^[0-9]+$/.test(data.phone)) {
-      errors.phone = t("personalInfo.validation.phone_invalid");
-    } else if (!/^0\d{9}$/.test(data.phone)) {
-      errors.phone = t("personalInfo.validation.phone_format");
+    // BUG-03 FIX: Phone is optional — only validate format when user has typed something
+    if (data.phone.trim()) {
+      if (!/^[0-9]+$/.test(data.phone)) {
+        errors.phone = t("personalInfo.validation.phone_invalid");
+      } else if (!/^0\d{9}$/.test(data.phone)) {
+        errors.phone = t("personalInfo.validation.phone_format");
+      }
     }
 
     // Date of Birth
@@ -333,7 +335,7 @@ const PersonalInfo = () => {
           <div className={styles.cardHeader}>
             <h3>{t("personalInfo.basic_info")}</h3>
             {!isEditingBasic && (
-              <button className={styles.editBtn} onClick={handleEditBasic}>
+              <button type="button" className={styles.editBtn} onClick={handleEditBasic}>
                 <FaPen />
               </button>
             )}
@@ -407,12 +409,13 @@ const PersonalInfo = () => {
             {isEditingBasic && (
               <div className={styles.action}>
                 <button
+                  type="button"
                   className={styles.btnCancel}
                   onClick={handleCancelBasic}
                 >
                   {t("personalInfo.cancel_button")}
                 </button>
-                <button className={styles.btnSave} onClick={handleSaveBasic}>
+                <button type="button" className={styles.btnSave} onClick={handleSaveBasic}>
                   <FaSave /> {t("personalInfo.save_button")}
                 </button>
               </div>

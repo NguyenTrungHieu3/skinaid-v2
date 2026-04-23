@@ -8,6 +8,9 @@ from app.modules.users.models import User
 from app.modules.audit.dependencies import AuditSvc
 from app.modules.firstaid.dependencies import FirstAidSvc
 from app.modules.firstaid.schemas.api import (
+    BulkImportRequest,
+    BulkImportResponse,
+    BulkImportFailedItem,
     CreateGuideRequest,
     FirstAidGuideResponse,
     GuideStatsResponse,
@@ -154,6 +157,117 @@ async def create_guide(
     return SuccessResponse(
         message="Tạo hướng dẫn thành công",
         data=FirstAidGuideResponse.model_validate(guide),
+    )
+
+
+@router.post(
+    "/guides/bulk-import",
+    response_model=SuccessResponse[BulkImportResponse],
+    status_code=status.HTTP_207_MULTI_STATUS,
+    summary="Import hàng loạt hướng dẫn từ Excel (Admin)",
+)
+async def bulk_import_guides(
+    request: BulkImportRequest,
+    service: FirstAidSvc,
+    audit_service: AuditSvc,
+    current_user: User = Depends(require_admin),
+) -> SuccessResponse:
+    """
+    Import hàng loạt hướng dẫn sơ cứu từ file Excel.
+    Ghi một audit log tổng hợp với đầy đủ metadata sau khi hoàn thành.
+    """
+    success_count = 0
+    deactivated_count = 0
+    failed_items: list[BulkImportFailedItem] = []
+    imported_ids: list[str] = []
+
+    for idx, guide_request in enumerate(request.guides):
+        try:
+            if request.auto_deactivate_conflicts and guide_request.is_active:
+                # Deactivate existing active guides of same wound_type/severity first
+                deactivated = await service.repository.deactivate_active_guides(
+                    wound_type=guide_request.wound_type,
+                    severity=guide_request.severity,
+                )
+                deactivated_count += deactivated
+
+            guide = await service.create_guide(guide_request, current_user.user_id)
+            imported_ids.append(str(guide.firstaidguide_id))
+            success_count += 1
+        except Exception as exc:
+            exc_name = type(exc).__name__
+            reason = str(exc)
+            if "AlreadyExists" in exc_name or "409" in reason:
+                reason = f"Đã tồn tại bản ghi active cho {guide_request.wound_type}/{guide_request.severity}"
+            elif "InvalidGuideData" in exc_name or "422" in reason:
+                reason = "Dữ liệu không hợp lệ"
+
+            failed_items.append(BulkImportFailedItem(
+                index=idx,
+                title=guide_request.title,
+                wound_type=guide_request.wound_type,
+                reason=reason,
+            ))
+
+    failed_count = len(failed_items)
+    overall_success = failed_count == 0
+
+    # Build the audit metadata — single comprehensive log entry
+    audit_details = {
+        "filename": request.filename,
+        "total_rows_in_file": request.total_rows_in_file,
+        "skipped_rows_before_submit": request.skipped_rows,
+        "total_submitted": len(request.guides),
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "auto_deactivate_conflicts": request.auto_deactivate_conflicts,
+        "deactivated_count": deactivated_count,
+        "imported_ids": imported_ids[:50],
+        "failed_items": [
+            {"index": f.index, "title": f.title, "reason": f.reason}
+            for f in failed_items
+        ],
+    }
+
+    if overall_success:
+        description = (
+            f"Import Excel thành công: {success_count}/{len(request.guides)} hướng dẫn"
+            + (f" từ file '{request.filename}'" if request.filename else "")
+            + (f" — đã vô hiệu hóa {deactivated_count} bộ cũ" if deactivated_count else "")
+        )
+        level = "info"
+    else:
+        description = (
+            f"Import Excel một phần: {success_count} thành công, "
+            f"{failed_count} thất bại / tổng {len(request.guides)}"
+            + (f" — file '{request.filename}'" if request.filename else "")
+        )
+        level = "warning"
+
+    await audit_service.log_event(
+        action="bulk_import_first_aid",
+        user_id=current_user.user_id,
+        resource_type="first_aid_guide",
+        resource_id=None,
+        success=overall_success,
+        level=level,
+        log_type="admin_action",
+        description=description,
+        details=audit_details,
+    )
+
+    result = BulkImportResponse(
+        total_submitted=len(request.guides),
+        success_count=success_count,
+        failed_count=failed_count,
+        failed_items=failed_items,
+        filename=request.filename,
+        imported_ids=imported_ids,
+    )
+
+    return SuccessResponse(
+        message=description,
+        data=result,
     )
 
 

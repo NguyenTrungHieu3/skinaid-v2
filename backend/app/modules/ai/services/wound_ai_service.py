@@ -1,5 +1,6 @@
 import os
 import cv2
+import logging
 import numpy as np
 from typing import Dict, Any
 import aiofiles
@@ -7,6 +8,8 @@ from app.core.config import settings
 from app.core.clients.http_client import HTTPClient
 from app.modules.ai.utils.wound_parser import WoundParser
 from app.modules.ai.constants import WoundConstants
+
+logger = logging.getLogger(__name__)
 
 
 class WoundAIService:
@@ -199,7 +202,8 @@ class WoundAIService:
 
                     final_detections.append(final_detection)
 
-                except Exception:
+                except Exception as exc:
+                    logger.warning("[WoundAI] detection %d parse failed: %s", i, exc)
                     continue
 
             reliable_detections = [
@@ -224,7 +228,8 @@ class WoundAIService:
 
             return result
 
-        except Exception:
+        except Exception as exc:
+            logger.exception("[WoundAI] processing failed: %s", exc)
             return {
                 "success": False,
                 "error": "AI processing failed",
@@ -251,7 +256,8 @@ class WoundAIService:
                 "status": "healthy" if healthy else "unhealthy"
             }
 
-        except Exception:
+        except Exception as exc:
+            logger.warning("[WoundAI] health check failed: %s", exc)
             return {
                 "overall_health": False,
                 "status": "unhealthy"

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -21,6 +21,7 @@ class NotificationResponse(BaseModel):
     image_url: Optional[str]
 
     priority: str
+    severity: str
     scheduled_at: Optional[datetime]
     sent_at: Optional[datetime]
     delivered_at: Optional[datetime]
@@ -58,7 +59,21 @@ class UnreadCountResponse(BaseModel):
 
 
 class CreateNotificationRequest(BaseModel):
-    user_id: UUID
+    """
+    Tạo thông báo cho người dùng.
+
+    - recipient_type="specific" (mặc định): gửi đến user_id cụ thể.
+    - recipient_type="all": gửi đến toàn bộ user đang active;
+      không cần truyền user_id.
+    """
+    recipient_type: Literal["specific", "all"] = Field(
+        default="specific",
+        description='"specific" → gửi 1 user, "all" → broadcast toàn bộ user active',
+    )
+    user_id: Optional[UUID] = Field(
+        default=None,
+        description="Bắt buộc khi recipient_type='specific'",
+    )
     title: str = Field(max_length=255)
     body: str
     notification_type: str = Field(max_length=50)
@@ -66,3 +81,19 @@ class CreateNotificationRequest(BaseModel):
     action_url: Optional[str] = None
     image_url: Optional[str] = None
     priority: str = Field(default="normal", max_length=20)
+    severity: str = Field(default="info", max_length=20)
+
+    @model_validator(mode="after")
+    def _check_user_id_required(self) -> "CreateNotificationRequest":
+        if self.recipient_type == "specific" and self.user_id is None:
+            raise ValueError("user_id là bắt buộc khi recipient_type='specific'")
+        return self
+
+
+class BroadcastNotificationResponse(BaseModel):
+    """Trả về khi recipient_type='all'."""
+    sent_count: int
+    recipient_type: str = "all"
+    title: str
+    notification_type: str
+

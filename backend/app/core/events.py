@@ -49,8 +49,16 @@ async def lifespan(app: FastAPI):
     print("Scheduler ready (cleanup: 3:00 AM daily)")
 
     print("Initializing Qdrant (RAG vector store)...")
-    await qdrant_service.initialize()
-    print("Qdrant ready")
+    try:
+        await qdrant_service.initialize()
+        print("Qdrant ready")
+    except Exception as e:
+        # Non-fatal: server starts without RAG if OpenAI key is invalid or Qdrant is unavailable
+        logger.warning(
+            "[Startup] Qdrant initialization failed — RAG features will be disabled. "
+            "Reason: %s", str(e)
+        )
+        print(f"[WARNING] Qdrant skipped: {type(e).__name__} — RAG features disabled")
 
     print("=" * 50)
     print("Server started successfully!")

@@ -1,133 +1,78 @@
+"""RAG module exceptions — extend shared AppException."""
 from __future__ import annotations
 
 from typing import Any
 
-from app.shared.exceptions.base import (
-    AppException,
+from app.shared.exceptions import (
     BadRequestError,
     InternalError,
     NotFoundError,
+    ServiceUnavailableError,
 )
 
 
-class RAGException(AppException):
-    """Base exception cho toàn bộ module RAG."""
-
-    status_code: int = 500
-    error_code: str = "RAG_ERROR"
+class UnsupportedFileType(BadRequestError):
+    error_code = "RAG_UNSUPPORTED_FILE_TYPE"
 
     def __init__(
         self,
-        message: str = "Đã xảy ra lỗi RAG",
+        message: str = "File type không được hỗ trợ",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
 
 
-class QdrantCollectionError(RAGException):
-    """Lỗi khi thao tác với Qdrant collection (HTTP 503)."""
-
-    status_code: int = 503
-    error_code: str = "QDRANT_COLLECTION_ERROR"
+class FileTooLarge(BadRequestError):
+    error_code = "RAG_FILE_TOO_LARGE"
+    status_code = 413
 
     def __init__(
         self,
-        message: str = "Lỗi kết nối hoặc thao tác với Qdrant collection",
+        message: str = "File vượt quá giới hạn kích thước",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
 
 
-class QdrantSearchError(RAGException):
-    """Lỗi khi thực hiện hybrid search trên Qdrant (HTTP 503)."""
-
-    status_code: int = 503
-    error_code: str = "QDRANT_SEARCH_ERROR"
+class LoaderError(InternalError):
+    error_code = "RAG_LOADER_ERROR"
 
     def __init__(
         self,
-        message: str = "Tìm kiếm vector thất bại",
+        message: str = "Không đọc được file",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
 
 
-class QdrantUpsertError(RAGException):
-    """Lỗi khi upsert document chunks vào Qdrant (HTTP 503)."""
-
-    status_code: int = 503
-    error_code: str = "QDRANT_UPSERT_ERROR"
+class IndexingError(InternalError):
+    error_code = "RAG_INDEXING_ERROR"
 
     def __init__(
         self,
-        message: str = "Không thể upsert tài liệu vào Qdrant",
+        message: str = "Lỗi khi index tài liệu",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
 
 
-class QdrantDeleteError(RAGException):
-    """Lỗi khi xóa vector points khỏi Qdrant (HTTP 503)."""
-
-    status_code: int = 503
-    error_code: str = "QDRANT_DELETE_ERROR"
+class DocumentNotFound(NotFoundError):
+    error_code = "RAG_DOCUMENT_NOT_FOUND"
 
     def __init__(
         self,
-        message: str = "Không thể xóa vector points khỏi Qdrant",
+        message: str = "Tài liệu không tồn tại",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)
 
 
-class RAGDocumentNotFoundError(NotFoundError):
-    """Tài liệu RAG không tồn tại trong database (HTTP 404)."""
-
-    error_code: str = "RAG_DOCUMENT_NOT_FOUND"
+class QdrantOperationError(ServiceUnavailableError):
+    error_code = "RAG_QDRANT_ERROR"
 
     def __init__(
         self,
-        message: str = "Tài liệu RAG không tìm thấy",
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message=message, details=details)
-
-
-class UnsupportedFileTypeError(BadRequestError):
-    """Định dạng file không được hỗ trợ bởi RAG loader (HTTP 400)."""
-
-    error_code: str = "RAG_UNSUPPORTED_FILE_TYPE"
-
-    def __init__(
-        self,
-        message: str = "Định dạng file không được hỗ trợ cho RAG indexing",
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message=message, details=details)
-
-
-class RAGIndexingError(InternalError):
-    """Lỗi trong quá trình index pipeline (HTTP 500)."""
-
-    error_code: str = "RAG_INDEXING_ERROR"
-
-    def __init__(
-        self,
-        message: str = "Lỗi trong quá trình index tài liệu RAG",
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message=message, details=details)
-
-
-class RAGServiceNotInitializedError(RAGException):
-    """QdrantService chưa được khởi tạo trước khi sử dụng (HTTP 500)."""
-
-    status_code: int = 500
-    error_code: str = "RAG_SERVICE_NOT_INITIALIZED"
-
-    def __init__(
-        self,
-        message: str = "QdrantService chưa được khởi tạo. Kiểm tra lifespan startup.",
+        message: str = "Lỗi kết nối Qdrant",
         details: dict[str, Any] | None = None,
     ) -> None:
         super().__init__(message=message, details=details)

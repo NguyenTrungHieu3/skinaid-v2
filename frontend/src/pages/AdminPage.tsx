@@ -10,6 +10,7 @@ import RagManagement from '../components/admin/RagManagement';
 import QuestionnaireManagement from '../components/admin/QuestionnaireManagement';
 import LLMManagement from '../components/admin/LLMManagement';
 import NotificationManagement from '../components/admin/NotificationManagement';
+import NotificationDetail from '../components/admin/NotificationDetail';
 import Sidebar from '../components/admin/Sidebar';
 import TopBar from '../components/admin/TopBar';
 import AdminFooter from '../components/admin/AdminFooter';
@@ -62,10 +63,14 @@ export default function AdminPage() {
       case 'questionnaires':
         return <QuestionnaireManagement />;
       case 'notifications':
-        return <NotificationManagement />;
+        return <NotificationManagement onNavigate={(page: string) => setCurrentPage(page)} />;
       case 'logs':
         return <AdminLogs />;
       default:
+        if (currentPage.startsWith('notification_detail_')) {
+          const id = currentPage.replace('notification_detail_', '');
+          return <NotificationDetail notificationId={id} onBack={() => setCurrentPage('notifications')} />;
+        }
         return <AdminDashboard />;
     }
   };

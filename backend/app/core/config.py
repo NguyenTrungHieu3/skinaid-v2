@@ -104,6 +104,7 @@ class Settings(BaseSettings):
     RAG_DOCS_PATH: str = "docs/RAGDocumentation"
     RAG_SCORE_THRESHOLD: float = 0.5
     RAG_SPARSE_MODEL: str = "Qdrant/bm25"
+    TESSERACT_CMD: str = ""
 
     # CORS — đọc từ env var CORS_ORIGINS=https://a.com,https://b.com
     # Validator bên dưới sẽ parse CSV string thành List
