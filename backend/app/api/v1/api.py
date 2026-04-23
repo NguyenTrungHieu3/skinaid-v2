@@ -19,6 +19,7 @@ from app.modules.llm.routes.llm_admin_router import router as llm_admin_router
 from app.modules.questionnaires.routes.questionnaire_router import router as questionnaire_crud_router
 from app.modules.questionnaires.routes.import_router import router as questionnaire_import_router
 from app.modules.questionnaires.routes.export_router import router as questionnaire_export_router
+from app.modules.questionnaires.routes.user_response_router import router as wound_response_router
 from app.modules.notifications.router import router as notifications_router
 
 router = APIRouter()
@@ -43,4 +44,5 @@ router.include_router(notifications_router, tags=["Notifications"])
 router.include_router(questionnaire_crud_router, tags=["Questionnaires Management"])
 router.include_router(questionnaire_import_router, tags=["Questionnaires Management"])
 router.include_router(questionnaire_export_router, tags=["Questionnaires Management"])
+router.include_router(wound_response_router, tags=["Wound Responses (User)"])
 
