@@ -346,8 +346,11 @@
     "severity": {
       "Mild": "Nhẹ",
       "Moderate": "Trung bình",
-      "Severe": "Nặng"
-    }
+      "Severe": "Nặng",
+      "General": "Tổng quát"
+    },
+    "healing_time_consult": "Tham khảo bác sĩ da liễu",
+    "healing_time_loading": "Đang cập nhật..."
   },
   "download": {
     "title": "Tải báo cáo",

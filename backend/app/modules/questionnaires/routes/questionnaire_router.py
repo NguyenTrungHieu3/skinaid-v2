@@ -47,7 +47,7 @@ async def create_questionnaire(
         action="create_questionnaire",
         user_id=current_user.user_id,
         resource_type="questionnaire",
-        resource_id=str(result.id),
+        resource_id=str(result.questionnaire_id),
         details={"title": result.title, "wound_type": result.wound_type},
         success=True,
         description=f"Tạo bộ câu hỏi: {result.title}"

@@ -352,8 +352,11 @@
     "severity": {
       "Mild": "Mild",
       "Moderate": "Moderate",
-      "Severe": "Severe"
-    }
+      "Severe": "Severe",
+      "General": "General"
+    },
+    "healing_time_consult": "Consult a dermatologist",
+    "healing_time_loading": "Updating..."
   },
   "download": {
     "title": "Download Report",

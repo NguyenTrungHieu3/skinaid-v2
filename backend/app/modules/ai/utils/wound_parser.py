@@ -3,8 +3,8 @@ from typing import Dict, Any
 # AI class names that are dermatological conditions with no severity suffix
 # and need to be remapped to the canonical wound_type stored in the DB.
 _DERM_SINGLE_WORD = {
-    "ringworm": ("fungal", "mild"),
-    "psoriasis": ("psoriasis", "mild"),
+    "ringworm": ("fungal", "general"),
+    "psoriasis": ("psoriasis", "general"),
 }
 
 # Multi-word dermatological prefixes whose first token is the wound type
@@ -30,18 +30,23 @@ class WoundParser:
         parts = normalized.split("_")
 
         if len(parts) < 2:
+            wound_type = _DERM_TYPE_REMAP.get(normalized, normalized)
             return {
-                "wound_type": normalized,
-                "severity": "mild",
+                "wound_type": wound_type,
+                "severity": "general" if wound_type in ["psoriasis", "fungal"] else "mild",
                 "sub_type": None,
             }
 
         raw_type = parts[0]
         wound_type = _DERM_TYPE_REMAP.get(raw_type, raw_type)
+        
+        severity = parts[1]
+        if wound_type in ["psoriasis", "fungal"]:
+            severity = "general"
 
         return {
             "wound_type": wound_type,
-            "severity": parts[1],
+            "severity": severity,
             "sub_type": "_".join(parts[2:]) if len(parts) > 2 else None,
         }
 
@@ -54,13 +59,16 @@ class WoundParser:
 
         base_severity = "mild"
         for part in parts:
-            if part in ["mild", "moderate", "severe"]:
+            if part in ["mild", "moderate", "severe", "general"]:
                 base_severity = part
                 break
+                
+        if normalized_type in ["psoriasis", "fungal"]:
+            base_severity = "general"
 
         severity_idx = -1
         for i, part in enumerate(parts):
-            if part in ["mild", "moderate", "severe"]:
+            if part in ["mild", "moderate", "severe", "general"]:
                 severity_idx = i
                 break
 

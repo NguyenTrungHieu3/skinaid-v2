@@ -27,6 +27,7 @@ _SEVERITY_DISPLAY: Final[dict[str, str]] = {
     "mild":     "Nhẹ (Mild)",
     "moderate": "Trung bình (Moderate)",
     "severe":   "Nặng (Severe)",
+    "general":  "Tổng quát (General)",
 }
 
 _SUB_TYPE_DISPLAY: Final[dict[str, str]] = {
