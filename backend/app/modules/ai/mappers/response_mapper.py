@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 from datetime import datetime
 from sqlalchemy import inspect
@@ -12,6 +12,7 @@ class ResponseMapper:
         analysis: Any,
         include_detections: bool = True,
         include_firstaid_details: bool = True,
+        user_responses: Optional[List[Any]] = None,
     ) -> Dict:
         response = {
             'analysis_id': str(analysis.analysis_id),
@@ -43,6 +44,17 @@ class ResponseMapper:
                 ]
             else:
                 response['significant_wounds'] = []
+                
+        if user_responses is not None:
+            response['user_responses'] = [
+                {
+                    'response_id': str(r.response_id),
+                    'question_id': str(r.question_id),
+                    'answer_id': str(r.answer_id),
+                    'created_at': r.created_at.isoformat()
+                } for r in user_responses
+            ]
+            
         return response
 
     @staticmethod
