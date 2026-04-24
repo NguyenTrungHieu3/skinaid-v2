@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.core.database import init_db
 from app.core.redis import init_redis, close_redis
 from app.core.scheduler import start_scheduler, shutdown_scheduler
 from app.core.startup import run_startup_checks
@@ -31,10 +30,6 @@ async def lifespan(app: FastAPI):
     print("=" * 50)
 
     run_startup_checks()
-
-    print("Initializing database...")
-    await init_db()
-    print("Database ready")
 
     print("Connecting to Redis...")
     await init_redis()

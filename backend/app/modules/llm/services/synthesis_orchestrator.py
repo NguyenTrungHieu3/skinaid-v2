@@ -164,7 +164,7 @@ class SynthesisOrchestrator:
         elif isinstance(rag_result, list):
             rag_chunks = [
                 RAGChunkSnapshot(
-                    content=chunk.content,
+                    content=chunk.text,
                     relevance_score=chunk.score,
                 )
                 for chunk in rag_result
