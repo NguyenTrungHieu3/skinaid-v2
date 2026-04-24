@@ -10,6 +10,7 @@ from app.modules.ai.dependencies import (
     ResponseMapperDep,
     get_guest_session_id,
 )
+from app.modules.questionnaires.dependencies import QuestionnaireRepo
 from app.modules.ai.schemas.wound_analysis_schemas import (
     BatchAnalysisResponse,
     WoundAnalysisDetailResponse,
@@ -121,6 +122,7 @@ async def get_analysis_history(
 async def get_analysis_detail(
     analysis_service: WoundAnalysisSvc,
     response_mapper: ResponseMapperDep,
+    questionnaire_repo: QuestionnaireRepo,
     analysis_id: UUID,
     current_user: Optional[User] = Depends(allow_guest),
     guest_session_id: Optional[UUID] = Depends(get_guest_session_id),
@@ -142,8 +144,10 @@ async def get_analysis_detail(
         if not guest_session_id or guest_session_id != analysis.guest_session_id:
             raise ForbiddenError(message=Message.AI_ACCESS_DENIED_MSG)
 
+    user_responses = await questionnaire_repo.get_user_responses_by_analysis(analysis_id)
+
     response_data = response_mapper.map_wound_analysis(
-        analysis, include_detections=True
+        analysis, include_detections=True, user_responses=user_responses
     )
 
     return SuccessResponse(
