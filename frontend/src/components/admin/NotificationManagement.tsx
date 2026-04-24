@@ -90,7 +90,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Create modal
@@ -128,7 +128,6 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
         skip,
         limit: itemsPerPage,
         notification_type: typeFilter !== 'all' ? typeFilter : undefined,
-        unread_only: statusFilter === 'unread' ? true : undefined,
       });
       setNotifications(data.items);
       setTotal(data.total);
@@ -142,7 +141,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
   useEffect(() => {
     fetchNotifications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, typeFilter, statusFilter, searchTerm]);
+  }, [currentPage, typeFilter, priorityFilter, searchTerm]);
 
   // Debounce search
   useEffect(() => {
@@ -154,13 +153,14 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  // Client-side search filter
-  const filteredNotifs = searchTerm
-    ? notifications.filter(n =>
+  // Client-side search + priority filter
+  const filteredNotifs = notifications.filter(n => {
+    const matchSearch = !searchTerm ||
       n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      n.body.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    : notifications;
+      n.body.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchPriority = priorityFilter === 'all' || n.priority === priorityFilter;
+    return matchSearch && matchPriority;
+  });
 
   // Deduplicate for admin view: Group broadcast notifications together
   const deduplicatedNotifs = useMemo(() => {
@@ -362,15 +362,16 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
           </div>
         </div>
         <div className={styles.filterGroup}>
-          <label>Trạng thái</label>
+          <label>Độ ưu tiên</label>
           <select
             className={styles.filterSelect}
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+            value={priorityFilter}
+            onChange={(e) => { setPriorityFilter(e.target.value); setCurrentPage(1); }}
           >
             <option value="all">Tất cả</option>
-            <option value="unread">Chưa đọc</option>
-            <option value="read">Đã đọc</option>
+            <option value="low">Thấp</option>
+            <option value="normal">Bình thường</option>
+            <option value="high">Cao</option>
           </select>
         </div>
         <div className={styles.filterGroup}>
@@ -388,11 +389,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
             <option value="warning">Cảnh báo</option>
           </select>
         </div>
-        <div className={styles.actionBar}>
-          <button className={styles.btnMarkAll} onClick={handleMarkAllRead}>
-            <CheckCircle size={14} /> Đánh dấu tất cả đã đọc
-          </button>
-        </div>
+
       </div>
 
       {/* Table */}
@@ -415,7 +412,6 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
                 <tr>
                   <th style={{ width: '40px' }}></th>
                   <th>Thông báo</th>
-                  <th>Trạng thái</th>
                   <th>Loại</th>
                   <th>Độ ưu tiên</th>
                   <th>Thời gian</th>
@@ -454,13 +450,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
                           <div className={styles.notifCellBody}>{notif.body}</div>
                         </div>
                       </td>
-                      <td>
-                        {notif.is_read ? (
-                          <span className={`${styles.badge} ${styles.statusRead}`}>Đã đọc</span>
-                        ) : (
-                          <span className={`${styles.badge} ${styles.statusUnread}`}>Chưa đọc</span>
-                        )}
-                      </td>
+
                       <td>
                         <span className={`${styles.badge} ${styles[typeInfo.className] || ''}`}>
                           {typeInfo.label}
