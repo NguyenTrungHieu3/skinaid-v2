@@ -1,19 +1,20 @@
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { authService } from "../services/authService";
+import type { SignInPayload, User } from "../constants/types";
 
 interface AuthContextType {
-  user: any;
+  user: User | null;
   token: string | null;
   isLoading: boolean;
-  signIn: (data: any) => Promise<void>;
+  signIn: (data: SignInPayload, rememberMe: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,39 +25,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const loadStorageData = async () => {
     try {
       const savedToken = await SecureStore.getItemAsync("userToken");
-      if (savedToken) {
+      const savedRemember = await SecureStore.getItemAsync("rememberMe");
+      const isRemember = savedRemember ? JSON.parse(savedRemember) : true;
+
+      if (savedToken && isRemember) {
         setToken(savedToken);
-        // Có thể gọi thêm API /me ở đây để lấy user info mới nhất
+        const res = await authService.getMe(savedToken);
+        setUser(res.data?.data || res.data);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      await SecureStore.deleteItemAsync("userToken");
+      await SecureStore.deleteItemAsync("refreshToken");
+      setToken(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Trong file AuthContext.tsx
-  const signIn = async (data: any) => {
+  const signIn = async (data: SignInPayload, rememberMe: boolean) => {
     const response = await authService.signIn(data);
-
-    // LOG ĐỂ KIỂM TRA (Rất quan trọng)
-    console.log("Response Full:", response.data);
-
-    // Theo Swagger Ảnh 4: Dữ liệu nằm trong response.data.data
-    const authData = response.data.data;
+    const authData = response.data?.data || response.data;
 
     if (authData && authData.access_token) {
-      const { access_token, user } = authData;
+      const { access_token, refresh_token, user: userData } = authData;
 
       setToken(access_token);
-      setUser(user);
+      setUser(userData);
 
-      // Lưu token vào SecureStore
-      await SecureStore.setItemAsync("userToken", access_token);
+      await SecureStore.setItemAsync("rememberMe", JSON.stringify(rememberMe));
 
-      // Nếu backend có trả về refresh_token, bạn cũng nên lưu lại nếu cần
-      if (authData.refresh_token) {
-        await SecureStore.setItemAsync("refreshToken", authData.refresh_token);
+      if (rememberMe) {
+        await SecureStore.setItemAsync("userToken", access_token);
+        if (refresh_token) {
+          await SecureStore.setItemAsync("refreshToken", refresh_token);
+        }
       }
     } else {
       throw new Error("Không nhận được token từ server");
@@ -64,9 +67,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore logout API errors — still clear local state
+    }
     setToken(null);
     setUser(null);
     await SecureStore.deleteItemAsync("userToken");
+    await SecureStore.deleteItemAsync("refreshToken");
+    await SecureStore.deleteItemAsync("rememberMe");
   };
 
   return (

@@ -4,17 +4,18 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ImageQualityIssue } from "../../constants/imageCheckTypes";
 
+const TEAL = "#02A18D";
+
 interface FailStateProps {
   issues: ImageQualityIssue[];
   onAutoFix: () => void;
   onSkip: () => void;
 }
 
-export default function FailState({
-  issues,
-  onAutoFix,
-  onSkip,
-}: FailStateProps) {
+export default function FailState({ issues, onAutoFix, onSkip }: FailStateProps) {
+  const hasFixableIssue = issues.some((i) => i.autoFixable);
+  const allUnfixable = issues.every((i) => !i.autoFixable);
+
   return (
     <View style={styles.container}>
       {/* Error banner */}
@@ -23,32 +24,53 @@ export default function FailState({
         <Text style={styles.errorBannerText}>Phát hiện vấn đề chất lượng</Text>
       </View>
 
-      {/* Issue list */}
+      {/* Issue list với description */}
       <View style={styles.issueList}>
         {issues.map((issue) => (
-          <View key={issue.id} style={styles.issueRow}>
-            <Text style={styles.issueArrow}>↳</Text>
-            <Text style={styles.issueText}>{issue.label}</Text>
+          <View key={issue.id} style={styles.issueCard}>
+            {/* Header row */}
+            <View style={styles.issueHeader}>
+              <View style={styles.issueDot} />
+              <Text style={styles.issueLabel}>{issue.label}</Text>
+              {issue.autoFixable && (
+                <View style={styles.fixableBadge}>
+                  <Feather name="zap" size={10} color={TEAL} />
+                  <Text style={styles.fixableBadgeText}>Có thể sửa</Text>
+                </View>
+              )}
+            </View>
+            {/* Description */}
+            <Text style={styles.issueDesc}>{issue.description}</Text>
           </View>
         ))}
       </View>
 
-      <Text style={styles.hint}>Chúng tôi có thể thử sửa lỗi này tự động.</Text>
+      {/* Auto-fix button — chỉ hiện khi có issue có thể fix */}
+      {hasFixableIssue && (
+        <>
+          <Text style={styles.hint}>
+            {allUnfixable
+              ? "Vui lòng chụp lại ảnh để được kết quả tốt nhất."
+              : "Hệ thống có thể tự động sửa một số vấn đề trên."}
+          </Text>
 
-      {/* Auto-fix button */}
-      <TouchableOpacity
-        style={styles.autoFixBtn}
-        onPress={onAutoFix}
-        activeOpacity={0.85}
-      >
-        <Feather
-          name="edit-2"
-          size={16}
-          color="#FFFFFF"
-          style={{ marginRight: 8 }}
-        />
-        <Text style={styles.autoFixText}>Tự động sửa</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.autoFixBtn}
+            onPress={onAutoFix}
+            activeOpacity={0.85}
+          >
+            <Feather name="zap" size={16} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.autoFixText}>Tự động sửa</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {/* Nếu tất cả không fix được → chỉ gợi ý chụp lại */}
+      {allUnfixable && (
+        <Text style={styles.hint}>
+          Những lỗi trên cần chụp lại ảnh. Bạn vẫn có thể bỏ qua và tiếp tục.
+        </Text>
+      )}
 
       {/* Divider */}
       <View style={styles.dividerRow}>
@@ -58,11 +80,7 @@ export default function FailState({
       </View>
 
       {/* Skip button */}
-      <TouchableOpacity
-        style={styles.skipBtn}
-        onPress={onSkip}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.skipBtn} onPress={onSkip} activeOpacity={0.8}>
         <Text style={styles.skipText}>Bỏ qua và tiếp tục</Text>
       </TouchableOpacity>
     </View>
@@ -92,29 +110,63 @@ const styles = StyleSheet.create({
     color: "#DC2626",
   },
   issueList: {
-    marginBottom: 12,
-    paddingLeft: 4,
+    marginBottom: 16,
+    gap: 8,
   },
-  issueRow: {
+  issueCard: {
+    backgroundColor: "#FFF9F9",
+    borderWidth: 1,
+    borderColor: "#FDE8E8",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  issueHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    marginBottom: 4,
+    gap: 8,
   },
-  issueArrow: {
+  issueDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#DC2626",
+  },
+  issueLabel: {
     fontSize: 13,
-    color: "#DC2626",
+    fontWeight: "700",
+    color: "#991B1B",
+    flex: 1,
+  },
+  fixableBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#E6FAF7",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    borderRadius: 20,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  fixableBadgeText: {
+    fontSize: 10,
+    color: TEAL,
     fontWeight: "600",
   },
-  issueText: {
-    fontSize: 13,
-    color: "#DC2626",
+  issueDesc: {
+    fontSize: 12,
+    color: "#6B7280",
+    lineHeight: 17,
+    paddingLeft: 15,
   },
   hint: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    marginBottom: 16,
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#374151",
+    marginBottom: 14,
+    lineHeight: 19,
   },
   autoFixBtn: {
     flexDirection: "row",

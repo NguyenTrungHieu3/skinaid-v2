@@ -1,5 +1,5 @@
 // components/profile/PersonalInfoView.tsx
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -17,11 +17,11 @@ interface PersonalInfoViewProps {
 }
 
 const FIELDS = [
-  { key: "fullName", label: "Họ và tên", icon: "user" },
-  { key: "phone", label: "Số điện thoại", icon: "phone" },
-  { key: "birthDate", label: "Ngày sinh", icon: "calendar" },
-  { key: "gender", label: "Giới tính", icon: "git-merge" },
-  { key: "address", label: "Địa chỉ", icon: "map-pin" },
+  { key: "fullName", label: "Họ và tên", icon: "user", isMCI: false },
+  { key: "phone", label: "Số điện thoại", icon: "phone", isMCI: false },
+  { key: "birthDate", label: "Ngày sinh", icon: "calendar", isMCI: false },
+  { key: "gender", label: "Giới tính", icon: "gender-male-female", isMCI: true },
+  { key: "address", label: "Địa chỉ", icon: "map-pin", isMCI: false },
 ] as const;
 
 export default function PersonalInfoView({
@@ -37,7 +37,7 @@ export default function PersonalInfoView({
           onPress={onPressEdit}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="edit-2" size={18} color="#3DBFA0" />
+          <Feather name="edit-2" size={18} color="#02A18D" />
         </TouchableOpacity>
       </View>
 
@@ -51,7 +51,11 @@ export default function PersonalInfoView({
           ]}
         >
           <View style={styles.fieldLabel}>
-            <Feather name={field.icon as any} size={16} color="#3DBFA0" />
+            {field.isMCI ? (
+              <MaterialCommunityIcons name={field.icon as any} size={16} color="#3DBFA0" />
+            ) : (
+              <Feather name={field.icon as any} size={16} color="#3DBFA0" />
+            )}
             <Text style={styles.labelText}>{field.label}</Text>
           </View>
           <Text style={styles.valueText}>{info[field.key] || "N/A"}</Text>

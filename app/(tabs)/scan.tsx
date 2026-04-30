@@ -1,10 +1,12 @@
 // app/(tabs)/scan.tsx
 import { router } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Alert, Dimensions, StyleSheet, View } from "react-native";
 
 import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import * as NavigationBar from "expo-navigation-bar";
+import { useFocusEffect } from "@react-navigation/native";
 
 import NoCameraPermission from "../../components/scan/NoCameraPermission";
 import ScanBottomBar from "../../components/scan/ScanBottomBar";
@@ -18,6 +20,17 @@ export default function ScanScreen() {
   const [facing] = useState<CameraType>("back");
   const [isCapturing, setIsCapturing] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  // Edge-to-edge đã bật → nav bar đã trong suốt tự động
+  // Chỉ đổi màu icon (light cho nền camera tối, dark khi rời)
+  useFocusEffect(
+    useCallback(() => {
+      NavigationBar.setButtonStyleAsync("light");
+      return () => {
+        NavigationBar.setButtonStyleAsync("dark");
+      };
+    }, [])
+  );
 
   // Chưa có response quyền
   if (!permission) return <View style={styles.container} />;
@@ -117,7 +130,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.12,
+    height: SCREEN_HEIGHT * 0.13,
     backgroundColor: "rgba(0,0,0,0.28)",
     zIndex: 1,
   },
@@ -126,7 +139,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SCREEN_HEIGHT * 0.2,
+    height: SCREEN_HEIGHT * 0.25,
     backgroundColor: "rgba(0,0,0,0.32)",
     zIndex: 1,
   },
@@ -134,6 +147,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
+    paddingBottom: 60,
     zIndex: 2,
   },
 });

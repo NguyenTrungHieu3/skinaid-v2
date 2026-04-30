@@ -65,7 +65,7 @@ export default function ScanBottomBar({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 0,
+    bottom: 28,
     left: 0,
     right: 0,
     flexDirection: "row",

@@ -1,68 +1,67 @@
 // constants/woundTypes.ts
-// Tách data ra đây để dễ thêm/sửa/xóa loại vết thương
 
 export interface WoundType {
   id: string;
   name: string;
   description: string;
   emoji: string;
-  bgColor: string;
-  borderColor: string;
+  gradientColors: [string, string];
+  accentColor: string;
 }
 
 export const WOUND_TYPES: WoundType[] = [
   {
     id: "bam",
     name: "Bầm",
-    description: "Nhận diện vết thương bầm",
-    emoji: "🟤",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    description: "Nhận diện vết tụ máu dưới da...",
+    emoji: "✳️",
+    gradientColors: ["#E8F5F2", "#D0EDE8"],
+    accentColor: "#02A18D",
   },
   {
     id: "bong",
     name: "Bỏng",
-    description: "Nhận diện vết thương bỏng",
-    emoji: "🔴",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    description: "Phân tích mức độ tổn thương nhiệt...",
+    emoji: "🔥",
+    gradientColors: ["#FFF3E8", "#FFE4CC"],
+    accentColor: "#E87440",
   },
   {
     id: "tray",
     name: "Trầy",
-    description: "Nhận diện vết thương trầy",
-    emoji: "🟠",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    description: "Vết trầy xước bề mặt da...",
+    emoji: "🩹",
+    gradientColors: ["#FFF0F0", "#FFD6D6"],
+    accentColor: "#E05050",
   },
   {
-    id: "ung-thu-da",
-    name: "Ung thư da",
-    description: "Nhận diện vết thương ung thư",
-    emoji: "🔵",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    id: "vay-nen",
+    name: "Vảy nến",
+    description: "Sàng lọc sớm các dấu hiệu...",
+    emoji: "🩺",
+    gradientColors: ["#FFF3F0", "#FFE0DA"],
+    accentColor: "#C04A3A",
   },
   {
-    id: "mun",
-    name: "Mụn",
-    description: "Nhận diện vết thương mụn",
-    emoji: "🟡",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    id: "mun-trung-ca",
+    name: "Mụn trứng cá",
+    description: "Phân biệt các loại mụn trứng cá...",
+    emoji: "😶",
+    gradientColors: ["#F0F8FF", "#D6EEFF"],
+    accentColor: "#3A7BD5",
   },
   {
-    id: "me-day",
-    name: "Mề đay",
-    description: "Nhận diện vết thương mề đay",
-    emoji: "🟣",
-    bgColor: "#FFF5F0",
-    borderColor: "#FFCDB2",
+    id: "nam-da",
+    name: "Nấm da",
+    description: "Nhận diện nấm da...",
+    emoji: "⚙️",
+    gradientColors: ["#F5F0FF", "#E6D6FF"],
+    accentColor: "#7B4FD5",
   },
 ];
 
 export const APP_STATS = {
   accuracy: "95%",
-  users: "10K+",
-  woundTypes: "50K+",
+  users: "10k+",
+  woundTypes: "50k+",
 };

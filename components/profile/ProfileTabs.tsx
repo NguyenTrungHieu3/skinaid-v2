@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: "#3DBFA0",
+    borderColor: "#02A18D",
     borderRadius: 50,
     overflow: "hidden",
   },
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   tabActive: {
-    backgroundColor: "#3DBFA0",
+    backgroundColor: "#02A18D",
   },
   tabText: {
     fontSize: 14,

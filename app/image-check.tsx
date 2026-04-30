@@ -2,14 +2,15 @@
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import CheckTopBar from "../components/image-check/CheckTopBar";
+import CropModal from "../components/image-check/CropModal";
 import FailState from "../components/image-check/FailState";
 import ImagePreview from "../components/image-check/ImagePreview";
 import LoadingState from "../components/image-check/LoadingState";
@@ -17,47 +18,43 @@ import SuccessState from "../components/image-check/SuccessState";
 import {
   CheckStatus,
   ImageQualityIssue,
-  MOCK_CHECK_DURATION,
-  QUALITY_ISSUES,
 } from "../constants/imageCheckTypes";
+import {
+  autoFixImage,
+  checkImageQuality,
+} from "../utils/imageQualityCheck";
 
-// ── Hàm giả lập kiểm tra chất lượng ảnh ──────────────────────
-// TODO: thay bằng API call thật
-async function mockCheckImageQuality(uri: string): Promise<{
-  passed: boolean;
-  issues: ImageQualityIssue[];
-}> {
-  await new Promise((res) => setTimeout(res, MOCK_CHECK_DURATION));
 
-  // Giả lập: 50% pass, 50% fail — thay bằng logic thật
-  const passed = Math.random() > 0.5;
-  const issues = passed ? [] : [QUALITY_ISSUES.blur, QUALITY_ISSUES.unclear];
-
-  return { passed, issues };
-}
 
 export default function ImageCheckScreen() {
   // Nhận uri ảnh từ scan screen
   const { uri } = useLocalSearchParams<{ uri: string }>();
 
+  const [currentUri, setCurrentUri] = useState(uri);
   const [status, setStatus] = useState<CheckStatus>("loading");
   const [issues, setIssues] = useState<ImageQualityIssue[]>([]);
+  const [cropVisible, setCropVisible] = useState(false);
 
-  // Chạy check ngay khi vào màn hình
+  // Sync khi uri thay đổi (lần đầu vào)
   useEffect(() => {
-    if (!uri) return;
-    runCheck(uri);
+    if (uri) setCurrentUri(uri);
   }, [uri]);
+
+  // Chạy check ngay khi vào màn hình hoặc sau crop
+  useEffect(() => {
+    if (!currentUri) return;
+    runCheck(currentUri);
+  }, [currentUri]);
 
   const runCheck = async (imageUri: string) => {
     setStatus("loading");
-    const result = await mockCheckImageQuality(imageUri);
+    const result = await checkImageQuality(imageUri);
     setStatus(result.passed ? "success" : "fail");
     setIssues(result.issues);
   };
 
   // ── Handlers ─────────────────────────────────────────────────
-  const handleClose = () => router.back();
+  const handleClose = () => router.replace("/(tabs)/home");
 
   const handleRetake = () => {
     // Quay lại màn hình scan
@@ -65,14 +62,25 @@ export default function ImageCheckScreen() {
   };
 
   const handleZoomCrop = () => {
-    // TODO: mở crop editor
-    console.log("Zoom/crop:", uri);
+    setCropVisible(true);
+  };
+
+  const handleCropDone = (croppedUri: string) => {
+    setCropVisible(false);
+    setCurrentUri(croppedUri); // useEffect sẽ tự chạy lại check
   };
 
   const handleAutoFix = async () => {
-    // Chạy lại check sau khi "tự động sửa"
-    if (!uri) return;
-    await runCheck(uri);
+    if (!currentUri) return;
+    setStatus("loading");
+    try {
+      const { fixedUri } = await autoFixImage(currentUri, issues);
+      // Cập nhật ảnh đã sửa → useEffect sẽ tự chạy lại check
+      setCurrentUri(fixedUri);
+    } catch {
+      // Nếu fix thất bại → chạy lại check trên ảnh cũ
+      await runCheck(currentUri);
+    }
   };
 
   const handleSkip = () => {
@@ -85,9 +93,11 @@ export default function ImageCheckScreen() {
   };
 
   const navigateToAnalysis = () => {
-    // TODO: điều hướng sang màn hình kết quả AI
-    // router.push({ pathname: "/analysis-result", params: { uri } });
-    console.log("Start analysis with uri:", uri);
+    // Điều hướng sang màn hình phân tích AI (loading → kết quả)
+    router.push({
+      pathname: "/analyzing",
+      params: { uri: currentUri },
+    });
   };
 
   // ── Render ───────────────────────────────────────────────────
@@ -111,8 +121,8 @@ export default function ImageCheckScreen() {
         scrollEnabled={!isLoading}
       >
         {/* Ảnh preview — luôn hiển thị */}
-        {uri ? (
-          <ImagePreview uri={uri} showWaitOverlay={isLoading} />
+        {currentUri ? (
+          <ImagePreview uri={currentUri} showWaitOverlay={isLoading} />
         ) : (
           <View style={styles.noImage} />
         )}
@@ -130,6 +140,16 @@ export default function ImageCheckScreen() {
           <SuccessState onStartAnalysis={handleStartAnalysis} />
         )}
       </ScrollView>
+
+      {/* Crop/Zoom Modal */}
+      {currentUri ? (
+        <CropModal
+          visible={cropVisible}
+          uri={currentUri}
+          onDone={handleCropDone}
+          onCancel={() => setCropVisible(false)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

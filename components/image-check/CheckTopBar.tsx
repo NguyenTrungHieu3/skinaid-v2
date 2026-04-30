@@ -20,7 +20,7 @@ export default function CheckTopBar({
 }: CheckTopBarProps) {
   return (
     <View style={styles.container}>
-      {/* Left: Close (X) */}
+      {/* Left */}
       <TouchableOpacity
         style={styles.closeBtn}
         onPress={onClose}
@@ -29,34 +29,28 @@ export default function CheckTopBar({
         <Feather name="x" size={18} color="#6B7280" />
       </TouchableOpacity>
 
-      {/* Center: SkinAid logo text */}
-      <Text style={styles.logo}>
-        <Text style={styles.logoLight}>Skin</Text>
-        <Text style={styles.logoBold}>Aid</Text>
-      </Text>
+      {/* Center - absolute */}
+      <View style={styles.logoWrapper}>
+        <Text style={styles.logo}>
+          <Text style={styles.logoLight}>Skin</Text>
+          <Text style={styles.logoBold}>Aid</Text>
+        </Text>
+      </View>
 
-      {/* Right: zoom-crop + retake */}
-      {showActions ? (
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onZoomCrop}
-            activeOpacity={0.75}
-          >
-            <MaterialCommunityIcons name="crop" size={20} color="#4B5563" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={onRetake}
-            activeOpacity={0.75}
-          >
-            <Feather name="rotate-cw" size={20} color="#4B5563" />
-          </TouchableOpacity>
-        </View>
-      ) : (
-        // Spacer để logo vẫn căn giữa khi không có actions
-        <View style={styles.spacer} />
-      )}
+      {/* Right */}
+      <View style={styles.actions}>
+        {showActions && (
+          <>
+            <TouchableOpacity style={styles.iconBtn} onPress={onZoomCrop}>
+              <MaterialCommunityIcons name="crop" size={20} color="#4B5563" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconBtn} onPress={onRetake}>
+              <Feather name="rotate-cw" size={20} color="#4B5563" />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -65,13 +59,16 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingTop: 52,
-    paddingBottom: 12,
+    paddingTop: 26,
+    paddingBottom: 20,
     backgroundColor: "#FFFFFF",
   },
+
+  // LEFT
   closeBtn: {
+    // position: "absolute",
+
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -79,15 +76,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logo: {
-    fontSize: 20,
+
+  // CENTER (QUAN TRỌNG)
+  logoWrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
-  logoLight: { color: "#1A1A1A", fontWeight: "400" },
-  logoBold: { color: TEAL, fontWeight: "700" },
+
+  logo: {
+    // position: "absolute",
+    fontSize: 22,
+  },
+
+  logoLight: { color: "#1A1A1A", fontWeight: "700" },
+  logoBold: { color: "#02A18D", fontWeight: "700" },
+
+  // RIGHT
   actions: {
+    // position: "absolute",
+    marginLeft: "auto",
     flexDirection: "row",
     gap: 8,
   },
+
   iconBtn: {
     width: 36,
     height: 36,
@@ -96,5 +109,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  spacer: { width: 80 },
 });

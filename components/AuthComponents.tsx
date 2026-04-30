@@ -1,3 +1,5 @@
+import MaskedView from "@react-native-masked-view/masked-view";
+import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -9,36 +11,39 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Colors } from "../constants/colors";
 
-export const TEAL = "#3DBFA0";
-export const TEAL_DARK = "#2EA88A";
+export const TEAL = Colors.primary;
+export const TEAL_DARK = Colors.primaryFocused;
 
 // ─── Logo Header ───────────────────────────────────────────────
 export function AuthHeader() {
   return (
     <View style={headerStyles.container}>
       <View style={headerStyles.scanFrame}>
-        <View style={[headerStyles.corner, headerStyles.cornerTL]} />
-        <View style={[headerStyles.corner, headerStyles.cornerTR]} />
-        <View style={[headerStyles.corner, headerStyles.cornerBL]} />
-        <View style={[headerStyles.corner, headerStyles.cornerBR]} />
         <Image
           source={require("../assets/logo_1.png")}
           style={headerStyles.logo}
           resizeMode="contain"
         />
       </View>
-      <Text style={headerStyles.appName}>
-        <Text style={headerStyles.appNameLight}>Skin</Text>
-        <Text style={headerStyles.appNameBold}>Aid</Text>
-      </Text>
+      <MaskedView
+        style={{ flexDirection: "row" }}
+        maskElement={<Text style={headerStyles.appName}>SkinAid</Text>}
+      >
+        <LinearGradient
+          colors={[...Colors.gradientAppName]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          <Text style={[headerStyles.appName, { opacity: 0 }]}>SkinAid</Text>
+        </LinearGradient>
+      </MaskedView>
     </View>
   );
 }
 
 const FRAME = 64;
-const C = 14;
-const T = 2;
 
 const headerStyles = StyleSheet.create({
   container: {
@@ -55,44 +60,8 @@ const headerStyles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
   },
-  corner: {
-    position: "absolute",
-    width: C,
-    height: C,
-    borderColor: TEAL,
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: T,
-    borderLeftWidth: T,
-    borderTopLeftRadius: 3,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: T,
-    borderRightWidth: T,
-    borderTopRightRadius: 3,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: T,
-    borderLeftWidth: T,
-    borderBottomLeftRadius: 3,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: T,
-    borderRightWidth: T,
-    borderBottomRightRadius: 3,
-  },
-  logo: { width: 42, height: 42 },
-  appName: { fontSize: 22 },
-  appNameLight: { color: "#1A1A1A", fontWeight: "400" },
-  appNameBold: { color: "#1A1A1A", fontWeight: "700" },
+  logo: { width: 72, height: 72 },
+  appName: { fontSize: 22, includeFontPadding: false, fontWeight: "bold" },
 });
 
 // ─── Input Field ───────────────────────────────────────────────
@@ -112,7 +81,7 @@ export function InputField({
       <View style={inputStyles.iconLeft}>{icon}</View>
       <TextInput
         style={[inputStyles.input, style]}
-        placeholderTextColor="#B0B8C1"
+        placeholderTextColor={Colors.borderInput}
         {...props}
       />
       {rightIcon && <View style={inputStyles.iconRight}>{rightIcon}</View>}
@@ -125,9 +94,9 @@ const inputStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: TEAL,
+    borderColor: Colors.primary,
     borderRadius: 10,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: Colors.background,
     paddingHorizontal: 14,
     height: 50,
     marginBottom: 14,
@@ -137,7 +106,7 @@ const inputStyles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 15,
-    color: "#1A1A1A",
+    color: Colors.textPrimary,
   },
 });
 
@@ -145,14 +114,20 @@ const inputStyles = StyleSheet.create({
 interface PrimaryButtonProps {
   label: string;
   onPress: () => void;
+  disabled?: boolean;
 }
 
-export function PrimaryButton({ label, onPress }: PrimaryButtonProps) {
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled,
+}: PrimaryButtonProps) {
   return (
     <TouchableOpacity
-      style={btnStyles.button}
+      style={[btnStyles.button, disabled && { opacity: 0.65 }]}
       onPress={onPress}
       activeOpacity={0.85}
+      disabled={disabled}
     >
       <Text style={btnStyles.label}>{label}</Text>
     </TouchableOpacity>
@@ -161,20 +136,20 @@ export function PrimaryButton({ label, onPress }: PrimaryButtonProps) {
 
 const btnStyles = StyleSheet.create({
   button: {
-    backgroundColor: TEAL,
+    backgroundColor: Colors.primary,
     borderRadius: 50,
     height: 52,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    shadowColor: TEAL,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
   },
   label: {
-    color: "#FFFFFF",
+    color: Colors.white,
     fontSize: 17,
     fontWeight: "600",
     letterSpacing: 0.3,
@@ -201,6 +176,6 @@ const backStyles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 20,
   },
-  arrow: { color: TEAL, fontSize: 14 },
-  text: { color: TEAL, fontSize: 14 },
+  arrow: { color: Colors.primary, fontSize: 14 },
+  text: { color: Colors.primary, fontSize: 14 },
 });

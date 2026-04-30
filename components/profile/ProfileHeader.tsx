@@ -41,7 +41,7 @@ export default function ProfileHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#3DBFA0",
+    backgroundColor: "#02A18D",
     alignItems: "center",
     paddingTop: 24,
     paddingBottom: 28,

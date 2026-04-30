@@ -1,8 +1,10 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,44 +20,103 @@ import {
 } from "../../components/AuthComponents";
 import { useAuth } from "../../context/AuthContext";
 import { getErrorMessage } from "../../services/utils";
+import { validatePassword, validateUsername } from "../../utils/validation";
 
 export default function SignInScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const { signIn } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState({ visible: false, message: "" });
 
-  // Trong file sign-in.tsx
+  const [errors, setErrors] = useState({
+    username: "",
+    password: "",
+  });
+
+  useEffect(() => {
+    const loadRemember = async () => {
+      const saved = await SecureStore.getItemAsync("rememberMe");
+      if (saved !== null) {
+        setRememberMe(JSON.parse(saved));
+      }
+    };
+    loadRemember();
+  }, []);
+
   const handleSignIn = async () => {
-    if (!username || !password) {
-      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+    if (loading) return;
+
+    const newErrors = {
+      username: validateUsername(username),
+      password: validatePassword(password),
+    };
+
+    setErrors(newErrors);
+
+    if (newErrors.username || newErrors.password) {
       return;
     }
 
     try {
       setLoading(true);
-      // Gửi đúng key "user_name" như Swagger yêu cầu
-      await signIn({
-        user_name: username,
-        password: password,
-      });
+
+      await signIn(
+        {
+          user_name: username,
+          password: password,
+        },
+        rememberMe
+      );
+
       router.replace("/(tabs)/home");
     } catch (error: any) {
-      Alert.alert("Đăng nhập thất bại", getErrorMessage(error));
+      console.error("Login Error:", error);
+      setErrorModal({ visible: true, message: getErrorMessage(error) });
     } finally {
       setLoading(false);
     }
   };
+
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <>
+      {/* Error Modal */}
+      <Modal
+        visible={errorModal.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setErrorModal({ ...errorModal, visible: false })}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            {/* Icon cảnh báo */}
+            <View style={styles.modalIconWrap}>
+              <Feather name="alert-circle" size={36} color="#EF4444" />
+            </View>
+
+            <Text style={styles.modalTitle}>Đăng nhập thất bại</Text>
+            <Text style={styles.modalMessage}>Tài khoản hoặc mật khẩu của bạn chưa đúng</Text>
+
+            <TouchableOpacity
+              style={styles.modalBtn}
+              activeOpacity={0.8}
+              onPress={() => setErrorModal({ ...errorModal, visible: false })}
+            >
+              <Text style={styles.modalBtnText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <AuthHeader />
 
@@ -65,11 +126,19 @@ export default function SignInScreen() {
       <Text style={styles.label}>Tên người dùng</Text>
       <InputField
         icon={<Feather name="user" size={18} color={TEAL} />}
-        placeholder="minhhoang123"
+        placeholder="Nhập tên người dùng"
         value={username}
-        onChangeText={setUsername}
+        onChangeText={(text) => {
+          setUsername(text);
+          if (errors.username) setErrors({ ...errors, username: "" });
+        }}
         autoCapitalize="none"
+        editable={!loading}
       />
+
+      {errors.username ? (
+        <Text style={styles.errorText}>{errors.username}</Text>
+      ) : null}
 
       {/* Password */}
       <Text style={styles.label}>Mật khẩu</Text>
@@ -77,8 +146,12 @@ export default function SignInScreen() {
         icon={<Feather name="lock" size={18} color={TEAL} />}
         placeholder="••••••••••"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errors.password) setErrors({ ...errors, password: "" });
+        }}
         secureTextEntry={!showPassword}
+        editable={!loading}
         rightIcon={
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
             <Feather
@@ -90,11 +163,16 @@ export default function SignInScreen() {
         }
       />
 
+      {errors.password && (
+        <Text style={styles.errorText}>{errors.password}</Text>
+      )}
+
       {/* Remember me + Forgot password */}
       <View style={styles.row}>
         <TouchableOpacity
           style={styles.checkRow}
-          onPress={() => setRememberMe(!rememberMe)}
+          onPress={() => !loading && setRememberMe(!rememberMe)}
+          disabled={loading}
         >
           <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
             {rememberMe && <Feather name="check" size={11} color="#FFF" />}
@@ -103,35 +181,55 @@ export default function SignInScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push("../(auth)/forgot-password")}
+          onPress={() => !loading && router.push("../(auth)/forgot-password")}
+          disabled={loading}
         >
           <Text style={styles.forgotText}>Quên mật khẩu?</Text>
         </TouchableOpacity>
       </View>
 
-      <PrimaryButton label="Đăng nhập" onPress={handleSignIn} />
+      {/* Nút đăng nhập với trạng thái Loading */}
+      <View style={{ marginTop: 20 }}>
+        {loading ? (
+          <View style={styles.loadingButton}>
+            <ActivityIndicator color="#FFF" size="small" />
+            <Text style={styles.loadingText}>Đang đăng nhập...</Text>
+          </View>
+        ) : (
+          <PrimaryButton label="Đăng nhập" onPress={handleSignIn} />
+        )}
+      </View>
 
       {/* Register link */}
       <View style={styles.registerRow}>
         <Text style={styles.registerText}>Chưa có tài khoản! </Text>
-        <TouchableOpacity onPress={() => router.push("../(tabs)/home")}>
+        <TouchableOpacity
+          onPress={() => !loading && router.push("../(auth)/sign-up")}
+          disabled={loading}
+        >
           <Text style={styles.registerLink}>Đăng kí ngay</Text>
         </TouchableOpacity>
       </View>
 
       {/* Divider */}
       <View style={styles.dividerRow}>
+        {/* ✅ ĐÃ FIX: Thay <div> bằng <View> */}
         <View style={styles.dividerLine} />
         <Text style={styles.dividerText}>Đăng nhập bằng</Text>
         <View style={styles.dividerLine} />
       </View>
 
       {/* Google Button */}
-      <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={[styles.googleBtn, loading && { opacity: 0.5 }]}
+        activeOpacity={0.8}
+        disabled={loading}
+      >
         <Text style={styles.googleIcon}>G</Text>
         <Text style={styles.googleText}>Google</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
@@ -224,5 +322,82 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#1A1A1A",
+  },
+  errorText: {
+    color: "#EF4444",
+    fontSize: 12,
+    marginBottom: 15,
+  },
+  loadingButton: {
+    backgroundColor: TEAL,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    height: 56,
+    gap: 10,
+  },
+  loadingText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // ── Error Modal ──────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: "#555",
+    textAlign: "center",
+    lineHeight: 21,
+    marginBottom: 24,
+  },
+  modalBtn: {
+    backgroundColor: TEAL,
+    borderRadius: 12,
+    height: 48,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBtnText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });

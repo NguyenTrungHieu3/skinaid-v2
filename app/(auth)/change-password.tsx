@@ -3,7 +3,7 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  SafeAreaView,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,7 +11,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { InputField, PrimaryButton } from "../../components/AuthComponents";
+import { authService } from "../../services/authService";
+import {
+  validateConfirmPassword,
+  validateOldVsNewPassword,
+  validatePassword,
+} from "../../utils/validation";
 
 const TEAL = "#3DBFA0";
 
@@ -22,15 +29,66 @@ export default function ChangePasswordScreen() {
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = () => {
-    if (newPassword !== confirmPassword) {
-      console.log("Mật khẩu xác nhận không khớp");
-      return;
+  const [errors, setErrors] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const validate = (): boolean => {
+    const errs = {
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    };
+
+    if (!oldPassword) errs.oldPassword = "Mật khẩu cũ không được để trống";
+
+    const newPassErr = validatePassword(newPassword);
+    if (newPassErr) errs.newPassword = newPassErr;
+
+    const sameErr = validateOldVsNewPassword(oldPassword, newPassword);
+    if (sameErr) errs.newPassword = sameErr;
+
+    const confirmErr = validateConfirmPassword(newPassword, confirmPassword);
+    if (confirmErr) errs.confirmPassword = confirmErr;
+
+    setErrors(errs);
+    return !errs.oldPassword && !errs.newPassword && !errs.confirmPassword;
+  };
+
+  const handleChange = async () => {
+    if (!validate()) return;
+
+    try {
+      setIsLoading(true);
+      await authService.changePassword({
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+
+      Alert.alert("Thành công", "Mật khẩu đã được đổi thành công!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg = e?.response?.data?.message;
+
+      if (status === 400 || status === 401) {
+        // Mật khẩu cũ sai
+        setErrors((prev) => ({
+          ...prev,
+          oldPassword: msg || "Mật khẩu cũ không đúng",
+        }));
+      } else {
+        Alert.alert("Lỗi", msg || "Đổi mật khẩu thất bại. Vui lòng thử lại.");
+      }
+    } finally {
+      setIsLoading(false);
     }
-    // TODO: gọi API đổi mật khẩu
-    console.log("Change password");
-    router.back();
   };
 
   return (
@@ -47,9 +105,10 @@ export default function ChangePasswordScreen() {
           <Feather name="arrow-left" size={22} color="#1A1A1A" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Đổi mật khẩu?</Text>
+        <Text style={styles.title}>Đổi mật khẩu</Text>
         <Text style={styles.description}>
-          Vui lòng nhập mật khẩu mới của bạn bên dưới.
+          Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, số và ký tự
+          đặc biệt.
         </Text>
 
         {/* Old password */}
@@ -58,7 +117,10 @@ export default function ChangePasswordScreen() {
           icon={<Feather name="lock" size={18} color={TEAL} />}
           placeholder="••••••••••"
           value={oldPassword}
-          onChangeText={setOldPassword}
+          onChangeText={(v) => {
+            setOldPassword(v);
+            setErrors((p) => ({ ...p, oldPassword: "" }));
+          }}
           secureTextEntry={!showOld}
           rightIcon={
             <TouchableOpacity onPress={() => setShowOld(!showOld)}>
@@ -70,14 +132,20 @@ export default function ChangePasswordScreen() {
             </TouchableOpacity>
           }
         />
+        {!!errors.oldPassword && (
+          <Text style={styles.errorText}>{errors.oldPassword}</Text>
+        )}
 
         {/* New password */}
-        <Text style={styles.label}>Mật khẩu mới</Text>
+        <Text style={[styles.label, { marginTop: 12 }]}>Mật khẩu mới</Text>
         <InputField
           icon={<Feather name="lock" size={18} color={TEAL} />}
           placeholder="••••••••••"
           value={newPassword}
-          onChangeText={setNewPassword}
+          onChangeText={(v) => {
+            setNewPassword(v);
+            setErrors((p) => ({ ...p, newPassword: "" }));
+          }}
           secureTextEntry={!showNew}
           rightIcon={
             <TouchableOpacity onPress={() => setShowNew(!showNew)}>
@@ -89,14 +157,22 @@ export default function ChangePasswordScreen() {
             </TouchableOpacity>
           }
         />
+        {!!errors.newPassword && (
+          <Text style={styles.errorText}>{errors.newPassword}</Text>
+        )}
 
         {/* Confirm new password */}
-        <Text style={styles.label}>Xác nhận mật khẩu mới</Text>
+        <Text style={[styles.label, { marginTop: 12 }]}>
+          Xác nhận mật khẩu mới
+        </Text>
         <InputField
           icon={<Feather name="lock" size={18} color={TEAL} />}
           placeholder="••••••••••"
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={(v) => {
+            setConfirmPassword(v);
+            setErrors((p) => ({ ...p, confirmPassword: "" }));
+          }}
           secureTextEntry={!showConfirm}
           rightIcon={
             <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)}>
@@ -108,9 +184,16 @@ export default function ChangePasswordScreen() {
             </TouchableOpacity>
           }
         />
+        {!!errors.confirmPassword && (
+          <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+        )}
 
-        <View style={{ marginTop: 8 }}>
-          <PrimaryButton label="Đổi mật khẩu" onPress={handleChange} />
+        <View style={{ marginTop: 24 }}>
+          <PrimaryButton
+            label={isLoading ? "Đang xử lý..." : "Đổi mật khẩu"}
+            onPress={handleChange}
+            disabled={isLoading}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -146,5 +229,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#1A1A1A",
     marginBottom: 6,
+  },
+  errorText: {
+    fontSize: 12,
+    color: "#EF4444",
+    marginTop: 4,
+    marginBottom: 4,
   },
 });
