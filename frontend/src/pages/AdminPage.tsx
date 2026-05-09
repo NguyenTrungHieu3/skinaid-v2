@@ -38,7 +38,7 @@ export default function AdminPage() {
     { id: 'users', label: t('admin.sidebar.user_management'), icon: Users },
     { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
     { id: 'questionnaires', label: 'Bộ câu hỏi', icon: ClipboardList },
-    { id: 'models', label: t('admin.sidebar.model_management'), icon: Database },
+    // { id: 'models', label: t('admin.sidebar.model_management'), icon: Database }, // Hidden: AI Model Management module
     { id: 'llm', label: 'Quản lý LLM', icon: Brain },
     { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Cơ sở tri thức'), icon: BookOpen },
     { id: 'notifications', label: 'Thông báo', icon: Bell },

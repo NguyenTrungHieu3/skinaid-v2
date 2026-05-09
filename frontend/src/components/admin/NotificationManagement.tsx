@@ -344,7 +344,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
       {/* Stats */}
       <div className={styles.statsGrid}>
         <StatCard icon={Bell} value={total} label="Tổng thông báo" color="default" />
-        <StatCard icon={Megaphone} value={0} label="Đã gửi hôm nay" color="default" />
+        {/* <StatCard icon={Megaphone} value={0} label="Đã gửi hôm nay" color="default" /> */}
       </div>
 
       {/* Filters */}
