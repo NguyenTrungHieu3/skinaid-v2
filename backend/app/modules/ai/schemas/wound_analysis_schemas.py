@@ -11,13 +11,6 @@ class WoundDetectionResponse(BaseModel):
     bounding_box: Dict[str, Any]
     detection_index: int
     firstaid_snapshot: Dict[str, Any]
-
-class UserQuestionnaireResponseView(BaseModel):
-    response_id: UUID
-    question_id: UUID
-    answer_id: UUID
-    created_at: datetime
-
 class WoundAnalysisResponse(BaseModel):
     analysis_id: UUID
     user_id: Optional[UUID] = None
@@ -30,7 +23,6 @@ class WoundAnalysisResponse(BaseModel):
     created_at: datetime
 class WoundAnalysisDetailResponse(WoundAnalysisResponse):
     detections: List[WoundDetectionResponse] = Field(default_factory=list)
-    user_responses: List[UserQuestionnaireResponseView] = Field(default_factory=list)
 class WoundAnalysisListResponse(BaseModel):
     total: int
     limit: int
