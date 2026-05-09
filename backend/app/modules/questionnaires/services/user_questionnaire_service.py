@@ -11,7 +11,6 @@ from app.modules.questionnaires.repository.questionnaire_repository import (
 )
 from app.modules.questionnaires.models.questionnaire import Questionnaire
 from app.modules.questionnaires.models.answer_option import AnswerOption
-from app.modules.questionnaires.models.user_response import UserQuestionnaireResponse
 from app.modules.questionnaires.exceptions import (
     QuestionNotFoundError,
     AnswerNotFoundError,
@@ -139,20 +138,6 @@ class UserQuestionnaireService:
                     triage_levels=triage_levels,
                 )
             )
-
-        if payload.analysis_id:
-            user_responses = []
-            for sel in payload.answers:
-                for aid in sel.answer_ids:
-                    user_responses.append(
-                        UserQuestionnaireResponse(
-                            analysis_id=payload.analysis_id,
-                            question_id=sel.question_id,
-                            answer_id=aid,
-                        )
-                    )
-            if user_responses:
-                await self.repo.save_user_responses(user_responses)
 
         aggregated = _pick_triage(all_triages)
 
