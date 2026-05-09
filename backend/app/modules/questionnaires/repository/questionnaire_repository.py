@@ -9,7 +9,6 @@ from app.shared.base_repository import BaseRepository
 from app.modules.questionnaires.models.questionnaire import Questionnaire
 from app.modules.questionnaires.models.question import Question
 from app.modules.questionnaires.models.answer_option import AnswerOption
-from app.modules.questionnaires.models.user_response import UserQuestionnaireResponse
 
 
 class QuestionnaireRepository(BaseRepository[Questionnaire]):
@@ -70,12 +69,3 @@ class QuestionnaireRepository(BaseRepository[Questionnaire]):
         stmt = select(AnswerOption).where(AnswerOption.answer_id == answer_id)
         result = await self.db.execute(stmt)
         return result.scalars().first()
-
-    async def save_user_responses(self, responses: List[UserQuestionnaireResponse]) -> None:
-        self.db.add_all(responses)
-        await self.db.flush()
-
-    async def get_user_responses_by_analysis(self, analysis_id: UUID) -> List[UserQuestionnaireResponse]:
-        stmt = select(UserQuestionnaireResponse).where(UserQuestionnaireResponse.analysis_id == analysis_id)
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
