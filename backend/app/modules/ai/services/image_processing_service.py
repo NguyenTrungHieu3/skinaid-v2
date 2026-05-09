@@ -127,21 +127,22 @@ class ImageProcessingService:
         )
         await self.analysis_service.repository.save_ai_result(ai_result_record)
 
-        # Fire-and-forget notification for authenticated users
-        if user_id is not None and self.notification_service is not None and detections:
-            primary = detections[0]
-            try:
-                await self.notification_service.create_analysis_complete(
-                    user_id=user_id,
-                    analysis_id=str(analysis.analysis_id),
-                    wound_type=primary.get("wound_type", ""),
-                    severity=primary.get("severity", ""),
-                )
-            except Exception as exc:
-                logger.warning(
-                    "[ImageProcessingService] Notification create failed (non-blocking): %s",
-                    str(exc)[:200],
-                )
+        # [DISABLED] Fire-and-forget notification — disabled to avoid spamming admin notification list.
+        # Re-enable when async/background processing is implemented.
+        # if user_id is not None and self.notification_service is not None and detections:
+        #     primary = detections[0]
+        #     try:
+        #         await self.notification_service.create_analysis_complete(
+        #             user_id=user_id,
+        #             analysis_id=str(analysis.analysis_id),
+        #             wound_type=primary.get("wound_type", ""),
+        #             severity=primary.get("severity", ""),
+        #         )
+        #     except Exception as exc:
+        #         logger.warning(
+        #             "[ImageProcessingService] Notification create failed (non-blocking): %s",
+        #             str(exc)[:200],
+        #         )
 
         analysis = await self.analysis_service.get_analysis_by_id(
             analysis.analysis_id
