@@ -346,19 +346,11 @@ CODEX.md
 .claude-code/
 CLAUDE.local.md
 
-# Dataset (training data — too large for git)
-dataset_final/
-
 # AI-generated scratch / test harnesses at backend root
 backend/test_db.py
 backend/test_db_*.py
 backend/scratch_*.py
 backend/debug_*.py
-backend/test_submit_flow.py
-backend/generate_experiment_report.py
-backend/create_user_response_table.py
-backend/Bao_cao_Thuc_nghiem_Fusion.md
-backend/fusion_experiment_chart.png
 
 # Legacy SQL dumps / Jenkins backups at repo root (use alembic migrations instead)
 /schema_v*.sql
