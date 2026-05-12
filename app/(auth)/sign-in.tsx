@@ -212,22 +212,21 @@ export default function SignInScreen() {
       </View>
 
       {/* Divider */}
-      <View style={styles.dividerRow}>
-        {/* ✅ ĐÃ FIX: Thay <div> bằng <View> */}
+      {/* <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />
         <Text style={styles.dividerText}>Đăng nhập bằng</Text>
         <View style={styles.dividerLine} />
-      </View>
+      </View> */}
 
       {/* Google Button */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[styles.googleBtn, loading && { opacity: 0.5 }]}
         activeOpacity={0.8}
         disabled={loading}
       >
         <Text style={styles.googleIcon}>G</Text>
         <Text style={styles.googleText}>Google</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       </ScrollView>
     </>
   );

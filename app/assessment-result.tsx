@@ -74,11 +74,12 @@ type GuideInput = {
   source?: string | null;
 } | null;
 
-function buildFirstAidSections(guide: GuideInput): FirstAidSection[] {
+// suppressImmediate = true → ẩn section "Sơ cứu ngay" (dùng cho bệnh mãn tính psoriasis/fungal)
+function buildFirstAidSections(guide: GuideInput, suppressImmediate = false): FirstAidSection[] {
   if (!guide) return [];
   const sections: FirstAidSection[] = [];
 
-  if (guide.steps && guide.steps.length > 0) {
+  if (!suppressImmediate && guide.steps && guide.steps.length > 0) {
     sections.push({
       title: 'Sơ cứu ngay',
       icon: 'alert',
@@ -114,6 +115,9 @@ function findSynthesis(
   );
 }
 
+// Các wound_type mãn tính không cần mục "Sơ cứu ngay"
+const CHRONIC_TYPES = ['psoriasis', 'fungal'] as const;
+
 function buildWoundDetail(
   wound: SignificantWound,
   synthesis: SynthesisResult | null,
@@ -123,6 +127,8 @@ function buildWoundDetail(
   const isFallback = !synthesis?.structured_guidance;
   const hasSeverity = !['psoriasis', 'fungal', 'acne'].includes(wound.wound_type);
   const severityColor = mapSeverityColor(wound.severity);
+  // Ẩn "Sơ cứu ngay" với các bệnh mãn tính (psoriasis / fungal)
+  const suppressImmediate = (CHRONIC_TYPES as readonly string[]).includes(wound.wound_type);
 
   return {
     id: wound.detection_id,
@@ -137,7 +143,7 @@ function buildWoundDetail(
     // WoundScanCard sẽ tự normalize bằng Image.getSize()
     boundingBox: wound.bounding_box,
     imageUri,
-    firstAid: buildFirstAidSections(guide),
+    firstAid: buildFirstAidSections(guide, suppressImmediate),
     isFallback,
   };
 }

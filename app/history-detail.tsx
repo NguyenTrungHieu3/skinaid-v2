@@ -461,7 +461,9 @@ export default function HistoryDetailScreen() {
           const fd = w.firstaid_snapshot;
 
           const firstAid: FirstAidSection[] = [];
-          if (fd && fd.steps?.length > 0) {
+          // Ẩn "Sơ cứu ngay" với bệnh mãn tính (psoriasis / fungal)
+          const isChronicType = ['psoriasis', 'fungal'].includes(w.wound_type);
+          if (!isChronicType && fd && fd.steps?.length > 0) {
             firstAid.push({ title: 'Sơ cứu ngay', icon: '!' as any, steps: fd.steps.map(s => ({ content: s })) });
           }
           if (fd && fd.dos?.length > 0) {
