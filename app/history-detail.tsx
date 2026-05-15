@@ -501,7 +501,7 @@ export default function HistoryDetailScreen() {
           wounds.push({
             id: w.detection_id || `wound_${Math.random()}`,
             woundType: w.wound_type as any,
-            imageUri: apiDetail.image_url.startsWith('http') ? apiDetail.image_url : `http://52.20.177.68${apiDetail.image_url}`,
+            imageUri: apiDetail.image_url.startsWith('http') ? apiDetail.image_url : `https://skinaid.xyz${apiDetail.image_url}`,
             label: rawLabel,
             accuracy: Math.round((w.confidence_score || 0.85) * 100),
             boundingBox: { ...w.bounding_box },

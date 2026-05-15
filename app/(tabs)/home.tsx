@@ -25,7 +25,7 @@ import { getAnalysisHistory, getAnalysisDetail, mapWoundLabel } from "../../serv
 import { notificationService } from "../../services/notificationService";
 import { useFocusEffect } from "@react-navigation/native";
 
-const BACKEND_URL = "http://52.20.177.68";
+const BACKEND_URL = "https://skinaid.xyz";
 
 // ─── Style tokens ───────────────────────────────────────────
 const COLORS = {

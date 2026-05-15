@@ -7,7 +7,7 @@
  * Base URL cho backend API.
  * Production: FastAPI server trên AWS EC2.
  */
-export const API_BASE_URL = "http://52.20.177.68/api/v1";
+export const API_BASE_URL = "https://skinaid.xyz/api/v1";
 
 /**
  * Geoapify API key cho bản đồ Leaflet.

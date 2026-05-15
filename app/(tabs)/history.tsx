@@ -27,7 +27,7 @@ let globalHistoryCache: HistoryRecord[] | null = null;
 // ─── Constants ───────────────────────────────────────────────
 const TEAL = "#1A7A5E";
 const BG = "#F2F5F3";
-const BACKEND_URL = "http://52.20.177.68";
+const BACKEND_URL = "https://skinaid.xyz";
 
 // Hệ thống hỗ trợ 6 loại vết thương:
 //   Có mức độ nghiêm trọng : Bỏng | Bầm | Trầy | Mụn trứng cá
