@@ -10,6 +10,8 @@ export interface HistoryEvent {
   date: string; // ISO string
   status: string;
   imageUrl: string;
+  severity?: string;
+  woundType?: string;
 }
 
 interface Props {
@@ -237,6 +239,9 @@ const TimelineVirtualized = ({
                             src={ev.imageUrl}
                             alt=""
                             className={styles.cardImage}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                            }}
                           />
                           <div className={styles.cardInfo}>
                             <p className={styles.cardTimestamp}>
@@ -248,6 +253,14 @@ const TimelineVirtualized = ({
                               })}
                             </p>
                             <h4 className={styles.cardTitle}>{t("history.analysis")} {ev.title}</h4>
+                            {ev.severity && (
+                              <span
+                                className={`${styles.severityBadge ?? ""} severity-${ev.severity.toLowerCase()}`}
+                                data-severity={ev.severity}
+                              >
+                                {t(`severity.${ev.severity.toLowerCase()}`, ev.severity)}
+                              </span>
+                            )}
                           </div>
                           <div className={styles.cardAction}>
                             <a>{t("history.view")}</a>

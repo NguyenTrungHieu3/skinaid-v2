@@ -14,6 +14,7 @@ from app.modules.notifications.exceptions import (
 from app.modules.notifications.models.notification import Notification
 from app.modules.notifications.repository import NotificationRepository
 from app.modules.notifications.schemas.api import (
+    BroadcastNotificationResponse,
     CreateNotificationRequest,
     NotificationListResponse,
     NotificationResponse,
@@ -32,9 +33,16 @@ class NotificationService:
         self._repository = repository
         self._db = db
 
+    async def get_notification_by_id(self, notification_id: UUID) -> NotificationResponse:
+        """Lấy thông tin chi tiết một notification theo ID."""
+        notif = await self._repository.get_by_id(notification_id)
+        if not notif:
+            raise NotFoundException(message="Notification not found")
+        return NotificationResponse.model_validate(notif)
+
     async def list_notifications(
         self,
-        user_id: UUID,
+        user_id: Optional[UUID],
         skip: int = 0,
         limit: int = 20,
         unread_only: bool = False,
@@ -47,7 +55,10 @@ class NotificationService:
             unread_only=unread_only,
             notification_type=notification_type,
         )
-        unread_count = await self._repository.count_unread(user_id)
+        if user_id is not None:
+            unread_count = await self._repository.count_unread(user_id)
+        else:
+            unread_count = await self._repository.count_unread_all()
         return NotificationListResponse(
             items=[NotificationResponse.model_validate(n) for n in items],
             total=total,
@@ -59,12 +70,12 @@ class NotificationService:
         return UnreadCountResponse(unread_count=count)
 
     async def mark_read(
-        self, notification_id: UUID, current_user_id: UUID
+        self, notification_id: UUID, current_user_id: UUID, is_admin: bool = False
     ) -> NotificationResponse:
         notification = await self._repository.get_by_id(notification_id)
         if notification is None:
             raise NotificationNotFoundError(str(notification_id))
-        if notification.user_id != current_user_id:
+        if notification.user_id != current_user_id and not is_admin:
             raise NotificationForbiddenError()
 
         updated = await self._repository.mark_as_read(notification)
@@ -74,11 +85,11 @@ class NotificationService:
         updated_count = await self._repository.mark_all_read(user_id)
         return {"updated_count": updated_count}
 
-    async def delete(self, notification_id: UUID, current_user_id: UUID) -> None:
+    async def delete(self, notification_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
         notification = await self._repository.get_by_id(notification_id)
         if notification is None:
             raise NotificationNotFoundError(str(notification_id))
-        if notification.user_id != current_user_id:
+        if notification.user_id != current_user_id and not is_admin:
             raise NotificationForbiddenError()
 
         await self._repository.delete(notification)
@@ -86,6 +97,7 @@ class NotificationService:
     async def create_for_user(
         self, request: CreateNotificationRequest
     ) -> NotificationResponse:
+        """Tạo 1 notification cho user cụ thể (recipient_type='specific')."""
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         notification = Notification(
             user_id=request.user_id,
@@ -102,6 +114,41 @@ class NotificationService:
         created = await self._repository.create(notification)
         await self._db.refresh(created)
         return NotificationResponse.model_validate(created)
+
+    async def create_broadcast(
+        self, request: CreateNotificationRequest
+    ) -> BroadcastNotificationResponse:
+        """Gửi notification đến TẤT CẢ user đang active (recipient_type='all')."""
+        user_ids = await self._repository.get_all_active_user_ids()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        count = 0
+        for uid in user_ids:
+            notification = Notification(
+                user_id=uid,
+                title=request.title,
+                body=request.body,
+                notification_type=request.notification_type,
+                data=request.data,
+                action_url=request.action_url,
+                image_url=request.image_url,
+                priority=request.priority,
+                status="sent",
+                sent_at=now,
+            )
+            await self._repository.create(notification)
+            count += 1
+
+        await self._db.flush()
+        logger.info(
+            "[NotificationService] broadcast sent to %d active users. title=%r",
+            count,
+            request.title,
+        )
+        return BroadcastNotificationResponse(
+            sent_count=count,
+            title=request.title,
+            notification_type=request.notification_type,
+        )
 
     async def create_analysis_complete(
         self,

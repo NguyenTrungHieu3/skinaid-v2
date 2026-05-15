@@ -19,6 +19,20 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/
 // Ví dụ: VITE_BACKEND_URL = "http://18.179.57.221:8000" (no /api/v1 suffix)
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
 
+/**
+ * Build absolute image URL from backend response.
+ * Handles both absolute (S3/CDN) and relative paths; avoids double-prefix bugs.
+ */
+export const resolveImageUrl = (imageUrl: string | undefined | null): string => {
+  if (!imageUrl) return "";
+  if (/^(https?:)?\/\//i.test(imageUrl) || imageUrl.startsWith("data:")) {
+    return imageUrl;
+  }
+  const base = BACKEND_URL.replace(/\/$/, "");
+  const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${base}${path}`;
+};
+
 // Tạo 1 instance của axios với cấu hình mặc định
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -162,6 +176,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // Attach i18n-translated message for consumers (TC-CL-07)
+    try {
+      const { translateBackendError } = await import("../utils/apiErrorI18n");
+      const data = error.response?.data;
+      const rawMessage =
+        data?.message || data?.detail || data?.error?.message || error.message;
+      const errorCode = data?.error_code || data?.error?.code;
+      error.translatedMessage = translateBackendError(errorCode, rawMessage);
+    } catch {
+      // i18n unavailable — fall through with original message
+    }
 
     // Catch genuine 401s from the server (token rejected server-side)
     const is401 =

@@ -7,6 +7,8 @@ import {
   getWeeklyActivity,
 } from "../../services/adminService";
 import { getDashboardRecentLogs } from "../../services/auditService";
+import { getUsageStats } from "../../services/llmManagementService";
+import { getFirstAidStatistics } from "../../services/firstAidService";
 import type {
   DashboardOverview,
   WoundTypeItem,
@@ -33,6 +35,8 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
   const [dashboardLogs, setDashboardLogs] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [llmTotalRequests, setLlmTotalRequests] = useState<number>(0);
+  const [firstAidTotal, setFirstAidTotal] = useState<number>(0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -50,13 +54,15 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
 
     // Gọi hàm lấy data từ API
     try {
-      const [overviewRes, woundTypeRes, severityRes, _activityRes, logsRes] =
+      const [overviewRes, woundTypeRes, severityRes, _activityRes, logsRes, llmRes, firstAidRes] =
         await Promise.all([
           getDashboardOverview(period),
           getWoundTypeDistribution(period),
           getSeverityStats(period),
           getWeeklyActivity(),
           getDashboardRecentLogs(5),
+          getUsageStats(30).catch(() => null),
+          getFirstAidStatistics().catch(() => null),
         ]);
 
       if (overviewRes.success && overviewRes.data) {
@@ -81,6 +87,16 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         if ('logs' in logsRes.data) {
           setDashboardLogs(logsRes.data.logs);
         }
+      }
+
+      // LLM total requests
+      if (llmRes?.success && llmRes.data) {
+        setLlmTotalRequests(llmRes.data.total_requests ?? 0);
+      }
+
+      // First aid guides total
+      if (firstAidRes?.success && firstAidRes.data) {
+        setFirstAidTotal(firstAidRes.data.total_guides ?? firstAidRes.data.total ?? 0);
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
@@ -168,7 +184,7 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
         </div>
       </div>
 
-      <DashboardStats overview={overview} period={period} />
+      <DashboardStats overview={overview} period={period} llmTotalRequests={llmTotalRequests} firstAidTotal={firstAidTotal} />
 
       <DashboardCharts
         woundTypeData={woundTypeData}

@@ -43,7 +43,7 @@ from app.modules.ai.schemas.model_schemas import (
 )
 from app.shared.response import SuccessResponse, ErrorResponse
 
-router = APIRouter(prefix="/admin/models", tags=["Admin - Model Management"])
+router = APIRouter(prefix="/models")
 
 
 # ============== Helper Functions ==============

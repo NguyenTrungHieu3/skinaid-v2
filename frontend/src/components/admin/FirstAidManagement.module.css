@@ -14,6 +14,14 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .pageTitle h1 {
@@ -32,6 +40,7 @@
 .btnPrimary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   background: linear-gradient(to right, #1E9378, #17805f);
@@ -39,10 +48,12 @@
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
+  line-height: normal;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(30, 147, 120, 0.3);
+  white-space: nowrap;
 }
 
 .btnPrimary svg {
@@ -60,6 +71,97 @@
 .btnPrimary:active {
   transform: translateY(0) scale(0.98);
 }
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #17805f;
+  border: 1.5px solid #17805f;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btnOutline:hover {
+  background: #f0fdf9;
+  transform: translateY(-1px);
+}
+
+.btnOutline:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btnOutline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.exportWrapper {
+  position: relative;
+}
+
+.exportDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  min-width: 180px;
+  padding: 0.5rem;
+}
+
+.dropdownLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+}
+
+.dropdownItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: #334155;
+  text-align: left;
+  border-radius: 0.25rem;
+  transition: background 0.15s;
+}
+
+.dropdownItem:hover {
+  background: #f1f5f9;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.25rem 0;
+}
+
 
 .statsGrid {
   display: grid;
@@ -1459,4 +1561,120 @@
 
 .centeredPagination {
   justify-content: center !important;
+}
+
+/* ── Import Preview Modal ── */
+
+.modalSubtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0 0 0;
+}
+
+.importPreviewModal {
+  background: white;
+  border-radius: 1rem;
+  width: 95%;
+  max-width: 1000px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.importPreviewBody {
+  flex: 1;
+  overflow: auto;
+  padding: 0 1.5rem;
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.previewTable thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.previewTable th {
+  background: #f8fafc;
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.previewTable td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+  color: #334155;
+}
+
+.previewTable tbody tr:hover {
+  background: #f8fafc;
+}
+
+.previewRowSelected {
+  background: #f0fdf9;
+}
+
+.previewRowError {
+  background: #fef2f2;
+  opacity: 0.7;
+}
+
+.previewTitle {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.125rem;
+}
+
+.previewDesc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.previewError {
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 500;
+  margin-top: 0.125rem;
+}
+
+.previewUrl {
+  font-size: 0.75rem;
+  color: #3b82f6;
+}
+
+.importPreviewFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 0 1rem 1rem;
+}
+
+.previewTable input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #17805f;
+  cursor: pointer;
 }

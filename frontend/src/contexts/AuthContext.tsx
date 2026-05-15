@@ -7,6 +7,7 @@ import {
 } from "react";
 import apiClient from "../services/api";
 import { getMe, logoutUser } from "../services/authService"; // API /auth/me
+import { abortActiveAnalysis } from "../services/aiService";
 // 1. IMPORT THÊM profileService
 import { getMyProfile } from "../services/profileService";
 import { useTranslation } from "react-i18next";
@@ -54,6 +55,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // --- HÀM LOGOUT CHÍNH THỨC ---
   // Hàm này sẽ xóa data và redirect
   const performLogout = () => {
+    // Abort any in-flight wound analysis (TC-LO-09)
+    abortActiveAnalysis();
     localStorage.removeItem("userToken");
     localStorage.removeItem("refreshToken");
     sessionStorage.removeItem("userToken");
@@ -168,6 +171,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     initializeAuth();
+  }, []);
+
+  // Cross-tab session sync (TC-LO-05): detect logout from other tabs
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "userToken" && e.newValue === null && e.oldValue) {
+        // Token cleared on another tab -> force logout here too
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsSessionExpired(false);
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   // 4. SỬA HÀM LOGIN (ĐỂ NHẬN 'USER' TRỰC TIẾP VÀ REFRESH TOKEN)

@@ -1,89 +1,67 @@
+"""Repository cho rag_documents — extend BaseRepository."""
 from __future__ import annotations
 
-import uuid
-from typing import Optional, Sequence, Tuple
+from datetime import datetime, timezone
+from typing import Optional
+from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.rag.models.rag_document import RagDocument
 from app.shared.base_repository import BaseRepository
 
 
-class RAGDocumentRepository(BaseRepository[RagDocument]):
+def _now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
+
+class RagDocumentRepository(BaseRepository[RagDocument]):
     def __init__(self, db: AsyncSession) -> None:
-        super().__init__(model=RagDocument, db=db)
+        super().__init__(RagDocument, db)
 
-    async def get_all(
+    async def list_documents(
         self,
         *,
         skip: int = 0,
-        limit: int = 20,
+        limit: int = 50,
         status: Optional[str] = None,
         file_type: Optional[str] = None,
-    ) -> Tuple[Sequence[RagDocument], int]:
-        """Lấy danh sách tài liệu có phân trang và lọc theo status/file_type. Mặc định ẩn deleted."""
+    ) -> tuple[list[RagDocument], int]:
         filters = []
-        if status is not None:
+        if status:
             filters.append(RagDocument.status == status)
-        else:
-            filters.append(RagDocument.status != "deleted")
-
-        if file_type is not None:
+        if file_type:
             filters.append(RagDocument.file_type == file_type.lower())
 
-        count_stmt = select(func.count()).select_from(RagDocument).where(*filters)
-        count_result = await self.db.execute(count_stmt)
-        total = count_result.scalar_one()
-
-        data_stmt = (
-            select(RagDocument)
-            .where(*filters)
-            .order_by(RagDocument.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        data_result = await self.db.execute(data_stmt)
-        items = data_result.scalars().all()
-
-        return items, total
-
-    async def get_by_status(self, status: str) -> Sequence[RagDocument]:
-        """Lấy tất cả tài liệu theo trạng thái cụ thể, sắp xếp theo created_at DESC."""
         stmt = (
             select(RagDocument)
-            .where(RagDocument.status == status)
-            .order_by(RagDocument.created_at.desc())
-        )
-        result = await self.db.execute(stmt)
-        return result.scalars().all()
-
-    async def get_by_uploader(
-        self,
-        user_id: uuid.UUID,
-        *,
-        skip: int = 0,
-        limit: int = 20,
-    ) -> Tuple[Sequence[RagDocument], int]:
-        """Lấy tài liệu do một user cụ thể upload."""
-        filters = [
-            RagDocument.uploaded_by == user_id,
-            RagDocument.status != "deleted",
-        ]
-
-        count_stmt = select(func.count()).select_from(RagDocument).where(*filters)
-        count_result = await self.db.execute(count_stmt)
-        total = count_result.scalar_one()
-
-        data_stmt = (
-            select(RagDocument)
             .where(*filters)
             .order_by(RagDocument.created_at.desc())
             .offset(skip)
             .limit(limit)
         )
-        data_result = await self.db.execute(data_stmt)
-        items = data_result.scalars().all()
+        items = await self.get_many_by_stmt(stmt)
+        total = await self.count(*filters)
+        return list(items), total
 
-        return items, total
+    async def update_status(
+        self,
+        doc: RagDocument,
+        status: str,
+        *,
+        chunk_count: Optional[int] = None,
+        error_message: Optional[str] = None,
+        indexed_at: Optional[datetime] = None,
+    ) -> RagDocument:
+        data: dict = {"status": status, "updated_at": _now()}
+        if chunk_count is not None:
+            data["chunk_count"] = chunk_count
+        if error_message is not None:
+            data["error_message"] = error_message[:2000]
+        if indexed_at is not None:
+            data["indexed_at"] = indexed_at
+        return await self.update(doc, data)
+
+    async def get(self, doc_id: UUID) -> Optional[RagDocument]:
+        return await self.get_by_id(doc_id)

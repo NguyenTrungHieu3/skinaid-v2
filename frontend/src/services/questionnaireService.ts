@@ -79,17 +79,17 @@ export interface AnswerUpdate {
 // ─── API Calls ────────────────────────────────────────────────────────────────
 export const getAllQuestionnaires = async (): Promise<Questionnaire[]> => {
   const res = await apiClient.get('/questionnaires/');
-  return res.data;
+  return res.data.data;
 };
 
 export const getQuestionnaire = async (id: string): Promise<Questionnaire> => {
   const res = await apiClient.get(`/questionnaires/${id}`);
-  return res.data;
+  return res.data.data;
 };
 
 export const createQuestionnaire = async (data: QuestionnaireCreate): Promise<Questionnaire> => {
   const res = await apiClient.post('/questionnaires/', data);
-  return res.data;
+  return res.data.data;
 };
 
 export const updateQuestionnaire = async (
@@ -97,16 +97,21 @@ export const updateQuestionnaire = async (
   data: QuestionnaireUpdate
 ): Promise<Questionnaire> => {
   const res = await apiClient.put(`/questionnaires/${id}`, data);
-  return res.data;
+  return res.data.data;
 };
 
 export const activateQuestionnaire = async (id: string): Promise<Questionnaire> => {
   const res = await apiClient.post(`/questionnaires/${id}/activate`);
-  return res.data;
+  return res.data.data;
 };
 
 export const deleteQuestionnaire = async (id: string): Promise<void> => {
   await apiClient.delete(`/questionnaires/${id}`);
+};
+
+export const bulkDeleteQuestionnaires = async (ids: string[]): Promise<{ deleted: number; message: string }> => {
+  const res = await apiClient.post('/questionnaires/bulk-delete', { ids });
+  return res.data.data;
 };
 
 export const addQuestion = async (
@@ -114,7 +119,7 @@ export const addQuestion = async (
   data: QuestionCreate
 ): Promise<Question> => {
   const res = await apiClient.post(`/questionnaires/${questionnaireId}/questions`, data);
-  return res.data;
+  return res.data.data;
 };
 
 export const updateQuestion = async (
@@ -122,7 +127,7 @@ export const updateQuestion = async (
   data: QuestionUpdate
 ): Promise<Question> => {
   const res = await apiClient.put(`/questionnaires/questions/${questionId}`, data);
-  return res.data;
+  return res.data.data;
 };
 
 export const deleteQuestion = async (questionId: string): Promise<void> => {
@@ -134,7 +139,7 @@ export const addAnswer = async (
   data: AnswerCreate
 ): Promise<AnswerOption> => {
   const res = await apiClient.post(`/questionnaires/questions/${questionId}/answers`, data);
-  return res.data;
+  return res.data.data;
 };
 
 export const updateAnswer = async (
@@ -142,7 +147,7 @@ export const updateAnswer = async (
   data: AnswerUpdate
 ): Promise<AnswerOption> => {
   const res = await apiClient.put(`/questionnaires/answers/${answerId}`, data);
-  return res.data;
+  return res.data.data;
 };
 
 export const deleteAnswer = async (answerId: string): Promise<void> => {
@@ -163,7 +168,7 @@ export const previewImportFile = async (file: File): Promise<ImportPreview> => {
   const res = await apiClient.post('/questionnaires/import/preview', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return res.data;
+  return res.data.data;
 };
 
 export const importFileToQuestionnaire = async (
@@ -175,7 +180,7 @@ export const importFileToQuestionnaire = async (
   const res = await apiClient.post(`/questionnaires/${questionnaireId}/import`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return res.data;
+  return res.data.data;
 };
 
 // ─── Export ───────────────────────────────────────────────────────────────────
@@ -325,7 +330,7 @@ export const previewFullImportFile = async (file: File): Promise<FullImportPrevi
   const res = await apiClient.post('/questionnaires/import/full/preview', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return res.data;
+  return res.data.data;
 };
 
 export const importFullQuestionnaire = async (
@@ -339,7 +344,7 @@ export const importFullQuestionnaire = async (
     form,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
-  return res.data;
+  return res.data.data;
 };
 
 export const importBulkQuestionnaires = async (
@@ -350,7 +355,7 @@ export const importBulkQuestionnaires = async (
   const res = await apiClient.post('/questionnaires/import/bulk', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return res.data;
+  return res.data.data;
 };
 
 export interface BulkFilesResult {
@@ -371,7 +376,7 @@ export const importBulkMultipleFiles = async (
     form,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
-  return res.data;
+  return res.data.data;
 };
 
 // ─── Coverage ─────────────────────────────────────────────────────────────────
@@ -392,6 +397,6 @@ export interface CoverageReport {
 
 export const getCoverage = async (): Promise<CoverageReport> => {
   const res = await apiClient.get('/questionnaires/coverage');
-  return res.data;
+  return res.data.data;
 };
 

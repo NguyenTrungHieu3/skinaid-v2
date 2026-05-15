@@ -80,7 +80,13 @@ const AnalysisDetails = ({
         </div>
         <div className={styles.detailItem}>
           <label>{t("analysis.detail_healing_time")}</label>
-          <div className={styles.detailValue}>{healingTime}</div>
+          <div className={styles.detailValue}>
+            {severity.toLowerCase() === "general"
+              ? t("analysis.healing_time_consult") || "Tham khảo bác sĩ"
+              : healingTime && healingTime !== "N/A"
+              ? healingTime
+              : t("analysis.healing_time_loading") || "Đang tải..."}
+          </div>
         </div>
       </div>
 

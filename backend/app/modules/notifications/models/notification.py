@@ -22,6 +22,7 @@ class Notification(SQLModel, table=True):
     image_url: Optional[str] = Field(default=None)
 
     priority: str = Field(default="normal", max_length=20)
+    severity: str = Field(default="info", max_length=20)
     scheduled_at: Optional[datetime] = Field(default=None)
     sent_at: Optional[datetime] = Field(default=None)
     delivered_at: Optional[datetime] = Field(default=None)

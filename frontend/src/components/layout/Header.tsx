@@ -158,7 +158,10 @@ const Header = ({ menuOpen, setMenuOpen }: HeaderProps) => {
                     {t("header.hi")}, {user?.full_name || user?.user_name}
                   </Link>{" "}
                   <button
-                    onClick={() => {
+                    type="button"
+                    id="header-logout-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
                       logout();
                       closeMenu();
                     }}

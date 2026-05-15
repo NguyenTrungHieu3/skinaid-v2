@@ -1,4 +1,4 @@
-import { Users, Image, Activity, Target } from 'lucide-react';
+import { Users, Image, Activity, Target, Brain, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import StatCard from '../shared/StatCard';
 import styles from './DashboardStats.module.css';
@@ -23,9 +23,11 @@ interface OverviewData {
 interface DashboardStatsProps {
   overview: OverviewData | null;
   period: string;
+  llmTotalRequests?: number;
+  firstAidTotal?: number;
 }
 
-export default function DashboardStats({ overview }: DashboardStatsProps) {
+export default function DashboardStats({ overview, llmTotalRequests = 0, firstAidTotal = 0 }: DashboardStatsProps) {
   const { t } = useTranslation();
   if (!overview) return null;
 
@@ -54,6 +56,18 @@ export default function DashboardStats({ overview }: DashboardStatsProps) {
         value={`${overview.model_accuracy.toFixed(1)}%`}
         label={t('admin.dashboard.stats.model_accuracy')}
         color="primary"
+      />
+      <StatCard
+        icon={Brain}
+        value={llmTotalRequests.toLocaleString()}
+        label="LLM Requests"
+        color="orange"
+      />
+      <StatCard
+        icon={BookOpen}
+        value={firstAidTotal.toLocaleString()}
+        label="Hướng dẫn sơ cứu"
+        color="green"
       />
     </div>
   );

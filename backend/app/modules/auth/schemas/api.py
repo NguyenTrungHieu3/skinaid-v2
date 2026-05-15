@@ -2,7 +2,7 @@ from uuid import uuid4, UUID
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.modules.auth.schemas.domain import Token, UserBase
 
@@ -101,6 +101,20 @@ class UserLogin(BaseModel):
 
     user_name: str
     password: str
+    device_id: Optional[str] = Field(default=None, max_length=100)
+
+    @field_validator("user_name", mode="before")
+    @classmethod
+    def strip_user_name(cls, v):
+        if isinstance(v, str):
+            return v.strip()
+        return v
+    platform: Optional[str] = Field(default=None, max_length=20, description="ios | android | web")
+    app_version: Optional[str] = Field(default=None, max_length=50)
+    os_version: Optional[str] = Field(default=None, max_length=50)
+    device_model: Optional[str] = Field(default=None, max_length=100)
+    device_name: Optional[str] = Field(default=None, max_length=255)
+    push_token: Optional[str] = None
 
 
 class RefreshTokenRequest(BaseModel):

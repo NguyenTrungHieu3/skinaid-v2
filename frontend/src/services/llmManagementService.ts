@@ -25,7 +25,7 @@ import type {
  * - Budget and pricing management
  */
 
-const BASE_URL = '/admin/llm';
+const BASE_URL = '/llm';
 
 // ── Phase 1: View Configurations ────────────────────────────
 

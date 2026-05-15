@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.modules.auth.router import router as auth_router
+from app.modules.auth.routes.device_router import router as device_router
 from app.modules.users.routes.profile_router import router as profile_router
 from app.modules.ai.routes.ai_router import router as ai_router
 from app.modules.ai.routes.model_management_router import router as model_management_router
@@ -15,12 +16,16 @@ from app.modules.chatbot.router import router as chatbot_router
 from app.modules.rag.routes.rag_router import router as rag_router
 from app.modules.llm.routes.llm_router import router as llm_router
 from app.modules.llm.routes.llm_admin_router import router as llm_admin_router
-from app.modules.questionnaires.router import router as questionnaires_router
+from app.modules.questionnaires.routes.questionnaire_router import router as questionnaire_crud_router
+from app.modules.questionnaires.routes.import_router import router as questionnaire_import_router
+from app.modules.questionnaires.routes.export_router import router as questionnaire_export_router
+from app.modules.questionnaires.routes.user_response_router import router as wound_response_router
 from app.modules.notifications.router import router as notifications_router
 
 router = APIRouter()
 
 router.include_router(auth_router, tags=["Authentication"])
+router.include_router(device_router, tags=["Device Sessions"])
 router.include_router(profile_router, tags=["User Profile Management"])
 router.include_router(ai_router, tags=["AI Processing"])
 router.include_router(model_management_router, tags=["AI Model Management"])
@@ -36,5 +41,8 @@ router.include_router(rag_router, tags=["RAG - Knowledge Retrieval"])
 router.include_router(llm_router, tags=["LLM - Response Synthesis"])
 router.include_router(llm_admin_router, tags=["LLM - Admin Configuration"])
 router.include_router(notifications_router, tags=["Notifications"])
-router.include_router(questionnaires_router, prefix="/questionnaires", tags=["Questionnaires Management"])
+router.include_router(questionnaire_crud_router, tags=["Questionnaires Management"])
+router.include_router(questionnaire_import_router, tags=["Questionnaires Management"])
+router.include_router(questionnaire_export_router, tags=["Questionnaires Management"])
+router.include_router(wound_response_router, tags=["Wound Responses (User)"])
 

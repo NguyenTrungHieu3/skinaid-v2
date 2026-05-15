@@ -314,8 +314,54 @@ nginx/ssl/*.pfx
 .kilo/
 .github/
 .gemini/
-./qwen
+.qwen/
 
 
 # AI Generated Workspace
 .ai_workspace/
+# Added by code-review-graph
+.code-review-graph/
+
+# AI coding assistants — context / config / caches
+.cursor/
+.cursorrules
+.cursorignore
+.roo/
+.roomodes
+.aider*
+.codeium/
+.continue/
+.windsurf/
+.sourcegraph/
+.tabnine/
+.copilot/
+.zed/
+.trae/
+.specstory/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+QWEN.md
+CODEX.md
+.claude-code/
+CLAUDE.local.md
+
+# Dataset (training data — too large for git)
+dataset_final/
+
+# AI-generated scratch / test harnesses at backend root
+backend/test_db.py
+backend/test_db_*.py
+backend/scratch_*.py
+backend/debug_*.py
+backend/test_submit_flow.py
+backend/generate_experiment_report.py
+backend/create_user_response_table.py
+backend/Bao_cao_Thuc_nghiem_Fusion.md
+backend/fusion_experiment_chart.png
+
+# Legacy SQL dumps / Jenkins backups at repo root (use alembic migrations instead)
+/schema_v*.sql
+/pg_dump_schema.sql
+Jenkinsfile.bak*
+/package-lock.json

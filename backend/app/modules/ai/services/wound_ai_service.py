@@ -1,5 +1,6 @@
 import os
 import cv2
+import logging
 import numpy as np
 from typing import Dict, Any
 import aiofiles
@@ -7,6 +8,8 @@ from app.core.config import settings
 from app.core.clients.http_client import HTTPClient
 from app.modules.ai.utils.wound_parser import WoundParser
 from app.modules.ai.constants import WoundConstants
+
+logger = logging.getLogger(__name__)
 
 
 class WoundAIService:
@@ -32,11 +35,16 @@ class WoundAIService:
     def validate_ai_class(cls, wound_type: str, severity: str) -> bool:
         """
         Xác thực xem sự kết hợp wound_type và severity có hợp lệ không.
-        Dermatological types (acne, fungal, psoriasis) only require a valid severity.
+        Dermatological types (fungal, psoriasis) dùng severity "general".
+        Acne dùng mild/moderate/severe. Burn cho phép subtype suffix.
         """
         wt = wound_type.lower()
         if wt not in WoundConstants.WOUND_TYPES:
             return False
+
+        # Dermatological conditions dùng severity "general"
+        if wt in ["fungal", "psoriasis"]:
+            return severity.lower() == "general"
 
         if wt == "burn" and "_" in severity:
             base_severity = severity.split("_")[0]
@@ -199,7 +207,8 @@ class WoundAIService:
 
                     final_detections.append(final_detection)
 
-                except Exception:
+                except Exception as exc:
+                    logger.warning("[WoundAI] detection %d parse failed: %s", i, exc)
                     continue
 
             reliable_detections = [
@@ -224,7 +233,8 @@ class WoundAIService:
 
             return result
 
-        except Exception:
+        except Exception as exc:
+            logger.exception("[WoundAI] processing failed: %s", exc)
             return {
                 "success": False,
                 "error": "AI processing failed",
@@ -251,7 +261,8 @@ class WoundAIService:
                 "status": "healthy" if healthy else "unhealthy"
             }
 
-        except Exception:
+        except Exception as exc:
+            logger.warning("[WoundAI] health check failed: %s", exc)
             return {
                 "overall_health": False,
                 "status": "unhealthy"

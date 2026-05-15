@@ -10,10 +10,11 @@ class MapService:
         self.base_url = "https://api.geoapify.com"
         self.timeout = 10.0
 
-    async def get_ip_location(self) -> Dict[str, Any]:
+    async def get_ip_location(self, client_ip: Optional[str] = None) -> Dict[str, Any]:
         url = f"{self.base_url}/v1/ipinfo"
-        params = {"apiKey": self.api_key}
-    
+        params: Dict[str, Any] = {"apiKey": self.api_key}
+        if client_ip:
+            params["ip"] = client_ip
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
@@ -152,14 +153,23 @@ class MapService:
 
         return result
 
-    async def geocode_address(self, address: str) -> Optional[Dict[str, Any]]:
+    async def geocode_address(
+        self,
+        address: str,
+        bias_lat: Optional[float] = None,
+        bias_lon: Optional[float] = None,
+    ) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/v1/geocode/search"
 
-        params = {
+        params: Dict[str, Any] = {
             "apiKey": self.api_key,
             "text": address,
-            "limit": 1
+            "limit": 1,
+            "filter": "countrycode:vn",
+            "lang": "vi",
         }
+        if bias_lat is not None and bias_lon is not None:
+            params["bias"] = f"proximity:{bias_lon},{bias_lat}"
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.get(url, params=params)
@@ -168,7 +178,15 @@ class MapService:
 
         features = data.get("features", [])
         if not features:
-            return None
+            # Retry without country filter as fallback
+            params.pop("filter", None)
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                data = response.json()
+            features = data.get("features", [])
+            if not features:
+                return None
 
         feature = features[0]
         props = feature.get("properties", {})
@@ -246,14 +264,22 @@ class MapService:
     def _map_category_to_geoapify(self, category: str) -> str:
         """
         Map user-friendly category names to Geoapify's category format.
+        Accepts both short aliases ("pharmacy") and full geoapify ids
+        ("healthcare.pharmacy"). Pharmacy returns multiple variants because
+        Geoapify indexes pharmacies under both healthcare and commercial trees.
         """
         category_mapping = {
             "hospital": "healthcare.hospital",
-            "clinic": "healthcare.clinic,healthcare.doctors",
-            "pharmacy": "healthcare.pharmacy",
+            "clinic": "healthcare.clinic_or_praxis,healthcare.clinic,healthcare.doctors",
+            "pharmacy": "healthcare.pharmacy,commercial.health_and_beauty.pharmacy",
             "dentist": "healthcare.dentist",
             "all": "healthcare",
-            "healthcare": "healthcare"
+            "healthcare": "healthcare",
+            "healthcare.hospital": "healthcare.hospital",
+            "healthcare.clinic": "healthcare.clinic_or_praxis,healthcare.clinic,healthcare.doctors",
+            "healthcare.clinic_or_praxis": "healthcare.clinic_or_praxis,healthcare.clinic,healthcare.doctors",
+            "healthcare.pharmacy": "healthcare.pharmacy,commercial.health_and_beauty.pharmacy",
+            "healthcare.dentist": "healthcare.dentist",
         }
 
         return category_mapping.get(category.lower(), category)

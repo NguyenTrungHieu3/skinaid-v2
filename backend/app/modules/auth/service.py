@@ -31,6 +31,8 @@ from app.modules.users.models import User
 from app.modules.auth.models.verification_token import VerificationToken
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
+from app.modules.auth.repository.device_session_repository import DeviceSessionRepository
+from app.modules.auth.device_session_service import DeviceSessionService
 from app.modules.auth.schemas.api import UserCreate, UserLogin
 from app.modules.users.models import UserProfile
 from app.shared.exceptions import BadRequestError
@@ -74,6 +76,9 @@ class AuthService:
         self.email_service = email_service
         self.audit_service = AuditService(audit_repo) if audit_repo else None
         self.jwt_handler = JWTHandler()
+        self.device_service = DeviceSessionService(
+            repo=DeviceSessionRepository(db), db=db
+        )
 
     async def _audit(
         self,
@@ -210,6 +215,23 @@ class AuthService:
             access_jti=tokens["access_jti"],
             refresh_exp=tokens["refresh_exp"],
         )
+
+        try:
+            await self.device_service.upsert_on_login(
+                user_id=user.user_id,
+                device_id=form_data.device_id,
+                platform=form_data.platform,
+                app_version=form_data.app_version,
+                os_version=form_data.os_version,
+                device_model=form_data.device_model,
+                device_name=form_data.device_name,
+                push_token=form_data.push_token,
+            )
+        except Exception:
+            logger.warning(
+                "[AuthService] Device session upsert failed (non-blocking) — user_id=%s",
+                user.user_id,
+            )
 
         await self._audit(
             action="user_login",
@@ -383,8 +405,8 @@ class AuthService:
 
             if jti:
                 revoked_count = await self.revoke_token_family(jti)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("[AuthService] logout token decode failed: %s", exc)
 
         await self._audit(
             action="user_logout",
@@ -452,7 +474,7 @@ class AuthService:
         token_entity = VerificationToken.create_token(
             email=email,
             token_type="password_reset",
-            expires_in_hours=1,
+            expires_in_minutes=30,
         )
         token_entity.token = reset_token
         await self.token_repo.create_verification_token(token_entity)

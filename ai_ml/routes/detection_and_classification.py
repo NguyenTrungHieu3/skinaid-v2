@@ -83,6 +83,9 @@ async def analyze_wound(
                 detections=[] # Sửa: Luôn trả về danh sách rỗng thay vì None
             )
         
+        # Dermatological single-word classes that use "general" severity
+        _DERM_GENERAL = {"ringworm", "psoriasis"}
+
         # (Đoạn code này giờ đã an toàn vì results_raw không thể là None)
         for det in results_raw:
             try:
@@ -90,10 +93,13 @@ async def analyze_wound(
                 parts = severity_label.split("_", 1)     # ["burn", "moderate"] or ["ringworm"] or ["acne", "mild"]
                 wound_type = parts[0] if len(parts) > 0 else det.get("class_name", "wound")
 
-                # For single-word dermatological classes (ringworm, psoriasis) there is no
-                # severity suffix — default to "mild" so the backend can process them.
+                # For single-word dermatological classes (ringworm, psoriasis):
+                #   → send "general" so backend validate_ai_class accepts them.
+                # For all other single-word classes default to "mild".
                 if len(parts) > 1:
                     severity = parts[1]
+                elif wound_type.lower() in _DERM_GENERAL:
+                    severity = "general"
                 else:
                     severity = "mild"
 

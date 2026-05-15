@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList, Brain } from 'lucide-react';
+import { Users, FileText, Shield, LayoutGrid, Database, BookOpen, ClipboardList, Brain, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
@@ -9,6 +9,8 @@ import ModelManagement from '../components/admin/ModelManagement';
 import RagManagement from '../components/admin/RagManagement';
 import QuestionnaireManagement from '../components/admin/QuestionnaireManagement';
 import LLMManagement from '../components/admin/LLMManagement';
+import NotificationManagement from '../components/admin/NotificationManagement';
+import NotificationDetail from '../components/admin/NotificationDetail';
 import Sidebar from '../components/admin/Sidebar';
 import TopBar from '../components/admin/TopBar';
 import AdminFooter from '../components/admin/AdminFooter';
@@ -36,9 +38,10 @@ export default function AdminPage() {
     { id: 'users', label: t('admin.sidebar.user_management'), icon: Users },
     { id: 'firstaid', label: t('admin.sidebar.first_aid_guidance'), icon: FileText },
     { id: 'questionnaires', label: 'Bộ câu hỏi', icon: ClipboardList },
-    { id: 'models', label: t('admin.sidebar.model_management'), icon: Database },
+    // { id: 'models', label: t('admin.sidebar.model_management'), icon: Database }, // Hidden: AI Model Management module
     { id: 'llm', label: 'Quản lý LLM', icon: Brain },
     { id: 'rag', label: t('admin.sidebar.knowledge_base', 'Cơ sở tri thức'), icon: BookOpen },
+    { id: 'notifications', label: 'Thông báo', icon: Bell },
     { id: 'logs', label: t('admin.sidebar.admin_logs'), icon: Shield },
   ];
 
@@ -59,9 +62,15 @@ export default function AdminPage() {
         return <RagManagement />;
       case 'questionnaires':
         return <QuestionnaireManagement />;
+      case 'notifications':
+        return <NotificationManagement onNavigate={(page: string) => setCurrentPage(page)} />;
       case 'logs':
         return <AdminLogs />;
       default:
+        if (currentPage.startsWith('notification_detail_')) {
+          const id = currentPage.replace('notification_detail_', '');
+          return <NotificationDetail notificationId={id} onBack={() => setCurrentPage('notifications')} />;
+        }
         return <AdminDashboard />;
     }
   };

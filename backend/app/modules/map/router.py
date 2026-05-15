@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 import httpx
 
 from app.modules.map.dependencies import MapSvc
@@ -27,10 +27,23 @@ router = APIRouter(prefix="/map")
     summary="Lấy vị trí từ IP"
 )
 async def get_user_location_from_ip(
+    request: Request,
     service: MapSvc
 ) -> SuccessResponse:
     try:
-        location_data = await service.get_ip_location()
+        xff = request.headers.get("x-forwarded-for")
+        client_ip = (
+            xff.split(",")[0].strip() if xff
+            else request.headers.get("x-real-ip")
+            or (request.client.host if request.client else None)
+        )
+        # Skip private/loopback IPs — let Geoapify auto-detect
+        if client_ip and (
+            client_ip.startswith(("10.", "192.168.", "127.", "172.16.", "172.17.", "172.18.", "172.19.", "172.2", "172.30.", "172.31."))
+            or client_ip == "::1"
+        ):
+            client_ip = None
+        location_data = await service.get_ip_location(client_ip=client_ip)
         return SuccessResponse(
             message="Lấy vị trí thành công",
             data=LocationResponse(**location_data)
@@ -158,10 +171,12 @@ async def calculate_route(
 )
 async def geocode_address(
     service: MapSvc,
-    address: str = Query(..., min_length=3)
+    address: str = Query(..., min_length=3),
+    bias_lat: Optional[float] = Query(None),
+    bias_lon: Optional[float] = Query(None),
 ) -> SuccessResponse:
     try:
-        result = await service.geocode_address(address)
+        result = await service.geocode_address(address, bias_lat=bias_lat, bias_lon=bias_lon)
         if not result:
             raise LocationNotFoundError("Address not found")
 

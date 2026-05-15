@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
-from app.modules.ai.models.audit_log import ModelAuditLog
+from app.modules.audit.models.audit_log import AuditLog
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class AuditService:
         status: str = "success",
         error_message: Optional[str] = None,
         error_code: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """
         Log an action to the audit trail.
         
@@ -60,17 +60,28 @@ class AuditService:
         Returns:
             Created audit log entry
         """
-        log_entry = ModelAuditLog.create_log(
+        actual_details = details or {}
+        if actor_email:
+            actual_details["actor_email"] = actor_email
+        if resource_version:
+            actual_details["resource_version"] = resource_version
+        if status != "success":
+            actual_details["status"] = status
+
+        log_entry = AuditLog(
+            user_id=actor_id,
             action=action,
-            resource_id=resource_id,
-            actor_id=actor_id,
-            actor_email=actor_email,
-            actor_ip=actor_ip,
-            resource_version=resource_version,
-            details=details,
-            status=status,
+            action_category="ai_model_lifecycle",
+            log_type="admin_action",
+            level="info" if status == "success" else "error",
+            description=f"AI model action: {action}",
+            resource_type="ai_model",
+            resource_id=str(resource_id),
+            ip_address=actor_ip,
+            success=(status == "success"),
+            error_code=error_code,
             error_message=error_message,
-            error_code=error_code
+            details=actual_details
         )
         
         self.db.add(log_entry)
@@ -93,7 +104,7 @@ class AuditService:
         is_beta: bool = False,
         status: str = "success",
         error_message: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a model upload event."""
         return await self.log_action(
             action="model_upload",
@@ -121,7 +132,7 @@ class AuditService:
         actor_ip: Optional[str] = None,
         status: str = "success",
         error_message: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a model activation event."""
         return await self.log_action(
             action="model_activate",
@@ -148,7 +159,7 @@ class AuditService:
         actor_ip: Optional[str] = None,
         status: str = "success",
         error_message: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a model rollback event."""
         return await self.log_action(
             action="model_rollback",
@@ -176,7 +187,7 @@ class AuditService:
         actor_ip: Optional[str] = None,
         status: str = "success",
         error_message: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a model deletion event."""
         return await self.log_action(
             action="model_delete",
@@ -203,7 +214,7 @@ class AuditService:
         actor_ip: Optional[str] = None,
         status: str = "success",
         error_message: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a model reload event."""
         return await self.log_action(
             action="model_reload",
@@ -227,7 +238,7 @@ class AuditService:
         error_message: str,
         actor_id: Optional[UUID] = None,
         actor_ip: Optional[str] = None
-    ) -> ModelAuditLog:
+    ) -> AuditLog:
         """Log a validation failure event."""
         return await self.log_action(
             action="validation_failed",
@@ -251,7 +262,7 @@ class AuditService:
         status: Optional[str] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> list[ModelAuditLog]:
+    ) -> list[AuditLog]:
         """
         Query audit logs with filters.
         
@@ -266,19 +277,22 @@ class AuditService:
         Returns:
             List of audit logs
         """
-        query = select(ModelAuditLog)
+        query = select(AuditLog).where(AuditLog.resource_type == "ai_model")
         
         if resource_id:
-            query = query.where(ModelAuditLog.resource_id == resource_id)
+            query = query.where(AuditLog.resource_id == str(resource_id))
         if actor_id:
-            query = query.where(ModelAuditLog.actor_id == actor_id)
+            query = query.where(AuditLog.user_id == actor_id)
         if action:
-            query = query.where(ModelAuditLog.action == action)
+            query = query.where(AuditLog.action == action)
         if status:
-            query = query.where(ModelAuditLog.status == status)
+            if status == "success":
+                query = query.where(AuditLog.success == True)
+            else:
+                query = query.where(AuditLog.success == False)
         
         query = query.order_by(
-            desc(ModelAuditLog.created_at)
+            desc(AuditLog.timestamp)
         ).offset(skip).limit(limit)
         
         result = await self.db.execute(query)
@@ -294,16 +308,19 @@ class AuditService:
         """Get count of logs matching filters."""
         from sqlalchemy import func
         
-        query = select(func.count()).select_from(ModelAuditLog)
+        query = select(func.count()).select_from(AuditLog).where(AuditLog.resource_type == "ai_model")
         
         if resource_id:
-            query = query.where(ModelAuditLog.resource_id == resource_id)
+            query = query.where(AuditLog.resource_id == str(resource_id))
         if actor_id:
-            query = query.where(ModelAuditLog.actor_id == actor_id)
+            query = query.where(AuditLog.user_id == actor_id)
         if action:
-            query = query.where(ModelAuditLog.action == action)
+            query = query.where(AuditLog.action == action)
         if status:
-            query = query.where(ModelAuditLog.status == status)
+            if status == "success":
+                query = query.where(AuditLog.success == True)
+            else:
+                query = query.where(AuditLog.success == False)
         
         result = await self.db.execute(query)
         return result.scalar() or 0

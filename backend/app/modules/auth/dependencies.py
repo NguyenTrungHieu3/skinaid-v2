@@ -9,7 +9,9 @@ from app.modules.audit.dependencies import get_audit_repository
 from app.modules.audit.audit_repository import AuditRepository
 from app.modules.auth.repository.token_repository import TokenRepository
 from app.modules.auth.repository.user_repository import UserRepository
+from app.modules.auth.repository.device_session_repository import DeviceSessionRepository
 from app.modules.auth.service import AuthService
+from app.modules.auth.device_session_service import DeviceSessionService
 
 
 def get_user_repository(
@@ -55,3 +57,20 @@ def get_auth_service(
 UserRepo  = Annotated[UserRepository,  Depends(get_user_repository)]
 TokenRepo = Annotated[TokenRepository, Depends(get_token_repository)]
 AuthSvc   = Annotated[AuthService,     Depends(get_auth_service)]
+
+
+def get_device_session_repository(
+    db: AsyncSession = Depends(get_db),
+) -> DeviceSessionRepository:
+    return DeviceSessionRepository(db)
+
+
+def get_device_session_service(
+    repo: DeviceSessionRepository = Depends(get_device_session_repository),
+    db: AsyncSession = Depends(get_db),
+) -> DeviceSessionService:
+    return DeviceSessionService(repo=repo, db=db)
+
+
+DeviceSessionRepo = Annotated[DeviceSessionRepository, Depends(get_device_session_repository)]
+DeviceSessionSvc  = Annotated[DeviceSessionService, Depends(get_device_session_service)]
