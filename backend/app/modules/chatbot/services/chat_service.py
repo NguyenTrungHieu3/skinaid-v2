@@ -22,6 +22,8 @@ from app.modules.chatbot.schemas.chat_schemas import (
     ChatMessageResponse,
     CreateSessionResponse,
     MessageItem,
+    SessionDetailResponse,
+    SessionListItem,
 )
 from app.modules.chatbot.services.chat_prompt_builder import ChatPromptBuilder
 from app.modules.chatbot.services.rag_retriever import ChatRagRetriever
@@ -87,6 +89,57 @@ class ChatService:
                 message,
                 start_ms,
             )
+
+        raise ChatSessionNotFoundError(details={"session_id": str(session_id)})
+
+    async def list_sessions(
+        self,
+        user_id: UUID,
+        analysis_id: UUID | None = None,
+    ) -> list[SessionListItem]:
+        sessions = await self._repo.list_sessions(user_id, analysis_id)
+        return [self._build_session_list_item(session) for session in sessions]
+
+    async def get_session_detail(
+        self,
+        user_id: UUID,
+        session_id: UUID,
+    ) -> SessionDetailResponse:
+        db_session = await self._repo.get_session(session_id, user_id)
+        if db_session:
+            messages = await self._get_db_messages_as_history(session_id)
+            return self._build_session_detail(db_session, messages)
+
+        redis_meta = await self._redis_store.get_session(session_id, user_id)
+        if redis_meta:
+            messages = await self._redis_store.get_messages(session_id)
+            created_at = self._parse_meta_datetime(redis_meta.get("created_at"))
+            message_count = int(redis_meta.get("message_count", 0))
+            return SessionDetailResponse(
+                session_id=session_id,
+                analysis_id=None,
+                session_type="app_guide",
+                messages=messages,
+                message_count=message_count,
+                remaining_messages=max(0, _MAX_MESSAGES - message_count),
+                status=redis_meta.get("status") or "active",
+                created_at=created_at,
+            )
+
+        raise ChatSessionNotFoundError(details={"session_id": str(session_id)})
+
+    async def delete_session(
+        self,
+        user_id: UUID,
+        session_id: UUID,
+    ) -> str:
+        deleted = await self._repo.delete_session(session_id, user_id)
+        if deleted:
+            return str(session_id)
+
+        redis_meta = await self._redis_store.get_session(session_id, user_id)
+        if redis_meta and await self._redis_store.delete_session(session_id):
+            return str(session_id)
 
         raise ChatSessionNotFoundError(details={"session_id": str(session_id)})
 
@@ -251,6 +304,42 @@ class ChatService:
             MessageItem(role=m.role, content=m.content, created_at=m.created_at)
             for m in messages
         ]
+
+    def _build_session_list_item(self, session: ChatSession) -> SessionListItem:
+        return SessionListItem(
+            session_id=session.session_id,
+            analysis_id=session.analysis_id,
+            session_type="wound_advisor" if session.analysis_id else "app_guide",
+            message_count=session.message_count,
+            last_message_at=session.last_message_at or session.created_at,
+            status=session.status,
+            created_at=session.created_at,
+        )
+
+    def _build_session_detail(
+        self,
+        session: ChatSession,
+        messages: list[MessageItem],
+    ) -> SessionDetailResponse:
+        return SessionDetailResponse(
+            session_id=session.session_id,
+            analysis_id=session.analysis_id,
+            session_type="wound_advisor" if session.analysis_id else "app_guide",
+            messages=messages,
+            message_count=session.message_count,
+            remaining_messages=max(0, _MAX_MESSAGES - session.message_count),
+            status=session.status,
+            created_at=session.created_at,
+        )
+
+    @staticmethod
+    def _parse_meta_datetime(value: str | None) -> datetime:
+        if not value:
+            return datetime.now(timezone.utc).replace(tzinfo=None)
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return datetime.now(timezone.utc).replace(tzinfo=None)
 
     async def _save_db_exchange(
         self,

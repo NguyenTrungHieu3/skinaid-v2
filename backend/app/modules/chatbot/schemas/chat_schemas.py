@@ -35,3 +35,24 @@ class MessageItem(BaseModel):
     role: str
     content: str
     created_at: datetime
+
+
+class SessionListItem(BaseModel):
+    session_id: UUID
+    analysis_id: UUID | None = None
+    session_type: str
+    message_count: int
+    last_message_at: datetime
+    status: str
+    created_at: datetime
+
+
+class SessionDetailResponse(BaseModel):
+    session_id: UUID
+    analysis_id: UUID | None = None
+    session_type: str
+    messages: list[MessageItem]
+    message_count: int
+    remaining_messages: int
+    status: str
+    created_at: datetime
