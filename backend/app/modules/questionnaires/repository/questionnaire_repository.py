@@ -1,6 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy import delete as sa_delete
 from sqlmodel import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,3 +70,19 @@ class QuestionnaireRepository(BaseRepository[Questionnaire]):
         stmt = select(AnswerOption).where(AnswerOption.answer_id == answer_id)
         result = await self.db.execute(stmt)
         return result.scalars().first()
+
+    async def delete(self, entity: Questionnaire) -> None:
+        question_id_result = await self.db.execute(
+            select(Question.question_id).where(
+                Question.questionnaire_id == entity.questionnaire_id
+            )
+        )
+        question_ids = list(question_id_result.scalars().all())
+        if question_ids:
+            await self.db.execute(
+                sa_delete(AnswerOption).where(AnswerOption.question_id.in_(question_ids))
+            )
+            await self.db.execute(
+                sa_delete(Question).where(Question.question_id.in_(question_ids))
+            )
+        await super().delete(entity)

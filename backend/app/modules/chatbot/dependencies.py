@@ -14,12 +14,10 @@ from app.modules.llm.services.llm_service import LLMService
 
 
 def get_llm_service() -> LLMService:
-    """Factory cho LLMService — reuse từ llm module."""
     return LLMService()
 
 
 def get_prompt_builder() -> ChatPromptBuilder:
-    """Factory cho ChatPromptBuilder — stateless."""
     return ChatPromptBuilder()
 
 
@@ -29,7 +27,6 @@ async def get_chat_service(
     llm_service: LLMService = Depends(get_llm_service),
     prompt_builder: ChatPromptBuilder = Depends(get_prompt_builder),
 ) -> ChatService:
-    """Factory cho ChatService — inject tất cả dependencies."""
     return ChatService(
         db=db,
         redis=redis,

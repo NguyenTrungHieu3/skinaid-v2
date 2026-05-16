@@ -6,7 +6,7 @@ from uuid import UUID
 
 # Canonical wound types — must stay in sync with VALID_WOUND_TYPES in import_service
 ALLOWED_WOUND_TYPES = {
-    "burn", "abrasion", "bruise", "fungal", "acne", "psoriasis",
+    "burn", "abrasion", "bruise", "cut", "fungal", "acne", "psoriasis",
 }
 
 ALLOWED_TRIAGE_LEVELS = {"green", "yellow", "red"}

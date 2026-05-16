@@ -1,14 +1,14 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from app.core.Security.jwt import JWTHandler
-from app.core.Security.password import hash_password
+from app.core.security.jwt import JWTHandler
+from app.core.security.password import hash_password
 from app.modules.auth.models.roles import Role
 from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole
 from app.modules.auth.models.verification_token import VerificationToken
-from app.modules.profile.models import UserProfile
+from app.modules.users.models.user_profile import UserProfile
 
 
 def utc_now_naive() -> datetime:

@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import logging
 from typing import Any, Final
 
 from app.modules.chatbot.schemas.chat_schemas import MessageItem
-
-logger = logging.getLogger(__name__)
 
 _WOUND_TYPE_DISPLAY: Final[dict[str, str]] = {
     "abrasion": "Trầy xước (Abrasion)",
@@ -34,8 +31,6 @@ _MAX_FIRSTAID_CHARS: Final[int] = 1_000
 
 
 class ChatPromptBuilder:
-    """Stateless prompt builder cho 2 mode chatbot: Wound Advisor và App Guide."""
-
     def build_wound_advisor_prompt(
         self,
         wound_type: str,
@@ -44,7 +39,6 @@ class ChatPromptBuilder:
         firstaid_snapshot: dict[str, Any] | None,
         rag_chunks: list[Any] | None = None,
     ) -> str:
-        """Build system prompt cho Wound Advisor — STRICT scope chỉ wound đã quét."""
         wt_display = _WOUND_TYPE_DISPLAY.get(wound_type.lower(), wound_type)
         sev_display = _SEVERITY_DISPLAY.get(severity.lower(), severity)
 
@@ -62,7 +56,6 @@ class ChatPromptBuilder:
             st_display = _SUB_TYPE_DISPLAY.get(sub_type.lower(), sub_type)
             lines.append(f"- Phân loại phụ: {st_display}")
 
-        # Firstaid section
         lines.append("")
         lines.append("[HƯỚNG DẪN SƠ CỨU TỪ CƠ SỞ DỮ LIỆU]")
         if firstaid_snapshot:
@@ -70,7 +63,6 @@ class ChatPromptBuilder:
         else:
             lines.append("Không có hướng dẫn cụ thể trong cơ sở dữ liệu.")
 
-        # RAG section
         lines.append("")
         rag_text = self._format_rag_chunks(rag_chunks)
         if rag_text:
@@ -80,7 +72,6 @@ class ChatPromptBuilder:
             lines.append("[KIẾN THỨC Y KHOA BỔ SUNG]")
             lines.append("Không có kiến thức bổ sung.")
 
-        # Strict rules
         lines.extend([
             "",
             "═══════════════════════════════════════",
@@ -111,7 +102,6 @@ class ChatPromptBuilder:
         return "\n".join(lines)
 
     def build_app_guide_prompt(self) -> str:
-        """Build system prompt cho App Guide — hướng dẫn sử dụng SkinAid."""
         return (
             "Bạn là trợ lý hướng dẫn sử dụng ứng dụng SkinAid — ứng dụng sơ cứu vết thương bằng AI.\n"
             "\n"
@@ -149,7 +139,6 @@ class ChatPromptBuilder:
         history: list[MessageItem],
         current_message: str,
     ) -> list[dict[str, str]]:
-        """Assemble messages list cho OpenAI API: [system, ...history, user_msg]."""
         messages: list[dict[str, str]] = [
             {"role": "system", "content": system_prompt},
         ]
@@ -165,7 +154,6 @@ class ChatPromptBuilder:
 
 
     def _format_firstaid_snapshot(self, snapshot: dict[str, Any]) -> str:
-        """Format firstaid_snapshot dict thành text cho prompt."""
         parts: list[str] = []
 
         title = snapshot.get("title", "")
@@ -193,7 +181,6 @@ class ChatPromptBuilder:
         return text
 
     def _format_rag_chunks(self, chunks: list[Any] | None) -> str:
-        """Format RAG chunks thành text cho prompt. Nhận RetrievedChunk objects."""
         if not chunks:
             return ""
 
@@ -201,10 +188,18 @@ class ChatPromptBuilder:
 
         parts = []
         for i, chunk in enumerate(top):
-            content = chunk.content if hasattr(chunk, "content") else str(chunk)
+            content = self._chunk_text(chunk)
             parts.append(f"[Nguồn {i + 1} — điểm liên quan: {chunk.score:.2f}]\n{content.strip()}")
 
         combined = "\n\n".join(parts)
         if len(combined) > _MAX_RAG_CHARS:
             combined = combined[:_MAX_RAG_CHARS] + "\n[... nội dung được rút gọn ...]"
         return combined
+
+    @staticmethod
+    def _chunk_text(chunk: Any) -> str:
+        if hasattr(chunk, "text"):
+            return str(chunk.text)
+        if hasattr(chunk, "content"):
+            return str(chunk.content)
+        return str(chunk)

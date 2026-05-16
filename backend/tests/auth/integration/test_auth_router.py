@@ -5,7 +5,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.Security.jwt import JWTHandler
+from app.core.security.jwt import JWTHandler
 from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user import User
 from app.modules.auth.models.verification_token import VerificationToken

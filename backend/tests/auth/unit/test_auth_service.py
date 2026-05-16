@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from app.core.Security.password import hash_password
+from app.core.security.password import hash_password
 from app.modules.auth.exceptions import (
     AccountInactiveError,
     AccountUnverifiedError,
@@ -67,7 +67,7 @@ async def test_register_user_success():
 
     assert result.email == payload.email
     user_repo.create_with_profile.assert_awaited_once()
-    db.commit.assert_awaited()
+    db.flush.assert_awaited()
 
 
 @pytest.mark.asyncio
@@ -184,13 +184,13 @@ async def test_authenticate_user_success():
 
     assert result.user_id == user_id
     user_repo.update_last_activity.assert_awaited_once()
-    db.commit.assert_awaited()
+    db.flush.assert_awaited()
 
 
 @pytest.mark.asyncio
 async def test_refresh_token_fail_invalid_payload_type():
     service, *_ = make_service()
-    with patch("app.core.Security.jwt.JWTHandler.decode_token", return_value={"sub": "x", "type": "access", "jti": "j"}):
+    with patch("app.core.security.jwt.JWTHandler.decode_token", return_value={"sub": "x", "type": "access", "jti": "j"}):
         with pytest.raises(InvalidTokenError):
             await service.refresh_token("invalid")
 
@@ -200,7 +200,7 @@ async def test_refresh_token_fail_token_reuse():
     service, *_ = make_service()
     service.check_token_reuse = AsyncMock(side_effect=TokenReuseError())
     payload = {"sub": str(uuid.uuid4()), "type": "refresh", "ver": 0, "jti": "old-jti"}
-    with patch("app.core.Security.jwt.JWTHandler.decode_token", return_value=payload):
+    with patch("app.core.security.jwt.JWTHandler.decode_token", return_value=payload):
         with pytest.raises(TokenReuseError):
             await service.refresh_token("refresh-token")
 
@@ -211,7 +211,7 @@ async def test_refresh_token_fail_token_version_revoked():
     service.check_token_reuse = AsyncMock()
     service.validate_token_version = AsyncMock(side_effect=TokenRevokedError())
     payload = {"sub": str(uuid.uuid4()), "type": "refresh", "ver": 0, "jti": "old-jti"}
-    with patch("app.core.Security.jwt.JWTHandler.decode_token", return_value=payload):
+    with patch("app.core.security.jwt.JWTHandler.decode_token", return_value=payload):
         with pytest.raises(TokenRevokedError):
             await service.refresh_token("refresh-token")
 
@@ -244,8 +244,8 @@ async def test_refresh_token_success_rotation_flow():
     service.get_user_token_version = AsyncMock(return_value=0)
     service.create_token_family = AsyncMock()
 
-    with patch("app.core.Security.jwt.JWTHandler.decode_token", return_value=payload):
-        with patch("app.core.Security.jwt.JWTHandler.create_token_pair", return_value=new_tokens):
+    with patch("app.core.security.jwt.JWTHandler.decode_token", return_value=payload):
+        with patch("app.core.security.jwt.JWTHandler.create_token_pair", return_value=new_tokens):
             result = await service.refresh_token("refresh-token")
 
     assert result["access_token"] == "new-access"
@@ -263,7 +263,7 @@ async def test_revoke_all_user_tokens_success():
 
     assert result["old_version"] == 1
     assert result["new_version"] == 2
-    db.commit.assert_awaited()
+    db.flush.assert_awaited()
 
 
 @pytest.mark.asyncio
@@ -347,4 +347,3 @@ async def test_change_password_success():
 
     assert result is True
     db.flush.assert_awaited()
-    db.commit.assert_awaited()

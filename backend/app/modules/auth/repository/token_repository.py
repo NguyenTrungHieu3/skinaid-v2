@@ -49,7 +49,6 @@ class TokenRepository:
         token_entity = result.scalar_one_or_none()
         if token_entity:
             token_entity.is_used = True
-            token_entity.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
             await self.db.flush()
 
     async def invalidate_previous_tokens(self, email: str, token_type: str) -> int:
@@ -65,7 +64,6 @@ class TokenRepository:
         count = 0
         for token_entity in tokens:
             token_entity.is_used = True
-            token_entity.updated_at = now
             count += 1
 
         if count > 0:

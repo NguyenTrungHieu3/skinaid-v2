@@ -411,6 +411,7 @@ export default function LLMManagement() {
   if (loading) {
     return (
       <div className={styles.llmManagementPage}>
+        <title>{t('title.admin_llm_management')}</title>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner}></div>
           <p className={styles.loadingText}>Đang tải cấu hình LLM...</p>
@@ -421,6 +422,7 @@ export default function LLMManagement() {
 
   return (
     <div className={styles.llmManagementPage}>
+      <title>{t('title.admin_llm_management')}</title>
       <Toaster richColors position="top-right" />
 
       {/* Header */}

@@ -45,14 +45,16 @@ async def init_db():
 
             if existing_tables:
                 # DB was initialized via SQL file — skip create_all
-                # to avoid DuplicateTableError on indexes
+                # when the schema is complete, but create model tables that
+                # were added after the local database was first initialized.
                 expected = set(SQLModel.metadata.tables.keys())
                 missing = expected - existing_tables
                 if missing:
                     logger.warning(
                         f"DB has {len(existing_tables)} tables but missing: {missing}. "
-                        f"Please update your SQL schema file."
+                        f"Creating missing model tables."
                     )
+                    SQLModel.metadata.create_all(connection, checkfirst=True)
                 else:
                     logger.info(
                         f"Database already initialized ({len(existing_tables)} tables). "

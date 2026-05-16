@@ -41,6 +41,11 @@
     "admin_dashboard": "Bảng điều khiển - Quản trị viên",
     "admin_logs": "Nhật ký quản trị viên",
     "admin_user_management": "Quản lý người dùng",
+    "admin_questionnaire": "Quản lý bộ câu hỏi",
+    "admin_llm_management": "Quản lý LLM",
+    "admin_knowledge_base": "Cơ sở tri thức",
+    "admin_notifications": "Quản lý thông báo",
+    "admin_notification_detail": "Chi tiết thông báo",
     "admin_first_aid": "Quản lý sơ cứu"
   },
   "auth_page": {
