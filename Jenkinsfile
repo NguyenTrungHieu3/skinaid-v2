@@ -186,54 +186,14 @@ pipeline {
         }
 
         // ============================================================
-        // Stage 4: Test
-        // Mount toàn bộ backend/.env.prod vào container thay vì
-        // truyền từng biến → đảm bảo SECRET_KEY và tất cả config có đủ
-        // ============================================================
-        stage('Test') {
-            when {
-                environment name: 'RUN_TESTS', value: 'true'
-            }
-            steps {
-                echo '\033[34m[4/7] Running backend unit tests...\033[0m'
-                sh '''
-                    # Lần đầu deploy image chưa tồn tại → skip
-                    if ! docker image inspect skinaid-backend:latest > /dev/null 2>&1; then
-                        echo "Image skinaid-backend:latest chưa có — skip tests (first deploy)"
-                        exit 0
-                    fi
-
-                    # Chạy test trong image (không mount code production)
-                    # --user root: tránh PermissionError khi tạo uploads/ và pytest cache
-                    # Dùng Redis DB 1 để không ảnh hưởng data production
-                    docker run --rm \
-                        --network skinaid_skinaid_internal \
-                        --env-file "$DEPLOY_DIR/backend/.env.prod" \
-                        -e REDIS_URL="redis://:$(grep ^REDIS_PASSWORD= $DEPLOY_DIR/.env | cut -d= -f2)@redis:6379/1" \
-                        -e TESTING=true \
-                        --user root \
-                        skinaid-backend:latest \
-                        sh -c "
-                            pip install pytest pytest-asyncio httpx --quiet 2>/dev/null
-                            python -m pytest tests/ -v --tb=short \
-                                --ignore=tests/auth/integration \
-                                -x
-                        "
-
-                    echo "Tests passed ✓"
-                '''
-            }
-        }
-
-        // ============================================================
-        // Stage 5: Build
+        // Stage 4: Build
         // ============================================================
         stage('Build') {
             when {
                 environment name: 'SKIP_BUILD', value: 'false'
             }
             steps {
-                echo '\033[34m[5/7] Syncing code and building: ${BUILD_SERVICES}...\033[0m'
+                echo '\033[34m[4/7] Syncing code and building: ${BUILD_SERVICES}...\033[0m'
                 sh '''
                     cd "$DEPLOY_DIR"
 
@@ -248,7 +208,22 @@ pipeline {
                             || echo "  WARN: $f missing sau reset!"
                     done
 
+                    backup_image() {
+                        local SERVICE="$1"
+                        local IMAGE="$2"
+                        if echo " $BUILD_SERVICES " | grep -q " $SERVICE " \
+                            && docker image inspect "$IMAGE" > /dev/null 2>&1; then
+                            docker tag "$IMAGE" "${IMAGE%:*}:rollback-${BUILD_NUMBER}"
+                            echo "  Backup image: $IMAGE"
+                        fi
+                    }
+
+                    backup_image "backend"  "skinaid-backend:latest"
+                    backup_image "frontend" "skinaid-frontend:latest"
+                    backup_image "ai_ml"    "skinaid-ai:latest"
+
                     # Load env — .env gốc có VITE_* cần cho frontend build
+                    set +x
                     set -a
                     . "$DEPLOY_DIR/.env"
                     . "$DEPLOY_DIR/backend/.env.prod"
@@ -269,6 +244,70 @@ pipeline {
         }
 
         // ============================================================
+        // Stage 5: Test
+        // Mount tests từ deploy directory; không copy tests vào image prod.
+        // Dùng DB riêng ${DB_NAME}_test và Redis DB 1 để tránh chạm data prod.
+        // ============================================================
+        stage('Test') {
+            when {
+                environment name: 'RUN_TESTS', value: 'true'
+            }
+            steps {
+                echo '\033[34m[5/7] Running backend unit tests...\033[0m'
+                sh '''
+                    cd "$DEPLOY_DIR"
+
+                    if ! docker image inspect skinaid-backend:latest > /dev/null 2>&1; then
+                        echo "ERROR: skinaid-backend:latest not found after build"
+                        exit 1
+                    fi
+
+                    if [ ! -d "$DEPLOY_DIR/backend/tests" ]; then
+                        echo "ERROR: backend/tests not found in $DEPLOY_DIR"
+                        exit 1
+                    fi
+
+                    set +x
+                    set -a
+                    . "$DEPLOY_DIR/.env"
+                    . "$DEPLOY_DIR/backend/.env.prod"
+                    set +a
+
+                    TEST_DB_NAME="${DB_NAME}_test"
+                    TEST_DB_URL="postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${TEST_DB_NAME}"
+
+                    echo "Preparing backend test database: ${TEST_DB_NAME}"
+                    docker exec \
+                        -e PGPASSWORD="$DB_PASSWORD" \
+                        -e DB_USER="$DB_USER" \
+                        -e TEST_DB_NAME="$TEST_DB_NAME" \
+                        skinaid_postgres \
+                        sh -c 'dropdb -U "$DB_USER" --if-exists --force "$TEST_DB_NAME" && createdb -U "$DB_USER" "$TEST_DB_NAME"'
+
+                    docker run --rm \
+                        --network skinaid_skinaid_internal \
+                        --env-file "$DEPLOY_DIR/backend/.env.prod" \
+                        -e DATABASE_URL="$TEST_DB_URL" \
+                        -e TEST_DATABASE_URL="$TEST_DB_URL" \
+                        -e REDIS_URL="redis://:${REDIS_PASSWORD}@redis:6379/1" \
+                        -e TESTING=true \
+                        -v "$DEPLOY_DIR/backend/tests:/app/tests:ro" \
+                        --user root \
+                        skinaid-backend:latest \
+                        sh -c "
+                            pip install pytest pytest-asyncio httpx --quiet 2>/dev/null
+                            python -m pytest tests/ -v --tb=short \
+                                --ignore=tests/auth/integration \
+                                -x \
+                                -p no:cacheprovider
+                        "
+
+                    echo "Tests passed ✓"
+                '''
+            }
+        }
+
+        // ============================================================
         // Stage 6: Deploy
         // ============================================================
         stage('Deploy') {
@@ -280,6 +319,7 @@ pipeline {
                 sh '''
                     cd "$DEPLOY_DIR"
 
+                    set +x
                     set -a
                     . "$DEPLOY_DIR/.env"
                     . "$DEPLOY_DIR/backend/.env.prod"
@@ -371,6 +411,12 @@ pipeline {
         success {
             echo '\033[32m=== PIPELINE SUCCEEDED ===\033[0m'
             sh '''
+                docker rmi \
+                    skinaid-backend:rollback-${BUILD_NUMBER} \
+                    skinaid-frontend:rollback-${BUILD_NUMBER} \
+                    skinaid-ai:rollback-${BUILD_NUMBER} \
+                    > /dev/null 2>&1 || true
+
                 docker image prune -f --filter "until=48h" || true
                 docker container prune -f || true
 
@@ -383,13 +429,40 @@ pipeline {
             echo '\033[31m=== PIPELINE FAILED — Rolling back... ===\033[0m'
             sh '''
                 # Dùng đường dẫn tuyệt đối — post block không có working dir cố định
+                set +x
                 set -a
                 [ -f "$DEPLOY_DIR/.env" ]              && . "$DEPLOY_DIR/.env"
                 [ -f "$DEPLOY_DIR/backend/.env.prod" ] && . "$DEPLOY_DIR/backend/.env.prod"
                 set +a
 
                 cd "$DEPLOY_DIR"
-                docker compose -f "$COMPOSE_FILE" up -d || true
+
+                RESTORED=0
+                restore_image() {
+                    local IMAGE="$1"
+                    local BACKUP="${IMAGE%:*}:rollback-${BUILD_NUMBER}"
+                    if docker image inspect "$BACKUP" > /dev/null 2>&1; then
+                        docker tag "$BACKUP" "$IMAGE"
+                        RESTORED=1
+                        echo "  Restored image: $IMAGE"
+                    fi
+                }
+
+                restore_image "skinaid-backend:latest"
+                restore_image "skinaid-frontend:latest"
+                restore_image "skinaid-ai:latest"
+
+                if [ "$RESTORED" -eq 1 ]; then
+                    docker compose -f "$COMPOSE_FILE" up -d --no-build --force-recreate || true
+                else
+                    docker compose -f "$COMPOSE_FILE" up -d --no-build --no-recreate || true
+                fi
+
+                docker rmi \
+                    skinaid-backend:rollback-${BUILD_NUMBER} \
+                    skinaid-frontend:rollback-${BUILD_NUMBER} \
+                    skinaid-ai:rollback-${BUILD_NUMBER} \
+                    > /dev/null 2>&1 || true
 
                 echo "$(date '+%Y-%m-%d %H:%M:%S') | FAILED  | #${BUILD_NUMBER} | ${GIT_SHORT_SHA:-unknown} | ${GIT_COMMIT_MSG:-?}" \
                     >> "$DEPLOY_DIR/deploy-history.log" || true
