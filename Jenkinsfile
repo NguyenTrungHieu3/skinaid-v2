@@ -2,52 +2,32 @@
 // Jenkinsfile — SkinAid CI/CD Pipeline (Production)
 // =================================================================
 //
-// Architecture:
-//   GitHub (production branch)
-//     → Jenkins (port 19904, container)
-//       → docker compose -f docker-compose.prod.yml
-//         → skinaid_nginx      (80/443)
-//         → skinaid_frontend   (React + nginx:alpine)
-//         → skinaid_backend    (FastAPI :8000)
-//         → skinaid_ai         (uvicorn :8001)
-//         → skinaid_postgres   (PostgreSQL 16)
-//         → skinaid_redis      (Redis 7)
-//         → skinaid_qdrant     (Qdrant v1.13)
-//
-// Server: AWS EC2 — 2 vCPU, 8 GB RAM, 68 GB disk
-// Deploy dir: /opt/skinaid
+// Server   : AWS EC2 — 2 vCPU, 8 GB RAM, 68 GB disk
+// Deploy   : /opt/skinaid
+// Domain   : https://skinaid.xyz
+// Trigger  : GitHub Webhook (push → production branch)
+//            Fallback: pollSCM mỗi 5 phút
 //
 // Required files on server (NOT in git):
 //   /opt/skinaid/.env                  — VITE_* + DB_* + REDIS_*
-//   /opt/skinaid/backend/.env.prod     — backend secrets
+//   /opt/skinaid/backend/.env.prod     — backend secrets (SECRET_KEY, JWT, ...)
 //   /opt/skinaid/ai_ml/.env.prod       — ai_ml secrets
 //   /opt/skinaid/nginx/ssl/fullchain.pem
 //   /opt/skinaid/nginx/ssl/privkey.pem
 //
-// Jenkins credential required:
+// Jenkins credential:
 //   ID: github-ssh  (SSH Username with private key)
-//
-// Stages:
-//   1. Checkout      — pull code nhánh production
-//   2. Validate      — kiểm tra env files + SSL còn hạn
-//   3. Detect        — so sánh diff với commit đang chạy trên server
-//   4. Test          — pytest backend (unit tests, bỏ qua integration)
-//   5. Build         — docker compose build service thay đổi
-//   6. Deploy        — docker compose up -d
-//   7. Health Check  — poll từng service đến khi healthy
 // =================================================================
 
 pipeline {
     agent any
 
     triggers {
-        // Webhook là trigger chính — poll là safety net nếu webhook fail
         pollSCM('H/5 * * * *')
     }
 
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
-        // 60 phút: torch load weights lần đầu có thể mất 10-20 phút
         timeout(time: 60, unit: 'MINUTES')
         ansiColor('xterm')
         disableConcurrentBuilds()
@@ -67,14 +47,9 @@ pipeline {
 
         // ============================================================
         // Stage 1: Checkout
+        // Không dùng when { branch } vì không phải Multibranch Pipeline
         // ============================================================
         stage('Checkout') {
-            when {
-                anyOf {
-                    branch 'production'
-                    triggeredBy 'UserIdCause'  // cho phép trigger thủ công từ UI
-                }
-            }
             steps {
                 echo '\033[34m[1/7] Checkout source code...\033[0m'
                 cleanWs()
@@ -87,7 +62,6 @@ pipeline {
                         credentialsId: 'github-ssh'
                     ]],
                     extensions: [
-                        // Shallow clone depth=1 — tiết kiệm bandwidth + thời gian
                         [$class: 'CloneOption', depth: 1, shallow: true, noTags: true],
                     ]
                 ])
@@ -107,7 +81,6 @@ pipeline {
 
         // ============================================================
         // Stage 2: Validate
-        // Kiểm tra tất cả file cần thiết + SSL còn hạn trước khi làm gì
         // ============================================================
         stage('Validate') {
             steps {
@@ -130,7 +103,6 @@ pipeline {
                     check_file "$DEPLOY_DIR/nginx/ssl/fullchain.pem"
                     check_file "$DEPLOY_DIR/nginx/ssl/privkey.pem"
 
-                    # Kiểm tra key bắt buộc trong .env gốc
                     for KEY in VITE_API_URL VITE_BACKEND_URL DB_USER DB_PASSWORD DB_NAME REDIS_PASSWORD; do
                         if ! grep -q "^${KEY}=" "$DEPLOY_DIR/.env" 2>/dev/null; then
                             echo "  ERROR: $KEY missing in .env"
@@ -138,14 +110,13 @@ pipeline {
                         fi
                     done
 
-                    # Kiểm tra SSL còn hạn
                     if [ -f "$DEPLOY_DIR/nginx/ssl/fullchain.pem" ]; then
                         EXPIRY=$(openssl x509 -enddate -noout \
                             -in "$DEPLOY_DIR/nginx/ssl/fullchain.pem" | cut -d= -f2)
                         EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null || echo 0)
                         DAYS=$(( (EXPIRY_EPOCH - $(date +%s)) / 86400 ))
                         if [ "$DAYS" -lt 0 ]; then
-                            echo "  ERROR: SSL cert ĐÃ HẾT HẠN — renew ngay!"
+                            echo "  ERROR: SSL cert ĐÃ HẾT HẠN!"
                             FAILED=1
                         elif [ "$DAYS" -lt 30 ]; then
                             echo "  WARN : SSL cert còn $DAYS ngày — nên renew sớm"
@@ -154,15 +125,14 @@ pipeline {
                         fi
                     fi
 
-                    # Cảnh báo disk space < 5 GB
                     FREE_GB=$(df -BG / | awk 'NR==2{gsub("G",""); print $4}')
                     if [ "$FREE_GB" -lt 5 ]; then
-                        echo "  WARN : Disk chỉ còn ${FREE_GB}GB — có thể fail khi build image"
+                        echo "  WARN : Disk chỉ còn ${FREE_GB}GB"
                     else
                         echo "  OK   : Disk còn ${FREE_GB}GB"
                     fi
 
-                    [ $FAILED -eq 0 ] || { echo; echo "Validation FAILED — fix errors above."; exit 1; }
+                    [ $FAILED -eq 0 ] || { echo "Validation FAILED"; exit 1; }
                     echo "Validation passed ✓"
                 '''
             }
@@ -170,8 +140,6 @@ pipeline {
 
         // ============================================================
         // Stage 3: Detect Changes
-        // So sánh workspace (commit mới) với commit đang chạy trên server
-        // Tránh build lại image không cần thiết — EC2 2 vCPU cần tiết kiệm
         // ============================================================
         stage('Detect Changes') {
             steps {
@@ -186,11 +154,7 @@ pipeline {
                     if (serverSha == 'none') {
                         changedFiles = 'all'
                         echo "First deploy → build all services"
-                    } else if (serverSha == env.GIT_SHORT_SHA) {
-                        changedFiles = ''
-                        echo "Server đang chạy commit này rồi — skip build"
                     } else {
-                        // Fetch thêm history để diff được (shallow clone chỉ có 1 commit)
                         sh "git fetch --depth=50 origin ${BRANCH} 2>/dev/null || true"
                         changedFiles = sh(
                             script: "git diff --name-only ${serverSha} HEAD 2>/dev/null || echo 'all'",
@@ -223,8 +187,8 @@ pipeline {
 
         // ============================================================
         // Stage 4: Test
-        // Chạy trong container tạm, dùng Redis DB index 1 (tránh ảnh hưởng prod)
-        // Bỏ qua integration tests (cần external services)
+        // Mount toàn bộ backend/.env.prod vào container thay vì
+        // truyền từng biến → đảm bảo SECRET_KEY và tất cả config có đủ
         // ============================================================
         stage('Test') {
             when {
@@ -233,21 +197,18 @@ pipeline {
             steps {
                 echo '\033[34m[4/7] Running backend unit tests...\033[0m'
                 sh '''
-                    set -a
-                    . "$DEPLOY_DIR/.env"
-                    . "$DEPLOY_DIR/backend/.env.prod"
-                    set +a
-
-                    # Lần đầu deploy image chưa tồn tại → skip test
+                    # Lần đầu deploy image chưa tồn tại → skip
                     if ! docker image inspect skinaid-backend:latest > /dev/null 2>&1; then
                         echo "Image skinaid-backend:latest chưa có — skip tests (first deploy)"
                         exit 0
                     fi
 
+                    # Mount env file trực tiếp → app nhận đủ tất cả config
+                    # Dùng Redis DB 1 (tránh ảnh hưởng data production ở DB 0)
                     docker run --rm \
                         --network skinaid_skinaid_internal \
-                        -e DATABASE_URL="postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}" \
-                        -e REDIS_URL="redis://:${REDIS_PASSWORD}@redis:6379/1" \
+                        --env-file "$DEPLOY_DIR/backend/.env.prod" \
+                        -e REDIS_URL="redis://:$(grep ^REDIS_PASSWORD= $DEPLOY_DIR/.env | cut -d= -f2)@redis:6379/1" \
                         -e TESTING=true \
                         -v "$DEPLOY_DIR/backend":/app \
                         -w /app \
@@ -266,9 +227,6 @@ pipeline {
 
         // ============================================================
         // Stage 5: Build
-        // Build chỉ service thay đổi, parallel (tiết kiệm CPU)
-        // QUAN TRỌNG: Frontend Vite bake VITE_* vào bundle lúc build
-        // → phải truyền qua --build-arg, không phải runtime env
         // ============================================================
         stage('Build') {
             when {
@@ -279,11 +237,10 @@ pipeline {
                 sh '''
                     cd "$DEPLOY_DIR"
 
-                    # Sync code — git reset KHÔNG xóa file untracked (.env, ssl/)
                     git fetch origin ${BRANCH}
                     git reset --hard origin/${BRANCH}
 
-                    # Confirm file quan trọng vẫn còn sau reset
+                    # Confirm file untracked vẫn còn sau reset
                     for f in ".env" "backend/.env.prod" "ai_ml/.env.prod" \
                              "nginx/ssl/fullchain.pem" "nginx/ssl/privkey.pem"; do
                         [ -f "$DEPLOY_DIR/$f" ] \
@@ -291,9 +248,7 @@ pipeline {
                             || echo "  WARN: $f missing sau reset!"
                     done
 
-                    # Load env:
-                    #   .env             → VITE_API_URL, VITE_BACKEND_URL, DB_*, REDIS_*
-                    #   backend/.env.prod → SECRET_KEY, JWT_* và các secrets khác
+                    # Load env — .env gốc có VITE_* cần cho frontend build
                     set -a
                     . "$DEPLOY_DIR/.env"
                     . "$DEPLOY_DIR/backend/.env.prod"
@@ -302,7 +257,6 @@ pipeline {
                     echo "  VITE_API_URL     = $VITE_API_URL"
                     echo "  VITE_BACKEND_URL = $VITE_BACKEND_URL"
 
-                    # Build parallel — frontend cần --build-arg để Vite bake URL vào bundle
                     docker compose -f "$COMPOSE_FILE" build \
                         --parallel \
                         --build-arg VITE_API_URL="$VITE_API_URL" \
@@ -331,10 +285,8 @@ pipeline {
                     . "$DEPLOY_DIR/backend/.env.prod"
                     set +a
 
-                    # Up tất cả service — chỉ recreate container có image mới
                     docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
 
-                    # Nếu chỉ nginx config thay đổi (không rebuild image) → reload config
                     if [ "$NGINX_CHANGED" = "true" ] && [ "$SKIP_BUILD" = "true" ]; then
                         echo "Reloading nginx config..."
                         docker exec skinaid_nginx nginx -t \
@@ -350,10 +302,6 @@ pipeline {
 
         // ============================================================
         // Stage 7: Health Check
-        // Timeout riêng cho từng service:
-        //   - AI service: 150s (torch load model weights chậm)
-        //   - Backend:    100s
-        //   - Nginx:       50s
         // ============================================================
         stage('Health Check') {
             when {
@@ -365,8 +313,6 @@ pipeline {
                     echo "Waiting 30s for services to stabilize..."
                     sleep 30
 
-                    # poll_health <name> <container> <cmd> <max_retries>
-                    # Mỗi retry cách 5s
                     poll_health() {
                         local NAME="$1" CTR="$2" CMD="$3" MAX="${4:-20}"
                         local TRIES=0
@@ -383,20 +329,15 @@ pipeline {
 
                     FAILED=0
 
-                    # Backend FastAPI: /health
                     poll_health "backend   :8000" "skinaid_backend" \
                         "curl -sf http://localhost:8000/health" 20 || FAILED=1
 
-                    # AI service: check_health.py (ada di /app/ — confirmed)
-                    # Max 30 retries = 150s untuk torch model loading
                     poll_health "ai_ml     :8001" "skinaid_ai" \
                         "python3 /app/check_health.py" 30 || FAILED=1
 
-                    # Nginx: /nginx-health
-                    poll_health "nginx      :443" "skinaid_nginx" \
+                    poll_health "nginx      :80 " "skinaid_nginx" \
                         "wget -qO- http://localhost/nginx-health" 10 || FAILED=1
 
-                    # Frontend: HTML berisi judul SkinAid
                     poll_health "frontend  →nginx" "skinaid_nginx" \
                         "wget -qO- http://localhost/ | grep -q 'SkinAid'" 10 || FAILED=1
 
@@ -404,16 +345,15 @@ pipeline {
 
                     if [ $FAILED -eq 1 ]; then
                         echo "=== HEALTH CHECK FAILED — Service logs ==="
-                        echo "--- skinaid_backend (last 40 lines) ---"
                         docker logs skinaid_backend --tail=40 2>&1 || true
-                        echo "--- skinaid_ai (last 40 lines) ---"
-                        docker logs skinaid_ai --tail=40 2>&1 || true
-                        echo "--- skinaid_nginx (last 20 lines) ---"
-                        docker logs skinaid_nginx --tail=20 2>&1 || true
+                        echo "---"
+                        docker logs skinaid_ai      --tail=40 2>&1 || true
+                        echo "---"
+                        docker logs skinaid_nginx   --tail=20 2>&1 || true
                         exit 1
                     fi
 
-                    echo "=== All containers status ==="
+                    echo "=== Container status ==="
                     cd "$DEPLOY_DIR"
                     docker compose -f "$COMPOSE_FILE" ps
 
@@ -430,7 +370,6 @@ pipeline {
         success {
             echo '\033[32m=== PIPELINE SUCCEEDED ===\033[0m'
             sh '''
-                # Prune image cũ hơn 48h — giữ image đang chạy
                 docker image prune -f --filter "until=48h" || true
                 docker container prune -f || true
 
@@ -442,14 +381,13 @@ pipeline {
         failure {
             echo '\033[31m=== PIPELINE FAILED — Rolling back... ===\033[0m'
             sh '''
-                cd "$DEPLOY_DIR"
-
+                # Dùng đường dẫn tuyệt đối — post block không có working dir cố định
                 set -a
-                [ -f .env ] && . .env
-                [ -f backend/.env.prod ] && . backend/.env.prod
+                [ -f "$DEPLOY_DIR/.env" ]              && . "$DEPLOY_DIR/.env"
+                [ -f "$DEPLOY_DIR/backend/.env.prod" ] && . "$DEPLOY_DIR/backend/.env.prod"
                 set +a
 
-                # Rollback: restart với image hiện tại (không build mới)
+                cd "$DEPLOY_DIR"
                 docker compose -f "$COMPOSE_FILE" up -d || true
 
                 echo "$(date '+%Y-%m-%d %H:%M:%S') | FAILED  | #${BUILD_NUMBER} | ${GIT_SHORT_SHA:-unknown} | ${GIT_COMMIT_MSG:-?}" \
@@ -458,7 +396,6 @@ pipeline {
         }
 
         always {
-            // Dọn Jenkins workspace sau mỗi build (tiết kiệm disk EC2)
             cleanWs()
         }
     }
