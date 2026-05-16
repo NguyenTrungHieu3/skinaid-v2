@@ -110,3 +110,10 @@ class ChatRedisSessionStore:
         pipe.hset(self.meta_key(session_id), "last_message_at", now.isoformat())
         pipe.expire(self.meta_key(session_id), ttl)
         await pipe.execute()
+
+    async def delete_session(self, session_id: UUID) -> bool:
+        deleted = await self._redis.delete(
+            self.meta_key(session_id),
+            self.msgs_key(session_id),
+        )
+        return deleted > 0
