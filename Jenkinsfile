@@ -203,15 +203,15 @@ pipeline {
                         exit 0
                     fi
 
-                    # Mount env file trực tiếp → app nhận đủ tất cả config
-                    # Dùng Redis DB 1 (tránh ảnh hưởng data production ở DB 0)
+                    # Chạy test trong image (không mount code production)
+                    # --user root: tránh PermissionError khi tạo uploads/ và pytest cache
+                    # Dùng Redis DB 1 để không ảnh hưởng data production
                     docker run --rm \
                         --network skinaid_skinaid_internal \
                         --env-file "$DEPLOY_DIR/backend/.env.prod" \
                         -e REDIS_URL="redis://:$(grep ^REDIS_PASSWORD= $DEPLOY_DIR/.env | cut -d= -f2)@redis:6379/1" \
                         -e TESTING=true \
-                        -v "$DEPLOY_DIR/backend":/app \
-                        -w /app \
+                        --user root \
                         skinaid-backend:latest \
                         sh -c "
                             pip install pytest pytest-asyncio httpx --quiet 2>/dev/null
