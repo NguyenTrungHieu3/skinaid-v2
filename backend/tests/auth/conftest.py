@@ -17,12 +17,11 @@ from app.modules.auth.dependencies import get_email_service
 from app.modules.auth.models.permissions import Permission  # noqa: F401
 from app.modules.auth.models.role_permissions import RolePermission  # noqa: F401
 from app.modules.auth.models.roles import Role
-from app.modules.auth.models.token_blacklist import TokenBlacklist  # noqa: F401
 from app.modules.auth.models.token_family import TokenFamily
 from app.modules.users.models.user import User
 from app.modules.auth.models.user_roles import UserRole  # noqa: F401
 from app.modules.auth.models.verification_token import VerificationToken  # noqa: F401
-from app.modules.profile.models import UserProfile
+from app.modules.users.models.user_profile import UserProfile
 from app.shared.services.mock_email_service import mock_email_service
 from tests.auth.helpers import (
     build_profile,
@@ -66,12 +65,52 @@ async def create_tables() -> AsyncGenerator[None, None]:
     yield
 
 
+class _FakeRedisPipeline:
+    def __init__(self, store: dict[str, str]) -> None:
+        self._store = store
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return None
+
+    def set(self, key: str, value: str, ex: int | None = None):
+        self._store[key] = value
+        return self
+
+    async def execute(self):
+        return []
+
+
+class _FakeRedis:
+    def __init__(self) -> None:
+        self.store: dict[str, str] = {}
+
+    async def exists(self, key: str) -> int:
+        return int(key in self.store)
+
+    async def set(self, key: str, value: str, ex: int | None = None) -> None:
+        self.store[key] = value
+
+    def pipeline(self, transaction: bool = False) -> _FakeRedisPipeline:
+        return _FakeRedisPipeline(self.store)
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def fake_redis() -> AsyncGenerator[None, None]:
+    from app.core import redis as redis_mod
+
+    redis_mod.redis_client = _FakeRedis()
+    yield
+    redis_mod.redis_client = None
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def cleanup_auth_tables() -> AsyncGenerator[None, None]:
     truncate_sql = text(
         """
         TRUNCATE TABLE
-            token_blacklist,
             token_families,
             verification_tokens,
             user_roles,

@@ -90,6 +90,13 @@ async def resolve_llm_config(
             "[ConfigResolver] DB query failed for '%s', using .env fallback: %s",
             config_key, str(exc)[:100],
         )
+        try:
+            await db.rollback()
+        except Exception as rollback_exc:
+            logger.warning(
+                "[ConfigResolver] DB rollback failed after config query error: %s",
+                str(rollback_exc)[:100],
+            )
         cfg = None
 
     if cfg is None:

@@ -41,6 +41,11 @@
     "admin_dashboard": "Dashboard - Admin",
     "admin_logs": "Admin Logs",
     "admin_user_management": "User Management",
+    "admin_questionnaire": "Questionnaire Management",
+    "admin_llm_management": "LLM Management",
+    "admin_knowledge_base": "Knowledge Base",
+    "admin_notifications": "Notification Management",
+    "admin_notification_detail": "Notification Detail",
     "admin_first_aid": "Fist-Aid Management"
   },
   "auth_page": {

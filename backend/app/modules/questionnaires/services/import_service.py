@@ -76,7 +76,7 @@ REQUIRED_FULL_COLUMNS = {"wound_type", "title", "question_order", "question_text
 
 # Canonical wound types (must stay in sync with frontend WOUND_TYPES_FORM)
 VALID_WOUND_TYPES = {
-    "burn", "abrasion", "bruise", "fungal", "acne", "psoriasis"
+    "burn", "abrasion", "bruise", "cut", "fungal", "acne", "psoriasis"
 }
 
 
@@ -529,4 +529,3 @@ def generate_full_questionnaire_excel_template() -> bytes:
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
-

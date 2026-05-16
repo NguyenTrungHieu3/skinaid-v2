@@ -100,10 +100,15 @@ class UpdateGuideRequest(BaseModel):
     dos: Optional[List[str]] = None
     donts: Optional[List[str]] = None
     supplies_needed: Optional[List[str]] = None
-    source: Optional[GuideSource] = None  # Fixed: was Optional[str], must match CreateGuideRequest
+    source: Optional[Any] = None
 
     estimated_healing_time: Optional[str] = None
     is_active: Optional[bool] = None
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def normalize_source(cls, v):
+        return GuideContentMixin.flatten_jsonb_source(v)
 
 
 class BulkImportRequest(BaseModel):

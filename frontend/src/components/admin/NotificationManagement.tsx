@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast, Toaster } from 'sonner';
 import {
   Bell, BellOff, Send, Search, Trash2, Eye,
@@ -77,6 +78,8 @@ interface NotificationManagementProps {
 }
 
 export default function NotificationManagement({ onNavigate }: NotificationManagementProps) {
+  const { t } = useTranslation();
+
   // Data
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -327,6 +330,7 @@ export default function NotificationManagement({ onNavigate }: NotificationManag
 
   return (
     <div className={styles.page}>
+      <title>{t('title.admin_notifications')}</title>
       <Toaster richColors position="top-right" />
 
       {/* Header */}

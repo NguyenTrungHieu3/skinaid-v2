@@ -490,6 +490,8 @@ export default function UserManagementPage() {
 
   return (
     <div className={styles.userManagementPage}>
+      <title>{t('title.admin_user_management')}</title>
+
       {/* Header */}
       <div className={styles.pageHeader}>
         <div className={styles.pageTitle}>

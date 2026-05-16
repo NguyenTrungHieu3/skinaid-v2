@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, AlertTriangle, XCircle, Bell, Loader2, ExternalLink } from 'lucide-react';
 import { getNotificationById, markAsRead } from '../../services/notificationService';
 import type { NotificationItem } from '../../services/notificationService';
@@ -10,6 +11,7 @@ interface NotificationDetailProps {
 }
 
 export default function NotificationDetail({ notificationId, onBack }: NotificationDetailProps) {
+  const { t } = useTranslation();
   const [notification, setNotification] = useState<NotificationItem | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,7 @@ export default function NotificationDetail({ notificationId, onBack }: Notificat
   if (loading) {
     return (
       <div className={styles.loadingState}>
+        <title>{t('title.admin_notification_detail')}</title>
         <Loader2 size={32} className={styles.spin} />
         <p>Đang tải chi tiết thông báo...</p>
       </div>
@@ -49,6 +52,7 @@ export default function NotificationDetail({ notificationId, onBack }: Notificat
   if (!notification) {
     return (
       <div className={styles.loadingState}>
+        <title>{t('title.admin_notification_detail')}</title>
         <XCircle size={48} color="#ef4444" />
         <p>Không tìm thấy thông báo hoặc đã bị xóa.</p>
         <button className={styles.backBtn} onClick={onBack}>
@@ -85,6 +89,7 @@ export default function NotificationDetail({ notificationId, onBack }: Notificat
 
   return (
     <div className={styles.detailContainer}>
+      <title>{notification.title}</title>
       <button className={styles.backBtn} onClick={onBack} style={{ marginBottom: '1rem' }}>
         <ChevronLeft size={16} /> Quay lại
       </button>

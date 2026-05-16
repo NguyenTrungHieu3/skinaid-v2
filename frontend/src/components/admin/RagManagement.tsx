@@ -269,6 +269,7 @@ export default function RagManagement() {
   if (loading && documents.length === 0) {
     return (
       <div className={styles.ragManagementPage}>
+        <title>{t('title.admin_knowledge_base')}</title>
         <div className={styles.loadingContainer}>
           <div className={styles.loadingSpinner} />
           <p className={styles.loadingText}>{t('admin.rag.loading')}</p>
@@ -281,6 +282,7 @@ export default function RagManagement() {
 
   return (
     <div className={styles.ragManagementPage}>
+      <title>{t('title.admin_knowledge_base')}</title>
       <Toaster richColors position="top-right" />
 
       {/* Header */}

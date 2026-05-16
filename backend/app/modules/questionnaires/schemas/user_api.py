@@ -55,12 +55,13 @@ class WoundDetectionInput(BaseModel):
         if v is None:
             return None
         v = v.strip().lower()
-        # Chỉ map về known severities, unknown values (e.g. "string" từ Swagger) → None
         if v in ALLOWED_SEVERITIES:
             return v
         if v == "general":
             return v
-        return None
+        raise ValueError(
+            f"Severity must be one of: {', '.join(sorted(ALLOWED_SEVERITIES | {'general'}))}"
+        )
 
 class ResolveQuestionnairesRequest(BaseModel):
     detections: List[WoundDetectionInput] = Field(..., min_length=1)
