@@ -338,7 +338,8 @@ pipeline {
                     poll_health "nginx      :80 " "skinaid_nginx" \
                         "wget -qO- http://localhost/nginx-health" 10 || FAILED=1
 
-                    poll_health "frontend  →nginx" "skinaid_nginx" \
+                    # Frontend: kiểm tra qua HTTPS trực tiếp vào frontend container
+                    poll_health "frontend  →nginx" "skinaid_frontend" \
                         "wget -qO- http://localhost/ | grep -q 'SkinAid'" 10 || FAILED=1
 
                     echo ""
