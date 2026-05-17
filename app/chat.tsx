@@ -35,7 +35,7 @@ interface Message {
 }
 
 // Giới hạn số tin nhắn người dùng mỗi phiên
-const MAX_USER_MESSAGES = 10;
+const MAX_USER_MESSAGES = 4;
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -213,26 +213,16 @@ export default function ChatScreen() {
         timestamp: new Date(),
       };
 
-  // Lấy dữ liệu từ cache nếu đang ở màn hình có analysisId đã lưu
-  const cachedSession = analysisId ? chatSessionCache[analysisId] : null;
-
-  const [messages, setMessages] = useState<Message[]>(
-    cachedSession ? cachedSession.messages : [initialMessage]
-  );
+  // Không cache session — luôn probe lại khi vào chat để đảm bảo bot đang hoạt động
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showQuickReplies, setShowQuickReplies] = useState(
-    cachedSession ? cachedSession.messages.length <= 1 : true
-  );
+  const [showQuickReplies, setShowQuickReplies] = useState(true);
   const flatListRef = useRef<FlatList>(null);
 
   // ── Session state ──
-  const [sessionId, setSessionId] = useState<string | null>(
-    cachedSession ? cachedSession.sessionId : null
-  );
-  const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "error">(
-    cachedSession ? "ready" : "loading"
-  );
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "error">("loading");
 
   // Lưu trữ ngược lại vào cache mỗi khi có thay đổi
   useEffect(() => {
@@ -272,7 +262,7 @@ export default function ChatScreen() {
     };
   }, []);
 
-  // ── Tạo session khi mount ──
+  // ── Tạo session + probe kiểm tra bot có hoạt động không ──
   const initSession = useCallback(async () => {
     setSessionStatus("loading");
     try {
@@ -282,27 +272,46 @@ export default function ChatScreen() {
 
       const { session_id } = res.data.data;
       setSessionId(session_id);
-      setSessionStatus("ready");
+
+      // Gửi probe ẩn để kiểm tra bot có thực sự phản hồi không
+      try {
+        const probeRes = await chatbotService.sendMessage(session_id, '__ping__');
+        if (!isMountedRef.current) return;
+
+        // Bot phản hồi được → dùng reply làm welcome message
+        const botReply = probeRes.data.data.reply;
+        setMessages([
+          {
+            id: 'welcome',
+            text: botReply,
+            sender: 'bot',
+            timestamp: new Date(),
+          },
+        ]);
+        setSessionStatus('ready');
+      } catch {
+        if (!isMountedRef.current) return;
+        // Bot không phản hồi (bị tắt, server lỗi...) → báo lỗi ngay
+        console.warn('[initSession] probe failed — chatbot unavailable');
+        setSessionStatus('error');
+      }
     } catch (error) {
       if (!isMountedRef.current) return;
-      console.error("Failed to create chatbot session:", error);
-      setSessionStatus("error");
+      console.error('Failed to create chatbot session:', error);
+      setSessionStatus('error');
     }
-  }, []);
+  }, [analysisId]);
 
   useEffect(() => {
     isMountedRef.current = true;
-    
-    // Nếu chưa có session trong cache thì mới khởi tạo
-    if (!sessionId) {
-      initSession();
-    }
+    // Luôn probe khi mount — đảm bảo bot đang hoạt động trước khi cho nhắn tin
+    initSession();
 
     return () => {
       // Khi thoát chat: huỷ pending state, session tự hết hạn trên Redis
       isMountedRef.current = false;
     };
-  }, [initSession, sessionId]);
+  }, [initSession]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -316,9 +325,11 @@ export default function ChatScreen() {
       const trimmed = text.trim();
       if (!trimmed || isTyping || !sessionId) return;
 
-      // Kiểm tra giới hạn tin nhắn
-      const userCount = messages.filter((m) => m.sender === 'user').length;
-      if (userCount >= MAX_USER_MESSAGES) return;
+      // Kiểm tra giới hạn tin nhắn — chỉ áp dụng với chat từ trang kết quả đánh giá
+      if (analysisId) {
+        const userCount = messages.filter((m) => m.sender === 'user').length;
+        if (userCount >= MAX_USER_MESSAGES) return;
+      }
 
       setShowQuickReplies(false);
 
@@ -356,27 +367,41 @@ export default function ChatScreen() {
 
         setIsTyping(false);
 
-        // Xử lý các loại lỗi
-        let errorText = "Rất tiếc, có lỗi xảy ra khi kết nối. Vui lòng thử lại sau! 🙏";
+        const status = error?.response?.status;
+        const isTimeout = error?.code === "ECONNABORTED";
+        const isRateLimit = status === 429;
 
-        if (error?.response?.status === 429) {
-          errorText = "Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút rồi thử lại. ⏳";
-        } else if (error?.code === "ECONNABORTED") {
-          errorText = "Phản hồi mất quá lâu. Vui lòng thử lại với câu hỏi ngắn hơn. ⏱️";
+        if (isRateLimit) {
+          // Rate limit — chỉ thông báo, vẫn cho gửi lại
+          const errMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "Bạn đã gửi quá nhiều tin nhắn. Vui lòng đợi một chút rồi thử lại. ⏳",
+            sender: "bot",
+            timestamp: new Date(),
+            isError: true,
+          };
+          setMessages((prev) => [...prev, errMsg]);
+          scrollToBottom();
+        } else if (isTimeout) {
+          // Timeout — chỉ thông báo, vẫn cho gửi lại
+          const errMsg: Message = {
+            id: (Date.now() + 2).toString(),
+            text: "Phản hồi mất quá lâu. Vui lòng thử lại với câu hỏi ngắn hơn. ⏱️",
+            sender: "bot",
+            timestamp: new Date(),
+            isError: true,
+          };
+          setMessages((prev) => [...prev, errMsg]);
+          scrollToBottom();
+        } else {
+          // Lỗi nghiêm trọng (chatbot bị tắt, server down, 4xx/5xx...)
+          // → chuyển sang trạng thái lỗi, thay input bằng banner lỗi
+          console.warn('[sendMessage] fatal error, switching to error state:', status, error?.message);
+          setSessionStatus("error");
         }
-
-        const errMsg: Message = {
-          id: (Date.now() + 2).toString(),
-          text: errorText,
-          sender: "bot",
-          timestamp: new Date(),
-          isError: true,
-        };
-        setMessages((prev) => [...prev, errMsg]);
-        scrollToBottom();
       }
     },
-    [isTyping, scrollToBottom, sessionId, messages]
+    [isTyping, scrollToBottom, sessionId, messages, analysisId]
   );
 
   const renderItem = useCallback(
@@ -457,9 +482,30 @@ export default function ChatScreen() {
   );
 
   const renderInputWrapper = () => {
+    // Giới hạn chỉ áp dụng khi chat từ trang kết quả đánh giá (có analysisId)
     const userMsgCount = messages.filter((m) => m.sender === 'user').length;
-    const isLimitReached = userMsgCount >= MAX_USER_MESSAGES;
-    const remaining = Math.max(0, MAX_USER_MESSAGES - userMsgCount);
+    const isLimitReached = !!analysisId && userMsgCount >= MAX_USER_MESSAGES;
+    const remaining = analysisId ? Math.max(0, MAX_USER_MESSAGES - userMsgCount) : Infinity;
+
+    // Khi không kết nối được → hiện banner lỗi, ẩn input
+    if (sessionStatus === 'error') {
+      return (
+        <View style={styles.errorInputBanner}>
+          <Feather name="wifi-off" size={16} color="#EF4444" />
+          <Text style={styles.errorInputBannerText}>
+            Không thể kết nối chatbot. Vui lòng thử lại.
+          </Text>
+          <TouchableOpacity
+            style={styles.errorRetryBtn}
+            onPress={initSession}
+            activeOpacity={0.8}
+          >
+            <Feather name="refresh-cw" size={13} color={TEAL} />
+            <Text style={styles.errorRetryBtnText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
     return (
       <>
@@ -470,7 +516,7 @@ export default function ChatScreen() {
               Đã đạt giới hạn {MAX_USER_MESSAGES} tin nhắn trong phiên này
             </Text>
           </View>
-        ) : remaining <= 3 ? (
+        ) : analysisId && remaining <= 2 ? (
           <View style={styles.limitWarningBanner}>
             <Feather name="alert-circle" size={12} color="#D97706" />
             <Text style={styles.limitWarningText}>Còn {remaining} tin nhắn</Text>
@@ -546,13 +592,13 @@ export default function ChatScreen() {
                 ]}
               />
               <Text style={styles.onlineText}>
-                {sessionStatus === "loading"
-                  ? "Đang kết nối..."
-                  : sessionStatus === "error"
-                    ? "Mất kết nối"
+                {sessionStatus === 'loading'
+                  ? 'Đang kết nối...'
+                  : sessionStatus === 'error'
+                    ? 'Không hoạt động'
                     : isTyping
-                      ? "Đang trả lời..."
-                      : "Trực tuyến"}
+                      ? 'Đang trả lời...'
+                      : 'Trực tuyến'}
               </Text>
             </View>
           </View>
@@ -1000,5 +1046,38 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#D97706',
     fontWeight: '600',
+  },
+  // ── Error connection banner (thay thế input khi mất kết nối) ──
+  errorInputBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderTopWidth: 1,
+    borderTopColor: '#FECACA',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  errorInputBannerText: {
+    flex: 1,
+    fontSize: 12.5,
+    color: '#B91C1C',
+    fontWeight: '500',
+  },
+  errorRetryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: TEAL,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  errorRetryBtnText: {
+    fontSize: 12,
+    color: TEAL,
+    fontWeight: '700',
   },
 });

@@ -28,6 +28,77 @@ interface RouteStepsSheetProps {
   onClose: () => void;
 }
 
+/** Dịch instruction tiếng Anh của Geoapify sang tiếng Việt */
+function translateInstruction(text: string): string {
+  let s = text;
+
+  // ── Hành động chính ───────────────────────────────────────────────
+  s = s.replace(/\bHead\b/gi, "Đi");
+  s = s.replace(/\bDrive\b/gi, "Đi");
+  s = s.replace(/\bContinue\b/gi, "Tiếp tục");
+  s = s.replace(/\bTurn sharp left\b/gi, "Rẽ gấp sang trái");
+  s = s.replace(/\bTurn sharp right\b/gi, "Rẽ gấp sang phải");
+  s = s.replace(/\bTurn slight left\b/gi, "Rẽ nhẹ sang trái");
+  s = s.replace(/\bTurn slight right\b/gi, "Rẽ nhẹ sang phải");
+  s = s.replace(/\bTurn left\b/gi, "Rẽ trái");
+  s = s.replace(/\bTurn right\b/gi, "Rẽ phải");
+  s = s.replace(/\bTurn\b/gi, "Rẽ");
+  s = s.replace(/\bKeep left\b/gi, "Giữ bên trái");
+  s = s.replace(/\bKeep right\b/gi, "Giữ bên phải");
+  s = s.replace(/\bMerge\b/gi, "Nhập vào");
+  s = s.replace(/\bFork left\b/gi, "Đi nhánh trái");
+  s = s.replace(/\bFork right\b/gi, "Đi nhánh phải");
+  s = s.replace(/\bFork\b/gi, "Đi nhánh");
+  s = s.replace(/\bRoundabout\b/gi, "Vòng xuyến");
+  s = s.replace(/\bU-turn\b/gi, "Quay đầu");
+  s = s.replace(/\bArrive at your destination\b/gi, "Bạn đã đến nơi");
+  s = s.replace(/\bArrive\b/gi, "Đến");
+  s = s.replace(/\bExit\b/gi, "Ra khỏi");
+
+  // ── Hướng đi ──────────────────────────────────────────────────────
+  s = s.replace(/\bnorth\b/gi, "hướng bắc");
+  s = s.replace(/\bsouth\b/gi, "hướng nam");
+  s = s.replace(/\beast\b/gi, "hướng đông");
+  s = s.replace(/\bwest\b/gi, "hướng tây");
+  s = s.replace(/\bnortheast\b/gi, "hướng đông bắc");
+  s = s.replace(/\bnorthwest\b/gi, "hướng tây bắc");
+  s = s.replace(/\bsoutheast\b/gi, "hướng đông nam");
+  s = s.replace(/\bsouthwest\b/gi, "hướng tây nam");
+
+  // ── Giới từ / liên từ phổ biến ────────────────────────────────────
+  s = s.replace(/\bonto\b/gi, "vào");
+  s = s.replace(/\binto\b/gi, "vào");
+  s = s.replace(/\btoward[s]?\b/gi, "về phía");
+  s = s.replace(/\balong\b/gi, "dọc theo");
+  s = s.replace(/\bfor\b/gi, "trong");
+  s = s.replace(/\bthen\b/gi, "sau đó");
+  s = s.replace(/\bafter\b/gi, "sau");
+  s = s.replace(/\bat the\b/gi, "tại");
+  s = s.replace(/\bat\b/gi, "tại");
+  s = s.replace(/\bthe\b/gi, "");
+  s = s.replace(/\band\b/gi, "và");
+  s = s.replace(/\bon\b/gi, "trên");
+
+  // ── Từ chỉ đường / địa điểm ───────────────────────────────────────
+  s = s.replace(/\bstreet\b/gi, "đường");
+  s = s.replace(/\broad\b/gi, "đường");
+  s = s.replace(/\bavenue\b/gi, "đại lộ");
+  s = s.replace(/\bboulevard\b/gi, "đại lộ");
+  s = s.replace(/\bhighway\b/gi, "quốc lộ");
+  s = s.replace(/\bbridge\b/gi, "cầu");
+  s = s.replace(/\bintersection\b/gi, "ngã tư");
+  s = s.replace(/\bjunction\b/gi, "giao lộ");
+  s = s.replace(/\bexit\b/gi, "lối ra");
+  s = s.replace(/\bdestination\b/gi, "đích đến");
+  s = s.replace(/\byour destination\b/gi, "điểm đến của bạn");
+  s = s.replace(/\bon the left\b/gi, "bên trái");
+  s = s.replace(/\bon the right\b/gi, "bên phải");
+
+  // Dọn khoảng trắng thừa
+  s = s.replace(/\s{2,}/g, " ").trim();
+  return s;
+}
+
 function StepItem({ step, index }: { step: RouteStep; index: number }) {
   const distText =
     step.distance < 1000
@@ -39,13 +110,16 @@ function StepItem({ step, index }: { step: RouteStep; index: number }) {
       ? `${Math.round(step.duration)} giây`
       : `${Math.round(step.duration / 60)} phút`;
 
-  /* Simple icon mapping based on instruction keywords */
+  const instruction = translateInstruction(step.instruction);
+
+  /* Icon mapping theo nội dung đã dịch */
   let icon: keyof typeof Feather.glyphMap = "arrow-up";
-  const lower = step.instruction.toLowerCase();
-  if (lower.includes("trái") || lower.includes("left")) icon = "corner-up-left";
-  else if (lower.includes("phải") || lower.includes("right")) icon = "corner-up-right";
-  else if (lower.includes("vòng") || lower.includes("roundabout")) icon = "refresh-cw";
-  else if (lower.includes("đến") || lower.includes("arrive")) icon = "map-pin";
+  const lower = instruction.toLowerCase();
+  if (lower.includes("trái")) icon = "corner-up-left";
+  else if (lower.includes("phải")) icon = "corner-up-right";
+  else if (lower.includes("vòng xuyến")) icon = "refresh-cw";
+  else if (lower.includes("quay đầu")) icon = "rotate-ccw";
+  else if (lower.includes("đến") || lower.includes("nơi")) icon = "map-pin";
 
   return (
     <View style={styles.stepItem}>
@@ -56,7 +130,7 @@ function StepItem({ step, index }: { step: RouteStep; index: number }) {
         {index > 0 && <View style={styles.stepLine} />}
       </View>
       <View style={styles.stepContent}>
-        <Text style={styles.stepInstruction}>{step.instruction}</Text>
+        <Text style={styles.stepInstruction}>{instruction}</Text>
         <View style={styles.stepMeta}>
           <Text style={styles.stepDist}>{distText}</Text>
           <Text style={styles.stepSep}>·</Text>

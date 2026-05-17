@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   Linking,
   Platform,
   Pressable,
@@ -20,6 +21,30 @@ import {
 } from "react-native";
 import { NearbyPlace } from "../../services/mapService";
 
+// ─── Icon theo category ───────────────────────────────────────────────────────
+type FeatherIconName = React.ComponentProps<typeof Feather>["name"];
+
+function getCategoryConfig(category: string): {
+  icon: FeatherIconName;
+  colors: [string, string];
+  label: string;
+} {
+  const cat = (category ?? "").toLowerCase();
+  if (cat.includes("hospital") || cat.includes("bệnh viện")) {
+    return { icon: "activity", colors: ["#02A18D", "#007A6B"], label: "Bệnh viện" };
+  }
+  if (cat.includes("clinic") || cat.includes("phòng khám")) {
+    return { icon: "thermometer", colors: ["#3B82F6", "#1D4ED8"], label: "Phòng khám" };
+  }
+  if (cat.includes("dermatology") || cat.includes("da liễu")) {
+    return { icon: "user", colors: ["#8B5CF6", "#6D28D9"], label: "Da liễu" };
+  }
+  if (cat.includes("pharmacy") || cat.includes("nhà thuốc")) {
+    return { icon: "package", colors: ["#F59E0B", "#D97706"], label: "Nhà thuốc" };
+  }
+  return { icon: "plus-square", colors: ["#3DBFA0", "#2EA88A"], label: "Cơ sở y tế" };
+}
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_HEIGHT = 220;
 
@@ -28,6 +53,7 @@ interface PlaceCardProps {
   isLoadingRoute: boolean;
   onGetDirections: () => void;
   onDismiss: () => void;
+  hospitalIconUri?: string;   // URI của hospital.png (từ useHospitalIconUri)
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -53,6 +79,7 @@ export default function PlaceCard({
   isLoadingRoute,
   onGetDirections,
   onDismiss,
+  hospitalIconUri,
 }: PlaceCardProps) {
   // Lấy đúng chiều cao tab bar (kể cả safe area) để không bị che
   const tabBarHeight = useBottomTabBarHeight();
@@ -138,18 +165,30 @@ export default function PlaceCard({
 
         {/* Badge + Content */}
         <View style={styles.cardBody}>
-          {/* Trust badge icon */}
-          <View style={styles.iconWrapper}>
-            <LinearGradient
-              colors={["#3DBFA0", "#2EA88A"]}
-              style={styles.iconGrad}
-            >
-              <Feather name="plus-square" size={28} color="#FFFFFF" />
-            </LinearGradient>
-            <View style={styles.trustBadge}>
-              <Text style={styles.trustText}>Uy tín</Text>
-            </View>
-          </View>
+          {/* Icon: hospital.png hoặc fallback gradient */}
+          {(() => {
+            const cfg = getCategoryConfig(place?.category ?? "");
+            return (
+              <View style={styles.iconWrapper}>
+                {hospitalIconUri ? (
+                  <View style={[styles.iconGrad, styles.iconImgWrap]}>
+                    <Image
+                      source={{ uri: hospitalIconUri }}
+                      style={styles.hospitalImg}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ) : (
+                  <LinearGradient colors={cfg.colors} style={styles.iconGrad}>
+                    <Feather name={cfg.icon} size={28} color="#FFFFFF" />
+                  </LinearGradient>
+                )}
+                <View style={[styles.trustBadge, { backgroundColor: cfg.colors[0] }]}>
+                  <Text style={styles.trustText}>{cfg.label}</Text>
+                </View>
+              </View>
+            );
+          })()}
 
           {/* Info */}
           <View style={styles.infoBlock}>
@@ -300,6 +339,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  iconImgWrap: {
+    backgroundColor: "#F0FBF8",
+    borderWidth: 1.5,
+    borderColor: "#3DBFA0",
+  },
+  hospitalImg: {
+    width: 44,
+    height: 44,
   },
   trustBadge: {
     marginTop: 6,

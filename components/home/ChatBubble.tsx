@@ -10,15 +10,17 @@ import {
   Text,
   View,
 } from "react-native";
+import { chatbotService } from "../../services/chatbotService";
 
 const TEAL = "#02A18D";
 const BUBBLE_SIZE = 58;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 // All animations use useNativeDriver: false to avoid conflicts
-// with PanResponder's JS-driven Animated.event. This is fine for
-// a single small floating button — no visible perf difference.
+// with PanResponder's JS-driven Animated.event.
 const DRIVER = false;
+
+type BotStatus = "checking" | "online" | "offline";
 
 interface ChatBubbleProps {
   /** Khoảng cách từ bottom lên — truyền tabBarHeight + margin để luôn nằm trên tab bar */
@@ -29,7 +31,9 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const tooltipOpacity = useRef(new Animated.Value(0)).current;
+  const badgePulse = useRef(new Animated.Value(1)).current;
   const [showTooltip, setShowTooltip] = useState(true);
+  const [botStatus, setBotStatus] = useState<BotStatus>("checking");
 
   // ── Drag state ──
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -47,7 +51,6 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
           y: (pan.y as any)._value,
         });
         pan.setValue({ x: 0, y: 0 });
-        // Hide tooltip on interaction
         if (showTooltip) {
           Animated.timing(tooltipOpacity, {
             toValue: 0,
@@ -72,14 +75,10 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
           return;
         }
 
-        // Snap to nearest horizontal edge
         const currentX = (pan.x as any)._value;
         const bubbleScreenX = SCREEN_WIDTH - 18 - BUBBLE_SIZE / 2 + currentX;
         const snapToLeft = bubbleScreenX < SCREEN_WIDTH / 2;
-
-        const targetX = snapToLeft
-          ? -(SCREEN_WIDTH - 18 - BUBBLE_SIZE - 18)
-          : 0;
+        const targetX = snapToLeft ? -(SCREEN_WIDTH - 18 - BUBBLE_SIZE - 18) : 0;
 
         Animated.spring(pan.x, {
           toValue: targetX,
@@ -91,8 +90,53 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
     })
   ).current;
 
+  // ── Probe chatbot health ────────────────────────────────
   useEffect(() => {
-    // Entry animation
+    let cancelled = false;
+
+    async function checkBotHealth() {
+      try {
+        // Chỉ kiểm tra createSession — đủ để biết server có thể tiếp nhận kết nối không
+        // (không gửi message để tránh timeout LLM gây false-negative)
+        await chatbotService.createSession(null);
+        if (cancelled) return;
+        setBotStatus('online');
+      } catch {
+        if (cancelled) return;
+        setBotStatus('offline');
+      }
+    }
+
+    // Kiểm tra ngay khi mount
+    checkBotHealth();
+
+    // Re-check mỗi 60 giây — badge tự đổi khi bot bật/tắt
+    const interval = setInterval(checkBotHealth, 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ── Badge nhấp nháy khi đang kiểm tra ──────────────────────────
+  useEffect(() => {
+    if (botStatus !== "checking") {
+      badgePulse.setValue(1);
+      return;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(badgePulse, { toValue: 0.3, duration: 500, useNativeDriver: DRIVER }),
+        Animated.timing(badgePulse, { toValue: 1, duration: 500, useNativeDriver: DRIVER }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [botStatus]);
+
+  // ── Entry + pulse animation ─────────────────────────────────────
+  useEffect(() => {
     Animated.spring(scaleAnim, {
       toValue: 1,
       tension: 60,
@@ -101,39 +145,21 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
       delay: 800,
     }).start();
 
-    // Pulse animation
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.08,
-          duration: 900,
-          useNativeDriver: DRIVER,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: DRIVER,
-        }),
+        Animated.timing(pulseAnim, { toValue: 1.08, duration: 900, useNativeDriver: DRIVER }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 900, useNativeDriver: DRIVER }),
       ])
     );
     pulse.start();
 
-    // Show tooltip after 1.2s
     const tooltipTimeout = setTimeout(() => {
-      Animated.timing(tooltipOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: DRIVER,
-      }).start();
+      Animated.timing(tooltipOpacity, { toValue: 1, duration: 400, useNativeDriver: DRIVER }).start();
     }, 1200);
 
-    // Hide tooltip after 5s
     const hideTimeout = setTimeout(() => {
-      Animated.timing(tooltipOpacity, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: DRIVER,
-      }).start(() => setShowTooltip(false));
+      Animated.timing(tooltipOpacity, { toValue: 0, duration: 400, useNativeDriver: DRIVER })
+        .start(() => setShowTooltip(false));
     }, 5200);
 
     return () => {
@@ -142,6 +168,12 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
       clearTimeout(hideTimeout);
     };
   }, []);
+
+  // Badge color: vàng khi checking, xanh khi online, đỏ khi offline
+  const badgeColor =
+    botStatus === "online"  ? "#2ECC71" :
+    botStatus === "offline" ? "#EF4444" :
+                              "#F59E0B";
 
   return (
     <Animated.View
@@ -158,7 +190,7 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
       ]}
       {...panResponder.panHandlers}
     >
-      {/* Tooltip chat bubble */}
+      {/* Tooltip */}
       {showTooltip && (
         <Animated.View style={[styles.tooltip, { opacity: tooltipOpacity }]}>
           <Text style={styles.tooltipText}>
@@ -169,9 +201,7 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
       )}
 
       {/* Ripple ring */}
-      <Animated.View
-        style={[styles.ripple, { transform: [{ scale: pulseAnim }] }]}
-      />
+      <Animated.View style={[styles.ripple, { transform: [{ scale: pulseAnim }] }]} />
 
       {/* Main button */}
       <View style={styles.bubble}>
@@ -182,8 +212,13 @@ export default function ChatBubble({ bottomOffset = 90 }: ChatBubbleProps) {
         />
       </View>
 
-      {/* Online badge */}
-      <View style={styles.onlineBadge} />
+      {/* Status badge — xanh/đỏ/vàng */}
+      <Animated.View
+        style={[
+          styles.onlineBadge,
+          { backgroundColor: badgeColor, opacity: badgePulse },
+        ]}
+      />
     </Animated.View>
   );
 }
@@ -225,7 +260,6 @@ const styles = StyleSheet.create({
     width: 13,
     height: 13,
     borderRadius: 7,
-    backgroundColor: "#2ECC71",
     borderWidth: 2,
     borderColor: "#FFFFFF",
   },

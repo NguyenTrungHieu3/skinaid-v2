@@ -34,6 +34,7 @@ import FilterChips, {
 } from "../../components/map/FilterChips";
 import MapWebView, {
   MapWebViewHandle,
+  useHospitalIconUri,
 } from "../../components/map/MapWebView";
 import PlaceCard from "../../components/map/PlaceCard";
 import RouteStepsSheet from "../../components/map/RouteStepsSheet";
@@ -59,6 +60,7 @@ export default function FacilitiesScreen() {
   // NOTE: React Compiler disabled globally in app.json → no 'use no memo' needed
   const insets = useSafeAreaInsets();
   const mapRef = useRef<MapWebViewHandle>(null);
+  const hospitalIconUri = useHospitalIconUri();  // ← load hospital.png
   // Uncontrolled TextInput ref — fixes Android bug where
   // controlled value prop blocks native text rendering
   const searchInputRef = useRef<TextInput>(null);
@@ -423,6 +425,7 @@ export default function FacilitiesScreen() {
             ref={mapRef}
             onMarkerPress={handleMarkerPress}
             onMapPress={handleMapPress}
+            hospitalIconUri={hospitalIconUri}
           />
         </View>
 
@@ -460,6 +463,7 @@ export default function FacilitiesScreen() {
         isLoadingRoute={loadingRoute}
         onGetDirections={handleGetDirections}
         onDismiss={handleDismiss}
+        hospitalIconUri={hospitalIconUri}
       />
 
       {/* ── ROUTE STEPS ── */}

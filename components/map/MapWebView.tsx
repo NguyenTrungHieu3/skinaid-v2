@@ -11,9 +11,10 @@
  *  5. Marker limit = 15 max → less rendering overhead
  */
 
-import React, { forwardRef, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
+import { Asset } from "expo-asset";
 import { GEOAPIFY_API_KEY } from "../../constants/config";
 import { NearbyPlace } from "../../services/mapService";
 
@@ -33,13 +34,20 @@ export interface MapWebViewHandle {
 interface Props {
   onMarkerPress: (placeId: string) => void;
   onMapPress: () => void;
+  hospitalIconUri?: string;   // base64 data URI của hospital.png
 }
 
 const MapWebView = forwardRef<MapWebViewHandle, Props>(
-  function MapWebView({ onMarkerPress, onMapPress }, ref) {
+  function MapWebView({ onMarkerPress, onMapPress, hospitalIconUri }, ref) {
     const webViewRef = useRef<WebView>(null);
     const isReady = useRef(false);
     const queue = useRef<string[]>([]);
+    // Build HTML một lần khi hospitalIconUri thay đổi
+    const [html, setHtml] = useState(() => buildMapHtml(""));
+
+    useEffect(() => {
+      setHtml(buildMapHtml(hospitalIconUri ?? ""));
+    }, [hospitalIconUri]);
 
     const inject = (code: string) => {
       const js = `(function(){try{${code}}catch(e){console.warn('[Map]',String(e));}})();true;`;
@@ -94,7 +102,7 @@ const MapWebView = forwardRef<MapWebViewHandle, Props>(
       <WebView
         ref={webViewRef}
         style={StyleSheet.absoluteFillObject}
-        source={{ html: MAP_HTML }}
+        source={{ html }}
         onLoadEnd={handleLoadEnd}
         onMessage={handleMessage}
         scrollEnabled={false}
@@ -113,14 +121,31 @@ const MapWebView = forwardRef<MapWebViewHandle, Props>(
 
 export default MapWebView;
 
+// ─── Hook để load hospital.png → base64 data URI ────────────────────────────
+export function useHospitalIconUri(): string {
+  const [uri, setUri] = useState("");
+  useEffect(() => {
+    (async () => {
+      try {
+        const asset = Asset.fromModule(require("../../assets/hospital.png"));
+        await asset.downloadAsync();
+        // localUri trả về file:// path, WebView trên Android cần dùng
+        // downloadAsync() để đảm bảo file có sẵn trong cache.
+        // Truyền thẳng localUri vào src của <img> trong HTML.
+        if (asset.localUri) setUri(asset.localUri);
+      } catch (e) {
+        console.warn("[Map] hospital icon load failed:", e);
+      }
+    })();
+  }, []);
+  return uri;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// MAP HTML
-// FIX 1: preferCanvas:true  → Canvas renderer → route does NOT shift on zoom
-// FIX 2: invalidateSize()   → Forces Leaflet to recalc size after WebView load
-// FIX 3: Red circleMarker   → Destination pin when route is drawn
-// FIX 4: Simplified markers → Fewer DOM nodes → less lag
+// buildMapHtml — nhận iconUri để nhúng vào marker
 // ─────────────────────────────────────────────────────────────────────────────
-const MAP_HTML = `<!DOCTYPE html>
+function buildMapHtml(iconUri: string): string {
+return `<!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -193,25 +218,28 @@ const MAP_HTML = `<!DOCTYPE html>
     try{ window.ReactNativeWebView.postMessage(JSON.stringify(obj)); }catch(e){}
   }
 
-  // ── Marker icon (simplified HTML = less DOM = faster) ────────────
+  // ── Marker icon: Location pin SVG (như Google Maps) + tên bên dưới ──
   function _mkIcon(name,isAct){
-    var bg  = isAct ? '#3DBFA0' : '#5B6A80';
-    var lbl = name.length>14 ? name.substring(0,12)+'..' : name;
-    var sh  = isAct ? 'box-shadow:0 3px 10px rgba(61,191,160,.5);' : '';
-    var sc  = isAct ? 'transform:scale(1.08);' : '';
+    var color = isAct ? '#3DBFA0' : '#E05C5C';
+    var scale = isAct ? 1.2 : 1.0;
+    var lbl   = name.length>16 ? name.substring(0,14)+'..' : name;
+    var sh    = isAct ? 'filter:drop-shadow(0 3px 6px rgba(61,191,160,.6));' : 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));';
+    // Location pin SVG (teardrop shape)
+    var pinSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40" style="'+sh+'transform:scale('+scale+');transform-origin:bottom center">'+
+        '<path d="M16 0C9.373 0 4 5.373 4 12c0 9 12 28 12 28S28 21 28 12C28 5.373 22.627 0 16 0z" fill="'+color+'"/>'+
+        '<circle cx="16" cy="12" r="6" fill="#fff"/>'+
+        '<path d="M13 10h2V8h2v2h2v2h-2v2h-2v-2h-2z" fill="'+color+'"/>'+
+      '</svg>';
     var html=
-      '<div style="display:inline-flex;flex-direction:column;align-items:center">'+
-        '<div style="width:28px;height:28px;border-radius:8px;background:'+bg+
-             ';border:2px solid #fff;display:flex;align-items:center;justify-content:center;'+sh+sc+'">'+
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round">'+
-            '<path d="M12 5v14M5 12h14"/>'+
-          '</svg>'+
-        '</div>'+
-        '<div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid '+bg+';margin-top:-1px"></div>'+
-        '<div style="font-size:9px;font-weight:700;color:#fff;background:'+bg+
-             ';border-radius:3px;padding:1px 4px;margin-top:2px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+lbl+'</div>'+
+      '<div style="display:inline-flex;flex-direction:column;align-items:center;pointer-events:none">'+
+        pinSvg+
+        '<div style="font-size:9px;font-weight:700;color:#333;background:rgba(255,255,255,0.92);'+
+             'border-radius:4px;padding:2px 5px;margin-top:1px;max-width:90px;'+
+             'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'+
+             'box-shadow:0 1px 4px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)">'+lbl+'</div>'+
       '</div>';
-    return L.divIcon({html:html,className:'',iconSize:[28,48],iconAnchor:[14,33]});
+    return L.divIcon({html:html,className:'',iconSize:[32,58],iconAnchor:[16,40]});
   }
 
   // ── API: User GPS dot ─────────────────────────────────────────────
@@ -277,3 +305,6 @@ const MAP_HTML = `<!DOCTYPE html>
 </script>
 </body>
 </html>`;
+}
+// Giá trị mặc định (không có icon)
+const MAP_HTML = buildMapHtml("");
