@@ -40,6 +40,15 @@ const SECTION_COLORS = {
     icon: '!',
     tag: 'KHẨN CẤP',
   },
+  'Xử lý ban đầu': {
+    headerBg: '#DCFCE7',
+    iconColor: '#16A34A',
+    stepNumberBg: '#DCFCE7',
+    stepNumberBorder: '#86EFAC',
+    stepNumberColor: '#16A34A',
+    icon: '!',
+    tag: 'KIỂM SOÁT',
+  },
   'Nên làm': {
     headerBg: '#DBEAFE',
     iconColor: '#2563EB',
@@ -74,14 +83,13 @@ type GuideInput = {
   source?: string | null;
 } | null;
 
-// suppressImmediate = true → ẩn section "Sơ cứu ngay" (dùng cho bệnh mãn tính psoriasis/fungal)
-function buildFirstAidSections(guide: GuideInput, suppressImmediate = false): FirstAidSection[] {
+function buildFirstAidSections(guide: GuideInput, isChronic: boolean = false): FirstAidSection[] {
   if (!guide) return [];
   const sections: FirstAidSection[] = [];
 
-  if (!suppressImmediate && guide.steps && guide.steps.length > 0) {
+  if (guide.steps && guide.steps.length > 0) {
     sections.push({
-      title: 'Sơ cứu ngay',
+      title: isChronic ? 'Xử lý ban đầu' : 'Sơ cứu ngay',
       icon: 'alert',
       steps: guide.steps.map((content) => ({ content })) as { content: string }[],
     });
@@ -115,9 +123,6 @@ function findSynthesis(
   );
 }
 
-// Các wound_type mãn tính không cần mục "Sơ cứu ngay"
-const CHRONIC_TYPES = ['psoriasis', 'fungal'] as const;
-
 function buildWoundDetail(
   wound: SignificantWound,
   synthesis: SynthesisResult | null,
@@ -127,8 +132,7 @@ function buildWoundDetail(
   const isFallback = !synthesis?.structured_guidance;
   const hasSeverity = !['psoriasis', 'fungal', 'acne'].includes(wound.wound_type);
   const severityColor = mapSeverityColor(wound.severity);
-  // Ẩn "Sơ cứu ngay" với các bệnh mãn tính (psoriasis / fungal)
-  const suppressImmediate = (CHRONIC_TYPES as readonly string[]).includes(wound.wound_type);
+  const isChronic = ['psoriasis', 'fungal'].includes(wound.wound_type);
 
   return {
     id: wound.detection_id,
@@ -143,7 +147,7 @@ function buildWoundDetail(
     // WoundScanCard sẽ tự normalize bằng Image.getSize()
     boundingBox: wound.bounding_box,
     imageUri,
-    firstAid: buildFirstAidSections(guide, suppressImmediate),
+    firstAid: buildFirstAidSections(guide, isChronic),
     isFallback,
   };
 }

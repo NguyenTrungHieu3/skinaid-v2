@@ -115,7 +115,7 @@ export interface FirstAidStep {
 }
 
 export interface FirstAidSection {
-  title: 'Sơ cứu ngay' | 'Nên làm' | 'Không nên làm';
+  title: 'Sơ cứu ngay' | 'Xử lý ban đầu' | 'Nên làm' | 'Không nên làm';
   icon: 'alert' | 'check' | 'ban';
   steps: FirstAidStep[];
 }
