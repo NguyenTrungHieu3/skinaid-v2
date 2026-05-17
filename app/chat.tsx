@@ -199,30 +199,19 @@ export default function ChatScreen() {
         "Tìm bệnh viện gần đây",
       ];
 
-  const initialMessage: Message = analysisId
-    ? {
-        id: "welcome",
-        text: "Xin chào! Tôi đã nhận được báo cáo phân tích vết thương của bạn. Tôi có thể tư vấn, hướng dẫn cách chăm sóc hoặc giải đáp thắc mắc chi tiết dựa trên kết quả báo cáo AI. Bạn cần tôi hỗ trợ gì nào? 🩺",
-        sender: "bot",
-        timestamp: new Date(),
-      }
-    : {
-        id: "welcome",
-        text: "Xin chào! Tôi là DermAid – trợ lý hướng dẫn sử dụng ứng dụng SkinAid. Tôi có thể giúp bạn tìm hiểu các chức năng của ứng dụng. Hãy hỏi tôi bất cứ điều gì! 🌿",
-        sender: "bot",
-        timestamp: new Date(),
-      };
+  // ── Session state ──
+  const cachedSession = analysisId ? chatSessionCache[analysisId] : null;
 
-  // Không cache session — luôn probe lại khi vào chat để đảm bảo bot đang hoạt động
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(cachedSession ? cachedSession.messages : []);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showQuickReplies, setShowQuickReplies] = useState(true);
+  const [showQuickReplies, setShowQuickReplies] = useState(!cachedSession);
   const flatListRef = useRef<FlatList>(null);
 
-  // ── Session state ──
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [sessionId, setSessionId] = useState<string | null>(cachedSession ? cachedSession.sessionId : null);
+  const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "error">(
+    cachedSession ? "ready" : "loading"
+  );
 
   // Lưu trữ ngược lại vào cache mỗi khi có thay đổi
   useEffect(() => {
@@ -264,6 +253,11 @@ export default function ChatScreen() {
 
   // ── Tạo session + probe kiểm tra bot có hoạt động không ──
   const initSession = useCallback(async () => {
+    // Nếu đã có cache session thì không tạo lại
+    if (analysisId && chatSessionCache[analysisId]) {
+      return;
+    }
+
     setSessionStatus("loading");
     try {
       const res = await chatbotService.createSession(analysisId || null);
