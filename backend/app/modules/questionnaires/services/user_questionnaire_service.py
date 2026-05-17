@@ -89,6 +89,11 @@ class UserQuestionnaireService:
                 await self.repo.get_active_by_wound_type(wound_key)
             )
 
+            # Fallback: nếu composite key (vd: "burn_blister") không tìm thấy,
+            # thử lại với wound_type thuần (vd: "burn").
+            if questionnaire is None and subtype:
+                questionnaire = await self.repo.get_active_by_wound_type(wound_type)
+
             if questionnaire is None:
                 missing.append(
                     MissingQuestionnaireItem(
