@@ -407,7 +407,7 @@ function MedicalDisclaimer() {
         <Feather name="alert-triangle" size={20} color="#B45309" />
       </Animated.View>
       <View style={styles.disclaimerBody}>
-        <Text style={styles.disclaimerTitle}>⚠️  Lưu ý quan trọng</Text>
+        <Text style={styles.disclaimerTitle}>Lưu ý quan trọng</Text>
         <Text style={styles.disclaimerText}>
           Phân tích AI chỉ mang tính tham khảo, không thay thế chẩn đoán lâm sàng.{' '}
           <Text style={styles.disclaimerBold}>Luôn tham khảo bác sĩ</Text>
@@ -724,9 +724,8 @@ export default function AssessmentResultScreen() {
       <View style={[styles.root, { paddingTop: insets.top }]}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Feather name="arrow-left" size={20} color={Colors.primary} />
-          </TouchableOpacity>
+          {/* Nút back đã được ẩn */}
+          <View style={styles.topBarSpacer} />
           <Text style={styles.topBarTitle}>KẾT QUẢ ĐÁNH GIÁ</Text>
           <View style={styles.topBarSpacer} />
         </View>
@@ -747,13 +746,8 @@ export default function AssessmentResultScreen() {
 
       {/* ── Top bar ─────────────────────────────────────────────── */}
       <View style={styles.topBar}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Feather name="arrow-left" size={20} color={Colors.primary} />
-        </TouchableOpacity>
+        {/* Nút back đã bị ẩn */}
+        <View style={styles.topBarSpacer} />
 
         <View style={styles.topBarCenter}>
           <Text style={styles.topBarTitle}>KẾT QUẢ ĐÁNH GIÁ</Text>

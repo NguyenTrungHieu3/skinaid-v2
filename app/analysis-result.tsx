@@ -142,7 +142,7 @@ function NoWoundDisclaimer() {
     <Animated.View style={[styles.noWoundDisclaimerCard, { opacity: pulse }]}>
       <Feather name="alert-triangle" size={20} color="#B45309" />
       <View style={styles.noWoundDisclaimerBody}>
-        <Text style={styles.noWoundDisclaimerTitle}>⚠️  Lưu ý quan trọng</Text>
+        <Text style={styles.noWoundDisclaimerTitle}>Lưu ý quan trọng</Text>
         <Text style={styles.noWoundDisclaimerText}>
           Phân tích AI chỉ mang tính tham khảo, không thay thế chẩn đoán lâm sàng.{' '}
           <Text style={styles.noWoundDisclaimerBold}>Luôn tham khảo bác sĩ</Text>

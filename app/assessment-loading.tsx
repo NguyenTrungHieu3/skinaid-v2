@@ -1,6 +1,5 @@
 // app/assessment-loading.tsx
-// TODO-4: Gọi submitWoundResponses() — xử lý LLM success và fallback
-// Màn hình này chỉ được gọi khi LLM hoạt động bình thường.
+// Màn hình loading khi gọi LLM tạo phác đồ — thiết kế hiện đại, vòng % tương lai
 
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { Colors } from '../constants/colors';
 import {
   SignificantWound,
@@ -24,11 +24,17 @@ import {
 import { getErrorMessage } from '../services/utils';
 
 const STEPS = [
-  'Đang tổng hợp câu trả lời...',
-  'Đánh giá mức độ tổn thương...',
-  'Tạo hướng dẫn sơ cứu phù hợp...',
-  'Hoàn thiện kết quả phân tích...',
+  'Đang tổng hợp thông tin...',
+  'Đánh giá mức độ rủi ro...',
+  'Tạo phác đồ điều trị AI...',
+  'Hoàn thiện báo cáo y khoa...',
 ];
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const SIZE = 240;
+const STROKE_WIDTH = 10;
+const RADIUS = (SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
 export default function AssessmentLoadingScreen() {
   const insets = useSafeAreaInsets();
@@ -40,79 +46,56 @@ export default function AssessmentLoadingScreen() {
       imageUri?: string;
     }>();
 
-  const rotate = useRef(new Animated.Value(0)).current;
-  const pulseOuter = useRef(new Animated.Value(1)).current;
-  const pulseInner = useRef(new Animated.Value(0.85)).current;
-  const progress = useRef(new Animated.Value(0)).current;
-  const stepOpacity = useRef(new Animated.Value(1)).current;
-  const [currentStep, setCurrentStep] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [percent, setPercent] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
 
   useEffect(() => {
-    // ── Animations ────────────────────────────────────────────────
+    // 1. Progress tick up to 90% (waiting for API)
+    Animated.timing(progressAnim, {
+      toValue: 90,
+      duration: 4000,
+      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+      useNativeDriver: false,
+    }).start();
+
+    // 2. Rotate scanning ring
     Animated.loop(
-      Animated.timing(rotate, {
+      Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 1500,
+        duration: 3500,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
+    // 3. Pulse effect for the background
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseOuter, {
-          toValue: 1.18,
-          duration: 880,
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(pulseOuter, {
+        Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 880,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseInner, {
-          toValue: 0.98,
-          duration: 880,
-          delay: 220,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseInner, {
-          toValue: 0.85,
-          duration: 880,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // Progress bar — animate tới 90% trong khi chờ API
-    // Sẽ complete sau khi API trả về
-    Animated.timing(progress, {
-      toValue: 0.9,
-      duration: 3500,
-      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-      useNativeDriver: false,
-    }).start();
-
-    // Cycling step text
-    const stepMs = 900;
-    let step = 0;
-    const interval = setInterval(() => {
-      step = (step + 1) % STEPS.length;
-      Animated.sequence([
-        Animated.timing(stepOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(stepOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start();
-      setCurrentStep(step);
-    }, stepMs);
+    // 4. Update text based on progress
+    const listener = progressAnim.addListener((state) => {
+      setPercent(Math.round(state.value));
+      let idx = Math.floor((state.value / 95) * STEPS.length);
+      if (idx >= STEPS.length) idx = STEPS.length - 1;
+      setStepIdx(idx);
+    });
 
     // ── API call ──────────────────────────────────────────────────
     let cancelled = false;
@@ -139,31 +122,29 @@ export default function AssessmentLoadingScreen() {
 
         if (cancelled) return;
 
-        // Animate progress đến 100%
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 400,
+        // Animate progress to 100% quickly upon success
+        Animated.timing(progressAnim, {
+          toValue: 100,
+          duration: 500,
           useNativeDriver: false,
         }).start();
 
-        // Kiểm tra LLM có thực sự trả về kết quả không
         const llmFailed =
           !submitResult.syntheses ||
           submitResult.syntheses.length === 0 ||
           submitResult.syntheses.some((s) => s.error !== null || !s.structured_guidance);
 
-        // Delay nhỏ để animation hoàn tất
+        // Chờ animation % lên 100 rồi chuyển trang
         setTimeout(() => {
           if (cancelled) return;
 
           if (llmFailed) {
-            // Dùng firstaid_snapshot (đã có sẵn trong rawDetections)
             router.replace({
               pathname: '/assessment-result' as any,
               params: {
                 analysisId,
                 selectedDetections: rawDetections,
-                synthesisJson: '',   // rỗng = fallback sang firstaid_snapshot
+                synthesisJson: '',
                 imageUri: imageUri ?? '',
               },
             });
@@ -178,11 +159,10 @@ export default function AssessmentLoadingScreen() {
               },
             });
           }
-        }, 500);
+        }, 700);
 
       } catch (err) {
         if (cancelled) return;
-        // Hard network error khi submit
         Alert.alert(
           'Không thể tải kết quả',
           getErrorMessage(err as any),
@@ -214,165 +194,155 @@ export default function AssessmentLoadingScreen() {
     submitAndNavigate();
 
     return () => {
+      progressAnim.removeListener(listener);
       cancelled = true;
-      clearInterval(interval);
     };
   }, []);
 
-  const spin = rotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+  const strokeDashoffset = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [CIRCUMFERENCE, 0],
+    extrapolate: "clamp",
   });
-  const progressWidth = progress.interpolate({
+
+  const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+    outputRange: ["0deg", "360deg"],
   });
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
-      {/* Spinner */}
-      <View style={styles.spinnerWrap}>
-        <Animated.View style={[styles.pulseOuter, { transform: [{ scale: pulseOuter }] }]} />
-        <Animated.View style={[styles.pulseInner, { transform: [{ scale: pulseInner }] }]} />
-        <Animated.View style={[styles.spinRing, { transform: [{ rotate: spin }] }]} />
-        <View style={styles.centerCircle}>
-          <Text style={styles.centerEmoji}>🧬</Text>
-        </View>
-      </View>
+      <View style={styles.loaderWrapper}>
+        <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]} />
 
-      {/* Tiêu đề */}
-      <Text style={styles.title}>AI đang tổng hợp kết quả</Text>
-      <Text style={styles.subtitle}>Vui lòng không tắt ứng dụng</Text>
+        <Animated.View style={[styles.spinRingWrapper, { transform: [{ rotate }] }]}>
+          <View style={styles.spinRingDot} />
+        </Animated.View>
 
-      {/* Bước hiện tại */}
-      <Animated.Text style={[styles.stepText, { opacity: stepOpacity }]}>
-        {STEPS[currentStep]}
-      </Animated.Text>
-
-      {/* Thanh progress */}
-      <View style={styles.progressWrap}>
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
-        </View>
-      </View>
-
-      {/* Chấm bước */}
-      <View style={styles.stepDots}>
-        {STEPS.map((_, idx) => (
-          <View
-            key={idx}
-            style={[styles.stepDot, idx <= currentStep && styles.stepDotActive]}
+        <Svg width={SIZE} height={SIZE} style={styles.svg}>
+          <Defs>
+            <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={Colors.primary} stopOpacity="1" />
+              <Stop offset="1" stopColor="#02E0C4" stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          <Circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            stroke={`${Colors.primary}1A`}
+            strokeWidth={STROKE_WIDTH}
+            fill="none"
           />
-        ))}
+          <AnimatedCircle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            stroke="url(#grad)"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+
+        <View style={styles.centerContent}>
+          <Text style={styles.percentText}>{percent}<Text style={styles.percentSymbol}>%</Text></Text>
+          <Text style={styles.statusLabel}>GENERATING</Text>
+        </View>
       </View>
+
+      <Text style={styles.title}>Phác đồ sơ cứu AI</Text>
+      <Text style={styles.stepText}>{STEPS[stepIdx]}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
+  container: {
     flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: Colors.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    gap: 18,
+    paddingHorizontal: 20,
   },
-  spinnerWrap: {
-    width: 150,
-    height: 150,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
+  loaderWrapper: {
+    width: SIZE,
+    height: SIZE,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 40,
   },
-  pulseOuter: {
-    position: 'absolute',
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    backgroundColor: `${Colors.primary}12`,
+  pulseCircle: {
+    position: "absolute",
+    width: SIZE * 0.75,
+    height: SIZE * 0.75,
+    borderRadius: (SIZE * 0.75) / 2,
+    backgroundColor: `${Colors.primary}15`,
   },
-  pulseInner: {
-    position: 'absolute',
-    width: 114,
-    height: 114,
-    borderRadius: 57,
-    backgroundColor: `${Colors.primary}20`,
+  spinRingWrapper: {
+    position: "absolute",
+    width: SIZE + 40,
+    height: SIZE + 40,
+    borderRadius: (SIZE + 40) / 2,
+    borderWidth: 1.5,
+    borderColor: `${Colors.primary}30`,
+    borderStyle: "dashed",
+    alignItems: "center",
   },
-  spinRing: {
-    position: 'absolute',
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    borderWidth: 3.5,
-    borderColor: Colors.primary,
-    borderTopColor: 'transparent',
-    borderRightColor: `${Colors.primary}50`,
+  spinRingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#02E0C4",
+    position: "absolute",
+    top: -5,
+    shadowColor: "#02E0C4",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  centerCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 7,
+  svg: {
+    position: "absolute",
+    transform: [{ rotate: "-90deg" }], // Bắt đầu vòng ở góc 12h
   },
-  centerEmoji: { fontSize: 28 },
-
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    letterSpacing: 0.2,
-    textAlign: 'center',
+  centerContent: {
+    alignItems: "center",
+    justifyContent: "center",
   },
-  subtitle: {
-    fontSize: 13,
+  percentText: {
+    fontSize: 56,
+    fontWeight: "900",
+    color: Colors.primary,
+    fontVariant: ["tabular-nums"], // Số không bị nhảy giật
+    letterSpacing: -1,
+  },
+  percentSymbol: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: "800",
     color: Colors.textMuted,
-    marginTop: -10,
+    letterSpacing: 3,
+    marginTop: -4,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   stepText: {
     fontSize: 14,
     color: Colors.primary,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: -6,
-  },
-
-  progressWrap: { width: '100%' },
-  progressTrack: {
-    width: '100%',
-    height: 7,
-    backgroundColor: Colors.backgroundTertiary,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary,
-    borderRadius: 4,
-  },
-
-  stepDots: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: -6,
-  },
-  stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.backgroundTertiary,
-  },
-  stepDotActive: {
-    backgroundColor: Colors.primary,
-    transform: [{ scale: 1.2 }],
+    fontWeight: "600",
   },
 });

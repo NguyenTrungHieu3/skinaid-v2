@@ -1,181 +1,151 @@
 // components/analysis/AnalyzingLoader.tsx
-// Màn hình loading khi AI đang phân tích ảnh — full screen overlay animation
+// Màn hình loading khi AI đang phân tích ảnh — phong cách tương lai hiện đại
 
-import React, { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { Colors } from "../../constants/colors";
 
 const STEPS = [
-  "Tiền xử lý ảnh...",
-  "Nhận diện vùng tổn thương...",
-  "Phân loại vết thương...",
+  "Khởi tạo AI Engine...",
+  "Đang quét đặc trưng y khoa...",
+  "Phân loại loại tổn thương...",
   "Đánh giá mức độ nghiêm trọng...",
-  "Tổng hợp kết quả...",
+  "Hoàn thiện kết quả phân tích...",
 ];
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+const SIZE = 240;
+const STROKE_WIDTH = 10;
+const RADIUS = (SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
+
 interface Props {
-  /** Tổng thời gian loading (ms) */
   duration?: number;
 }
 
-export default function AnalyzingLoader({ duration = 4000 }: Props) {
-  // ── Vòng xoay scan ring ─────────────────────────────────────────
-  const rotate = useRef(new Animated.Value(0)).current;
-  const pulseOuter = useRef(new Animated.Value(1)).current;
-  const pulseInner = useRef(new Animated.Value(0.85)).current;
+export default function AnalyzingLoader({ duration = 4500 }: Props) {
+  // Vì truyền duration = 0 từ parent, ta sẽ override nếu nó quá ngắn
+  const actualDuration = duration < 1000 ? 4500 : duration;
 
-  // ── Progress bar ────────────────────────────────────────────────
-  const progress = useRef(new Animated.Value(0)).current;
-
-  // ── Step text ───────────────────────────────────────────────────
-  const [currentStep, setCurrentStep] = React.useState(0);
-  const stepOpacity = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [percent, setPercent] = useState(0);
+  const [stepIdx, setStepIdx] = useState(0);
 
   useEffect(() => {
-    // Spin
+    // 1. Progress tick up to 95% (remaining 5% will be conceptual or completed by parent unmount)
+    Animated.timing(progressAnim, {
+      toValue: 95,
+      duration: actualDuration,
+      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
+      useNativeDriver: false, // required for listener syncing and strokeDashoffset
+    }).start();
+
+    // 2. Rotate scanning ring
     Animated.loop(
-      Animated.timing(rotate, {
+      Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 1800,
+        duration: 3500,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
 
-    // Pulse outer
+    // 3. Pulse effect for the background
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseOuter, {
-          toValue: 1.12,
-          duration: 900,
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(pulseOuter, {
+        Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 900,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    // Pulse inner (offset)
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseInner, {
-          toValue: 1,
-          duration: 900,
-          delay: 300,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseInner, {
-          toValue: 0.85,
-          duration: 900,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // 4. Update text based on progress
+    const listener = progressAnim.addListener((state) => {
+      setPercent(Math.round(state.value));
+      let idx = Math.floor((state.value / 95) * STEPS.length);
+      if (idx >= STEPS.length) idx = STEPS.length - 1;
+      setStepIdx(idx);
+    });
 
-    // Progress bar
-    Animated.timing(progress, {
-      toValue: 1,
-      duration,
-      easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
-      useNativeDriver: false,
-    }).start();
+    return () => {
+      progressAnim.removeListener(listener);
+    };
+  }, [actualDuration, progressAnim, rotateAnim, pulseAnim]);
 
-    // Step rotation
-    const stepInterval = Math.floor(duration / STEPS.length);
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      if (step >= STEPS.length) {
-        clearInterval(interval);
-        return;
-      }
-      Animated.sequence([
-        Animated.timing(stepOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(stepOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start();
-      setCurrentStep(step);
-    }, stepInterval);
+  const strokeDashoffset = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [CIRCUMFERENCE, 0],
+    extrapolate: "clamp",
+  });
 
-    return () => clearInterval(interval);
-  }, []);
-
-  const spinInterpolate = rotate.interpolate({
+  const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
 
-  const progressWidth = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0%", "100%"],
-  });
-
   return (
     <View style={styles.container}>
-      {/* ── Spinner ────────────────────────────────────────────── */}
-      <View style={styles.spinnerContainer}>
-        {/* Outer pulse ring */}
-        <Animated.View
-          style={[styles.pulseRingOuter, { transform: [{ scale: pulseOuter }] }]}
-        />
-        {/* Inner pulse ring */}
-        <Animated.View
-          style={[styles.pulseRingInner, { transform: [{ scale: pulseInner }] }]}
-        />
-        {/* Rotating border */}
-        <Animated.View
-          style={[
-            styles.spinRing,
-            { transform: [{ rotate: spinInterpolate }] },
-          ]}
-        />
-        {/* Center circle with icon */}
-        <View style={styles.centerCircle}>
-          <Text style={styles.centerIcon}>🔬</Text>
-        </View>
-      </View>
+      <View style={styles.loaderWrapper}>
+        {/* Glow/Pulse background */}
+        <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]} />
 
-      {/* ── Title ─────────────────────────────────────────────── */}
-      <Text style={styles.title}>AI đang phân tích</Text>
-      <Text style={styles.subtitle}>Vui lòng không tắt ứng dụng</Text>
+        {/* Outer Rotating dashes to look like a futuristic scanner */}
+        <Animated.View style={[styles.spinRingWrapper, { transform: [{ rotate }] }]}>
+          <View style={styles.spinRingDot} />
+        </Animated.View>
 
-      {/* ── Step text ─────────────────────────────────────────── */}
-      <Animated.Text style={[styles.stepText, { opacity: stepOpacity }]}>
-        {STEPS[currentStep]}
-      </Animated.Text>
-
-      {/* ── Progress bar ──────────────────────────────────────── */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBg}>
-          <Animated.View
-            style={[styles.progressFill, { width: progressWidth }]}
+        {/* SVG Progress Circle */}
+        <Svg width={SIZE} height={SIZE} style={styles.svg}>
+          <Defs>
+            <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={Colors.primary} stopOpacity="1" />
+              <Stop offset="1" stopColor="#02E0C4" stopOpacity="1" />
+            </LinearGradient>
+          </Defs>
+          {/* Track */}
+          <Circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            stroke={`${Colors.primary}1A`}
+            strokeWidth={STROKE_WIDTH}
+            fill="none"
           />
+          {/* Animated Fill */}
+          <AnimatedCircle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={RADIUS}
+            stroke="url(#grad)"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+
+        {/* Center Content */}
+        <View style={styles.centerContent}>
+          <Text style={styles.percentText}>{percent}<Text style={styles.percentSymbol}>%</Text></Text>
+          <Text style={styles.statusLabel}>PROCESSING</Text>
         </View>
-        <Animated.Text style={styles.progressPct}>
-          {/* Hiển thị % xấp xỉ */}
-          {`${Math.round((currentStep / STEPS.length) * 100)}%`}
-        </Animated.Text>
       </View>
+
+      <Text style={styles.title}>Hệ thống AI đang phân tích</Text>
+      <Text style={styles.stepText}>{STEPS[stepIdx]}</Text>
     </View>
   );
 }
@@ -186,98 +156,82 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: Colors.backgroundSecondary,
-    paddingHorizontal: 40,
-    gap: 12,
+    paddingHorizontal: 20,
   },
-  // ── Spinner ─────────────────────────────────────────────────────
-  spinnerContainer: {
-    width: 120,
-    height: 120,
+  loaderWrapper: {
+    width: SIZE,
+    height: SIZE,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom: 40,
   },
-  pulseRingOuter: {
+  pulseCircle: {
     position: "absolute",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: `${Colors.primary}18`,
+    width: SIZE * 0.75,
+    height: SIZE * 0.75,
+    borderRadius: (SIZE * 0.75) / 2,
+    backgroundColor: `${Colors.primary}15`,
   },
-  pulseRingInner: {
+  spinRingWrapper: {
     position: "absolute",
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: `${Colors.primary}28`,
+    width: SIZE + 40,
+    height: SIZE + 40,
+    borderRadius: (SIZE + 40) / 2,
+    borderWidth: 1.5,
+    borderColor: `${Colors.primary}30`,
+    borderStyle: "dashed",
+    alignItems: "center",
   },
-  spinRing: {
+  spinRingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#02E0C4",
     position: "absolute",
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 3,
-    borderColor: Colors.primary,
-    borderTopColor: "transparent",
-    borderRightColor: `${Colors.primary}50`,
+    top: -5,
+    shadowColor: "#02E0C4",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  centerCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.white,
+  svg: {
+    position: "absolute",
+    transform: [{ rotate: "-90deg" }], // Bắt đầu vòng ở góc 12h
+  },
+  centerContent: {
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 6,
   },
-  centerIcon: {
-    fontSize: 28,
+  percentText: {
+    fontSize: 56,
+    fontWeight: "900",
+    color: Colors.primary,
+    fontVariant: ["tabular-nums"], // Số không bị nhảy giật
+    letterSpacing: -1,
   },
-  // ── Text ────────────────────────────────────────────────────────
+  percentSymbol: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: Colors.textMuted,
+    letterSpacing: 3,
+    marginTop: -4,
+  },
   title: {
     fontSize: 20,
     fontWeight: "800",
     color: Colors.textPrimary,
-    letterSpacing: 0.3,
-    marginTop: 8,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    fontWeight: "400",
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   stepText: {
-    fontSize: 13,
+    fontSize: 14,
     color: Colors.primary,
-    fontWeight: "500",
-    marginTop: 4,
-  },
-  // ── Progress ────────────────────────────────────────────────────
-  progressContainer: {
-    width: "100%",
-    alignItems: "flex-end",
-    gap: 6,
-    marginTop: 8,
-  },
-  progressBg: {
-    width: "100%",
-    height: 6,
-    backgroundColor: Colors.backgroundTertiary,
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: Colors.primary,
-    borderRadius: 3,
-  },
-  progressPct: {
-    fontSize: 11,
-    color: Colors.primary,
-    fontWeight: "700",
+    fontWeight: "600",
   },
 });
