@@ -42,6 +42,18 @@ const SECTION_COLORS = {
     icon: '!',
     tag: 'KHẨN CẤP',
   },
+  'Xử lý ban đầu': {
+    iconBg: '#F0FDF4',
+    iconColor: '#16A34A',
+    stepNumberColor: '#16A34A',
+    stepNumberBg: '#DCFCE7',
+    stepNumberBorder: '#86EFAC',
+    gradientBg: '#F0FDF4',
+    headerBg: '#DCFCE7',
+    accentLine: '#16A34A',
+    icon: '!',
+    tag: 'KIỂM SOÁT',
+  },
   'Nên làm': {
     iconBg: '#EFF6FF',
     iconColor: '#2563EB',
@@ -461,16 +473,19 @@ export default function HistoryDetailScreen() {
           const fd = w.firstaid_snapshot;
 
           const firstAid: FirstAidSection[] = [];
-          // Ẩn "Sơ cứu ngay" với bệnh mãn tính (psoriasis / fungal)
           const isChronicType = ['psoriasis', 'fungal'].includes(w.wound_type);
-          if (!isChronicType && fd && fd.steps?.length > 0) {
-            firstAid.push({ title: 'Sơ cứu ngay', icon: '!' as any, steps: fd.steps.map(s => ({ content: s })) });
+          if (fd && fd.steps?.length > 0) {
+            firstAid.push({
+              title: isChronicType ? 'Xử lý ban đầu' : 'Sơ cứu ngay',
+              icon: 'alert',
+              steps: fd.steps.map(s => ({ content: s }))
+            });
           }
           if (fd && fd.dos?.length > 0) {
-            firstAid.push({ title: 'Nên làm', icon: 'check' as any, steps: fd.dos.map(s => ({ content: s })) });
+            firstAid.push({ title: 'Nên làm', icon: 'check', steps: fd.dos.map(s => ({ content: s })) });
           }
           if (fd && fd.donts?.length > 0) {
-            firstAid.push({ title: 'Không nên làm', icon: 'x' as any, steps: fd.donts.map(s => ({ content: s })) });
+            firstAid.push({ title: 'Không nên làm', icon: 'ban', steps: fd.donts.map(s => ({ content: s })) });
           }
 
           let userAnswers: { questionText: string; selectedOptions: string[] }[] = [];
