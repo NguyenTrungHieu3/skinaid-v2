@@ -12,12 +12,11 @@ import {
   Alert,
   Animated,
   Image,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,6 +27,7 @@ import {
   DetectedWound,
 } from "../constants/analysisTypes";
 import { Colors } from "../constants/colors";
+import { getErrorMessage } from "../services/utils";
 import {
   AnalysisDetailResponse,
   SignificantWound,
@@ -37,7 +37,6 @@ import {
   mapWoundTypeId,
   resolveQuestionnaires,
 } from "../services/woundService";
-import { getErrorMessage } from "../services/utils";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -377,7 +376,7 @@ export default function AnalysisResultScreen() {
             {/* Chụp lại */}
             <TouchableOpacity
               style={styles.noWoundRetakeBtn}
-              onPress={() => router.replace('/image-check' as any)}
+              onPress={() => router.replace('/scan' as any)}
               activeOpacity={0.85}
             >
               <LinearGradient
